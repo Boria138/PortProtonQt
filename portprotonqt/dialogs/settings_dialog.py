@@ -160,9 +160,9 @@ class ExeSettingsDialog(
             if scripts_path:
                 var_path = os.path.join(scripts_path, "var")
                 self.lg_dist_aliases = read_lg_dist_versions_from_var(var_path)
-            system_wine_label = "" if self.game_source == "steam" else _('System WINE')
+            system_wine_label = _('System WINE')
             self.dist_options = get_available_wine_options(
-                self.portproton_path, system_wine_label, self.game_source == "steam"
+                self.portproton_path, system_wine_label, False
             )
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
@@ -512,16 +512,6 @@ class ExeSettingsDialog(
                     except ValueError:
                         continue
 
-        if self.game_source == "steam":
-            self.blocked_keys.update({
-                "PW_USE_GSTREAMER",
-                "PW_USE_RUNTIME",
-                "PW_DGVOODOO2",
-                "PW_USE_D3D_EXTRAS",
-                "PW_USE_GALLIUM_NINE",
-                "PW_USE_SUPPLIED_DXVK_VKD3D",
-                "PW_USE_INHIBIT_SLEEP",
-            })
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
             for key in self.toggle_settings:
                 self.current_settings[key] = '0'
@@ -549,7 +539,6 @@ class ExeSettingsDialog(
         if (
             current_wine_version
             and current_wine_version not in self.dist_options
-            and self.game_source != "steam"
             and current_wine_version != 'USE_SYSTEM_WINE'
         ):
             self.dist_options.append(current_wine_version)
@@ -756,10 +745,7 @@ class ExeSettingsDialog(
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
-                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
-                    combo.setEnabled(False)
-                    name_item.setForeground(QColor(self.theme.color_disabled_text))
-                elif is_blocked:
+                if is_blocked:
                     combo.setEnabled(False)
                     name_item.setForeground(QColor(self.theme.color_disabled_text))
 
@@ -1236,8 +1222,6 @@ class ExeSettingsDialog(
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
-                if key in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
-                    continue
                 if key == 'PW_PREFIX_NAME':
                     new_val = re.sub(r"[ \t]", "_", new_val.strip()).upper()
 

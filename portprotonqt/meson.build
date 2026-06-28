@@ -57,6 +57,7 @@ install_data(
    'steam_api/cache.py',
    'steam_api/api.py',
    'steam_api/shortcuts.py',
+   'steam_api/windows_client.py',
   ],
   install_dir: pythondir / meson.project_name() / 'steam_api',
 )

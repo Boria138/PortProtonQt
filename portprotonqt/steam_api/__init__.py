@@ -54,6 +54,13 @@ from portprotonqt.steam_api.shortcuts import (
     remove_from_steam,
     is_game_in_steam,
 )
+from portprotonqt.steam_api.windows_client import (
+    find_native_steam_app,
+    get_native_steam_app_executable,
+    get_windows_steam_app_launcher,
+    get_windows_steam_launch_commands,
+    get_windows_steam_prefix,
+)
 
 __all__ = [
     # Utils
@@ -73,6 +80,11 @@ __all__ = [
     "remove_duplicates",
     "convert_steam_id",
     "get_last_steam_user",
+    "find_native_steam_app",
+    "get_native_steam_app_executable",
+    "get_windows_steam_app_launcher",
+    "get_windows_steam_launch_commands",
+    "get_windows_steam_prefix",
     # Cache
     "get_exiftool_data",
     "delete_cached_app_files",

@@ -25,8 +25,11 @@ def get_requests_session():
     session.verify = True
     return session
 
-def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
+def download_with_cache(url, local_path, timeout=5, downloader_instance=None, progress_callback=None):
     if os.path.exists(local_path):
+        if progress_callback:
+            size = os.path.getsize(local_path)
+            progress_callback(size, size)
         return local_path
     session = get_requests_session()
     try:
@@ -37,12 +40,15 @@ def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
             desc = Path(local_path).name
             with tqdm(total=total_size if total_size > 0 else None,
                       unit='B', unit_scale=True, unit_divisor=1024,
-                      desc=f"Downloading {desc}", ascii=True) as pbar:
+                      desc=f"Downloading {desc}", ascii=True,
+                      disable=progress_callback is not None) as pbar:
                 with open(local_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
                             pbar.update(len(chunk))
+                            if progress_callback:
+                                progress_callback(pbar.n, total_size)
         return local_path
     except Exception as e:
         logger.error(f"Download error {url}: {e}")

@@ -365,7 +365,13 @@ class TestIsSteamProtonDir:
 
 class TestGetSteamLaunchCommands:
     def test_no_steam_home(self):
-        with patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs", return_value=[]):
+        with (
+            patch(
+                "portprotonqt.steam_api.windows_client.get_windows_steam_launch_commands",
+                return_value=[],
+            ),
+            patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs", return_value=[]),
+        ):
             result = get_steam_launch_commands("730")
             assert result == []
 
@@ -373,7 +379,14 @@ class TestGetSteamLaunchCommands:
         steam_dir = tmp_path / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam"
         steam_dir.mkdir(parents=True)
         with (
-            patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs", return_value=[steam_dir]),
+            patch(
+                "portprotonqt.steam_api.windows_client.get_windows_steam_launch_commands",
+                return_value=[],
+            ),
+            patch(
+                "portprotonqt.steam_api.utils._iter_existing_steam_data_dirs",
+                return_value=[steam_dir],
+            ),
             patch("shutil.which", return_value="/usr/bin/flatpak"),
         ):
             result = get_steam_launch_commands("730")

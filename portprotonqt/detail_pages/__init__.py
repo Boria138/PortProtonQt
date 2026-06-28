@@ -52,7 +52,13 @@ from portprotonqt.logger import get_logger
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
-from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
+from portprotonqt.steam_api import (
+    get_native_steam_app_executable,
+    get_steam_home,
+    get_steam_libs,
+    get_windows_steam_app_launcher,
+    safe_vdf_load,
+)
 from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
@@ -444,21 +450,23 @@ class DetailPageManager:
             )
             buttons_layout.addWidget(add_button)
 
-        # Show settings button for PortProton games or Steam games using PortProtonQt
+        # Show settings button for PortProton and Steam games.
         if str(game_source).lower() == "portproton":
             self._add_portproton_buttons(buttons_layout, exec_line)
         elif str(game_source).lower() == "steam" and appid:
-            try:
-                compat_tool = get_steam_compat_tool(int(appid))
-                if compat_tool == "PortProtonQt":
-                    self._add_steam_settings_button(buttons_layout, exec_line, str(appid))
-            except (ValueError, TypeError):
-                pass
+            self._add_steam_settings_button(buttons_layout, exec_line, str(appid))
 
         return buttons_layout
 
     def _get_current_exe(self, exec_line: str) -> str | None:
         """Extract current executable from exec line."""
+        if exec_line.startswith("steam://"):
+            appid = exec_line.rsplit("/", 1)[-1]
+            launcher_path = get_windows_steam_app_launcher(appid)
+            if launcher_path is not None:
+                return launcher_path.name
+            game_exe = get_native_steam_app_executable(appid)
+            return os.path.basename(game_exe) if game_exe else "steam.exe"
         file_to_check = extract_exec_target_path(exec_line)
         return os.path.basename(file_to_check) if file_to_check else None
 
@@ -501,23 +509,37 @@ class DetailPageManager:
         )
         buttons_layout.addWidget(open_folder_button)
 
-    def _add_steam_settings_button(self, buttons_layout: FlowLayout, exec_line: str, appid: str) -> None:
+    def _add_steam_settings_button(
+        self,
+        buttons_layout: FlowLayout,
+        exec_line: str,
+        appid: str,
+    ) -> None:
         """Add only settings button for Steam games."""
-        # Create fake exe path in steam_scripts folder
         portproton_location = self.main_window.portproton_location
         if not portproton_location:
             return
-        steam_scripts_dir = os.path.join(portproton_location, "steam_scripts")
-        os.makedirs(steam_scripts_dir, exist_ok=True)
-        fake_exe_path = os.path.join(steam_scripts_dir, f"{appid}.exe")
-        # Create empty file if it doesn't exist
-        if not os.path.exists(fake_exe_path):
-            open(fake_exe_path, 'a').close()
+        launcher_path = get_windows_steam_app_launcher(appid)
+        if launcher_path is not None:
+            settings_exe = str(launcher_path)
+            settings_source = "portproton"
+        else:
+            game_exe = get_native_steam_app_executable(appid)
+            if game_exe is not None:
+                settings_exe = str(game_exe)
+                settings_source = "portproton"
+            else:
+                steam_scripts_dir = os.path.join(portproton_location, "steam_scripts")
+                os.makedirs(steam_scripts_dir, exist_ok=True)
+                settings_exe = os.path.join(steam_scripts_dir, f"{appid}.exe")
+                if not os.path.exists(settings_exe):
+                    open(settings_exe, 'a').close()
+                settings_source = "steam"
 
         settings_icon = self.main_window.theme_manager.get_icon("settings", as_path=True)
         settings_button = self._make_action_button(_("Settings"), settings_icon)
         settings_button.clicked.connect(
-            lambda: self.main_window.open_exe_settings(fake_exe_path, appid, "steam")
+            lambda: self.main_window.open_exe_settings(settings_exe, appid, settings_source)
         )
         buttons_layout.addWidget(settings_button)
 

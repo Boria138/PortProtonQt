@@ -7,12 +7,16 @@ Key regression areas (from git history):
 - #@_@# space encoding in stat paths
 """
 from datetime import datetime
+from pathlib import Path
+
+from pytest import MonkeyPatch
 
 from portprotonqt.time_utils import (
     _parse_last_launch_line,
     save_last_launch,
     get_last_launch,
     get_last_launch_timestamp,
+    get_last_launch_timestamps,
     get_last_launch_path,
     parse_playtime_file,
     get_playtime_for_exe,
@@ -179,6 +183,22 @@ class TestGetLastLaunchTimestamp:
         result = get_last_launch_timestamp("my game.exe")
         assert result > 0
 
+    def test_returns_all_timestamps(
+        self,
+        tmp_path: Path,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        cache_file = tmp_path / "PortProtonQt" / "last_launch"
+        monkeypatch.setattr(
+            "portprotonqt.time_utils.get_last_launch_path",
+            lambda: str(cache_file),
+        )
+        save_last_launch("steam://rungameid/730", datetime(2026, 7, 13))
+
+        result = get_last_launch_timestamps()
+
+        assert result["steam://rungameid/730"] > 0
+
 
 # ── parse_playtime_file ──────────────────────────────────────────────────────
 
@@ -188,6 +208,12 @@ class TestParsePlaytimeFile:
         f.write_text("/path/game.exe abc123def456 3600 platform build\n")
         result = parse_playtime_file(str(f))
         assert result["/path/game.exe"] == 3600
+
+    def test_steam_uri_without_hash(self, tmp_path: Path) -> None:
+        f = tmp_path / "stats.txt"
+        f.write_text("steam://rungameid/730 3600\n")
+        result = parse_playtime_file(str(f))
+        assert result["steam://rungameid/730"] == 3600
 
     def test_spaced_path_with_hash_encoding(self, tmp_path):
         f = tmp_path / "stats.txt"

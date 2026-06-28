@@ -2440,7 +2440,7 @@ pw_specialk_sync_files () {
     fi
 
     if [[ -d "$SPECIALK_PATH" ]] ; then
-        if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
+        if file "${PW_GAME_EXE_FILE:-$PW_EXE_FILE}" | grep -q "x86-64" ; then
             PW_SK_ARCH_DLL="SpecialK64.dll"
         else
             PW_SK_ARCH_DLL="SpecialK32.dll"
@@ -2459,7 +2459,7 @@ pw_specialk_sync_files () {
         fi
 
         local DETECT_OUT HIGHEST_DX USES_OGL
-        DETECT_OUT=$(python_module graphics_detector "$PW_EXE_FILE")
+        DETECT_OUT=$(python_module graphics_detector "${PW_GAME_EXE_FILE:-$PW_EXE_FILE}")
         HIGHEST_DX=$(echo "$DETECT_OUT" | grep "^HIGHEST_DX=" | cut -d'=' -f2)
         USES_OGL=$(echo "$DETECT_OUT" | grep "^USES_OGL=" | cut -d'=' -f2)
 
@@ -2671,6 +2671,25 @@ start_portproton () {
         fi
         return 0
     }
+
+pw_link_shared_steam () {
+    local game_exe shared_dir steam_dir
+    [[ "$(basename "${PW_EXE_FILE}")" == portprotonqt_steam_*.bat ]] || return
+    shared_dir="${PORT_DATA_PATH}/data/tmp/steam"
+    steam_dir="${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files (x86)/Steam"
+    [[ -f "${shared_dir}/steam.exe" ]] || return
+    mkdir -p "$(dirname "${steam_dir}")"
+    if [[ ! -L "${steam_dir}" ]] && { [[ -e "${steam_dir}" ]] || [[ -L "${steam_dir}" ]]; } ; then
+        print_warning "Steam path already exists: ${steam_dir}"
+        return
+    fi
+    [[ -L "${steam_dir}" ]] || ln -s "${shared_dir}" "${steam_dir}"
+    game_exe=$(sed -n 's/^rem PORTPROTON_GAME_EXE=//p' "${PW_EXE_FILE}" | head -1 | tr -d '\r')
+    if [[ -f "${game_exe}" ]] ; then
+        export PW_GAME_EXE_FILE="${game_exe}"
+        export PATH_TO_GAME="$(dirname "$(realpath "${game_exe}")")"
+    fi
+}
 
     pw_get_pfx
 
@@ -2917,6 +2936,8 @@ start_portproton () {
         esac
     }
     set_to_dxvk_conf default
+
+    pw_link_shared_steam
 
     # NVAPI, DLSS AND FAKE DLSS
     if [[ -d "$PATH_TO_GAME/Engine" ]]; then
@@ -3820,7 +3841,7 @@ pw_run () {
     fi
     cd "${PATH_TO_GAME}" || fatal "${PATH_TO_GAME} not found"
 
-    if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
+    if file "${PW_GAME_EXE_FILE:-$PW_EXE_FILE}" | grep -q "x86-64" ; then
         check_variables WINE_LARGE_ADDRESS_AWARE "0"
     else
         check_variables WINE_LARGE_ADDRESS_AWARE "1"

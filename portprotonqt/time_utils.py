@@ -214,7 +214,7 @@ def parse_playtime_file(file_path):
     Parse playtime data file.
 
     Line format in file:
-      <full exe path> <hash> <playtime_seconds> <platform> <build>
+      <full exe path> [<hash>] <playtime_seconds> <platform> <build>
 
     Return dictionary like:
       {
@@ -232,12 +232,11 @@ def parse_playtime_file(file_path):
             if not line.strip():
                 continue
             parts = line.strip().split()
-            if len(parts) < 3:
+            if len(parts) < 2:
                 continue
             exe_path = parts[0]
             # Find playtime: first numeric value after exe_path
-            # Format: <exe_path> <hash> <playtime_seconds> <platform> ...
-            # Hash is 64 hex chars, playtime is digits only
+            # Hash is optional; playtime is the first numeric field.
             for i in range(1, len(parts)):
                 if parts[i].isdigit():
                     playtime_data[exe_path] = int(parts[i])
@@ -354,14 +353,22 @@ def get_last_launch_timestamp(exe_name):
     Return last launch timestamp for given exe.
     If no record, return 0.
     """
+    return get_last_launch_timestamps().get(exe_name, 0)
+
+
+def get_last_launch_timestamps() -> dict[str, float]:
+    """Return all saved last-launch timestamps."""
     file_path = get_last_launch_path()
     if not os.path.exists(file_path):
-        return 0
+        return {}
+    timestamps: dict[str, float] = {}
     with open(file_path, encoding="utf-8") as f:
         for line in f:
             parsed_line = _parse_last_launch_line(line)
-            if parsed_line and parsed_line[0] == exe_name:
-                iso_time = parsed_line[1]
-                dt = datetime.fromisoformat(iso_time)
-                return dt.timestamp()
-    return 0
+            if not parsed_line:
+                continue
+            try:
+                timestamps[parsed_line[0]] = datetime.fromisoformat(parsed_line[1]).timestamp()
+            except ValueError:
+                logger.warning("Invalid last launch timestamp for %s", parsed_line[0])
+    return timestamps

@@ -10,6 +10,7 @@ from pytest import MonkeyPatch
 
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
+from portprotonqt.localization import _
 from portprotonqt.main_window import MainWindow
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
@@ -597,6 +598,117 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     assert popen_kwargs["text"] is True
     assert popen_kwargs["errors"] == "replace"
     assert window.input_manager.suspended
+
+
+def test_toggle_steam_game_tracks_steam_process(monkeypatch: Any) -> None:
+    process = object()
+    button = FakeButton()
+    saved_launches: list[str] = []
+    window: Any = MainWindow.__new__(MainWindow)
+    window.game_processes = []
+    window.target_exe = None
+    window.current_play_button = None
+    window.input_manager = FakeInputManager()
+    window.theme_manager = FakeThemeManager()
+
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_launch_commands",
+        lambda _appid: [["portproton", "steam.exe"]],
+    )
+    monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", lambda *_args, **_kwargs: process)
+    monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.save_last_launch",
+        lambda exec_line, _time: saved_launches.append(exec_line),
+    )
+    monkeypatch.setattr(window, "_start_launch_output_reader", lambda _process: None)
+    monkeypatch.setattr(window, "_update_last_launch_after_start", lambda *_args: None)
+    monkeypatch.setattr(
+        window,
+        "_prepare_steam_game",
+        lambda exec_line: window._launch_steam_game(exec_line, [["portproton", "steam.exe"]]),
+    )
+
+    window.toggleGame("steam://rungameid/730", button)
+
+    assert window.game_processes == [process]
+    assert window.target_exe == "steam.exe"
+    assert button.text == _("Stop")
+    assert window.input_manager.suspended
+    assert saved_launches == ["steam://rungameid/730"]
+
+
+def test_steam_playtime_increment_uses_loaded_baseline(monkeypatch: Any) -> None:
+    exec_line = "steam://rungameid/730"
+    window: Any = MainWindow.__new__(MainWindow)
+    window.games = [
+        ("Game", "", "", 730, "", exec_line, "", "", "", "", 0, 500),
+    ]
+    monkeypatch.setattr("portprotonqt.main_window.get_statistics_path", lambda: "stats")
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_playtime_for_exe",
+        lambda *_args: 300,
+    )
+
+    assert window._get_playtime_increment(exec_line, 60) == 260
+
+
+def test_load_steam_games_uses_newer_local_playtime(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    statistics_path = tmp_path / "statistics"
+    statistics_path.write_text("steam://rungameid/730 500\n", encoding="utf-8")
+    window: Any = MainWindow.__new__(MainWindow)
+    window.pending_games = []
+    results: list[list[tuple]] = []
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_installed_games",
+        lambda: [("Game", 730, 100, 300)],
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_statistics_path",
+        lambda: str(statistics_path),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_last_launch_timestamps",
+        lambda: {"steam://rungameid/730": 200},
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_full_steam_game_info_async",
+        lambda _appid, callback, **_kwargs: callback({}),
+    )
+
+    window._load_steam_games_async(results.append)
+
+    assert results[0][0][10] == 200
+    assert results[0][0][11] == 500
+
+
+def test_prepare_steam_game_shows_download_on_button(monkeypatch: Any) -> None:
+    button = FakeButton()
+    window: Any = MainWindow.__new__(MainWindow)
+    window.current_play_button = button
+    window.current_running_button = None
+    window.theme_manager = FakeThemeManager()
+
+    class PendingThread:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+    monkeypatch.setattr("portprotonqt.main_window.Thread", PendingThread)
+
+    window._prepare_steam_game("steam://rungameid/730")
+
+    assert button.text == _("Downloading Steam…")
+    assert window.steam_preparation_thread is not None
+
+    window._on_steam_preparation_progress(39.2)
+
+    assert button.text == _("Downloading Steam…") + " 39%"
 
 
 def test_process_portproton_desktop_calls_callback_without_asset_download(

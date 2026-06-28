@@ -87,8 +87,22 @@ def get_steam_home() -> Path | None:
     return None
 
 
-def get_steam_launch_commands(appid: str) -> list[list[str]]:
+def get_steam_launch_commands(
+    appid: str,
+    progress_callback=None,
+) -> list[list[str]]:
     """Return Steam launch commands based on detected Steam data dir."""
+    from portprotonqt.steam_api.windows_client import (
+        get_native_steam_app_executable,
+        get_windows_steam_launch_commands,
+    )
+
+    windows_steam_commands = get_windows_steam_launch_commands(appid, progress_callback)
+    if windows_steam_commands:
+        return windows_steam_commands
+    if get_native_steam_app_executable(appid) is not None:
+        return []
+
     steam_home = get_steam_home()
     if steam_home is None:
         return []

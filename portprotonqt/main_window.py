@@ -31,7 +31,17 @@ from portprotonqt.image_utils import (
 )
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, fetch_sgdb_cover_async, get_steam_launch_commands
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
+from portprotonqt.time_utils import (
+    format_last_launch,
+    format_playtime,
+    get_last_launch,
+    get_last_launch_timestamp,
+    get_last_launch_timestamps,
+    get_playtime_for_exe,
+    get_statistics_path,
+    parse_playtime_file,
+    save_last_launch,
+)
 from portprotonqt.config import (
     get_portproton_location,
     ui_config,
@@ -65,8 +75,8 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QMessageBox, QApplication, QPushButton, QCheckBox)
-from PySide6.QtCore import Qt, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QFileSystemWatcher, QObject
-from PySide6.QtGui import QColor, QDesktopServices, QHideEvent, QShowEvent, QGuiApplication
+from PySide6.QtCore import Qt, QEvent, Signal, QTimer, Slot, QProcess, QFileSystemWatcher, QObject
+from PySide6.QtGui import QColor, QHideEvent, QShowEvent, QGuiApplication
 from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -140,6 +150,8 @@ class MainWindow(
     QMainWindow,
 ):
     games_loaded = Signal(list)
+    steam_preparation_finished = Signal(str, object)
+    steam_preparation_progress = Signal(float)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -339,6 +351,9 @@ class MainWindow(
         self.games_load_timer.setSingleShot(True)
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
         self.games_loaded.connect(self.on_games_loaded)
+        self.steam_preparation_finished.connect(self._on_steam_preparation_finished)
+        self.steam_preparation_progress.connect(self._on_steam_preparation_progress)
+        self.steam_preparation_thread = None
         self.current_add_game_dialog = None
 
         self.settingsDebounceTimer = QTimer(self)
@@ -997,6 +1012,13 @@ class MainWindow(
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []
         installed_games = get_steam_installed_games()
+        statistics_path = get_statistics_path()
+        local_playtime = (
+            parse_playtime_file(statistics_path)
+            if os.path.exists(statistics_path)
+            else {}
+        )
+        local_last_launch = get_last_launch_timestamps()
         logger.info("Found %d installed Steam games: %s", len(installed_games), [g[0] for g in installed_games])
         if not installed_games:
             callback(steam_games)
@@ -1006,6 +1028,12 @@ class MainWindow(
 
         def on_game_info(info: dict, name, appid, last_played, playtime_seconds):
             nonlocal processed_count
+            exec_line = f"steam://rungameid/{appid}"
+            last_played = max(last_played, local_last_launch.get(exec_line, 0))
+            playtime_seconds = max(
+                playtime_seconds,
+                local_playtime.get(exec_line, 0),
+            )
             if not info:
                 logger.warning("No info retrieved for game %s (appid %s)", name, appid)
                 info = {
@@ -1023,7 +1051,7 @@ class MainWindow(
                 info.get('cover', ''),
                 appid,
                 info.get('controller_support', ''),
-                f"steam://rungameid/{appid}",
+                exec_line,
                 last_launch,
                 format_playtime(playtime_seconds),
                 info.get('protondb_tier', ''),
@@ -1882,7 +1910,7 @@ class MainWindow(
             elapsed = int((datetime.now() - start_time).total_seconds())
             if elapsed > 0:
                 from portprotonqt.time_utils import save_playtime
-                save_playtime(start_exe, elapsed)
+                save_playtime(start_exe, self._get_playtime_increment(start_exe, elapsed))
                 self._update_playtime_after_exit(start_exe, elapsed)
             self.game_start_time = None
             self.game_start_exe = None
@@ -1897,6 +1925,21 @@ class MainWindow(
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
         self.loadGames(force_load=True)
+
+    def _get_playtime_increment(self, exec_line: str, elapsed: int) -> int:
+        """Return elapsed time adjusted to the loaded Steam baseline."""
+        if not exec_line.startswith("steam://"):
+            return elapsed
+        saved_playtime = get_playtime_for_exe(get_statistics_path(), exec_line) or 0
+        loaded_playtime = next(
+            (
+                int(game[11] or 0)
+                for game in self.games
+                if len(game) > 11 and game[5] == exec_line
+            ),
+            0,
+        )
+        return elapsed + max(loaded_playtime - saved_playtime, 0)
 
     def _update_game_list_playtime(
         self, games: list[tuple], exe_path: str, additional_seconds: int
@@ -2217,26 +2260,112 @@ class MainWindow(
                 return str(game[0])
         return ""
 
-    def _launch_steam_game(self, exec_line: str) -> None:
+    def _prepare_steam_game(self, exec_line: str) -> None:
         appid = exec_line.rsplit("/", 1)[-1]
         if not appid.isdigit():
             logger.warning("Invalid Steam URI: %s", exec_line)
             return
 
-        for command in get_steam_launch_commands(appid):
+        self.current_running_button = self.current_play_button
+        self.wine_download_status = _("Downloading Steam…")
+        self.wine_download_percent = 0.0
+        self._set_running_button_progress()
+        self.steam_preparation_thread = Thread(
+            target=self._load_steam_launch_commands,
+            args=(exec_line, appid),
+            daemon=True,
+        )
+        self.steam_preparation_thread.start()
+
+    def _load_steam_launch_commands(self, exec_line: str, appid: str) -> None:
+        commands = get_steam_launch_commands(appid, self.steam_preparation_progress.emit)
+        self.steam_preparation_finished.emit(exec_line, commands)
+
+    def _on_steam_preparation_progress(self, percent: float) -> None:
+        self.wine_download_percent = percent
+        self._set_running_button_progress()
+
+    def _on_steam_preparation_finished(self, exec_line: str, commands: object) -> None:
+        self.steam_preparation_thread = None
+        self._launch_steam_game(exec_line, commands if isinstance(commands, list) else [])
+
+    def _launch_steam_game(self, exec_line: str, commands: list[list[str]]) -> None:
+        appid = exec_line.rsplit("/", 1)[-1]
+
+        for command in commands:
             try:
-                subprocess.Popen(command)
+                current_exe = os.path.basename(command[-1]) if command else "steam.exe"
+                process = subprocess.Popen(
+                    command,
+                    shell=False,
+                    preexec_fn=os.setsid,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    errors="replace",
+                    bufsize=1,
+                )
+                self._track_launched_process(process, current_exe, exec_line)
                 return
             except OSError as e:
                 logger.warning("Failed to launch Steam app %s with %s: %s", appid, command[0], e)
 
-        if not QDesktopServices.openUrl(QUrl(exec_line)):
-            logger.warning("Failed to open Steam URI: %s", exec_line)
+        self._reset_steam_preparation_button()
+        QMessageBox.warning(
+            self,
+            _("Error"),
+            _("Failed to prepare Windows Steam for this game"),
+        )
+
+    def _reset_steam_preparation_button(self) -> None:
+        if self.current_running_button is None:
+            return
+        try:
+            self.current_running_button.setText(_("Start"))
+            icon = self.theme_manager.get_icon("play", as_path=True)
+            self.current_running_button.setIcon(icon)
+        except RuntimeError:
+            pass
+        self.current_running_button = None
+
+    def _track_launched_process(
+        self,
+        process: subprocess.Popen[str],
+        current_exe: str,
+        exec_line: str,
+    ) -> None:
+        self.game_processes.append(process)
+        self._start_launch_output_reader(process)
+        self.input_manager.suspend_gamepad_polling()
+        launch_time = datetime.now()
+        self.game_start_time = launch_time
+        self.game_start_exe = exec_line
+        save_last_launch(exec_line, launch_time)
+        self._update_last_launch_after_start(exec_line, launch_time)
+        self.current_running_button = self.current_play_button
+        self.target_exe = current_exe
+        self._set_running_button_stop()
+
+        self.wine_download_seen = False
+        self.wine_download_percent = 0.0
+        self.wine_download_status = _("Downloading Wine…")
+        self.game_launch_started = False
+
+        self.checkProcessTimer = QTimer(self)
+        self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+        self.checkProcessTimer.start(500)
 
     def toggleGame(self, exec_line, button=None, game_name=None):
         # Handle Steam games
         if exec_line.startswith("steam://"):
-            self._launch_steam_game(exec_line)
+            self.current_play_button = button
+            if getattr(self, "steam_preparation_thread", None) is not None:
+                return
+            if getattr(self, "game_start_exe", None) == exec_line or self.target_exe == "steam.exe":
+                if not self.stop_running_game(button):
+                    QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
+                return
+            self._prepare_steam_game(exec_line)
             return
 
         # Handle PortProton games
