@@ -999,8 +999,9 @@ class DetailPageManager:
             game_data = self._game_tuple_to_data(game_tuple)
             self._return_to_autoinstall_card = self._get_exec_name(game_data["exec_line"])
             self._remove_current_detail_page()
+            self.main_window.switchTab(0)
             self.openGameDetailPage(game_data)
-            self._return_to_tab_index = self.main_window.auto_install_tab_index
+            self._return_to_tab_index = 0
 
         self.main_window._process_desktop_file_async(desktop_path, on_game_data)
 

@@ -1,7 +1,10 @@
 """Tests for auto-install installed status matching."""
 
 from pathlib import Path
+from typing import Any
 
+import portprotonqt.detail_pages as detail_pages
+from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.detail_pages.utils import (
     _check_autoinstall_installed_sync,
     find_autoinstall_entry_path,
@@ -91,3 +94,43 @@ def test_autoinstall_status_falls_back_to_basename_without_path(tmp_path: Path) 
     assert _check_autoinstall_installed_sync(
         str(script_path), "Itch.io", str(portproton_dir)
     )
+
+
+def test_open_installed_autoinstall_card_switches_to_library(monkeypatch: Any) -> None:
+    class FakeMainWindow:
+        portproton_location = "/tmp/portproton"
+        auto_install_tab_index = 1
+
+        def __init__(self) -> None:
+            self.switched_index: int | None = None
+
+        def switchTab(self, index: int) -> None:
+            self.switched_index = index
+
+        def _process_desktop_file_async(self, _path: str, callback: Any) -> None:
+            callback((
+                "Installed Game", "", "", "", "", "/tmp/InstalledGame.exe",
+                "Never", "0h 0m", "", "", 0, 0, "portproton", "", "", "",
+            ))
+
+    opened_data: dict | None = None
+    manager = DetailPageManager.__new__(DetailPageManager)
+    manager.main_window = FakeMainWindow()
+    monkeypatch.setattr(
+        detail_pages,
+        "find_autoinstall_entry_path",
+        lambda _script, _location: "/tmp/Installed Game.desktop",
+    )
+    monkeypatch.setattr(manager, "_remove_current_detail_page", lambda: None)
+
+    def open_detail(game_data: dict) -> None:
+        nonlocal opened_data
+        opened_data = game_data
+
+    monkeypatch.setattr(manager, "openGameDetailPage", open_detail)
+
+    manager._open_installed_autoinstall_card("/tmp/game.ppai", "Auto Game")
+
+    assert manager.main_window.switched_index == 0
+    assert manager._return_to_tab_index == 0
+    assert opened_data is not None
