@@ -11,7 +11,6 @@ LIBRARY_LAYOUT_MODE = "list"
 DETAIL_PAGE_LAYOUT_MODE = "compact"
 
 autoSizeButtonPadding = (0, 20)
-
 portProtonPageMargins = (10, 7, 15, 10)
 portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
