@@ -1,6 +1,7 @@
 """Detail page utilities for PortProtonQt."""
 
 import os
+import re
 from weakref import WeakKeyDictionary
 from collections.abc import Callable
 from PySide6.QtWidgets import QWidget, QApplication, QLabel, QGraphicsOpacityEffect
@@ -310,12 +311,12 @@ def _check_autoinstall_installed_sync(
     except (OSError, AttributeError):
         return False
 
-    autoinstall_exe = _get_autoinstall_exe_name(script_name)
+    autoinstall_exe, autoinstall_path = _get_autoinstall_exe_target(script_name)
     if not autoinstall_exe:
         return False
 
     for file in desktop_files:
-        if _check_desktop_file(file, portproton_location, autoinstall_exe):
+        if _check_desktop_file(file, portproton_location, autoinstall_exe, autoinstall_path):
             return True
 
     return False
@@ -334,12 +335,12 @@ def find_autoinstall_entry_path(
     except (OSError, AttributeError):
         return None
 
-    autoinstall_exe = _get_autoinstall_exe_name(script_name)
+    autoinstall_exe, autoinstall_path = _get_autoinstall_exe_target(script_name)
     if not autoinstall_exe:
         return None
 
     for filename in desktop_files:
-        if not _check_desktop_file(filename, portproton_location, autoinstall_exe):
+        if not _check_desktop_file(filename, portproton_location, autoinstall_exe, autoinstall_path):
             continue
         return os.path.join(portproton_location, filename)
 
@@ -377,6 +378,7 @@ def _check_desktop_file(
     filename: str,
     location: str,
     autoinstall_exe: str,
+    autoinstall_path: str,
 ) -> bool:
     """Check if desktop file targets autoinstall exe."""
     if not filename.endswith(".desktop"):
@@ -394,36 +396,74 @@ def _check_desktop_file(
 
     exec_name = os.path.basename(exec_path).lower()
     real_exec_name = os.path.basename(os.path.realpath(exec_path)).lower()
+    if autoinstall_path:
+        return (
+            _path_matches_autoinstall(exec_path, autoinstall_path)
+            or _path_matches_autoinstall(os.path.realpath(exec_path), autoinstall_path)
+        )
     return autoinstall_exe.lower() in (exec_name, real_exec_name)
 
 
 def _get_autoinstall_exe_name(script_name: str) -> str:
+    autoinstall_exe, _autoinstall_path = _get_autoinstall_exe_target(script_name)
+    return autoinstall_exe
+
+
+def _get_autoinstall_exe_target(script_name: str) -> tuple[str, str]:
     script_path = script_name
     if not os.path.isfile(script_path):
-        return ""
+        return "", ""
 
     install_exe = ""
+    install_path = ""
     try:
         with open(script_path, encoding="utf-8") as script_file:
             for line in script_file:
                 if "PW_EXE_FILE" in line:
                     exe_name = _extract_exe_name(line)
                     if exe_name:
-                        return exe_name
+                        return exe_name, _extract_exe_path(line)
                 if "PW_AUTOINSTALL_EXE" not in line:
                     continue
                 exe_name = _extract_exe_name(line)
                 if exe_name:
                     install_exe = exe_name
+                    install_path = _extract_exe_path(line)
     except OSError:
-        return ""
+        return "", ""
 
-    return install_exe
+    return install_exe, install_path
 
 
 def _extract_exe_name(line: str) -> str:
+    quoted_exe = re.search(r"['\"]([^/'\"]+\.exe)['\"]", line, re.IGNORECASE)
+    if quoted_exe:
+        return quoted_exe.group(1)
     for part in line.replace("\\", "/").split("/"):
         clean_part = part.strip().strip('"\' }')
         if clean_part.lower().endswith(".exe"):
             return clean_part
     return ""
+
+
+def _extract_exe_path(line: str) -> str:
+    match = re.search(r"['\"]([^'\"]+\.exe)['\"]", line.replace("\\", "/"), re.IGNORECASE)
+    if not match:
+        return ""
+    path = match.group(1)
+    drive_index = path.lower().find("drive_c/")
+    if drive_index < 0:
+        return ""
+    return path[drive_index:].lower()
+
+
+def _path_matches_autoinstall(exec_path: str, autoinstall_path: str) -> bool:
+    normalized_path = exec_path.replace("\\", "/").lower()
+    pattern_parts = []
+    for part in autoinstall_path.split("/"):
+        if part.startswith("$"):
+            pattern_parts.append("[^/]+")
+        else:
+            pattern_parts.append(re.escape(part))
+    pattern = r"(^|.*/)" + "/".join(pattern_parts) + r"$"
+    return re.search(pattern, normalized_path) is not None

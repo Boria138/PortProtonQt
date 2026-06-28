@@ -387,6 +387,7 @@ tests/
 ├── test_main_window.py      # Main window data processing and callback regressions
 ├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
 ├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
+├── test_autoinstall_status.py # Autoinstall installed-status matching regressions
 ├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
