@@ -1,8 +1,8 @@
-📘 Эта документация также доступна на [русском.](README.ru.md)
+ Эта документация также доступна на [русском.](README.ru.md)
 
 ---
 
-## 📋 Contents
+## Contents
 - [Overview](#-overview)
 - [Translate Online](#-translate-online)
 - [Adding a New Translation](#-adding-a-new-translation)
@@ -10,7 +10,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 Localization in `PortProtonQT` is powered by `Babel` using `.po` files stored under `LC_MESSAGES/portprotonqt.po` for each language.
 To see updated translations in the app, you must generate `.mo` files after editing `.po`.
@@ -23,7 +23,7 @@ Current translation status:
 
 ---
 
-## 🌐 Translate Online
+## Translate Online
 
 You can help translate PortProtonQt using our web-based translation platform:
 
@@ -39,7 +39,7 @@ Translations submitted online are periodically reviewed and merged into the main
 
 ---
 
-## 🏁 Adding a New Translation
+## Adding a New Translation
 
 1. Run:
 
@@ -59,7 +59,7 @@ python dev-scripts/l10n.py
 
 ---
 
-## 🔄 Updating Existing Translations
+## Updating Existing Translations
 
 If you’ve added new strings to the code:
 
