@@ -89,6 +89,7 @@ color_separator = "#7f7f7f"
 # === Scrollbar ===
 color_scrollbar_bg = "rgba(20, 20, 20, 0.30)"
 color_scrollbar_handle = "#bebebe"
+border_radius_scroll = "5px"
 
 # === Slider ===
 color_slider_handle = "#bebebe"
