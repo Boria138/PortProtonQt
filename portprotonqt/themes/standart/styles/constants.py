@@ -5,6 +5,7 @@ theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
 # === Layout Constants ===
+autoSizeButtonPadding = (10, 20)
 favoriteLabelSize = 48, 48
 favoriteLabelIconSize = 32
 detailCompactCoverFrameSize = 128
