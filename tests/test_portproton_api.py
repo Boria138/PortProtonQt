@@ -50,6 +50,27 @@ def test_autoinstall_name_falls_back_to_plain_field(tmp_config_dir: Path) -> Non
     assert api._get_autoinstall_field(game, "name", "ru") == "VK Play"
 
 
+def test_local_autoinstall_metadata_reads_script_comments(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setattr(PortProtonAPI, "_get_autoinstall_lang_code", lambda self: "ru")
+    script_path = tmp_path / "VK_Play.ppai"
+    script_path.write_text(
+        "# name: VK Play Games Center\n"
+        "# info_en: English description.\n"
+        "# info_ru: Русское описание.\n",
+        encoding="utf-8",
+    )
+    api = PortProtonAPI()
+
+    metadata = api.read_local_autoinstall_metadata(str(script_path))
+
+    assert metadata["name"] == "VK Play Games Center"
+    assert metadata["description"] == "Русское описание."
+
+
 def test_autoinstall_script_download_uses_tmp_dir(
     tmp_config_dir: Path,
     tmp_path: Path,

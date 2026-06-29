@@ -1,9 +1,11 @@
 """Tests for main window library data processing."""
 
+import shlex
 from pathlib import Path
 from queue import Queue
 from typing import Any
 
+from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
@@ -155,6 +157,57 @@ def test_tabs_package_exports_tab_mixins() -> None:
 
     for mixin in TAB_METHODS:
         assert getattr(tabs, mixin.__name__) is mixin
+
+
+def test_autoinstall_script_name_supports_spaced_paths(tmp_path: Path) -> None:
+    script_path = tmp_path / "Game Installer.ppai"
+    script_path.touch()
+    manager = DetailPageManager.__new__(DetailPageManager)
+
+    script_name = manager._extract_script_name(f"autoinstall:{shlex.quote(str(script_path))}")
+
+    assert script_name == str(script_path)
+
+
+def test_open_local_autoinstall_card_uses_autoinstall_page(tmp_path: Path) -> None:
+    script_path = tmp_path / "Game Installer.ppai"
+    script_path.touch()
+    opened = []
+
+    class FakePortProtonAPI:
+        def read_local_autoinstall_metadata(self, path: str) -> dict[str, str]:
+            assert path == str(script_path)
+            return {"name": "Game", "description": "Description"}
+
+    class FakeThemeManager:
+        def get_icon(self, *args: Any, **kwargs: Any) -> str:
+            return ""
+
+    class FakeDetailPageManager:
+        def openAutoInstallDetailPage(self, game_data: dict, return_tab_index: int = 1) -> None:
+            opened.append((game_data, return_tab_index))
+
+    window: Any = MainWindow.__new__(MainWindow)
+    window.portproton_api = FakePortProtonAPI()
+    window.theme_manager = FakeThemeManager()
+    window.detail_page_manager = FakeDetailPageManager()
+
+    window.open_local_autoinstall_card(str(script_path))
+
+    game_data, return_tab_index = opened[0]
+    assert game_data["name"] == "Game"
+    assert game_data["exec_line"] == f"autoinstall:{shlex.quote(str(script_path))}"
+    assert return_tab_index == 0
+
+
+def test_launch_exe_skips_library_load_for_ppai() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    window._loading_games = False
+    window.launch_exe = "/tmp/Game Installer.ppai"
+
+    window.loadGames()
+
+    assert window._loading_games is False
 
 
 def test_meson_installs_tab_modules() -> None:

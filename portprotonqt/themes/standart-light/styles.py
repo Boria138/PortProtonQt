@@ -5,6 +5,7 @@ theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
 # CONSTANTS
+autoSizeButtonPadding = (10, 20)
 favoriteLabelSize = 48, 48
 favoriteLabelIconSize = 32
 detailCompactCoverFrameSize = 128
@@ -65,6 +66,7 @@ color_separator = "#7f7f7f"
 # Scrollbar
 color_scrollbar_bg = "rgba(20, 20, 20, 0.20)"
 color_scrollbar_handle = "#bfbfbf"
+border_radius_scroll = "5px"
 
 # Slider
 color_slider_handle = "#bfbfbf"
@@ -1222,13 +1224,13 @@ SCROLL_STYLE = f"""
     QScrollBar:vertical {{
         width: 10px;
         border:  {border_none};
-        border-radius: 5px;
+        border-radius: {border_radius_scroll};
         background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:vertical {{
         background: {color_scrollbar_handle};
         border:  {border_none};
-        border-radius: 5px;
+        border-radius: {border_radius_scroll};
     }}
     QScrollBar::add-line:vertical {{
         border:  {border_none};
@@ -1247,13 +1249,13 @@ SCROLL_STYLE = f"""
     QScrollBar:horizontal {{
         height: 10px;
         border:  {border_none};
-        border-radius: 5px;
+        border-radius: {border_radius_scroll};
         background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:horizontal {{
         background: {color_scrollbar_handle};
         border:  {border_none};
-        border-radius: 5px;
+        border-radius: {border_radius_scroll};
     }}
     QScrollBar::add-line:horizontal {{
         border:  {border_none};

@@ -267,6 +267,27 @@ class PortProtonAPI:
     def _clean_metadata_value(self, value: str) -> str:
         return value.replace("\r", " ").replace("\n", " ").strip()
 
+    def read_local_autoinstall_metadata(self, script_path: str) -> dict[str, str]:
+        metadata: dict[str, str] = {}
+        try:
+            with open(script_path, encoding="utf-8") as script_file:
+                for line in script_file:
+                    clean_line = line.strip()
+                    if clean_line.startswith("# name:"):
+                        metadata["name"] = clean_line.split(":", 1)[1].strip()
+                    elif clean_line.startswith("# info_"):
+                        key, _, value = clean_line[2:].partition(":")
+                        metadata[key.strip()] = value.strip()
+        except OSError as e:
+            logger.warning("Failed to read local autoinstall script %s: %s", script_path, e)
+
+        lang_code = self._get_autoinstall_lang_code()
+        description = metadata.get(f"info_{lang_code}") or metadata.get("info_en") or ""
+        return {
+            "name": metadata.get("name", ""),
+            "description": description,
+        }
+
     def _write_autoinstall_metadata(self, game_data: dict, game_dir: str) -> None:
         metadata_path = os.path.join(game_dir, "metadata.txt")
         name = game_data.get("name", "")

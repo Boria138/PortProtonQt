@@ -4,12 +4,14 @@ from pathlib import Path
 
 from portprotonqt.cli import (
     normalize_launch_path,
+    is_autoinstall_file,
     is_launch_file,
     is_prefix_backup_file,
     parse_portproton_url,
     parse_portprotonqt_theme_url,
     parse_resolution,
     LAUNCH_FILE_EXTENSIONS,
+    PP_EXTENSIONS,
     PREFIX_BACKUP_EXTENSION,
 )
 
@@ -101,6 +103,21 @@ class TestIsPrefixBackupFile:
 
     def test_ppack_extension_constant(self):
         assert PREFIX_BACKUP_EXTENSION == ".ppack"
+
+
+class TestIsAutoinstallFile:
+    def test_ppai_file(self, tmp_path: Path):
+        ppai = tmp_path / "installer.ppai"
+        ppai.touch()
+        assert is_autoinstall_file(str(ppai)) is True
+
+    def test_not_ppai(self, tmp_path: Path):
+        txt = tmp_path / "installer.txt"
+        txt.touch()
+        assert is_autoinstall_file(str(txt)) is False
+
+    def test_ppai_extension_constant(self):
+        assert PP_EXTENSIONS == (".ppack", ".ppai")
 
 
 class TestParsePortprotonUrl:

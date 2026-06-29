@@ -42,6 +42,7 @@ from portprotonqt.cli import (
     is_portproton_url,
     parse_portproton_url,
     parse_portprotonqt_theme_url,
+    is_autoinstall_file,
     is_launch_file,
     is_prefix_backup_file,
     normalize_launch_path,
@@ -282,6 +283,7 @@ def main():
     ipc_message = "show:fullscreen" if fullscreen else "show"
     backup_request = None
     restore_prefix_path = None
+    autoinstall_path = None
     theme_store_id = None
     resolution_from_args = None
     if args.resolution:
@@ -304,6 +306,9 @@ def main():
         ipc_message = f"restore:{quote(restore_prefix_path, safe='')}"
     elif args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
+    elif args.file_or_url and is_autoinstall_file(args.file_or_url):
+        autoinstall_path = normalize_launch_path(args.file_or_url)
+        ipc_message = f"autoinstall:{quote(autoinstall_path, safe='')}"
     elif args.file_or_url:
         theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
         if theme_store_id is not None:
@@ -387,6 +392,9 @@ def main():
         elif is_launch_file(args.file_or_url):
             # Store launch file path for later processing after window is created
             exe_path = normalize_launch_path(args.file_or_url)
+        elif is_autoinstall_file(args.file_or_url):
+            autoinstall_path = normalize_launch_path(args.file_or_url)
+            exe_path = None
         elif theme_store_id is not None:
             exe_path = None
         else:
@@ -442,7 +450,8 @@ def main():
     if args.resolution and resolution_from_args is None:
         logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g. 1920x1080)")
 
-    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution, show_system_tab=args.ppqtos)
+    launch_path = exe_path or autoinstall_path
+    window = MainWindow(app_name=__app_name__, version=version, launch_exe=launch_path, resolution=window_resolution, show_system_tab=args.ppqtos)
 
     # Handle launch file if provided
     if exe_path:
@@ -450,6 +459,10 @@ def main():
         def handle_launch_exe():
             window.handle_launch_exe(exe_path)
         QTimer.singleShot(0, handle_launch_exe)
+    elif autoinstall_path:
+        def handle_autoinstall():
+            window.open_local_autoinstall_card(autoinstall_path)
+        QTimer.singleShot(0, handle_autoinstall)
     elif backup_request:
         def handle_create_backup():
             window._perform_backup(backup_request[1], backup_request[0])
@@ -478,6 +491,7 @@ def main():
                         or msg.startswith("restore:")
                         or msg.startswith("backup:")
                         or msg.startswith("theme:")
+                        or msg.startswith("autoinstall:")
                     ):
                         # Ensure the window is visible and not minimized
                         window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
@@ -529,6 +543,13 @@ def main():
                             else:
                                 logger.info("Installing theme from store via IPC: %s", theme_id)
                                 window._download_store_theme({"id": theme_id})
+                        elif msg.startswith("autoinstall:"):
+                            script_path = unquote(msg[12:].strip())
+                            if script_path and is_autoinstall_file(script_path):
+                                logger.info("Opening autoinstall file via IPC: %s", script_path)
+                                window.open_local_autoinstall_card(script_path)
+                            else:
+                                logger.warning("Invalid autoinstall file via IPC: %s", script_path)
                 except Exception as e:
                     logger.warning(f"Failed to restore window: {e}")
 
@@ -554,6 +575,7 @@ def main():
         and exe_path is None
         and backup_request is None
         and restore_prefix_path is None
+        and autoinstall_path is None
         and theme_store_id is None
     )
     if launch_minimized:

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.animations import ExpandingSearchAnimation, LibraryControlsAnimation
+from portprotonqt.cli import is_autoinstall_file
 from portprotonqt.config import (
     LAUNCH_FILE_EXTENSIONS,
     game_config,
@@ -35,6 +36,7 @@ from portprotonqt.steam_api import get_cached_steam_game_info, is_game_in_steam
 from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
+PP_FILE_EXTENSIONS = (BACKUP_EXTENSION, ".ppai")
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
@@ -400,7 +402,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
                 path = url.toLocalFile().lower()
-                if path.endswith(LAUNCH_FILE_EXTENSIONS) or path.endswith(BACKUP_EXTENSION):
+                if path.endswith(LAUNCH_FILE_EXTENSIONS + PP_FILE_EXTENSIONS):
                     event.acceptProposedAction()
                     return
         event.ignore()
@@ -411,6 +413,10 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             path_lower = path.lower()
             if path_lower.endswith(BACKUP_EXTENSION):
                 self._perform_restore(path)
+                event.acceptProposedAction()
+                break
+            if is_autoinstall_file(path):
+                self.open_local_autoinstall_card(path)
                 event.acceptProposedAction()
                 break
             if path_lower.endswith(LAUNCH_FILE_EXTENSIONS):

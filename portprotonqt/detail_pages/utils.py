@@ -419,6 +419,8 @@ def _get_autoinstall_exe_target(script_name: str) -> tuple[str, str]:
     try:
         with open(script_path, encoding="utf-8") as script_file:
             for line in script_file:
+                if line.lstrip().startswith("#"):
+                    continue
                 if "PW_EXE_FILE" in line:
                     exe_name = _extract_exe_name(line)
                     if exe_name:

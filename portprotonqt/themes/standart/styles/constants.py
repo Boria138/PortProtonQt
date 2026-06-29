@@ -5,6 +5,7 @@ theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
 # === Layout Constants ===
+autoSizeButtonPadding = (10, 20)
 favoriteLabelSize = 48, 48
 favoriteLabelIconSize = 32
 detailCompactCoverFrameSize = 128
@@ -88,6 +89,7 @@ color_separator = "#7f7f7f"
 # === Scrollbar ===
 color_scrollbar_bg = "rgba(20, 20, 20, 0.30)"
 color_scrollbar_handle = "#bebebe"
+border_radius_scroll = "5px"
 
 # === Slider ===
 color_slider_handle = "#bebebe"

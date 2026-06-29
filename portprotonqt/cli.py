@@ -8,7 +8,8 @@ from pathlib import Path
 from portprotonqt.steam_api import get_steam_home
 
 LAUNCH_FILE_EXTENSIONS = ('.exe', '.bat', '.cmd', '.msi', '.reg', '.iso', '.mdf', '.nrg')
-PREFIX_BACKUP_EXTENSION = '.ppack'
+PP_EXTENSIONS = ('.ppack', '.ppai')
+PREFIX_BACKUP_EXTENSION = PP_EXTENSIONS[0]
 
 
 def parse_args():
@@ -416,6 +417,12 @@ def is_prefix_backup_file(path: str) -> bool:
     """Check if the given path is a PortProton prefix backup."""
     normalized_path = normalize_launch_path(path)
     return normalized_path.lower().endswith(PREFIX_BACKUP_EXTENSION) and os.path.isfile(normalized_path)
+
+
+def is_autoinstall_file(path: str) -> bool:
+    """Check if the given path is a PortProton Auto Install file."""
+    normalized_path = normalize_launch_path(path)
+    return normalized_path.lower().endswith(PP_EXTENSIONS[1]) and os.path.isfile(normalized_path)
 
 
 def parse_portproton_url(url: str) -> str | None:

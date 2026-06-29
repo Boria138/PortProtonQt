@@ -492,6 +492,19 @@ class ClickableLabel(QLabel):
         super().leaveEvent(event)
 
 class AutoSizeButton(QPushButton):
+    def _normalize_padding(self, padding):
+        if isinstance(padding, int):
+            return (padding, padding, padding, padding)
+        if isinstance(padding, (tuple, list)):
+            if len(padding) == 2:
+                v, h = padding
+                return (v, v, h, h)   # top=bottom=v, left=right=h
+            elif len(padding) == 4:
+                return tuple(padding)
+            else:
+                raise ValueError("padding must be tuple of 2 or 4 values")
+        raise TypeError("padding must be int or tuple/list")
+
     def __init__(self, *args, icon=None, icon_size=16,
                  min_font_size=6, max_font_size=14, padding=None, update_size=True, **kwargs):
         if args and isinstance(args[0], str):
@@ -515,12 +528,13 @@ class AutoSizeButton(QPushButton):
         if padding is None:
             padding = getattr(self.theme, 'autoSizeButtonPadding', 20)
 
+        self._pad_top, self._pad_bottom, self._pad_left, self._pad_right = self._normalize_padding(padding)
+
         self._icon = icon
         self._icon_size = icon_size
         self._alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
-        self._padding = padding
         self._update_size = update_size
         self._original_font = self.font()
         self._original_text = self.text()
@@ -624,7 +638,7 @@ class AutoSizeButton(QPushButton):
             available_width -= self._icon_size
 
         margins = self.contentsMargins()
-        available_width -= (margins.left() + margins.right() + self._padding * 2)
+        available_width -= (margins.left() + margins.right() + self._pad_left + self._pad_right)
 
         font = QFont(self._original_font)
         text = self._original_text
@@ -643,7 +657,7 @@ class AutoSizeButton(QPushButton):
 
         fm = QFontMetrics(font)
         text_width = fm.horizontalAdvance(text)
-        required_width = text_width + margins.left() + margins.right() + self._padding * 2
+        required_width = text_width + margins.left() + margins.right() + self._pad_left + self._pad_right
         if self._icon:
             required_width += self._icon_size
 
@@ -660,10 +674,10 @@ class AutoSizeButton(QPushButton):
             fm = QFontMetrics(font)
             text_width = fm.horizontalAdvance(self._original_text)
             margins = self.contentsMargins()
-            width = text_width + margins.left() + margins.right() + self._padding * 2
+            width = text_width + margins.left() + margins.right() + self._pad_left + self._pad_right
             if self._icon:
                 width += self._icon_size
-            height = fm.height() + margins.top() + margins.bottom() + self._padding
+            height = fm.height() + margins.top() + margins.bottom() + self._pad_top + self._pad_bottom
             return QSize(width, height)
 
 class NavLabel(QLabel):

@@ -1397,6 +1397,34 @@ class MainWindow(
         os.chmod(desktop_path, 0o755)
         logger.info("Created desktop file: %s", desktop_path)
 
+    def open_local_autoinstall_card(self, script_path: str) -> None:
+        """Open a temporary card for a local PPAI script."""
+        if not os.path.isfile(script_path):
+            QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(script_path))
+            return
+
+        metadata = self.portproton_api.read_local_autoinstall_metadata(script_path)
+        icon_path = self.theme_manager.get_icon("bat", as_path=True)
+        cover_path = icon_path if isinstance(icon_path, str) else ""
+        name = metadata.get("name") or os.path.splitext(os.path.basename(script_path))[0]
+        game_data = {
+            "name": name,
+            "description": metadata.get("description", ""),
+            "cover_path": cover_path,
+            "appid": "",
+            "controller_support": "",
+            "exec_line": f"autoinstall:{shlex.quote(script_path)}",
+            "last_launch": _("Never"),
+            "formatted_playtime": "0:00",
+            "protondb_tier": "",
+            "anticheat_status": "",
+            "game_source": "portproton",
+            "anticheat_slug": "",
+            "ppdb_id": "",
+            "ppdb_rating": "",
+        }
+        self.detail_page_manager.openAutoInstallDetailPage(game_data, return_tab_index=0)
+
     def handle_launch_exe(self, exe_path: str) -> None:
         """Handle launching a supported file from CLI.
 
