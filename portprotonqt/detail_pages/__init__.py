@@ -801,7 +801,7 @@ class DetailPageManager:
         """Handle favorite toggle click."""
         return toggle_favorite(name, self.main_window)
 
-    def openAutoInstallDetailPage(self, game_data: dict) -> None:
+    def openAutoInstallDetailPage(self, game_data: dict, return_tab_index: int = 1) -> None:
         """Open minimal detail page for auto-install games."""
         self._current_detail_source = ("autoinstall", dict(game_data))
         detail_page = QWidget()
@@ -809,7 +809,7 @@ class DetailPageManager:
         frame_width, frame_height = self._get_cover_frame_size(compact_layout)
         image_label = self._create_detail_image_label(compact_layout)
 
-        self._setup_detail_page_common(detail_page, image_label, 1)
+        self._setup_detail_page_common(detail_page, image_label, return_tab_index)
         detail_page.setProperty("force_compact_detail_layout", compact_layout)
 
         exec_line = game_data.get("exec_line", "")
@@ -908,7 +908,8 @@ class DetailPageManager:
     def _extract_script_name(self, exec_line: str) -> str:
         """Extract script name from exec line."""
         if exec_line and exec_line.startswith("autoinstall:"):
-            return exec_line[11:].lstrip(":").strip()
+            script_name = exec_line[11:].lstrip(":").strip()
+            return extract_exec_target_path(script_name) or script_name
         return ""
 
     def _get_enhanced_description(self, script_name: str, description: str) -> str:

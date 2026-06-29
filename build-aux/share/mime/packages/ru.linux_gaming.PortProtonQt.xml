@@ -5,4 +5,9 @@
     <comment xml:lang="ru">Резервная копия префикса PortProton</comment>
     <glob pattern="*.ppack"/>
   </mime-type>
+  <mime-type type="application/x-portproton-autoinstall">
+    <comment>PortProton auto install script</comment>
+    <comment xml:lang="ru">Скрипт автоустановки PortProton</comment>
+    <glob pattern="*.ppai"/>
+  </mime-type>
 </mime-info>

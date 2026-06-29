@@ -29,6 +29,22 @@ class DummySession:
         return DummyResponse()
 
 
+class DummyPPDBResponse:
+    content = b"PW_USE_DXVK=1\n"
+
+    def raise_for_status(self) -> None:
+        return
+
+
+class DummyPPDBSession:
+    def __init__(self) -> None:
+        self.requests: list[tuple[str, int]] = []
+
+    def get(self, url: str, timeout: int = 10) -> DummyPPDBResponse:
+        self.requests.append((url, timeout))
+        return DummyPPDBResponse()
+
+
 def test_autoinstall_description_falls_back_to_english(tmp_config_dir: Path) -> None:
     api = PortProtonAPI()
     game = {
@@ -48,6 +64,27 @@ def test_autoinstall_name_falls_back_to_plain_field(tmp_config_dir: Path) -> Non
     }
 
     assert api._get_autoinstall_field(game, "name", "ru") == "VK Play"
+
+
+def test_local_autoinstall_metadata_reads_script_comments(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setattr(PortProtonAPI, "_get_autoinstall_lang_code", lambda self: "ru")
+    script_path = tmp_path / "VK_Play.ppai"
+    script_path.write_text(
+        "# name: VK Play Games Center\n"
+        "# info_en: English description.\n"
+        "# info_ru: Русское описание.\n",
+        encoding="utf-8",
+    )
+    api = PortProtonAPI()
+
+    metadata = api.read_local_autoinstall_metadata(str(script_path))
+
+    assert metadata["name"] == "VK Play Games Center"
+    assert metadata["description"] == "Русское описание."
 
 
 def test_autoinstall_script_download_uses_tmp_dir(
@@ -114,6 +151,51 @@ def test_autoinstall_script_caches_cover_for_target_exe(
     assert cover_path.exists()
     assert downloader.downloads[0][1] == str(cover_path)
     assert downloader.downloads[0][0] == game_data["cover_path"]
+
+
+def test_autoinstall_ppdb_downloads_from_script_variable(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    session = DummyPPDBSession()
+    monkeypatch.setattr(portproton_api, "get_requests_session", lambda: session)
+    script_path = tmp_path / "game.ppai"
+    exe_path = tmp_path / "Game.exe"
+    exe_path.touch()
+    script_path.write_text(
+        'export PW_PPDB_FILE="https://example.org/game.ppdb"\n',
+        encoding="utf-8",
+    )
+    api = PortProtonAPI()
+
+    assert api.download_autoinstall_ppdb(str(script_path), str(exe_path)) is True
+
+    assert Path(f"{exe_path}.ppdb").read_bytes() == b"PW_USE_DXVK=1\n"
+    assert session.requests == [("https://example.org/game.ppdb", 30)]
+
+
+def test_autoinstall_ppdb_overwrites_existing_file(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    session = DummyPPDBSession()
+    monkeypatch.setattr(portproton_api, "get_requests_session", lambda: session)
+    script_path = tmp_path / "game.ppai"
+    exe_path = tmp_path / "Game.exe"
+    exe_path.touch()
+    Path(f"{exe_path}.ppdb").write_text("old", encoding="utf-8")
+    script_path.write_text(
+        'PW_PPDB_FILE="https://example.org/new.ppdb"\n',
+        encoding="utf-8",
+    )
+    api = PortProtonAPI()
+
+    assert api.download_autoinstall_ppdb(str(script_path), str(exe_path)) is True
+
+    assert Path(f"{exe_path}.ppdb").read_bytes() == b"PW_USE_DXVK=1\n"
+    assert session.requests == [("https://example.org/new.ppdb", 30)]
 
 
 def test_autoinstall_script_uses_cached_card_data(

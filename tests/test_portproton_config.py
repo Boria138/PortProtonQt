@@ -182,3 +182,15 @@ def test_run_after_batch_is_created_next_to_exe() -> None:
     assert 'start "" /unix "${PW_RUN_AFTER_EXE}"' in helper
     assert 'LAUNCH_PARAMETERS="" proxy_launch_parameters="" \\' in helper
     assert 'pw_run "${PW_VD_TMP[@]}" "${run_after_bat}"' in helper
+
+
+def test_autoinstall_ppdb_url_skips_lookup_ppdb() -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
+        encoding="utf-8",
+    )
+
+    download_index = helper.index("pw_download_autoinstall_ppdb")
+    find_index = helper.index('python_module shortcut_tools find-ppdb "${PW_EXE_FILE}"')
+
+    assert download_index < find_index
+    assert '&& [[ -z "${PW_PPDB_FILE:-}" ]]' in helper
