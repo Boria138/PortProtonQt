@@ -200,47 +200,6 @@ def test_open_local_autoinstall_card_uses_autoinstall_page(tmp_path: Path) -> No
     assert return_tab_index == 0
 
 
-def test_autoinstall_ppdb_download_uses_installed_desktop(
-    tmp_path: Path,
-    monkeypatch: Any,
-) -> None:
-    script_path = tmp_path / "Game.ppai"
-    exe_path = tmp_path / "Game.exe"
-    desktop_path = tmp_path / "Game.desktop"
-    exe_path.touch()
-    desktop_path.write_text(
-        "[Desktop Entry]\n"
-        "Name=Game\n"
-        f"Exec={shlex.quote(str(exe_path))}\n",
-        encoding="utf-8",
-    )
-    started = []
-
-    class FakeSignal:
-        def connect(self, callback: Any) -> None:
-            return None
-
-    class FakeThread:
-        finished = FakeSignal()
-
-    class FakePortProtonAPI:
-        def start_autoinstall_ppdb_download(self, script: str, exe: str) -> FakeThread:
-            started.append((script, exe))
-            return FakeThread()
-
-    window: Any = MainWindow.__new__(MainWindow)
-    window.portproton_api = FakePortProtonAPI()
-    window.portproton_location = str(tmp_path)
-    monkeypatch.setattr(
-        "portprotonqt.main_window.find_autoinstall_entry_path",
-        lambda script, location: str(desktop_path),
-    )
-
-    window._start_autoinstall_ppdb_download(str(script_path))
-
-    assert started == [(str(script_path), str(exe_path))]
-
-
 def test_launch_exe_skips_library_load_for_ppai() -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window._loading_games = False

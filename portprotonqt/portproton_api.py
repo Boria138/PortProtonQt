@@ -28,11 +28,9 @@ from portprotonqt.image_utils import (
     COVER_IMAGE_EXTENSIONS,
     clear_ppdb_autoinstall_image_cache,
 )
-from portprotonqt.scripts_utils.shortcut_tools import _download_ppdb_file
 
 logger = get_logger(__name__)
 AUTOINSTALL_API_URL = "https://ppdb.linux-gaming.ru/api/games/autoinstall"
-AUTOINSTALL_PPDB_RE = re.compile(r"(?:^|\s)(?:export\s+)?PW_PPDB_FILE=(.+)")
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 HEAD_CACHE_DURATION = 24 * 60 * 60
 HEAD_CACHE_NAME = "head_cache"
@@ -317,31 +315,6 @@ class PortProtonAPI:
         downloaded_path = self.downloader.download(cover_path, local_path, timeout=10)
         return downloaded_path or ""
 
-    def _get_autoinstall_ppdb_url(self, script_path: str) -> str:
-        try:
-            with open(script_path, encoding="utf-8") as script_file:
-                for line in script_file:
-                    if line.lstrip().startswith("#"):
-                        continue
-                    match = AUTOINSTALL_PPDB_RE.search(line.strip())
-                    if not match:
-                        continue
-                    ppdb_url = match.group(1).strip().strip('"\'')
-                    if ppdb_url.startswith(("http://", "https://")):
-                        return ppdb_url
-        except OSError as e:
-            logger.warning("Failed to read autoinstall script %s: %s", script_path, e)
-        return ""
-
-    def download_autoinstall_ppdb(self, script_path: str, exe_path: str) -> bool:
-        if not os.path.isfile(exe_path):
-            return False
-        ppdb_url = self._get_autoinstall_ppdb_url(script_path)
-        if not ppdb_url:
-            return False
-        session = get_requests_session()
-        return _download_ppdb_file(session, ppdb_url, f"{exe_path}.ppdb")
-
     def _extract_exe_name_from_script_line(self, line: str) -> str:
         for part in line.replace("\\", "/").split("/"):
             clean_part = part.strip().strip('"\' }')
@@ -464,22 +437,6 @@ class PortProtonAPI:
         worker.api = self
         worker.script_path = script_path
         worker.game_data = game_data
-        worker.start()
-        return worker
-
-    def start_autoinstall_ppdb_download(self, script_path: str, exe_path: str) -> QThread:
-        class AutoinstallPPDBWorker(QThread):
-            api: "PortProtonAPI"
-            script_path: str
-            exe_path: str
-
-            def run(self):
-                self.api.download_autoinstall_ppdb(self.script_path, self.exe_path)
-
-        worker = AutoinstallPPDBWorker()
-        worker.api = self
-        worker.script_path = script_path
-        worker.exe_path = exe_path
         worker.start()
         return worker
 

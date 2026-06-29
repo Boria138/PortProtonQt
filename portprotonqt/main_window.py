@@ -14,7 +14,6 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.detail_pages import DetailPageManager
-from portprotonqt.detail_pages.utils import find_autoinstall_entry_path
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.debug_utils import get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
@@ -300,7 +299,6 @@ class MainWindow(
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
         self.autoInstallCustomDataThread = None
-        self.autoInstallPPDBThread = None
 
         self.installing = False
         self.install_process = None
@@ -817,27 +815,6 @@ class MainWindow(
         self._reset_install_state()
         if exit_code == 0:
             self.detail_page_manager.refresh_autoinstall_install_status(script_name)
-            self._start_autoinstall_ppdb_download(script_name)
-
-    def _start_autoinstall_ppdb_download(self, script_name: str | None) -> None:
-        if not script_name:
-            return
-        desktop_path = find_autoinstall_entry_path(script_name, self.portproton_location)
-        if not desktop_path:
-            return
-        entry = parse_desktop_entry(desktop_path)
-        if not entry:
-            return
-        exe_path = extract_exec_target_path(entry.get("Exec", ""))
-        if not exe_path:
-            return
-        self.autoInstallPPDBThread = self.portproton_api.start_autoinstall_ppdb_download(
-            script_name,
-            exe_path,
-        )
-        self.autoInstallPPDBThread.finished.connect(
-            lambda: setattr(self, "autoInstallPPDBThread", None)
-        )
 
     def on_install_error(self, error: QProcess.ProcessError):
         """Handle installation error."""
