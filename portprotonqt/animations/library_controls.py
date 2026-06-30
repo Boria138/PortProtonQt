@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 def _animation_duration(theme: object, fallback_duration: int) -> int:
     animation_config = getattr(theme, "GAME_CARD_ANIMATION", {})
-    return animation_config.get("scale_anim_duration", fallback_duration)
+    return animation_config.get("library_controls_anim_duration", fallback_duration)
 
 
 def _animation_easing(theme: object, opening: bool) -> QEasingCurve:

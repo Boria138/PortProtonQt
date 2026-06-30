@@ -3,8 +3,10 @@
 import shlex
 from pathlib import Path
 from queue import Queue
+from types import SimpleNamespace
 from typing import Any
 
+from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
 from portprotonqt.tabs import (
@@ -136,6 +138,23 @@ def test_main_window_inherits_all_tab_mixins() -> None:
 
     for mixin in expected_mixins:
         assert issubclass(MainWindow, mixin)
+
+
+def test_library_controls_animation_ignores_game_card_scale_duration() -> None:
+    theme = SimpleNamespace(GAME_CARD_ANIMATION={"scale_anim_duration": 10})
+
+    assert _animation_duration(theme, 150) == 150
+
+
+def test_library_controls_animation_uses_own_duration() -> None:
+    theme = SimpleNamespace(
+        GAME_CARD_ANIMATION={
+            "library_controls_anim_duration": 220,
+            "scale_anim_duration": 10,
+        },
+    )
+
+    assert _animation_duration(theme, 150) == 220
 
 
 def test_tab_methods_resolve_from_expected_modules() -> None:
