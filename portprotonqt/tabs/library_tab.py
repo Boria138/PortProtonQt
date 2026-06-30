@@ -71,8 +71,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         combo.addItems(labels)
-        combo_style = getattr(self.theme, "LIBRARY_FILTER_COMBOBOX_STYLE", self.theme.COMBOBOX_STYLE)
-        combo.setStyleSheet(combo_style + self.theme.SCROLL_STYLE)
+        combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._register_gamepad_tooltip(combo, tooltip)
         return combo
@@ -112,8 +111,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
     def _create_library_controls_widget(self) -> QHBoxLayout:
         self.libraryControlsWidget = QWidget(self)
         controls_layout = QHBoxLayout(self.libraryControlsWidget)
-        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setContentsMargins(5, 5, 5, 5)
         controls_layout.setSpacing(10)
+        self.libraryControlsWidget.setStyleSheet(self.theme.LIBRARY_CONTROL_STYLE)
         return controls_layout
 
     def _position_library_controls_widget(self) -> None:

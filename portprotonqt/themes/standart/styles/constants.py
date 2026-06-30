@@ -56,6 +56,7 @@ border_radius_slider_handle = "9px"
 # === Core Palette ===
 color_accent = "#409EFF"
 color_bg = "#282a33"
+color_bg_darker = "#22242b"
 color_surface = "#3f424d"
 color_surface_elevated = "#32343d"
 color_surface_hover = "#404554"

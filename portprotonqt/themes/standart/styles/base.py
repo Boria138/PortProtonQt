@@ -303,6 +303,15 @@ LIBRARY_WIDGET_STYLE = f"""
     }}
 """
 
+# LIBRARY_CONTROL_STYLE
+LIBRARY_CONTROL_STYLE = f"""
+    QWidget {{
+        background: {color_bg_darker};
+        border: {border_thin} {color_accent};
+        border-radius: {border_radius_small};
+    }}
+"""
+
 # CONTAINER_STYLE
 CONTAINER_STYLE = """
     QWidget {
