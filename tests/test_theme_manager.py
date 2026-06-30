@@ -456,7 +456,6 @@ class TestThemeStylesIntegrity:
             "PLAY_BUTTON_STYLE",
             "ADDGAME_BACK_BUTTON_STYLE",
             "LIBRARY_CONTROLS_BUTTON_STYLE",
-            "LIBRARY_FILTER_COMBOBOX_STYLE",
             "SEARCH_EDIT_STYLE",
             "THEME_STORE_SCROLL_STYLE",
             "THEME_STORE_CARD_STYLE",
