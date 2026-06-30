@@ -3,7 +3,7 @@ import shutil
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import QAbstractAnimation, QStandardPaths, Qt, QTimer, Slot
+from PySide6.QtCore import QAbstractAnimation, QPoint, QStandardPaths, Qt, QTimer, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QComboBox,
@@ -106,14 +106,28 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             card.update_badge_view_mode(badge_view_mode)
 
     def _toggle_library_controls(self) -> None:
+        self._position_library_controls_widget()
         self.libraryControlsAnimation.toggle(self.libraryControlsButton.isChecked())
 
     def _create_library_controls_widget(self) -> QHBoxLayout:
-        self.libraryControlsWidget = QWidget()
+        self.libraryControlsWidget = QWidget(self)
         controls_layout = QHBoxLayout(self.libraryControlsWidget)
         controls_layout.setContentsMargins(0, 0, 0, 0)
         controls_layout.setSpacing(10)
         return controls_layout
+
+    def _position_library_controls_widget(self) -> None:
+        size_hint = self.libraryControlsWidget.sizeHint()
+        button_bottom = self.libraryControlsButton.mapTo(
+            self,
+            QPoint(0, self.libraryControlsButton.height()),
+        )
+        button_right = self.libraryControlsButton.mapTo(
+            self,
+            QPoint(self.libraryControlsButton.width(), 0),
+        ).x()
+        x = max(0, min(self.width() - size_hint.width(), button_right - size_hint.width()))
+        self.libraryControlsWidget.setGeometry(x, button_bottom.y() + 10, size_hint.width(), size_hint.height())
 
     def _add_library_action_buttons(self, buttons_layout: QHBoxLayout) -> None:
         self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
@@ -297,7 +311,6 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._add_library_filter_controls(controls_layout)
         self.libraryControlsAnimation.setup_hidden()
         layout.addLayout(buttons_layout)
-        layout.addWidget(self.libraryControlsWidget)
         return self.container, self.searchEdit
 
     def refreshGames(self):
