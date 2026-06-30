@@ -1404,7 +1404,7 @@ class MainWindow(
             return
 
         metadata = self.portproton_api.read_local_autoinstall_metadata(script_path)
-        icon_path = self.theme_manager.get_icon("bat", as_path=True)
+        icon_path = self.theme_manager.get_icon("ppai", as_path=True)
         cover_path = icon_path if isinstance(icon_path, str) else ""
         name = metadata.get("name") or os.path.splitext(os.path.basename(script_path))[0]
         game_data = {
