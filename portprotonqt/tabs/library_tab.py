@@ -108,6 +108,18 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._position_library_controls_widget()
         self.libraryControlsAnimation.toggle(self.libraryControlsButton.isChecked())
 
+    def _close_library_controls(self) -> None:
+        controls_button = getattr(self, "libraryControlsButton", None)
+        if controls_button is not None:
+            controls_button.setChecked(False)
+        animation = getattr(self, "libraryControlsAnimation", None)
+        if animation is not None:
+            animation.group.stop()
+            animation.opacity_effect.setOpacity(0)
+        controls_widget = getattr(self, "libraryControlsWidget", None)
+        if controls_widget is not None:
+            controls_widget.hide()
+
     def _create_library_controls_widget(self) -> QHBoxLayout:
         self.libraryControlsWidget = QWidget(self)
         controls_layout = QHBoxLayout(self.libraryControlsWidget)
@@ -250,7 +262,6 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addStretch()
         controls_layout.addWidget(self.gamesSortCombo)
 
         self.filter_keys = ["all", "steam", "portproton", "favorites"]

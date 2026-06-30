@@ -1254,6 +1254,8 @@ class MainWindow(
                 self.stackedWidget.setCurrentIndex(0)
 
         current_index = self.stackedWidget.currentIndex()
+        if current_index != 0:
+            self._close_library_controls()
         if hasattr(self, "game_library_manager"):
             mgr = self.game_library_manager
             if current_index == 0 and mgr.gamesListWidget and mgr.gamesListLayout:
