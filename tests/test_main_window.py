@@ -3,8 +3,10 @@
 import shlex
 from pathlib import Path
 from queue import Queue
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
+from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
 from portprotonqt.tabs import (
@@ -45,6 +47,7 @@ TAB_METHODS = {
         "_on_library_filter_changed",
         "_on_library_badge_view_changed",
         "_toggle_library_controls",
+        "_close_library_controls",
         "_create_library_controls_widget",
         "_add_library_action_buttons",
         "_add_library_search",
@@ -136,6 +139,62 @@ def test_main_window_inherits_all_tab_mixins() -> None:
 
     for mixin in expected_mixins:
         assert issubclass(MainWindow, mixin)
+
+
+def test_library_controls_animation_ignores_game_card_scale_duration() -> None:
+    theme = SimpleNamespace(GAME_CARD_ANIMATION={"scale_anim_duration": 10})
+
+    assert _animation_duration(theme, 150) == 150
+
+
+def test_library_controls_animation_uses_own_duration() -> None:
+    theme = SimpleNamespace(
+        GAME_CARD_ANIMATION={
+            "library_controls_anim_duration": 220,
+            "scale_anim_duration": 10,
+        },
+    )
+
+    assert _animation_duration(theme, 150) == 220
+
+
+def test_switch_tab_closes_library_controls_when_leaving_library() -> None:
+    class Button:
+        def __init__(self) -> None:
+            self.checked = False
+
+        def isVisible(self) -> bool:
+            return True
+
+        def setChecked(self, checked: bool) -> None:
+            self.checked = checked
+
+    class Stack:
+        def __init__(self) -> None:
+            self.index = 0
+
+        def setCurrentIndex(self, index: int) -> None:
+            self.index = index
+
+        def currentIndex(self) -> int:
+            return self.index
+
+    window = SimpleNamespace(
+        tabButtons={0: Button(), 1: Button()},
+        stackedWidget=Stack(),
+        auto_install_tab_index=-1,
+        system_tab_index=-1,
+        library_controls_closed=False,
+    )
+    window._close_library_controls = lambda: setattr(
+        window,
+        "library_controls_closed",
+        True,
+    )
+
+    MainWindow.switchTab(cast(Any, window), 1)
+
+    assert window.library_controls_closed is True
 
 
 def test_tab_methods_resolve_from_expected_modules() -> None:

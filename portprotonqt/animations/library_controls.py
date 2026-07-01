@@ -4,13 +4,14 @@ from PySide6.QtCore import (
     QEasingCurve,
     QParallelAnimationGroup,
     QPropertyAnimation,
+    QRect,
 )
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 
 def _animation_duration(theme: object, fallback_duration: int) -> int:
     animation_config = getattr(theme, "GAME_CARD_ANIMATION", {})
-    return animation_config.get("scale_anim_duration", fallback_duration)
+    return animation_config.get("library_controls_anim_duration", fallback_duration)
 
 
 def _animation_easing(theme: object, opening: bool) -> QEasingCurve:
@@ -26,12 +27,12 @@ class ExpandingSearchAnimation:
         self.widget = widget
         self.theme = theme
         self.fallback_duration = fallback_duration
-        self.animation = QPropertyAnimation(widget, QByteArray(b"maximumWidth"))
+        self.group = QParallelAnimationGroup(widget)
 
     def setup(self, collapsed_width: int, expanded_width: int) -> None:
         self.collapsed_width = collapsed_width
         self.expanded_width = expanded_width
-        self.widget.setMaximumWidth(collapsed_width)
+        self.widget.setFixedWidth(collapsed_width)
 
     def expand(self) -> None:
         self._start(self.expanded_width)
@@ -42,14 +43,20 @@ class ExpandingSearchAnimation:
         self._start(self.collapsed_width)
 
     def _start(self, target_width: int) -> None:
-        if self.animation.state() == QAbstractAnimation.State.Running:
-            self.animation.stop()
-        self.animation = QPropertyAnimation(self.widget, QByteArray(b"maximumWidth"))
-        self.animation.setDuration(_animation_duration(self.theme, self.fallback_duration))
-        self.animation.setStartValue(self.widget.maximumWidth())
-        self.animation.setEndValue(target_width)
-        self.animation.setEasingCurve(_animation_easing(self.theme, target_width == self.expanded_width))
-        self.animation.start()
+        if self.group.state() == QAbstractAnimation.State.Running:
+            self.group.stop()
+        self.group = QParallelAnimationGroup(self.widget)
+        self.group.addAnimation(self._create_width_animation(b"minimumWidth", target_width))
+        self.group.addAnimation(self._create_width_animation(b"maximumWidth", target_width))
+        self.group.start()
+
+    def _create_width_animation(self, property_name: bytes, target_width: int) -> QPropertyAnimation:
+        animation = QPropertyAnimation(self.widget, QByteArray(property_name))
+        animation.setDuration(_animation_duration(self.theme, self.fallback_duration))
+        animation.setStartValue(self.widget.width())
+        animation.setEndValue(target_width)
+        animation.setEasingCurve(_animation_easing(self.theme, target_width == self.expanded_width))
+        return animation
 
 
 class LibraryControlsAnimation:
@@ -64,27 +71,29 @@ class LibraryControlsAnimation:
 
     def setup_hidden(self) -> None:
         self.widget.setVisible(False)
-        self.widget.setMaximumHeight(0)
 
     def toggle(self, opening: bool) -> None:
         if self.group.state() == QAbstractAnimation.State.Running:
             self.group.stop()
         if opening:
             self.widget.setVisible(True)
+            self.widget.raise_()
 
-        target_height = self.widget.sizeHint().height() if opening else 0
         self.group = QParallelAnimationGroup(self.widget)
-        height_animation = self._create_widget_animation(
-            b"maximumHeight",
-            self.widget.maximumHeight(),
-            target_height,
-        )
-        opacity_animation = self._create_opacity_animation(opening, height_animation.duration())
-        self.group.addAnimation(height_animation)
+        geometry_animation = self._create_geometry_animation(opening)
+        opacity_animation = self._create_opacity_animation(opening, geometry_animation.duration())
+        self.group.addAnimation(geometry_animation)
         self.group.addAnimation(opacity_animation)
         if not opening:
             self.group.finished.connect(self.widget.hide)
         self.group.start()
+
+    def _create_geometry_animation(self, opening: bool) -> QPropertyAnimation:
+        target_rect = self.widget.geometry()
+        hidden_rect = QRect(target_rect.right(), target_rect.y(), 0, target_rect.height())
+        start_rect = hidden_rect if opening else target_rect
+        end_rect = target_rect if opening else hidden_rect
+        return self._create_widget_animation(b"geometry", start_rect, end_rect)
 
     def _create_widget_animation(
         self,

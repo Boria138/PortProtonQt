@@ -44,6 +44,7 @@ border_radius_card = "20px"
 border_radius_badge = "5px"
 color_accent = "#70b8ff"
 color_bg = "#F8F9FC"
+color_bg_darker = "#bfc0c7"
 color_surface = "#F0F2F5"
 color_surface_elevated = "#E9ECEF"
 color_surface_hover = "#DEE2E6"
@@ -595,6 +596,14 @@ LIBRARY_WIDGET_STYLE = f"""
     }}
 """
 
+LIBRARY_CONTROL_STYLE = f"""
+    QWidget {{
+        background: {color_bg_darker};
+        border: {border_thin} {color_accent};
+        border-radius: {border_radius_small};
+    }}
+"""
+
 # CONTAINER_STYLE
 CONTAINER_STYLE= """
     QWidget {
@@ -1012,77 +1021,6 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
             stop:1 {color_surface_light}
         );
         border: {border_thin} {color_accent};
-    }}
-"""
-
-LIBRARY_FILTER_COMBOBOX_STYLE = f"""
-    QComboBox {{
-        background: {color_bg};
-        border: {border_thin} {color_text};
-        border-radius: {border_radius_small};
-        padding-left: 12px;
-        height: 34px;
-        color: {color_text_dark};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
-        min-width: 120px;
-        combobox-popup: 0;
-    }}
-    QComboBox:hover,
-    QComboBox:focus {{
-        background: {color_bg};
-        border: {border_thin} {color_accent};
-    }}
-    QComboBox:on {{
-        background: {color_bg};
-        border: {border_thin} {color_accent};
-        border-bottom-style: none;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-        border-bottom-left-radius: 0px;
-        border-bottom-right-radius: 0px;
-    }}
-    QComboBox::drop-down {{
-        subcontrol-origin: padding;
-        subcontrol-position: center right;
-        border-left: {border_thin} {color_border_faint};
-        padding: 12px;
-        height: 12px;
-        width: 12px;
-    }}
-    QComboBox::down-arrow {{
-        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
-        padding: 12px;
-        height: 12px;
-        width: 12px;
-    }}
-    QComboBox::down-arrow:on {{
-        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
-        padding: 12px;
-        height: 12px;
-        width: 12px;
-    }}
-    QComboBox QAbstractItemView {{
-        outline: none;
-        background: {color_surface};
-        border: {border_thin} {color_accent};
-        border-top-style: none;
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
-        border-bottom-left-radius: 10px;
-        border-bottom-right-radius: 10px;
-    }}
-    QComboBox QAbstractItemView::item {{
-        padding: 7px 7px 7px 12px;
-        margin: 3px;
-        min-height: 24px;
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-    }}
-    QComboBox QAbstractItemView::item:hover,
-    QComboBox QAbstractItemView::item:selected {{
-        background: {color_accent};
-        color: {color_text_dark};
     }}
 """
 

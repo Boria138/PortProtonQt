@@ -100,6 +100,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 132327,
+    "normalized_name": "age of empires online",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 132331,
     "normalized_name": "age of mythology",
     "overall_rating": "platinum"
@@ -132,6 +137,11 @@
   {
     "id": 132409,
     "normalized_name": "alan wake",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1459,
+    "normalized_name": "albion online",
     "overall_rating": "platinum"
   },
   {
@@ -195,6 +205,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143175,
+    "normalized_name": "ankama launcher",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 136441,
     "normalized_name": "anno 1503",
     "overall_rating": "gold"
@@ -205,6 +220,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 8648,
+    "normalized_name": "anomaly zone",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 136490,
     "normalized_name": "apocalyptica",
     "overall_rating": "platinum"
@@ -212,6 +232,11 @@
   {
     "id": 8747,
     "normalized_name": "aquanox 2 revelation",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143176,
+    "normalized_name": "arizona games launcher",
     "overall_rating": "platinum"
   },
   {
@@ -365,8 +390,18 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 112465,
+    "normalized_name": "batman the telltale series",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 1676,
     "normalized_name": "batman arkham city game of the year",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 115091,
+    "normalized_name": "batman the enemy within the telltale series",
     "overall_rating": "platinum"
   },
   {
@@ -382,6 +417,11 @@
   {
     "id": 27469,
     "normalized_name": "battle engine aquila",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143177,
+    "normalized_name": "battle.net",
     "overall_rating": "platinum"
   },
   {
@@ -520,6 +560,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143171,
+    "normalized_name": "blood and soul",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 9633,
     "normalized_name": "bloodrayne (legacy)",
     "overall_rating": "platinum"
@@ -617,6 +662,11 @@
   {
     "id": 5850,
     "normalized_name": "broken age",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143169,
+    "normalized_name": "broken ranks",
     "overall_rating": "platinum"
   },
   {
@@ -780,6 +830,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 8730,
+    "normalized_name": "chicken invaders universe",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 6621,
     "normalized_name": "chorus",
     "overall_rating": "platinum"
@@ -852,6 +907,11 @@
   {
     "id": 6460,
     "normalized_name": "contra anniversary collection",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 138102,
+    "normalized_name": "contract wars client",
     "overall_rating": "platinum"
   },
   {
@@ -1002,6 +1062,11 @@
   {
     "id": 1615,
     "normalized_name": "dark souls",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1864,
+    "normalized_name": "dc universe online",
     "overall_rating": "platinum"
   },
   {
@@ -1355,6 +1420,21 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 142159,
+    "normalized_name": "duke nukem",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 142160,
+    "normalized_name": "duke nukem 3d",
+    "overall_rating": "silver"
+  },
+  {
+    "id": 142164,
+    "normalized_name": "duke nukem ii",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 140676,
     "normalized_name": "duke nukem manhattan project",
     "overall_rating": "platinum"
@@ -1470,6 +1550,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 90117,
+    "normalized_name": "elsword free to play",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 2638,
     "normalized_name": "empire of sin",
     "overall_rating": "platinum"
@@ -1492,6 +1577,11 @@
   {
     "id": 140532,
     "normalized_name": "enter the matrix",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143178,
+    "normalized_name": "epic games launcher",
     "overall_rating": "platinum"
   },
   {
@@ -1527,6 +1617,11 @@
   {
     "id": 2270,
     "normalized_name": "evil west",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 83436,
+    "normalized_name": "exotanks",
     "overall_rating": "platinum"
   },
   {
@@ -1635,6 +1730,11 @@
     "overall_rating": "silver"
   },
   {
+    "id": 41454,
+    "normalized_name": "farlight 84",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 46846,
     "normalized_name": "fatekeeper",
     "overall_rating": "platinum"
@@ -1705,6 +1805,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143181,
+    "normalized_name": "gog galaxy",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 5964,
     "normalized_name": "grandia ii hd remaster",
     "overall_rating": "platinum"
@@ -1737,6 +1842,16 @@
   {
     "id": 2565,
     "normalized_name": "game of thrones",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143179,
+    "normalized_name": "gamexp launcher",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143180,
+    "normalized_name": "gameforge client",
     "overall_rating": "platinum"
   },
   {
@@ -1867,6 +1982,11 @@
   {
     "id": 1494,
     "normalized_name": "grounded",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1684,
+    "normalized_name": "guild wars 2",
     "overall_rating": "platinum"
   },
   {
@@ -2035,6 +2155,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143182,
+    "normalized_name": "hoyoplay",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 25948,
     "normalized_name": "hob",
     "overall_rating": "platinum"
@@ -2160,6 +2285,11 @@
     "overall_rating": "broken"
   },
   {
+    "id": 143183,
+    "normalized_name": "indiegala client (igclient)",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 6231,
     "normalized_name": "industry giant 2",
     "overall_rating": "platinum"
@@ -2187,6 +2317,11 @@
   {
     "id": 124917,
     "normalized_name": "it takes two",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143184,
+    "normalized_name": "itch.io",
     "overall_rating": "platinum"
   },
   {
@@ -2310,6 +2445,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 33834,
+    "normalized_name": "knightly passions",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 117202,
     "normalized_name": "knights within",
     "overall_rating": "platinum"
@@ -2357,6 +2497,11 @@
   {
     "id": 114296,
     "normalized_name": "legacy of kain soul reaver 1&2",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143185,
+    "normalized_name": "lesta game center (lgc)",
     "overall_rating": "platinum"
   },
   {
@@ -2522,7 +2667,7 @@
   {
     "id": 98244,
     "normalized_name": "mafia the old country",
-    "overall_rating": "platinum"
+    "overall_rating": "bronze"
   },
   {
     "id": 3619,
@@ -2685,6 +2830,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 2569,
+    "normalized_name": "mini world creata",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 1554,
     "normalized_name": "mirror's edge",
     "overall_rating": "platinum"
@@ -2695,6 +2845,11 @@
     "overall_rating": "gold"
   },
   {
+    "id": 71287,
+    "normalized_name": "modern warships",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 120435,
     "normalized_name": "monster hunter world",
     "overall_rating": "platinum"
@@ -2703,6 +2858,11 @@
     "id": 50962,
     "normalized_name": "moonlighter 2 the endless vault",
     "overall_rating": "platinum"
+  },
+  {
+    "id": 23153,
+    "normalized_name": "mortal sin",
+    "overall_rating": "bronze"
   },
   {
     "id": 110485,
@@ -2920,6 +3080,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143173,
+    "normalized_name": "osu!",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 96572,
     "normalized_name": "out of action",
     "overall_rating": "platinum"
@@ -3010,6 +3175,16 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 1940,
+    "normalized_name": "panzar",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 124666,
+    "normalized_name": "path of exile",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 138172,
     "normalized_name": "patrician 2",
     "overall_rating": "platinum"
@@ -3042,6 +3217,11 @@
   {
     "id": 122113,
     "normalized_name": "pillars of eternity",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1980,
+    "normalized_name": "pillars of eternity ii deadfire",
     "overall_rating": "platinum"
   },
   {
@@ -3097,6 +3277,16 @@
   {
     "id": 129163,
     "normalized_name": "praetorians hd remaster",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 83824,
+    "normalized_name": "prehistorik",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 83553,
+    "normalized_name": "prehistorik 2",
     "overall_rating": "platinum"
   },
   {
@@ -3350,6 +3540,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 3694,
+    "normalized_name": "rise of flight united",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 140517,
     "normalized_name": "rise of nations",
     "overall_rating": "gold"
@@ -3417,6 +3612,11 @@
   {
     "id": 8532,
     "normalized_name": "rune classic",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1424,
+    "normalized_name": "russian fishing 4",
     "overall_rating": "platinum"
   },
   {
@@ -3597,6 +3797,11 @@
   {
     "id": 3098,
     "normalized_name": "sea of stars",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 2002,
+    "normalized_name": "secret world legends",
     "overall_rating": "platinum"
   },
   {
@@ -3835,6 +4040,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 1680,
+    "normalized_name": "star conflict",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 138174,
     "normalized_name": "star trek elite force ii",
     "overall_rating": "platinum"
@@ -3878,6 +4088,11 @@
     "id": 125318,
     "normalized_name": "state of decay yose",
     "overall_rating": "gold"
+  },
+  {
+    "id": 116085,
+    "normalized_name": "stay out (stalker online)",
+    "overall_rating": "platinum"
   },
   {
     "id": 3005,
@@ -4030,6 +4245,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 8791,
+    "normalized_name": "tanki online",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 137387,
     "normalized_name": "tanks blitz",
     "overall_rating": "platinum"
@@ -4072,6 +4292,11 @@
   {
     "id": 122836,
     "normalized_name": "terraria",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143213,
+    "normalized_name": "terrinoth heroes of descent",
     "overall_rating": "platinum"
   },
   {
@@ -4127,6 +4352,11 @@
   {
     "id": 1768,
     "normalized_name": "the darkness ii",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 122572,
+    "normalized_name": "the dungeon of naheulbeuk the amulet of chaos",
     "overall_rating": "platinum"
   },
   {
@@ -4202,6 +4432,11 @@
   {
     "id": 110860,
     "normalized_name": "the light remake",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1486,
+    "normalized_name": "the lord of the rings online",
     "overall_rating": "platinum"
   },
   {
@@ -4335,6 +4570,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 53133,
+    "normalized_name": "the world of nifty craft",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 3095,
     "normalized_name": "thief deadly shadows",
     "overall_rating": "platinum"
@@ -4440,8 +4680,23 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143174,
+    "normalized_name": "toontown rewritten",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 1510,
     "normalized_name": "torchlight ii",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1636,
+    "normalized_name": "toribash",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 3248,
+    "normalized_name": "tormented souls",
     "overall_rating": "platinum"
   },
   {
@@ -4565,6 +4820,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 143189,
+    "normalized_name": "ubisoft connect",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 140337,
     "normalized_name": "uncharted 4 a thief’s end",
     "overall_rating": "platinum"
@@ -4582,7 +4842,7 @@
   {
     "id": 8705,
     "normalized_name": "unreal 2 the awakening",
-    "overall_rating": "platinum"
+    "overall_rating": "gold"
   },
   {
     "id": 113485,
@@ -4592,6 +4852,11 @@
   {
     "id": 39949,
     "normalized_name": "vein",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143163,
+    "normalized_name": "vk play",
     "overall_rating": "platinum"
   },
   {
@@ -4692,6 +4957,16 @@
   {
     "id": 128493,
     "normalized_name": "warcraft iii the frozen throne",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1310,
+    "normalized_name": "warframe",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 143190,
+    "normalized_name": "wargaming game center (wgc)",
     "overall_rating": "platinum"
   },
   {
@@ -4847,6 +5122,11 @@
   {
     "id": 1987,
     "normalized_name": "world war z",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 66195,
+    "normalized_name": "world of sea battle",
     "overall_rating": "platinum"
   },
   {
@@ -5012,6 +5292,16 @@
   {
     "id": 10633,
     "normalized_name": "калибр",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 100945,
+    "normalized_name": "лихо одноглазое",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 138933,
+    "normalized_name": "лаунчер steam",
     "overall_rating": "platinum"
   },
   {

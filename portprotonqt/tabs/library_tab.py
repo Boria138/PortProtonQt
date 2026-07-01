@@ -3,7 +3,7 @@ import shutil
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import QAbstractAnimation, QStandardPaths, Qt, QTimer, Slot
+from PySide6.QtCore import QAbstractAnimation, QPoint, QStandardPaths, Qt, QTimer, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QComboBox,
@@ -71,8 +71,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         combo.addItems(labels)
-        combo_style = getattr(self.theme, "LIBRARY_FILTER_COMBOBOX_STYLE", self.theme.COMBOBOX_STYLE)
-        combo.setStyleSheet(combo_style + self.theme.SCROLL_STYLE)
+        combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._register_gamepad_tooltip(combo, tooltip)
         return combo
@@ -106,14 +105,41 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             card.update_badge_view_mode(badge_view_mode)
 
     def _toggle_library_controls(self) -> None:
+        self._position_library_controls_widget()
         self.libraryControlsAnimation.toggle(self.libraryControlsButton.isChecked())
 
+    def _close_library_controls(self) -> None:
+        controls_button = getattr(self, "libraryControlsButton", None)
+        if controls_button is not None:
+            controls_button.setChecked(False)
+        animation = getattr(self, "libraryControlsAnimation", None)
+        if animation is not None:
+            animation.group.stop()
+            animation.opacity_effect.setOpacity(0)
+        controls_widget = getattr(self, "libraryControlsWidget", None)
+        if controls_widget is not None:
+            controls_widget.hide()
+
     def _create_library_controls_widget(self) -> QHBoxLayout:
-        self.libraryControlsWidget = QWidget()
+        self.libraryControlsWidget = QWidget(self)
         controls_layout = QHBoxLayout(self.libraryControlsWidget)
-        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setContentsMargins(5, 5, 5, 5)
         controls_layout.setSpacing(10)
+        self.libraryControlsWidget.setStyleSheet(self.theme.LIBRARY_CONTROL_STYLE)
         return controls_layout
+
+    def _position_library_controls_widget(self) -> None:
+        size_hint = self.libraryControlsWidget.sizeHint()
+        button_bottom = self.libraryControlsButton.mapTo(
+            self,
+            QPoint(0, self.libraryControlsButton.height()),
+        )
+        button_right = self.libraryControlsButton.mapTo(
+            self,
+            QPoint(self.libraryControlsButton.width(), 0),
+        ).x()
+        x = max(0, min(self.width() - size_hint.width(), button_right - size_hint.width()))
+        self.libraryControlsWidget.setGeometry(x, button_bottom.y() + 10, size_hint.width(), size_hint.height())
 
     def _add_library_action_buttons(self, buttons_layout: QHBoxLayout) -> None:
         self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
@@ -236,7 +262,6 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addStretch()
         controls_layout.addWidget(self.gamesSortCombo)
 
         self.filter_keys = ["all", "steam", "portproton", "favorites"]
@@ -297,7 +322,6 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._add_library_filter_controls(controls_layout)
         self.libraryControlsAnimation.setup_hidden()
         layout.addLayout(buttons_layout)
-        layout.addWidget(self.libraryControlsWidget)
         return self.container, self.searchEdit
 
     def refreshGames(self):
