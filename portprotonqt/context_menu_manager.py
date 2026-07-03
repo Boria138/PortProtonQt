@@ -2,8 +2,8 @@ import os
 import glob
 import shutil
 import tempfile
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QComboBox, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
+from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer, QSize
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config import (
@@ -411,12 +411,36 @@ class ContextMenuManager:
 
     def _get_safe_icon(self, icon_name: str) -> QIcon:
         """Returns a QIcon, ensuring it is valid."""
-        icon = self.theme_manager.get_icon(icon_name)
-        if isinstance(icon, QIcon):
-            return icon
-        elif isinstance(icon, str) and os.path.exists(icon):
-            return QIcon(icon)
-        return QIcon()
+        icon_path = self.theme_manager.get_icon(icon_name, as_path=True)
+        if not isinstance(icon_path, str) or not os.path.exists(icon_path):
+            return QIcon()
+
+        icon = QIcon()
+        normal_path = self._get_colored_menu_icon_path(icon_name, None) or icon_path
+        icon.addFile(normal_path, QSize(), QIcon.Mode.Normal)
+        active_path = (
+            self._get_colored_menu_icon_path(icon_name, "hover")
+            or normal_path
+        )
+        icon.addFile(active_path, QSize(), QIcon.Mode.Active)
+        icon.addFile(active_path, QSize(), QIcon.Mode.Selected)
+        return icon
+
+    def _get_colored_menu_icon_path(self, icon_name: str, state: str | None) -> str | None:
+        colors = getattr(self.theme, "ICON_COLORS", {})
+        if not isinstance(colors, dict):
+            return None
+
+        keys = []
+        if state:
+            keys.extend((f"{icon_name}_{state}", f"*_{state}"))
+        keys.append(icon_name)
+
+        for key in keys:
+            color = colors.get(key)
+            if isinstance(color, str):
+                return self.theme_manager.get_colored_icon_path(icon_name, color)
+        return None
 
     def show_context_menu(self, game_card, pos: QPoint):
         """
@@ -1348,20 +1372,6 @@ class CustomLineEdit(QLineEdit):
         cursor_pos = self.cursorPosition()
         self.backspace()
         self.setCursorPosition(cursor_pos)
-
-class CustomComboBox(QComboBox):
-    def __init__(self, parent=None, theme=None):
-        super().__init__(parent)
-        self.theme = theme
-        self.setEditable(True)  # если нужен редактируемый режим
-
-    def contextMenuEvent(self, event):
-        line_edit = self.lineEdit()
-        if line_edit is not None:
-            show_themed_line_edit_context_menu(line_edit, event.globalPos(), self.theme)
-        else:
-            super().contextMenuEvent(event)
-
 
 def show_themed_line_edit_context_menu(line_edit: QLineEdit, global_pos: QPoint, theme=None) -> None:
     """Show a themed context menu for any line edit widget."""

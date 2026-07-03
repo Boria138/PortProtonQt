@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QStackedWidget,
@@ -12,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.config import load_theme_metainfo, ui_config, window_config
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.image_utils import ImageCarousel
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -52,7 +51,7 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
         self.themeTabTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
-        self.themesCombo = QComboBox()
+        self.themesCombo = CustomComboBox(theme=self.theme)
         self.themesCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -73,7 +72,7 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
         self.themeTabHeaderLayout.addWidget(self.themesCombo)
 
-        self.themeVariantCombo = QComboBox()
+        self.themeVariantCombo = CustomComboBox(theme=self.theme)
         self.themeVariantCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )

@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_FPS_OPTIONS
 from portprotonqt.config import CONFIG_FILE
+from portprotonqt.custom_widgets import CustomComboBox
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -411,7 +412,7 @@ class GamescopeSettingsMixin:
 
     def _create_gamescope_resolution_widget(self, target):
         """Create a resolution combo widget and bind it to width/height fields."""
-        widget = QComboBox()
+        widget = CustomComboBox(theme=self.theme)
         widget.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -528,7 +529,7 @@ class GamescopeSettingsMixin:
 
     def _create_gamescope_value_widget(self, spec):
         """Create a Gamescope value widget."""
-        widget = QComboBox()
+        widget = CustomComboBox(theme=self.theme)
         widget.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -600,7 +601,7 @@ class GamescopeSettingsMixin:
         selector_layout = QVBoxLayout(selector_group)
         self.gamescope_toggle_group = selector_group
 
-        self.gamescope_category_combo = QComboBox()
+        self.gamescope_category_combo = CustomComboBox(theme=self.theme)
         self.gamescope_category_combo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )

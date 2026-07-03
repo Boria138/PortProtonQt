@@ -9,7 +9,6 @@ from typing import Any, cast
 from PySide6.QtCore import Qt, QProcess
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QFormLayout,
     QGridLayout,
     QGroupBox,
@@ -27,6 +26,7 @@ from PySide6.QtWidgets import (
 from portprotonqt.config import CONFIG_FILE
 from portprotonqt.config import get_portproton_scripts_path
 from portprotonqt.debug_utils import get_cached_vk_gpu_info
+from portprotonqt.custom_widgets import CustomComboBox
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -442,7 +442,7 @@ class MangoHudSettingsMixin:
 
     def _create_mangohud_value_widget(self, spec):
         """Create a MangoHud value widget."""
-        widget = QComboBox()
+        widget = CustomComboBox(theme=self.theme)
         widget.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -554,7 +554,7 @@ class MangoHudSettingsMixin:
         selector_layout = QVBoxLayout(selector_group)
         self.mangohud_toggle_group = selector_group
 
-        self.mangohud_category_combo = QComboBox()
+        self.mangohud_category_combo = CustomComboBox(theme=self.theme)
         self.mangohud_category_combo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )

@@ -1,5 +1,5 @@
 import os
-from PySide6.QtWidgets import QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem, QScrollArea, QGraphicsOpacityEffect
+from PySide6.QtWidgets import QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem, QScrollArea, QGraphicsOpacityEffect, QComboBox
 from PySide6.QtCore import Qt, Signal, QRect, QRectF, QSize, Property, QPropertyAnimation, QEasingCurve, QTimer, QEvent
 from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter, QPalette, QColor
 from PySide6.QtSvg import QSvgRenderer
@@ -10,6 +10,22 @@ from portprotonqt.qt_utils import get_device_pixel_ratio
 
 def _is_svg_icon(icon: object) -> bool:
     return isinstance(icon, str) and icon.lower().endswith(".svg")
+
+
+class CustomComboBox(QComboBox):
+    def __init__(self, parent=None, theme=None):
+        super().__init__(parent)
+        self.theme = theme
+
+    def contextMenuEvent(self, event):
+        line_edit = self.lineEdit()
+        if line_edit is None:
+            super().contextMenuEvent(event)
+            return
+
+        from portprotonqt.context_menu_manager import show_themed_line_edit_context_menu
+
+        show_themed_line_edit_context_menu(line_edit, event.globalPos(), self.theme)
 
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale, center_rows=True):
@@ -561,9 +577,6 @@ class AutoSizeButton(QPushButton):
         return None
 
     def _get_icon_color(self):
-        if not self._icon_name:
-            return None
-
         state = None
         if not self.isEnabled():
             state = "disabled"
@@ -578,9 +591,11 @@ class AutoSizeButton(QPushButton):
 
         keys = []
         if state:
-            keys.append(f"{self._icon_name}_{state}")
+            if self._icon_name:
+                keys.append(f"{self._icon_name}_{state}")
             keys.append(f"*_{state}")
-        keys.append(self._icon_name)
+        if self._icon_name:
+            keys.append(self._icon_name)
 
         for key in keys:
             color = colors_dict.get(key)
@@ -621,6 +636,24 @@ class AutoSizeButton(QPushButton):
         self.update()
 
     def paintEvent(self, event):
+        icon_color = self._get_icon_color()
+        if not self._icon and icon_color:
+            option = QStyleOptionButton()
+            self.initStyleOption(option)
+            text = option.text
+            option.text = ""
+            painter = QPainter(self)
+            self.style().drawControl(QStyle.ControlElement.CE_PushButton, option, painter, self)
+            rect = self.style().subElementRect(
+                QStyle.SubElement.SE_PushButtonContents,
+                option,
+                self,
+            )
+            painter.setPen(QColor(icon_color))
+            painter.drawText(rect, self._alignment, text)
+            painter.end()
+            return
+
         if not _is_svg_icon(self._icon):
             super().paintEvent(event)
             return
@@ -642,8 +675,6 @@ class AutoSizeButton(QPushButton):
             option,
             self,
         )
-
-        icon_color = self._get_icon_color()
 
         if icon_color and self._icon_name:
             colored_path = self.theme_manager.get_colored_icon_path(
