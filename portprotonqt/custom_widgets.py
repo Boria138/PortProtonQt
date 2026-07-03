@@ -1,3 +1,4 @@
+import os
 from PySide6.QtWidgets import QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem, QScrollArea, QGraphicsOpacityEffect
 from PySide6.QtCore import Qt, Signal, QRect, QRectF, QSize, Property, QPropertyAnimation, QEasingCurve, QTimer, QEvent
 from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter
@@ -539,13 +540,62 @@ class AutoSizeButton(QPushButton):
         self._original_font = self.font()
         self._original_text = self.text()
 
+        self._icon_name = self._extract_icon_name(icon)
+
         if self._icon:
             self.setIcon(self._icon)
+
+        self.setMouseTracking(True)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
         self.setMinimumWidth(50)
+
         self.adjustFontSize()
+
+    def _extract_icon_name(self, icon_path):
+        if isinstance(icon_path, str):
+            base = os.path.basename(icon_path)
+            name, _ = os.path.splitext(base)
+            return name
+        return None
+
+    def _get_icon_color(self):
+        if not self._icon_name:
+            return None
+
+        state = None
+        if not self.isEnabled():
+            state = "disabled"
+        elif self.isDown():
+            state = "pressed"
+        elif self.hasFocus():
+            state = "focused"
+        elif self.underMouse():
+            state = "hover"
+
+        colors_dict = getattr(self.theme, 'ICON_COLORS', {})
+
+        keys = []
+        if state:
+            keys.append(f"{self._icon_name}_{state}")
+            keys.append(f"*_{state}")
+        keys.append(self._icon_name)
+        keys.append("*")
+
+        for key in keys:
+            color = colors_dict.get(key)
+            if color is not None:
+                return color
+
+        if not self.isEnabled():
+            return getattr(self.theme, 'color_disabled', None)
+        if self.isDown():
+            return getattr(self.theme, 'color_accent_dark', None) or getattr(self.theme, 'color_accent', None)
+        if self.underMouse() or self.hasFocus():
+            return getattr(self.theme, 'color_accent', None)
+
+        return None
 
     def setAlignment(self, alignment):
         self._alignment = alignment
@@ -559,6 +609,7 @@ class AutoSizeButton(QPushButton):
 
     def setIcon(self, icon: object) -> None:
         self._icon = icon
+        self._icon_name = self._extract_icon_name(icon)
         if _is_svg_icon(icon):
             super().setIcon(QIcon())
         elif isinstance(icon, str):
@@ -592,15 +643,31 @@ class AutoSizeButton(QPushButton):
             option,
             self,
         )
+
+        icon_color = self._get_icon_color()
+
+        if icon_color and self._icon_name:
+            colored_path = self.theme_manager.get_colored_icon_path(
+                self._icon_name,
+                icon_color,
+                self.current_theme_name
+            )
+            if colored_path and os.path.exists(colored_path):
+                icon_path = colored_path
+
         fm = QFontMetrics(self.font())
         text = self.text()
-        text_width = fm.horizontalAdvance(text)
+        text_width = fm.horizontalAdvance(text) if text else 0
         icon_spacing = self._icon_size // 2 if text else 0
         total_width = self._icon_size + icon_spacing + text_width
         x = rect.left() + (rect.width() - total_width) // 2
         icon_y = rect.top() + (rect.height() - self._icon_size) // 2
         icon_rect = QRect(x, icon_y, self._icon_size, self._icon_size)
-        QSvgRenderer(icon_path).render(painter, QRectF(icon_rect))
+
+        renderer = QSvgRenderer(icon_path)
+        if renderer.isValid():
+            renderer.render(painter, QRectF(icon_rect))
+
 
         text_rect = QRect(x + self._icon_size + icon_spacing, rect.top(), text_width, rect.height())
         self.style().drawItemText(
@@ -612,6 +679,7 @@ class AutoSizeButton(QPushButton):
             text,
             self.foregroundRole(),
         )
+        painter.end()
 
     def setText(self, text):
         self._original_text = text
@@ -679,6 +747,22 @@ class AutoSizeButton(QPushButton):
                 width += self._icon_size
             height = fm.height() + margins.top() + margins.bottom() + self._pad_top + self._pad_bottom
             return QSize(width, height)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        self.update()
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        self.update()
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.update()
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        self.update()
 
 class NavLabel(QLabel):
     clicked = Signal()
