@@ -226,9 +226,14 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             original_event(event)
             if not hasattr(self, "searchAnimation"):
                 return
+            keyboard = getattr(self, "keyboard", None)
             if expand:
                 self.searchAnimation.expand()
-            else:
+            elif not (
+                keyboard
+                and keyboard.isVisible()
+                and getattr(keyboard, "current_input_widget", None) is self.searchEdit
+            ):
                 self.searchAnimation.collapse()
             QTimer.singleShot(0, self._center_collapsed_search_icon)
         return handle_focus_event

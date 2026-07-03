@@ -253,9 +253,14 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
             original_event(event)
             if not hasattr(self, "autoInstallSearchAnimation"):
                 return
+            keyboard = getattr(self, "keyboard", None)
             if expand:
                 self.autoInstallSearchAnimation.expand()
-            else:
+            elif not (
+                keyboard
+                and keyboard.isVisible()
+                and getattr(keyboard, "current_input_widget", None) is self.autoInstallSearchLineEdit
+            ):
                 self.autoInstallSearchAnimation.collapse()
             QTimer.singleShot(0, self._center_collapsed_autoinstall_search_icon)
         return handle_focus_event
