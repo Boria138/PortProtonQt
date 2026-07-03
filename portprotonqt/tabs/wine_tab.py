@@ -27,6 +27,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.portproton_api import get_user_conf_setting, set_user_conf_setting
 from portprotonqt.scripts_utils.prefix_backup import is_legacy_squashfs_backup
 from portprotonqt.settings_manager import get_available_prefix_options, get_available_wine_options
+from portprotonqt.context_menu_manager import CustomComboBox
 
 logger = get_logger(__name__)
 
@@ -90,7 +91,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
         self.prefixes = get_available_prefix_options(self.portproton_location)
-        self.prefixCombo = QComboBox()
+        self.prefixCombo = CustomComboBox(self, theme=self.theme)
         self.prefixCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )

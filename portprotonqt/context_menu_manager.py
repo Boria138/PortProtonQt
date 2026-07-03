@@ -2,7 +2,7 @@ import os
 import glob
 import shutil
 import tempfile
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QComboBox, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
@@ -1349,6 +1349,19 @@ class CustomLineEdit(QLineEdit):
         self.backspace()
         self.setCursorPosition(cursor_pos)
 
+class CustomComboBox(QComboBox):
+    def __init__(self, parent=None, theme=None):
+        super().__init__(parent)
+        self.theme = theme
+        self.setEditable(True)  # если нужен редактируемый режим
+
+    def contextMenuEvent(self, event):
+        line_edit = self.lineEdit()
+        if line_edit is not None:
+            show_themed_line_edit_context_menu(line_edit, event.globalPos(), self.theme)
+        else:
+            super().contextMenuEvent(event)
+
 
 def show_themed_line_edit_context_menu(line_edit: QLineEdit, global_pos: QPoint, theme=None) -> None:
     """Show a themed context menu for any line edit widget."""
@@ -1377,7 +1390,7 @@ def show_themed_line_edit_context_menu(line_edit: QLineEdit, global_pos: QPoint,
     add_action(menu, _("Copy"), QKeySequence.StandardKey.Copy, "copy", line_edit.copy, line_edit.hasSelectedText())
     add_action(menu, _("Paste"), QKeySequence.StandardKey.Paste, "paste", line_edit.paste,
                QApplication.clipboard().mimeData().hasText())
-    add_action(menu, _("Delete"), QKeySequence.StandardKey.Delete, "delete", line_edit.backspace,
+    add_action(menu, _("Delete"), QKeySequence.StandardKey.Delete, "delete", lambda: line_edit.backspace(),
                line_edit.hasSelectedText())
     menu.addSeparator()
     add_action(menu, _("Select All"), QKeySequence.StandardKey.SelectAll, "select_all", line_edit.selectAll,
