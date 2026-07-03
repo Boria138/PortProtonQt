@@ -429,11 +429,13 @@ MESSAGE_BOX_STYLE = f"""
     }}
     QMessageBox QPushButton:hover {{
         background: {color_accent};
+        color: {color_text};
         border-color: border: {border_thin} {color_accent};
     }}
     QMessageBox QPushButton:focus {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -1577,6 +1579,7 @@ QTableWidget::item:selected,
 QTableWidget::item:selected:!active,
 QTableWidget::item:hover {{
     background: {color_accent};
+    color: {color_text};
 }}
 /* LogArea */
 QFrame {{
