@@ -11,7 +11,7 @@ from portprotonqt.theme_security import (
     is_safe_image_file,
 )
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QIcon, QFontDatabase, QPainter, QPixmap
+from PySide6.QtGui import QGuiApplication, QIcon, QFontDatabase, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.config import CACHE_DIR, ui_config, load_theme_metainfo
 from portprotonqt.qt_utils import get_device_pixel_ratio
@@ -20,6 +20,8 @@ from portprotonqt.qt_utils import get_device_pixel_ratio
 _icon_cache = {}
 # Directory structure cache for performance optimization
 _icon_dirs_cache = {}
+# Guard against recursive theme loading (styles.py → get_icon → load_theme)
+_loading_themes: set[str] = set()
 
 logger = get_logger(__name__)
 SUPPORTED_IMAGE_EXTENSIONS = ('.svg', '.png', '.jpg', '.jpeg', '.webp', '.jxl')
@@ -643,6 +645,11 @@ def load_theme(theme_name, inherit_chain=None):
     inherit_chain = inherit_chain or []
     if theme_name in inherit_chain:
         raise FileNotFoundError(f"Theme inheritance cycle for '{theme_name}'")
+    if theme_name in _loading_themes:
+        cached = sys.modules.get(f"portprotonqt.themes.{theme_name}") or sys.modules.get(theme_name)
+        if cached is not None:
+            return cached
+        raise FileNotFoundError(f"Theme '{theme_name}' is already being loaded")
     next_inherit_chain = [*inherit_chain, theme_name]
 
     if not _is_valid_theme_name(theme_name):
@@ -738,9 +745,11 @@ def load_theme(theme_name, inherit_chain=None):
 
             _inject_parent_theme_constants(custom_theme, styles_file)
 
+            _loading_themes.add(theme_name)
             try:
                 spec.loader.exec_module(custom_theme)
             finally:
+                _loading_themes.discard(theme_name)
                 # Remove the theme directory from sys.path if we added it
                 if path_added:
                     sys.path.remove(theme_dir)
@@ -806,6 +815,8 @@ class ThemeManager:
         if not theme_name:
             return None
         theme = self.current_theme_module if theme_name == self.current_theme_name else None
+        if theme is None and QGuiApplication.instance() is None:
+            return None
         if theme is None:
             try:
                 theme = load_theme(theme_name)
