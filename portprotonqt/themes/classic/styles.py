@@ -171,7 +171,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
         min-height: 25px;
     }}
     QPushButton:hover, QPushButton:pressed, QPushButton:focus, QPushButton:checked {{
-        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_hover}, stop:1 {color_surface_elevated});
+        background: {color_accent};
         border: {border_thin} {color_accent};
     }}
 """
