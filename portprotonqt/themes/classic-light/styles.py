@@ -29,7 +29,7 @@ exeSettingsGroupBoxElementVerticalSpacing = 2
 exeSettingsGroupBoxElementHorizontalSpacing = 5
 
 # === Core Palette (light) ===
-color_accent = "#70b8ff"
+color_accent = "#409EFF"
 color_bg = "#F8F9FC"
 color_surface = "#F0F2F5"
 color_surface_elevated = "#E9ECEF"
@@ -223,7 +223,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
         min-height: 25px;
     }}
     QPushButton:hover, QPushButton:pressed, QPushButton:focus, QPushButton:checked {{
-        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_elevated}, stop:1 {color_surface_light});
+        background: {color_accent};
         border: {border_thin} {color_accent};
     }}
 """
@@ -301,10 +301,12 @@ COMBOBOX_STYLE = f"""
     QComboBox:hover {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text};
     }}
     QComboBox:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
     QComboBox:disabled {{
         background: {color_surface_hover};
@@ -343,6 +345,7 @@ COMBOBOX_STYLE = f"""
     }}
     QComboBox:editable {{
         background: {color_surface};
+        color: {color_text_dark};
     }}
     QComboBox::drop-down:editable:focus {{
         background: {color_accent};
@@ -369,7 +372,7 @@ COMBOBOX_STYLE = f"""
     }}
     QListView::item:focus {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
     }}
 """ % (
     theme_manager.get_icon("down", current_theme_name, as_path=True),
@@ -381,6 +384,7 @@ SETTINGS_TABLE_COMBOBOX_STYLE = f"""
     QComboBox#settingsTableCombo:focus {{
         background: {color_surface};
         border: {border_medium} {color_accent};
+        color: {color_text_dark};
     }}
 """
 
@@ -444,9 +448,11 @@ TAB_STYLE = f"""
     QTabBar::tab:selected {{
         background: {color_accent};
         color: {color_text_dark};
+        color: {color_text};
     }}
     QTabBar::tab:hover {{
         background: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -472,11 +478,13 @@ ACTION_BUTTON_STYLE = f"""
         border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_bg};
+        background: {color_accent};
+        color: {color_text};
     }}
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -494,6 +502,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -501,6 +510,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
 """
 
