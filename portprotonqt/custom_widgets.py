@@ -1,7 +1,7 @@
 import os
 from PySide6.QtWidgets import QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem, QScrollArea, QGraphicsOpacityEffect
 from PySide6.QtCore import Qt, Signal, QRect, QRectF, QSize, Property, QPropertyAnimation, QEasingCurve, QTimer, QEvent
-from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter
+from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter, QPalette, QColor
 from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
@@ -667,17 +667,14 @@ class AutoSizeButton(QPushButton):
         if renderer.isValid():
             renderer.render(painter, QRectF(icon_rect))
 
-
         text_rect = QRect(x + self._icon_size + icon_spacing, rect.top(), text_width, rect.height())
-        self.style().drawItemText(
-            painter,
-            text_rect,
-            self._alignment,
-            self.palette(),
-            self.isEnabled(),
-            text,
-            self.foregroundRole(),
-        )
+
+        if icon_color:
+            painter.setPen(QColor(icon_color))
+        else:
+            painter.setPen(self.palette().color(QPalette.ColorRole.ButtonText))
+        painter.drawText(text_rect, self._alignment, text)
+
         painter.end()
 
     def setText(self, text):
