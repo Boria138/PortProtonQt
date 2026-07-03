@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from portprotonqt.theme_manager import (
+    ThemeManager,
     _get_parent_theme_name,
     _inject_ast_constants,
     _inject_parent_theme_constants,
@@ -420,6 +421,117 @@ class TestReadThemeParentName:
             lambda name: None,
         )
         assert _read_theme_parent_name("nonexistent") == "standart"
+
+
+# === Colored SVG icons ===
+
+
+class TestColoredSvgIcons:
+    def test_get_icon_uses_icon_color_constant(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text('<svg><path fill="#fff"/></svg>', encoding="utf-8")
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.build_icon_cache",
+            lambda _theme_name: {"icon": str(icon_path)},
+        )
+        manager = ThemeManager()
+        manager.current_theme_name = "test-theme"
+        theme_module = types.ModuleType("test-theme")
+        theme_module.__dict__["ICON_COLORS"] = {"icon": "#123456"}
+        manager.current_theme_module = theme_module
+
+        colored_path = manager.get_icon("icon", "test-theme", as_path=True)
+
+        assert isinstance(colored_path, str)
+        assert colored_path != str(icon_path)
+        assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
+
+    def test_get_icon_without_icon_color_keeps_original_path(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text('<svg><path fill="#fff"/></svg>', encoding="utf-8")
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.build_icon_cache",
+            lambda _theme_name: {"icon": str(icon_path)},
+        )
+        manager = ThemeManager()
+        manager.current_theme_name = "test-theme"
+        theme_module = types.ModuleType("test-theme")
+        theme_module.__dict__["ICON_COLORS"] = {}
+        manager.current_theme_module = theme_module
+
+        icon_result = manager.get_icon("icon", "test-theme", as_path=True)
+
+        assert icon_result == str(icon_path)
+
+    def test_creates_colored_svg_cache_file(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text('<svg><path fill="currentColor"/></svg>', encoding="utf-8")
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), "#123456")
+
+        assert colored_path is not None
+        assert colored_path != str(icon_path)
+        assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
+
+    def test_recolors_svg_paint_attributes(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text(
+            '<svg><path fill="#fff" stroke="rgb(1, 2, 3)" color="red"/></svg>',
+            encoding="utf-8",
+        )
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), "#123456")
+        assert colored_path is not None
+        content = Path(colored_path).read_text(encoding="utf-8")
+
+        assert 'fill="#123456"' in content
+        assert 'stroke="#123456"' in content
+        assert 'color="#123456"' in content
+
+    def test_recolors_svg_style_paints(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text(
+            '<svg><style>path{fill:#fff;stroke:blue}</style>'
+            '<path style="fill: #fff; stroke: rgb(1,2,3);"/></svg>',
+            encoding="utf-8",
+        )
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), "#123456")
+        assert colored_path is not None
+        content = Path(colored_path).read_text(encoding="utf-8")
+
+        assert "fill:#123456" in content or "fill: #123456" in content
+        assert "stroke:#123456" in content or "stroke: #123456" in content
+
+    def test_keeps_non_color_svg_paints(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text(
+            '<svg><path fill="none" stroke="url(#g)" style="color: transparent"/></svg>',
+            encoding="utf-8",
+        )
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), "#123456")
+        assert colored_path is not None
+        content = Path(colored_path).read_text(encoding="utf-8")
+
+        assert 'fill="none"' in content
+        assert 'stroke="url(#g)"' in content
+        assert "transparent" in content
+
+    def test_unsafe_color_falls_back_to_original_svg(self, tmp_path: Path):
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text('<svg><path fill="currentColor"/></svg>', encoding="utf-8")
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), 'red";<script>')
+
+        assert colored_path == str(icon_path)
 
 
 # === Integration: classic/classic-light themes have required styles ===

@@ -1,6 +1,9 @@
 import ast
+import hashlib
 import importlib.util
 import os
+import re
+import xml.etree.ElementTree as ET
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_security import (
     check_theme_directory_safety,
@@ -10,7 +13,7 @@ from portprotonqt.theme_security import (
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QIcon, QFontDatabase, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from portprotonqt.config import ui_config, load_theme_metainfo
+from portprotonqt.config import CACHE_DIR, ui_config, load_theme_metainfo
 from portprotonqt.qt_utils import get_device_pixel_ratio
 
 # Icon caching for performance optimization
@@ -20,6 +23,23 @@ _icon_dirs_cache = {}
 
 logger = get_logger(__name__)
 SUPPORTED_IMAGE_EXTENSIONS = ('.svg', '.png', '.jpg', '.jpeg', '.webp', '.jxl')
+SVG_COLOR_PATTERN = re.compile(
+    r"^(#[0-9a-fA-F]{3,8}|[A-Za-z][A-Za-z0-9_-]{0,31}|"
+    r"(rgba?|hsla?)\([0-9A-Za-z.,% /+-]+\))$"
+)
+SVG_STYLE_DECL_PATTERN = re.compile(
+    r"(?P<prefix>(^|;)\s*(fill|stroke|color|stop-color|flood-color|lighting-color)\s*:\s*)"
+    r"(?P<value>[^;]+)",
+    re.IGNORECASE,
+)
+SVG_PAINT_ATTR_PATTERN = re.compile(
+    r"(?P<prefix>\b(fill|stroke|color|stop-color|flood-color|lighting-color)\s*=\s*)"
+    r"(?P<quote>['\"])(?P<value>.*?)(?P=quote)",
+    re.IGNORECASE,
+)
+SVG_PAINT_ATTRIBUTES = {"fill", "stroke", "color", "stop-color", "flood-color", "lighting-color"}
+SVG_ANIMATION_TAGS = {"animate", "animateMotion", "animateTransform", "set"}
+SVG_KEEP_PAINT_VALUES = {"none", "transparent", "inherit", "initial", "unset", "freeze", "remove"}
 
 # Folder where all custom themes are located
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -62,6 +82,108 @@ def _load_svg_icon(icon_path: str) -> QIcon:
         painter.end()
         icon.addPixmap(pixmap)
     return icon
+
+
+def _safe_svg_color(color: str | None) -> str | None:
+    if not isinstance(color, str):
+        return None
+    value = color.strip()
+    if not SVG_COLOR_PATTERN.match(value):
+        logger.warning("Unsafe SVG icon color skipped: %s", color)
+        return None
+    return value
+
+
+def _colored_svg_cache_path(icon_path: str, color: str) -> str | None:
+    try:
+        stat = os.stat(icon_path)
+    except OSError as e:
+        logger.warning("Cannot stat SVG icon '%s': %s", icon_path, e)
+        return None
+    digest_source = f"{icon_path}:{stat.st_mtime_ns}:{color}".encode()
+    digest = hashlib.sha256(digest_source).hexdigest()[:16]
+    return str(CACHE_DIR / "icons" / f"{digest}.svg")
+
+
+def _svg_local_name(name: str) -> str:
+    return name.rsplit("}", 1)[-1] if "}" in name else name
+
+
+def _is_recolorable_paint(value: str) -> bool:
+    paint = value.strip()
+    paint_lower = paint.lower()
+    if not paint or paint_lower in SVG_KEEP_PAINT_VALUES:
+        return False
+    if paint_lower.startswith(("url(", "context-fill", "context-stroke")):
+        return False
+    return True
+
+
+def _replace_style_paints(style: str | None, color: str) -> str | None:
+    if style is None:
+        return None
+
+    def replace_match(match: re.Match) -> str:
+        value = match.group("value")
+        if not _is_recolorable_paint(value):
+            return match.group(0)
+        return f"{match.group('prefix')}{color}"
+
+    return SVG_STYLE_DECL_PATTERN.sub(replace_match, style)
+
+
+def _replace_svg_paints_text(source: str, color: str) -> str:
+    def replace_match(match: re.Match) -> str:
+        if not _is_recolorable_paint(match.group("value")):
+            return match.group(0)
+        return f"{match.group('prefix')}{match.group('quote')}{color}{match.group('quote')}"
+
+    source = SVG_PAINT_ATTR_PATTERN.sub(replace_match, source)
+    return _replace_style_paints(source, color) or source
+
+
+def _recolor_svg_element(element: ET.Element, color: str) -> None:
+    local_name = _svg_local_name(element.tag)
+    if local_name != "style":
+        style = _replace_style_paints(element.attrib.get("style"), color)
+        if style is not None:
+            element.set("style", style)
+    elif element.text:
+        element.text = _replace_style_paints(element.text, color)
+
+    if local_name not in SVG_ANIMATION_TAGS:
+        for attr_name, attr_value in list(element.attrib.items()):
+            if _svg_local_name(attr_name) not in SVG_PAINT_ATTRIBUTES:
+                continue
+            if _is_recolorable_paint(attr_value):
+                element.set(attr_name, color)
+
+    for child in list(element):
+        _recolor_svg_element(child, color)
+
+
+def _recolor_svg_source(source: str, color: str) -> str:
+    try:
+        root = ET.fromstring(source)
+    except ET.ParseError:
+        return _replace_svg_paints_text(source, color)
+    _recolor_svg_element(root, color)
+    return ET.tostring(root, encoding="unicode")
+
+
+def _write_colored_svg(icon_path: str, target_path: str, color: str) -> bool:
+    try:
+        with open(icon_path, encoding="utf-8") as source_file:
+            source = source_file.read()
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        temp_path = f"{target_path}.tmp"
+        with open(temp_path, "w", encoding="utf-8") as target_file:
+            target_file.write(_recolor_svg_source(source, color))
+        os.replace(temp_path, target_path)
+    except OSError as e:
+        logger.warning("Cannot write colored SVG icon '%s': %s", icon_path, e)
+        return False
+    return True
 
 
 def _is_valid_theme_name(theme_name: str) -> bool:
@@ -680,55 +802,96 @@ class ThemeManager:
         logger.info(f"Theme '{theme_name}' successfully applied")
         return theme_module
 
+    def _get_icon_color(self, icon_name: str, theme_name: str | None) -> str | None:
+        if not theme_name:
+            return None
+        theme = self.current_theme_module if theme_name == self.current_theme_name else None
+        if theme is None:
+            try:
+                theme = load_theme(theme_name)
+            except FileNotFoundError:
+                return None
+        colors = getattr(theme, "ICON_COLORS", {})
+        if not isinstance(colors, dict):
+            return None
+        color = colors.get(icon_name)
+        return color if isinstance(color, str) else None
+
+    def _colored_icon_path(self, icon_path: str, color: str) -> str | None:
+        if not is_safe_image_file(icon_path):
+            return None
+        if not icon_path.lower().endswith(".svg"):
+            return icon_path
+        safe_color = _safe_svg_color(color)
+        if safe_color is None:
+            return icon_path
+        target_path = _colored_svg_cache_path(icon_path, safe_color)
+        if target_path is None:
+            return icon_path
+        if os.path.exists(target_path):
+            return target_path
+        if _write_colored_svg(icon_path, target_path, safe_color):
+            return target_path
+        return icon_path
+
     def get_icon(self, icon_name, theme_name=None, as_path=False):
         """
         Return QIcon from icons folder of current theme (including subdirectories),
         if file not found, from standard theme.
         If as_path=True, return icon path instead of QIcon.
         """
-        # Create cache key
         theme_name = theme_name or self.current_theme_name
-        device_pixel_ratio = 1.0 if as_path else get_device_pixel_ratio()
-        cache_key = f"{icon_name}_{theme_name}_{as_path}_{device_pixel_ratio}"
+        supported_extensions = SUPPORTED_IMAGE_EXTENSIONS
+        has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
+        base_name = os.path.splitext(icon_name)[0] if has_extension else icon_name
+        icon_color = self._get_icon_color(base_name, theme_name)
 
-        # Check if we already have this icon cached
+        device_pixel_ratio = 1.0 if as_path else get_device_pixel_ratio()
+        cache_key = f"{icon_name}_{theme_name}_{as_path}_{device_pixel_ratio}_{icon_color}"
+
         if cache_key in _icon_cache:
             logger.debug(f"Using cached icon for {icon_name}")
             return _icon_cache[cache_key]
 
         icon_path = None
 
-        # Extract base name without extension if present
-        supported_extensions = SUPPORTED_IMAGE_EXTENSIONS
-        has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
-        base_name = os.path.splitext(icon_name)[0] if has_extension else icon_name
-
-        # Build icon cache for this theme if not already done
         icon_map = build_icon_cache(theme_name)
 
-        # Look up the icon in the cache
         if base_name in icon_map:
             icon_path = icon_map[base_name]
             if not is_safe_image_file(icon_path):
                 icon_path = None
 
-        # If icon still not found
         if not icon_path or not os.path.exists(icon_path):
             logger.error(f"Warning: icon '{icon_name}' not found")
             result = QIcon() if not as_path else None
-            # Cache the result even if it's None
             _icon_cache[cache_key] = result
             return result
 
+        if icon_color:
+            icon_path = self._colored_icon_path(icon_path, icon_color) or icon_path
+
         if as_path:
-            # Cache the path
             _icon_cache[cache_key] = icon_path
             return icon_path
 
-        # Create QIcon and cache it
         icon = _load_icon(icon_path)
         _icon_cache[cache_key] = icon
         return icon
+
+    def get_colored_icon_path(self, icon_name: str, color: str, theme_name: str | None = None) -> str | None:
+        """
+        Return a cached SVG path with currentColor replaced by color.
+        Non-SVG icons and unsafe colors fall back to the original icon path.
+        """
+        has_extension = any(icon_name.lower().endswith(ext) for ext in SUPPORTED_IMAGE_EXTENSIONS)
+        if has_extension and os.path.exists(icon_name):
+            icon_path = icon_name
+        else:
+            icon_path = self.get_icon(icon_name, theme_name, as_path=True)
+        if not isinstance(icon_path, str):
+            return None
+        return self._colored_icon_path(icon_path, color)
 
     def get_theme_image(self, image_name, theme_name=None):
         """
