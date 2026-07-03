@@ -618,6 +618,17 @@ ICON_COLORS = {
 }
 ```
 
+Recoloring of button states (pressed/focused) is supported, as well as specifying wildcard filenames for batch processing:
+
+```python
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+```
+
 Only icons listed in `ICON_COLORS` are recolored. Icons without an entry keep their original file unchanged. The source SVG is never modified; PortProtonQt writes a recolored copy to the icon cache and uses that path.
 
 The recoloring helper handles common SVG paint declarations: `fill`, `stroke`, `color`, `stop-color`, `flood-color`, `lighting-color`, inline `style` attributes, and CSS inside `<style>` blocks. It preserves non-color paint values such as `none`, `transparent`, `url(#...)`, `context-fill`, and `context-stroke`.

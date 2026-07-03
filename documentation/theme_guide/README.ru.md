@@ -618,6 +618,17 @@ ICON_COLORS = {
 }
 ```
 
+Поддерживается перекрашивание состояний нажатия/фокуса кнопок, а так же указание "wildcard" имён файлов для групповой обработки:
+
+```python
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+```
+
 Перекрашиваются только иконки, перечисленные в `ICON_COLORS`. Если записи для иконки нет, она остаётся в исходном виде. Исходный SVG не изменяется: PortProtonQt создаёт перекрашенную копию в кеше и использует путь к ней.
 
 Механизм перекраски учитывает распространённые SVG-объявления цвета: `fill`, `stroke`, `color`, `stop-color`, `flood-color`, `lighting-color`, inline-атрибуты `style` и CSS внутри блоков `<style>`. Значения, не являющиеся обычным цветом, сохраняются без изменений: `none`, `transparent`, `url(#...)`, `context-fill` и `context-stroke`.
