@@ -581,7 +581,6 @@ class AutoSizeButton(QPushButton):
             keys.append(f"{self._icon_name}_{state}")
             keys.append(f"*_{state}")
         keys.append(self._icon_name)
-        keys.append("*")
 
         for key in keys:
             color = colors_dict.get(key)
