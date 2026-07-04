@@ -549,7 +549,7 @@ class AutoSizeButton(QPushButton):
 
         self._icon = icon
         self._icon_size = icon_size
-        self._alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        self._alignment = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
         self._update_size = update_size
