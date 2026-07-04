@@ -589,12 +589,20 @@ class TestThemeStylesIntegrity:
             "ADDGAME_INPUT_STYLE",
             "TAB_STYLE",
             "QGROUP_BOX_STYLE",
+            "WINETRICKS_TABBLE_STYLE",
             "SETTINGS_TITLE_STYLE",
             "ACTION_BUTTON_STYLE",
             "ACTION_BUTTON_ACTIVE_STYLE",
         ]
         for style_name in required_styles:
             assert f"{style_name}" in content, f"classic-light/styles.py missing {style_name}"
+
+    def test_classic_light_wine_table_keeps_classic_compact_rows(self):
+        content = self._read_theme("classic-light")
+
+        assert "QTableWidget::item {{" in content
+        assert "padding: 3px;" in content
+        assert "height: 32px;" in content
 
     def test_classic_game_card_animation_has_glow_keys(self):
         content = self._read_theme("classic")
