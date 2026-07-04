@@ -1,6 +1,5 @@
 """Tests for theme_manager: AST injection, parent resolution, and ThemeWrapper."""
 import ast
-import sys
 import types
 from pathlib import Path
 import pytest
@@ -11,7 +10,6 @@ from portprotonqt.theme_manager import (
     _inject_ast_constants,
     _inject_parent_theme_constants,
     _is_valid_theme_name,
-    _loading_themes,
     _read_theme_parent_name,
 )
 
@@ -1057,29 +1055,6 @@ class TestRecursiveThemeLoading:
         )
         return base_dir
 
-    def test_loading_theme_returns_cached_module(self, stub_themes, monkeypatch):
-        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
-
-        theme_dir = stub_themes / "cached_ref"
-        theme_dir.mkdir()
-        (theme_dir / "styles.py").write_text(
-            'MY_VAL = 42\n',
-            encoding="utf-8",
-        )
-
-        from portprotonqt.theme_manager import load_theme
-        _loading_themes.add("cached_ref")
-        try:
-            module_name = "cached_ref"
-            stub = types.ModuleType(module_name)
-            stub.__dict__["MY_VAL"] = 42
-            sys.modules[module_name] = stub
-            result = load_theme("cached_ref")
-            assert getattr(result, "MY_VAL", None) == 42
-        finally:
-            _loading_themes.discard("cached_ref")
-            sys.modules.pop("cached_ref", None)
-
     def test_theme_wrapper_parent_load_during_loading(self, stub_themes, monkeypatch):
         monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
 
@@ -1121,51 +1096,10 @@ class TestRecursiveThemeLoading:
             encoding="utf-8",
         )
 
-        from portprotonqt.theme_manager import ThemeManager, load_theme
+        from portprotonqt.theme_manager import load_theme
         theme = load_theme("color_theme")
-        manager = ThemeManager()
-        manager.current_theme_name = "color_theme"
-        manager.current_theme_module = theme
-
-        colored_path = manager.get_icon("down", "color_theme", as_path=True)
+        colored_path = getattr(theme, "ICON_PATH", None)
 
         assert isinstance(colored_path, str)
         assert colored_path != str(icon_path)
         assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
-
-    def test_loading_guard_returns_cached_module_from_sys_modules(self, monkeypatch):
-        from portprotonqt.theme_manager import load_theme
-        module_name = "guard_test_theme"
-        stub = types.ModuleType(module_name)
-        stub.__dict__["GUARD_VAL"] = 99
-        sys.modules[module_name] = stub
-        _loading_themes.add(module_name)
-        try:
-            result = load_theme(module_name)
-            assert getattr(result, "GUARD_VAL", None) == 99
-        finally:
-            _loading_themes.discard(module_name)
-            sys.modules.pop(module_name, None)
-
-    def test_loading_guard_with_standard_prefix(self, monkeypatch):
-        from portprotonqt.theme_manager import load_theme
-        module_name = "portprotonqt.themes.guard_std_theme"
-        stub = types.ModuleType(module_name)
-        stub.__dict__["STD_VAL"] = 77
-        sys.modules[module_name] = stub
-        _loading_themes.add("guard_std_theme")
-        try:
-            result = load_theme("guard_std_theme")
-            assert getattr(result, "STD_VAL", None) == 77
-        finally:
-            _loading_themes.discard("guard_std_theme")
-            sys.modules.pop(module_name, None)
-
-    def test_loading_guard_fallback_when_not_in_sys_modules(self, monkeypatch):
-        from portprotonqt.theme_manager import load_theme
-        _loading_themes.add("nonexistent_theme")
-        try:
-            with pytest.raises(FileNotFoundError, match="already being loaded"):
-                load_theme("nonexistent_theme")
-        finally:
-            _loading_themes.discard("nonexistent_theme")

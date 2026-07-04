@@ -2,6 +2,7 @@
 from unittest.mock import patch, MagicMock
 
 from portprotonqt.config.ui import (
+    UIConfig,
     _is_gsettings_dark_theme,
     THEME_VARIANTS,
 )
@@ -152,3 +153,26 @@ class TestIsGsettingsDarkTheme:
 class TestThemeVariants:
     def test_theme_variants_values(self):
         assert set(THEME_VARIANTS) == {"dark", "light", "auto"}
+
+    def test_get_theme_caches_resolved_theme(self, tmp_path):
+        config = UIConfig(tmp_path / "PortProtonQt.conf")
+        config.set_theme("classic")
+        config.set_theme_variant("auto")
+
+        with patch("portprotonqt.config.ui._resolve_theme_name", return_value="classic") as resolve:
+            assert config.get_theme() == "classic"
+            assert config.get_theme() == "classic"
+
+        assert resolve.call_count == 1
+
+    def test_set_theme_variant_clears_resolved_theme_cache(self, tmp_path):
+        config = UIConfig(tmp_path / "PortProtonQt.conf")
+        config.set_theme("classic")
+        config.set_theme_variant("auto")
+
+        with patch("portprotonqt.config.ui._resolve_theme_name", return_value="classic") as resolve:
+            assert config.get_theme() == "classic"
+            config.set_theme_variant("dark")
+            assert config.get_theme() == "classic"
+
+        assert resolve.call_count == 2
