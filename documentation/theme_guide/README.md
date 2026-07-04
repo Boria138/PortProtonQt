@@ -8,6 +8,8 @@
 - [Theme Variants](#theme-variants)
 - [Style File](#style-file-stylespy)
 - [Style Inheritance](#style-inheritance)
+  - [How Inheritance Works](#how-inheritance-works)
+  - [Overriding QSS Styles](#overriding-qss-styles)
 - [Library Layout Mode](#library-layout-mode)
 - [Detail Page Layout Mode](#detail-page-layout-mode)
 - [Preloader](#preloader)
@@ -15,8 +17,12 @@
 - [Terminal Color Schemes](#terminal-color-schemes)
 - [Animation configuration](#animation-configuration)
 - [Metadata](#metadata-metainfoini)
+  - [Translation Support](#translation-support)
 - [Screenshots](#screenshots)
 - [Fonts and Icons](#fonts-and-icons-optional)
+  - [Recoloring SVG Icons](#recoloring-svg-icons)
+  - [AutoSizeButton State Recoloring](#autosizebutton-state-recoloring)
+  - [Non-Inherited Icon Colors](#non-inherited-icon-colors)
 
 ---
 
@@ -621,5 +627,31 @@ ICON_COLORS = {
 Only icons listed in `ICON_COLORS` are recolored. Icons without an entry keep their original file unchanged. The source SVG is never modified; PortProtonQt writes a recolored copy to the icon cache and uses that path.
 
 The recoloring helper handles common SVG paint declarations: `fill`, `stroke`, `color`, `stop-color`, `flood-color`, `lighting-color`, inline `style` attributes, and CSS inside `<style>` blocks. It preserves non-color paint values such as `none`, `transparent`, `url(#...)`, `context-fill`, and `context-stroke`.
+
+### AutoSizeButton State Recoloring
+
+`AutoSizeButton` icons and text can be recolored automatically for button states. State-specific keys have priority over base icon keys. The lookup order is:
+
+1. `{icon_name}_{state}`
+2. `*_{state}`
+3. `{icon_name}`
+
+Supported states are `hover`, `pressed`, `focused`, and `disabled`. Use state wildcard keys to apply one color to all button icons in that state:
+
+```python
+ICON_COLORS = {
+    "settings_hover": color_accent,
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+```
+
+When no `ICON_COLORS` entry matches an `AutoSizeButton` state, the button falls back to theme colors: `color_disabled` for disabled, `color_accent_dark` or `color_accent` for pressed, and `color_accent` for hover/focus.
+
+### Non-Inherited Icon Colors
+
+`ICON_COLORS` is not inherited from parent themes. If a child theme needs SVG recoloring, define its own `ICON_COLORS` dictionary in that theme.
 
 ---

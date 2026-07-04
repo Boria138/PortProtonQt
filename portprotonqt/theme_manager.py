@@ -40,6 +40,7 @@ SVG_PAINT_ATTR_PATTERN = re.compile(
 SVG_PAINT_ATTRIBUTES = {"fill", "stroke", "color", "stop-color", "flood-color", "lighting-color"}
 SVG_ANIMATION_TAGS = {"animate", "animateMotion", "animateTransform", "set"}
 SVG_KEEP_PAINT_VALUES = {"none", "transparent", "inherit", "initial", "unset", "freeze", "remove"}
+NON_INHERITED_THEME_CONSTANTS = {"ICON_COLORS"}
 
 # Folder where all custom themes are located
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -235,11 +236,12 @@ def _inject_parent_theme_constants(module, styles_file: str):
         if os.path.exists(parent_styles):
             sources.append(parent_styles)
         for fpath in sources:
-            _inject_ast_constants(fpath, module)
+            _inject_ast_constants(fpath, module, NON_INHERITED_THEME_CONSTANTS)
         current_name = parent_name
 
 
-def _inject_ast_constants(source_path: str, module):
+def _inject_ast_constants(source_path: str, module, excluded_names: set | None = None):
+    excluded_names = excluded_names or set()
     try:
         with open(source_path, encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=source_path)
@@ -254,7 +256,9 @@ def _inject_ast_constants(source_path: str, module):
         for target in node.targets:
             if not isinstance(target, ast.Name):
                 continue
-            if target.id.startswith("_") or target.id in module.__dict__:
+            if target.id.startswith("_") or target.id in excluded_names:
+                continue
+            if target.id in module.__dict__:
                 continue
             try:
                 module.__dict__[target.id] = ast.literal_eval(node.value)
@@ -500,6 +504,8 @@ class ThemeWrapper:
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
+        if name in NON_INHERITED_THEME_CONSTANTS:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         generated = self._get_generated_style(name)
         if generated is not None:
             return generated
@@ -777,7 +783,6 @@ class ThemeManager:
         Return theme module or wrapper.
         """
         if self.current_theme_name == theme_name and self.current_theme_module is not None:
-            logger.debug(f"Theme '{theme_name}' is already applied, skipping")
             return self.current_theme_module
 
         try:
@@ -802,18 +807,23 @@ class ThemeManager:
         logger.info(f"Theme '{theme_name}' successfully applied")
         return theme_module
 
+    def _get_theme_icon_colors(self, theme: object) -> dict:
+        if isinstance(theme, ThemeWrapper):
+            colors = vars(theme.custom_theme).get("ICON_COLORS", {})
+        else:
+            colors = vars(theme).get("ICON_COLORS", {})
+        return colors if isinstance(colors, dict) else {}
+
     def _get_icon_color(self, icon_name: str, theme_name: str | None) -> str | None:
         if not theme_name:
             return None
         theme = self.current_theme_module if theme_name == self.current_theme_name else None
         if theme is None:
-            try:
-                theme = load_theme(theme_name)
-            except FileNotFoundError:
-                return None
-        colors = getattr(theme, "ICON_COLORS", {})
-        if not isinstance(colors, dict):
+            import sys
+            theme = sys.modules.get(f"portprotonqt.themes.{theme_name}") or sys.modules.get(theme_name)
+        if theme is None:
             return None
+        colors = self._get_theme_icon_colors(theme)
         color = colors.get(icon_name)
         return color if isinstance(color, str) else None
 
@@ -850,7 +860,6 @@ class ThemeManager:
         cache_key = f"{icon_name}_{theme_name}_{as_path}_{device_pixel_ratio}_{icon_color}"
 
         if cache_key in _icon_cache:
-            logger.debug(f"Using cached icon for {icon_name}")
             return _icon_cache[cache_key]
 
         icon_path = None

@@ -3,7 +3,7 @@
 import os
 import tempfile
 from typing import cast, TYPE_CHECKING
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout,
     QProgressBar, QSizePolicy, QWidget, QCheckBox
@@ -198,11 +198,14 @@ class AddGameDialog(DraggableDialog):
         self.add_to_steam_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_menu_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_desktop_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-        if icon := theme_manager.get_icon("menu_steam"):
+        icon = theme_manager.get_icon("menu_steam")
+        if isinstance(icon, QIcon):
             self.add_to_steam_checkbox.setIcon(icon)
-        if icon := theme_manager.get_icon("menu"):
+        icon = theme_manager.get_icon("menu")
+        if isinstance(icon, QIcon):
             self.add_to_menu_checkbox.setIcon(icon)
-        if icon := theme_manager.get_icon("desktop"):
+        icon = theme_manager.get_icon("desktop")
+        if isinstance(icon, QIcon):
             self.add_to_desktop_checkbox.setIcon(icon)
         self.add_to_steam_checkbox.setIconSize(QSize(20, 20))
         self.add_to_menu_checkbox.setIconSize(QSize(20, 20))

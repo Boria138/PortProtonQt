@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.dialogs import FileExplorer, WinetricksDialog
 from portprotonqt.dialogs.prefix_backup import PrefixBackupDialog, PrefixBackupJob, PrefixBackupThread
 from portprotonqt.dialogs.proton_manager import show_proton_manager
@@ -66,7 +66,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
         self.wine_versions = get_available_wine_options(
             self.portproton_location, include_lg_aliases=True
         )
-        self.wineCombo = QComboBox()
+        self.wineCombo = CustomComboBox(theme=self.theme)
         self.wineCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -90,7 +90,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
         self.prefixes = get_available_prefix_options(self.portproton_location)
-        self.prefixCombo = QComboBox()
+        self.prefixCombo = CustomComboBox(self, theme=self.theme)
         self.prefixCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -116,7 +116,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
             self.prefixCombo.setCurrentText(default_prefix)
         formLayout.addRow(self.prefixTitleLabel, self.prefixCombo)
 
-        self.defaultVulkanCombo = QComboBox()
+        self.defaultVulkanCombo = CustomComboBox(theme=self.theme)
         self.defaultVulkanCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )

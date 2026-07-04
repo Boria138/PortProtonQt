@@ -78,6 +78,14 @@ color_gamepad_supported = "#00ff00"
 color_white = "#ffffff"
 missing_exe_cover_opacity = 0.45
 
+# === Button Icons Color ===
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+
 # === Widget State Colors ===
 color_combo_disabled_bg = "#2a2c35"
 color_combo_disabled_border = "#2a2c35"

@@ -6,9 +6,13 @@ from queue import Queue
 from types import SimpleNamespace
 from typing import Any, cast
 
+from pytest import MonkeyPatch
+
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
+import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
+import portprotonqt.tabs.library_tab as library_tab_module
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
@@ -195,6 +199,56 @@ def test_switch_tab_closes_library_controls_when_leaving_library() -> None:
     MainWindow.switchTab(cast(Any, window), 1)
 
     assert window.library_controls_closed is True
+
+
+def test_library_search_keeps_expanded_for_active_virtual_keyboard(monkeypatch: MonkeyPatch) -> None:
+    class Window(LibraryMixin):
+        pass
+
+    search_edit = object()
+    animation = SimpleNamespace(expanded=False, collapsed=False)
+    keyboard = SimpleNamespace(
+        current_input_widget=search_edit,
+        isVisible=lambda: True,
+    )
+    window: Any = Window()
+    window.searchEdit = search_edit
+    window.searchAnimation = animation
+    window.keyboard = keyboard
+    window._center_collapsed_search_icon = lambda: None
+    animation.expand = lambda: setattr(animation, "expanded", True)
+    animation.collapse = lambda: setattr(animation, "collapsed", True)
+    monkeypatch.setattr(library_tab_module.QTimer, "singleShot", lambda _ms, callback: callback())
+
+    handler = window._wrap_search_focus_event(lambda _event: None, False)
+    handler(object())
+
+    assert animation.collapsed is False
+
+
+def test_autoinstall_search_keeps_expanded_for_active_virtual_keyboard(monkeypatch: MonkeyPatch) -> None:
+    class Window(AutoInstallMixin):
+        pass
+
+    search_edit = object()
+    animation = SimpleNamespace(expanded=False, collapsed=False)
+    keyboard = SimpleNamespace(
+        current_input_widget=search_edit,
+        isVisible=lambda: True,
+    )
+    window: Any = Window()
+    window.autoInstallSearchLineEdit = search_edit
+    window.autoInstallSearchAnimation = animation
+    window.keyboard = keyboard
+    window._center_collapsed_autoinstall_search_icon = lambda: None
+    animation.expand = lambda: setattr(animation, "expanded", True)
+    animation.collapse = lambda: setattr(animation, "collapsed", True)
+    monkeypatch.setattr(autoinstall_tab_module.QTimer, "singleShot", lambda _ms, callback: callback())
+
+    handler = window._wrap_autoinstall_search_focus_event(lambda _event: None, False)
+    handler(object())
+
+    assert animation.collapsed is False
 
 
 def test_tab_methods_resolve_from_expected_modules() -> None:

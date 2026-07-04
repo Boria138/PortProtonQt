@@ -42,7 +42,7 @@ border_radius_small = "10px"
 border_radius_large = "15px"
 border_radius_card = "20px"
 border_radius_badge = "5px"
-color_accent = "#70b8ff"
+color_accent = "#409EFF"
 color_bg = "#F8F9FC"
 color_bg_darker = "#bfc0c7"
 color_surface = "#F0F2F5"
@@ -54,6 +54,14 @@ color_overlay = "rgba(40, 42, 51, 0.9)"
 color_surface_light = "#d2d3db"
 color_surface_mid = "#9394a5"
 color_text_dark = "#212529"
+
+# === Button Icons Color ===
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
 
 # Widget State
 color_combo_disabled_bg = "#dee2e6"
@@ -421,11 +429,13 @@ MESSAGE_BOX_STYLE = f"""
     }}
     QMessageBox QPushButton:hover {{
         background: {color_accent};
+        color: {color_text};
         border-color: border: {border_thin} {color_accent};
     }}
     QMessageBox QPushButton:focus {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -1015,11 +1025,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:pressed,
     QPushButton:focus,
     QPushButton:checked {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_surface_elevated},
-            stop:1 {color_surface_light}
-        );
+        background: {color_accent};
         border: {border_thin} {color_accent};
     }}
 """
@@ -1146,7 +1152,7 @@ QTableWidget::item:selected,
 QTableWidget::item:focus,
 QTableWidget::item:selected:focus {{
     background: {color_accent};
-    color: {color_text_dark};
+    color: {color_text};
     selection-background-color: {color_accent};
 }}
 QTableWidget::item:hover {{
@@ -1154,7 +1160,7 @@ QTableWidget::item:hover {{
 }}
 QTableWidget::item:selected:hover {{
     background: {color_accent};
-    color: {color_text_dark};
+    color: {color_text};
 }}
 """
 
@@ -1237,11 +1243,13 @@ COMBOBOX_STYLE = f"""
     QComboBox:hover {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text};
     }}
     /* Focus state */
     QComboBox:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
     QComboBox:disabled {{
         background: {color_combo_disabled_bg};
@@ -1281,6 +1289,7 @@ COMBOBOX_STYLE = f"""
     }}
     QComboBox:editable {{
         background: {color_surface};
+        color: {color_text_dark};
     }}
     QComboBox::drop-down:editable:focus {{
         background: {color_accent};
@@ -1308,7 +1317,7 @@ COMBOBOX_STYLE = f"""
     /* Selection in list when item is focused */
     QListView::item:focus {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
     }}
 """
 
@@ -1317,6 +1326,7 @@ SETTINGS_TABLE_COMBOBOX_STYLE = f"""
     QComboBox#settingsTableCombo:focus {{
         background: {color_surface};
         border: {border_medium} {color_accent};
+        color: {color_text_dark};
     }}
 """
 
@@ -1450,10 +1460,11 @@ TAB_STYLE = f"""
     }}
     QTabBar::tab:selected {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
     }}
     QTabBar::tab:hover {{
         background: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -1502,13 +1513,16 @@ ACTION_BUTTON_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text};
     }}
     QPushButton:pressed {{
-        background: {color_bg};
+        background: {color_accent};
+        color: {color_text};
     }}
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -1526,6 +1540,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -1533,6 +1548,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -1563,6 +1579,7 @@ QTableWidget::item:selected,
 QTableWidget::item:selected:!active,
 QTableWidget::item:hover {{
     background: {color_accent};
+    color: {color_text};
 }}
 /* LogArea */
 QFrame {{
@@ -1658,18 +1675,18 @@ CONTEXT_MENU_STYLE = f"""
     }}
     QMenu::item:selected {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
     }}
     QMenu::item:disabled {{
             color: {color_nav_inactive};
         }}
     QMenu::item:hover {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
     }}
     QMenu::item:focus {{
         background: {color_accent};
-        color: {color_text_dark};
+        color: {color_text};
         border: {border_thin} {color_border_light};
         border-radius: {border_radius_small};
     }}
@@ -1697,26 +1714,30 @@ QPushButton {{
 QPushButton:hover {{
     background-color: {color_accent};
     border: {border_thin} {color_accent};
+    color: {color_text};
 }}
 QPushButton:focus {{
     border: {border_thin} {color_accent};
     background-color: {color_accent};
+    color: {color_text};
 }}
 QPushButton[vk_selected="true"] {{
     border: {border_thin} {color_accent};
     background-color: {color_accent};
+    color: {color_text};
 }}
 QPushButton:pressed {{
     background-color: {color_surface_hover};
     border: {border_none} {color_transparent};
+    color: {color_text};
 }}
 QPushButton[checked="true"] {{
     background-color: {color_accent};
-    color: {color_text_dark};
+    color: {color_text};
     border: {border_none} {color_transparent};
 }}
 QPushButton[checked="true"]:focus {{
-    border: {border_thin} {color_text_dark};
+    border: {border_thin} {color_text};
 }}
 """
 

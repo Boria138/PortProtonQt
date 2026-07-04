@@ -36,7 +36,7 @@ from portprotonqt.config import (
     exe_settings_favorites_config,
     ui_config,
 )
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_ENV_KEYS, MangoHudSettingsMixin
@@ -713,7 +713,7 @@ class ExeSettingsDialog(
             self.advanced_table.setItem(row, 0, name_item)
 
             if setting['type'] == 'combo':
-                combo = QComboBox()
+                combo = CustomComboBox(theme=self.theme)
                 combo.setObjectName("settingsTableCombo")
                 combo.view().window().setWindowFlags(
                     Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -1040,7 +1040,7 @@ class ExeSettingsDialog(
             source_widget.setChecked(checkbox.isChecked())
 
     def _add_favorite_combo(self, row: int, source_widget: QComboBox) -> None:
-        combo = QComboBox()
+        combo = CustomComboBox(theme=self.theme)
         combo.setObjectName("settingsTableCombo")
         combo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint

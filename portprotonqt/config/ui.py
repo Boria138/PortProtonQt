@@ -232,14 +232,28 @@ class UIConfig(BaseConfig):
 
     _section = "Appearance"
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._resolved_theme_cache: tuple[str, str, str] | None = None
+
+    def _clear_resolved_theme_cache(self) -> None:
+        self._resolved_theme_cache = None
+
     def get_theme(self) -> str:
         """Get the current theme name."""
         theme_name = self._get_str("theme", "standart")
-        return _resolve_theme_name(theme_name, self.get_theme_variant())
+        variant = self.get_theme_variant()
+        cache = self._resolved_theme_cache
+        if cache is not None and cache[:2] == (theme_name, variant):
+            return cache[2]
+        resolved_name = _resolve_theme_name(theme_name, variant)
+        self._resolved_theme_cache = (theme_name, variant, resolved_name)
+        return resolved_name
 
     def set_theme(self, theme_name: str):
         """Set the theme name."""
         validate_string(theme_name, "theme", min_len=1, max_len=50)
+        self._clear_resolved_theme_cache()
         self._save_value("theme", theme_name, "str")
 
     def get_theme_base(self) -> str:
@@ -261,6 +275,7 @@ class UIConfig(BaseConfig):
         validate_string(variant, "theme_variant", min_len=1, max_len=10)
         if variant not in THEME_VARIANTS:
             variant = "auto"
+        self._clear_resolved_theme_cache()
         self._save_value("theme_variant", variant, "str")
 
     def resolve_theme(self, theme_name: str, variant: str) -> str:

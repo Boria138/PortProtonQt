@@ -531,20 +531,14 @@ class FileExplorer(DraggableDialog):
             if self.directory_only:
                 item = QListWidgetItem("./")
                 folder_icon = theme_manager.get_icon("folder")
-                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
-                    folder_icon = QIcon(folder_icon)
-                elif not isinstance(folder_icon, QIcon):
-                    folder_icon = QIcon()
-                item.setIcon(folder_icon)
+                if isinstance(folder_icon, QIcon):
+                    item.setIcon(folder_icon)
                 self.file_list.addItem(item)
             if self.current_path != "/":
                 item = QListWidgetItem("../")
                 folder_icon = theme_manager.get_icon("folder")
-                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
-                    folder_icon = QIcon(folder_icon)
-                elif not isinstance(folder_icon, QIcon):
-                    folder_icon = QIcon()
-                item.setIcon(folder_icon)
+                if isinstance(folder_icon, QIcon):
+                    item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
@@ -553,11 +547,8 @@ class FileExplorer(DraggableDialog):
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
                 folder_icon = theme_manager.get_icon("folder")
-                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
-                    folder_icon = QIcon(folder_icon)
-                elif not isinstance(folder_icon, QIcon):
-                    folder_icon = QIcon()
-                item.setIcon(folder_icon)
+                if isinstance(folder_icon, QIcon):
+                    item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
             if not self.directory_only:
@@ -583,8 +574,6 @@ class FileExplorer(DraggableDialog):
                         or mime_type.inherits("application/vnd.squashfs")
                     ):
                         ppack_icon = theme_manager.get_icon("ppack")
-                        if isinstance(ppack_icon, str) and os.path.isfile(ppack_icon):
-                            ppack_icon = QIcon(ppack_icon)
                         if isinstance(ppack_icon, QIcon):
                             item.setIcon(ppack_icon)
                     self.file_items[file_path] = item

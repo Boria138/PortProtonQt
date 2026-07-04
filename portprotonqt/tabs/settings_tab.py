@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -36,7 +35,7 @@ from portprotonqt.config import (
     ui_config,
 )
 from portprotonqt.context_menu_manager import CustomLineEdit
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.debug_utils import get_selectable_gpu_list
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -120,7 +119,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(genFrame)
 
-        self.timeDetailCombo = QComboBox()
+        self.timeDetailCombo = CustomComboBox(theme=self.theme)
         self.timeDetailCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -152,7 +151,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         self.tray_menu_mode_keys = ["compact", "detailed"]
         self.tray_menu_mode_labels = [_("Compact"), _("Detailed")]
-        self.trayMenuModeCombo = QComboBox()
+        self.trayMenuModeCombo = CustomComboBox(theme=self.theme)
         self.trayMenuModeCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -177,7 +176,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         self.gamepad_type_keys = ["auto", "xbox", "playstation"]
         self.gamepad_type_labels = [_("Auto"), "Xbox", "PlayStation"]
-        self.gamepadTypeCombo = QComboBox()
+        self.gamepadTypeCombo = CustomComboBox(theme=self.theme)
         self.gamepadTypeCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -369,7 +368,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         economy_mode_layout.addWidget(self.economyModeTitle)
         economy_mode_layout.addStretch()
 
-        self.downloadMirrorCombo = QComboBox()
+        self.downloadMirrorCombo = CustomComboBox(theme=self.theme)
         self.downloadMirrorCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -464,7 +463,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         filtered_gpu_list = get_selectable_gpu_list()
         hwFrame.setVisible(len(filtered_gpu_list) > 1)
         if len(filtered_gpu_list) > 1:
-            self.gpuCombo = QComboBox()
+            self.gpuCombo = CustomComboBox(theme=self.theme)
             self.gpuCombo.view().window().setWindowFlags(
                 Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
             )

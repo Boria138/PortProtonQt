@@ -589,12 +589,20 @@ class TestThemeStylesIntegrity:
             "ADDGAME_INPUT_STYLE",
             "TAB_STYLE",
             "QGROUP_BOX_STYLE",
+            "WINETRICKS_TABBLE_STYLE",
             "SETTINGS_TITLE_STYLE",
             "ACTION_BUTTON_STYLE",
             "ACTION_BUTTON_ACTIVE_STYLE",
         ]
         for style_name in required_styles:
             assert f"{style_name}" in content, f"classic-light/styles.py missing {style_name}"
+
+    def test_classic_light_wine_table_keeps_classic_compact_rows(self):
+        content = self._read_theme("classic-light")
+
+        assert "QTableWidget::item {{" in content
+        assert "padding: 3px;" in content
+        assert "height: 32px;" in content
 
     def test_classic_game_card_animation_has_glow_keys(self):
         content = self._read_theme("classic")
@@ -1036,3 +1044,126 @@ class TestThemeFilesParse:
     def test_constants_py_parses(self, constants_file: Path):
         source = constants_file.read_text(encoding="utf-8")
         ast.parse(source, filename=str(constants_file))
+
+
+# === Recursive theme loading (d5fedd8 regression) ===
+
+
+class TestRecursiveThemeLoading:
+    """load_theme must not recurse when styles.py calls get_icon during exec_module."""
+
+    @pytest.fixture()
+    def stub_themes(self, tmp_path, monkeypatch):
+        from portprotonqt.theme_manager import THEMES_DIRS
+        base_dir = tmp_path / "themes"
+        base_dir.mkdir()
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.THEMES_DIRS",
+            [str(base_dir), str(THEMES_DIRS[1])],
+        )
+        return base_dir
+
+    def test_theme_wrapper_parent_load_during_loading(self, stub_themes, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+
+        parent_dir = stub_themes / "load_parent"
+        parent_dir.mkdir()
+        (parent_dir / "styles.py").write_text(
+            'PARENT_VAL = "from_parent"\n',
+            encoding="utf-8",
+        )
+
+        child_dir = stub_themes / "load_child"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "load_parent"\nCHILD_VAL = "from_child"\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import load_theme
+        result = load_theme("load_child")
+        assert getattr(result, "CHILD_VAL", None) == "from_child"
+        assert getattr(result, "PARENT_VAL", None) == "from_parent"
+
+    def test_icon_color_applies_after_recursive_load(self, stub_themes, tmp_path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_dirs_cache", {})
+
+        theme_dir = stub_themes / "color_theme"
+        theme_dir.mkdir()
+        images_dir = theme_dir / "images"
+        images_dir.mkdir()
+        icon_path = images_dir / "down.svg"
+        icon_path.write_text('<svg><path fill="#fff"/></svg>', encoding="utf-8")
+        (theme_dir / "styles.py").write_text(
+            "from portprotonqt.theme_manager import ThemeManager\n"
+            'ICON_COLORS = {"down": "#123456"}\n'
+            "theme_manager = ThemeManager()\n"
+            'ICON_PATH = theme_manager.get_icon("down", "color_theme", as_path=True)\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import load_theme
+        theme = load_theme("color_theme")
+        colored_path = getattr(theme, "ICON_PATH", None)
+
+        assert isinstance(colored_path, str)
+        assert colored_path != str(icon_path)
+        assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
+
+    def test_missing_child_icon_colors_do_not_load_parent_recursively(
+        self, stub_themes, tmp_path, monkeypatch,
+    ):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_dirs_cache", {})
+
+        parent_dir = stub_themes / "parent_icons"
+        parent_dir.mkdir()
+        images_dir = parent_dir / "images"
+        images_dir.mkdir()
+        icon_path = images_dir / "down.svg"
+        icon_path.write_text('<svg><path fill="#fff"/></svg>', encoding="utf-8")
+        (parent_dir / "styles.py").write_text(
+            "from portprotonqt.theme_manager import ThemeManager\n"
+            "theme_manager = ThemeManager()\n"
+            'PARENT_ICON = theme_manager.get_icon("down", "child_icons", as_path=True)\n',
+            encoding="utf-8",
+        )
+
+        child_dir = stub_themes / "child_icons"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_icons"\nCHILD_VAL = "from_child"\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import ThemeManager, load_theme
+        child = load_theme("child_icons")
+        manager = ThemeManager()
+        manager.current_theme_name = "child_icons"
+        manager.current_theme_module = child
+
+        assert getattr(child, "PARENT_ICON", None) == str(icon_path)
+
+    def test_icon_colors_are_not_inherited(self, stub_themes):
+        parent_dir = stub_themes / "parent_colors"
+        parent_dir.mkdir()
+        (parent_dir / "styles.py").write_text(
+            'ICON_COLORS = {"down": "#123456"}\nPARENT_VAL = "from_parent"\n',
+            encoding="utf-8",
+        )
+
+        child_dir = stub_themes / "child_colors"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_colors"\nCHILD_VAL = "from_child"\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import load_theme
+        child = load_theme("child_colors")
+
+        assert getattr(child, "ICON_COLORS", {}) == {}
+        assert getattr(child, "PARENT_VAL", None) == "from_parent"

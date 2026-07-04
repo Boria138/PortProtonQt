@@ -431,6 +431,7 @@ pre-commit run pytest
 | `time_utils` | SHA256 hash + L5- index | 7a02b6b |
 | `time_utils` | Malformed playtime data | dd65021 |
 | `theme_manager` | AST injection lost dict constants, leaked CONTAINER_STYLE | 519edd1 |
+| `theme_manager` | Recursive load_theme when styles.py calls get_icon during exec_module | d5fedd8 |
 | `classic/styles.py` | Missing styles after theme rewrite (NAV, COMBOBOX, TAB, etc.) | 519edd1 |
 | `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
 

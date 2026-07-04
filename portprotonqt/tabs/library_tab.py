@@ -25,7 +25,7 @@ from portprotonqt.config import (
     ui_config,
 )
 from portprotonqt.context_menu_manager import CustomLineEdit
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
@@ -62,7 +62,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         combo.setCurrentIndex(idx)
 
     def _create_library_combo(self, labels: list[str], tooltip: str) -> QComboBox:
-        combo = QComboBox()
+        combo = CustomComboBox(theme=self.theme)
         combo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
@@ -226,9 +226,14 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             original_event(event)
             if not hasattr(self, "searchAnimation"):
                 return
+            keyboard = getattr(self, "keyboard", None)
             if expand:
                 self.searchAnimation.expand()
-            else:
+            elif not (
+                keyboard
+                and keyboard.isVisible()
+                and getattr(keyboard, "current_input_widget", None) is self.searchEdit
+            ):
                 self.searchAnimation.collapse()
             QTimer.singleShot(0, self._center_collapsed_search_icon)
         return handle_focus_event

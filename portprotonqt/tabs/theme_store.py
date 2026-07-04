@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, cast
 from PySide6.QtCore import QObject, QThread, Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -15,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.config import ui_config
-from portprotonqt.custom_widgets import AutoHideScrollArea, AutoSizeButton, FlowLayout
+from portprotonqt.custom_widgets import AutoHideScrollArea, AutoSizeButton, CustomComboBox, FlowLayout
 from portprotonqt.image_utils import ImageCarousel
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -145,7 +144,7 @@ class ThemeStoreMixin:
     def _create_theme_store_sort_header(self) -> QHBoxLayout:
         header = QHBoxLayout()
         header.addStretch(1)
-        self.themeStoreSortCombo = QComboBox()
+        self.themeStoreSortCombo = CustomComboBox(theme=self.theme)
         self.themeStoreSortCombo.addItems([
             _("Most voted"),
             _("Most downloaded"),
