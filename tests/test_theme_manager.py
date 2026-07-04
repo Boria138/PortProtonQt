@@ -1111,3 +1111,59 @@ class TestRecursiveThemeLoading:
         assert isinstance(colored_path, str)
         assert colored_path != str(icon_path)
         assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
+
+    def test_missing_child_icon_colors_do_not_load_parent_recursively(
+        self, stub_themes, tmp_path, monkeypatch,
+    ):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_cache", {})
+        monkeypatch.setattr("portprotonqt.theme_manager._icon_dirs_cache", {})
+
+        parent_dir = stub_themes / "parent_icons"
+        parent_dir.mkdir()
+        images_dir = parent_dir / "images"
+        images_dir.mkdir()
+        icon_path = images_dir / "down.svg"
+        icon_path.write_text('<svg><path fill="#fff"/></svg>', encoding="utf-8")
+        (parent_dir / "styles.py").write_text(
+            "from portprotonqt.theme_manager import ThemeManager\n"
+            "theme_manager = ThemeManager()\n"
+            'PARENT_ICON = theme_manager.get_icon("down", "child_icons", as_path=True)\n',
+            encoding="utf-8",
+        )
+
+        child_dir = stub_themes / "child_icons"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_icons"\nCHILD_VAL = "from_child"\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import ThemeManager, load_theme
+        child = load_theme("child_icons")
+        manager = ThemeManager()
+        manager.current_theme_name = "child_icons"
+        manager.current_theme_module = child
+
+        assert getattr(child, "PARENT_ICON", None) == str(icon_path)
+
+    def test_icon_colors_are_not_inherited(self, stub_themes):
+        parent_dir = stub_themes / "parent_colors"
+        parent_dir.mkdir()
+        (parent_dir / "styles.py").write_text(
+            'ICON_COLORS = {"down": "#123456"}\nPARENT_VAL = "from_parent"\n',
+            encoding="utf-8",
+        )
+
+        child_dir = stub_themes / "child_colors"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_colors"\nCHILD_VAL = "from_child"\n',
+            encoding="utf-8",
+        )
+
+        from portprotonqt.theme_manager import load_theme
+        child = load_theme("child_colors")
+
+        assert getattr(child, "ICON_COLORS", {}) == {}
+        assert getattr(child, "PARENT_VAL", None) == "from_parent"
