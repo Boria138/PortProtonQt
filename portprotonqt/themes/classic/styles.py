@@ -28,6 +28,14 @@ exeSettingsGroupBoxBlockSpacing = 5
 exeSettingsGroupBoxElementVerticalSpacing = 2
 exeSettingsGroupBoxElementHorizontalSpacing = 5
 
+# === Button Icons Color ===
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+
 # === Gradients (unique to classic) ===
 color_library_gradient_start = "#22242b"
 color_library_gradient_end = "#1a1b21"
