@@ -41,6 +41,14 @@ color_text_dark = "#212529"
 color_detail_overlay = "rgba(220, 222, 226, 0.40)"
 color_detail_line = "rgba(0,0,0,0.12)"
 
+# === Button Icons Color ===
+ICON_COLORS = {
+    "*_hover": color_text,
+    "*_pressed": color_text,
+    "*_focused": color_text,
+    "*_disabled": color_text,
+}
+
 # === Card Animation (glow) ===
 GAME_CARD_ANIMATION = {
     "detail_page_animation_type": "fade",
