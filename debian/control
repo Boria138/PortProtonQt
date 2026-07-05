@@ -22,7 +22,6 @@ Depends:
  curl,
  file,
  gawk,
- jq,
  libimage-exiftool-perl,
  libsdl3-0,
  mesa-utils,

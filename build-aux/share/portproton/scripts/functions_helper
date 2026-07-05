@@ -4222,11 +4222,8 @@ gui_proton_downloader () {
     pw_download_get_wine () {
         local URL_VERSION_PROTON_GIT
         local VERSION="$1"
-        local ALL_CATEGORIES=$(echo "$METADATA" | jq -r 'keys[]' 2>/dev/null)
         print_info "Download and install ${VERSION}..."
-        URL_VERSION_PROTON_GIT=$(echo "$METADATA" | jq -r --arg version "$VERSION" '
-        to_entries[] | .value[]? | select((.name | ascii_downcase) == ($version | ascii_downcase)) | .url
-        ' 2>/dev/null | head -n 1)
+        URL_VERSION_PROTON_GIT=$(python_module json_tools wine-url "$VERSION" <<< "$METADATA" 2>/dev/null)
         if [[ -z "$URL_VERSION_PROTON_GIT" ]]; then
             fatal "no URL found for version ${VERSION}"
         fi
@@ -4751,14 +4748,18 @@ pw_auto_create_shortcut () {
     if [[ "${PW_EXE_FILE}" =~ EpicGamesLauncher.exe$ ]]; then
         for item_file in "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Epic/EpicGamesLauncher/Data/Manifests/"*".item"; do
             if [[ -f "${item_file}" ]]; then
-                exe_path=$(jq -r '.InstallLocation + "\\" + .LaunchExecutable' "${item_file}")
+                IFS=$'\t' read -r exe_path PORTWINE_CREATE_SHORTCUT_NAME item_id < <(
+                    python_module json_tools epic-manifest "${item_file}" 2>/dev/null
+                )
+                if [[ -z "${exe_path}" ]]; then
+                    print_warning "Failed to parse Epic manifest: ${item_file}"
+                    continue
+                fi
                 get_lnk_path "${exe_path}"
-                PORTWINE_CREATE_SHORTCUT_NAME=$(jq -r '.DisplayName' "${item_file}")
                 if ! exe_path="$(realpath "${link_path}" 2>/dev/null)" || [[ ! -f "${exe_path}" ]]; then
                     print_warning "Link broken for: ${PORTWINE_CREATE_SHORTCUT_NAME}"
                 elif [[ ! -f "${exe_path}.ppdb" ]]; then
                     unset FILE_SHA256SUM DESKTOP_NAME_FILE DESKTOP_CORRECT_FILE
-                    item_id=$(jq -r '.AppName' "${item_file}")
                     PW_EXE_FILE="${exe_path}"
                     PORTWINE_DB_FILE="${PW_EXE_FILE}.ppdb"
                     LAUNCH_URI="com.epicgames.launcher://apps/${item_id}?action=launch&silent=true"
