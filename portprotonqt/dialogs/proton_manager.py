@@ -247,12 +247,8 @@ class ProtonManager(DraggableDialog):
         self.wine_loading_thread.start()
 
     def on_wine_data_loaded(self, metadata):
-        self.process_metadata(metadata)
-        for i in range(self.tab_widget.count()):
-            if self.tab_widget.tabText(i) == _("Installed"):
-                self.tab_widget.removeTab(i)
-                break
-        self.create_installed_tab()
+        self.wine_metadata = metadata
+        self.refresh_wine_tabs()
         if hasattr(self, 'content_stack'):
             self.content_stack.setCurrentIndex(1)
 
@@ -888,6 +884,29 @@ class ProtonManager(DraggableDialog):
             self.tab_widget.removeTab(installed_tab_index)
             self.create_installed_tab()
 
+    def refresh_wine_tabs(self) -> None:
+        current_tab_text = self.tab_widget.tabText(self.tab_widget.currentIndex())
+        metadata = getattr(self, 'wine_metadata', None)
+        self.selected_assets.clear()
+        self.tab_widget.clear()
+        if metadata:
+            self.process_metadata(metadata)
+        self.create_installed_tab()
+        for index in range(self.tab_widget.count()):
+            if self.tab_widget.tabText(index) == current_tab_text:
+                self.tab_widget.setCurrentIndex(index)
+                break
+        self.update_selection_display()
+
+    def refresh_parent_wine_combo(self) -> None:
+        parent_widget = self.parent()
+        while parent_widget:
+            refresh_wine_combo = getattr(parent_widget, 'refresh_wine_combo', None)
+            if callable(refresh_wine_combo):
+                refresh_wine_combo()
+                return
+            parent_widget = parent_widget.parent()
+
     def start_next_download(self):
         if self.current_download_index >= len(self.assets_to_download):
             self.download_frame.setVisible(False)
@@ -896,11 +915,12 @@ class ProtonManager(DraggableDialog):
             self.is_downloading = False
             self.selected_assets.clear()
 
-            # Сбросить все галочки во всех вкладках
+            # Reset all checked items in every tab.
             self.clear_selection()
 
-            # Обновить вкладку установленных версий
-            self.refresh_installed_tab()
+            # Refresh source tabs so newly installed versions are disabled.
+            self.refresh_wine_tabs()
+            self.refresh_parent_wine_combo()
 
             import subprocess
             try:

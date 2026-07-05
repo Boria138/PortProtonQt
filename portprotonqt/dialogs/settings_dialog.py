@@ -6,7 +6,7 @@ import subprocess
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QIcon
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QFontMetrics, QGuiApplication, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -728,6 +728,19 @@ class ExeSettingsDialog(
                     prefix_line_edit = combo.lineEdit()
                     if prefix_line_edit is not None:
                         prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
+                elif setting['key'] == 'PW_WINE_USE':
+                    combo.view().setTextElideMode(Qt.TextElideMode.ElideNone)
+                    font_metrics = QFontMetrics(combo.font())
+                    longest_text_width = 0
+                    for option in setting['options']:
+                        longest_text_width = max(
+                            longest_text_width,
+                            font_metrics.horizontalAdvance(option),
+                        )
+                    popup_width = longest_text_width + font_metrics.horizontalAdvance("  ")
+                    popup_width += combo.view().verticalScrollBar().sizeHint().width()
+                    combo.view().setMinimumWidth(popup_width)
+                    combo.view().window().setMinimumWidth(popup_width)
 
                 current_raw = current.get(setting['key'], setting['default'])
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
