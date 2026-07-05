@@ -6,7 +6,7 @@ import subprocess
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QFontMetrics, QGuiApplication, QIcon
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -728,19 +728,13 @@ class ExeSettingsDialog(
                     prefix_line_edit = combo.lineEdit()
                     if prefix_line_edit is not None:
                         prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
+                    combo.highlighted.connect(
+                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    )
                 elif setting['key'] == 'PW_WINE_USE':
-                    combo.view().setTextElideMode(Qt.TextElideMode.ElideNone)
-                    font_metrics = QFontMetrics(combo.font())
-                    longest_text_width = 0
-                    for option in setting['options']:
-                        longest_text_width = max(
-                            longest_text_width,
-                            font_metrics.horizontalAdvance(option),
-                        )
-                    popup_width = longest_text_width + font_metrics.horizontalAdvance("  ")
-                    popup_width += combo.view().verticalScrollBar().sizeHint().width()
-                    combo.view().setMinimumWidth(popup_width)
-                    combo.view().window().setMinimumWidth(popup_width)
+                    combo.highlighted.connect(
+                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    )
 
                 current_raw = current.get(setting['key'], setting['default'])
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
@@ -1105,6 +1099,39 @@ class ExeSettingsDialog(
         """Register tooltip text for a focusable widget."""
         if text:
             self._gamepad_tooltip_map[widget] = text
+
+    def _on_combo_highlighted(self, row: int, combo: QComboBox) -> None:
+        view = combo.view()
+        index = view.model().index(row, 0)
+        if not index.isValid():
+            self.gamepad_tooltip.hide()
+            return
+        text = view.model().data(index, Qt.ItemDataRole.DisplayRole) or ''
+        if not text:
+            self.gamepad_tooltip.hide()
+            return
+        fm = view.fontMetrics()
+        text_rect = fm.boundingRect(0, 0, 480, 1000, Qt.TextFlag.TextWordWrap, text)
+        w = min(500, text_rect.width() + 25)
+        h = min(300, text_rect.height() + 25)
+        item_rect = view.visualRect(index)
+        item_center_y = view.viewport().mapToGlobal(item_rect.center()).y()
+        combo_right_x = combo.mapToGlobal(combo.rect().topRight()).x()
+        pos = QPoint(combo_right_x + 4, item_center_y - h // 2)
+        screen = QGuiApplication.screenAt(pos) or QGuiApplication.primaryScreen()
+        if screen:
+            ar = screen.availableGeometry()
+            if pos.x() + w > ar.right():
+                pos.setX(ar.right() - w)
+            if pos.y() + h > ar.bottom():
+                pos.setY(ar.bottom() - h)
+            if pos.y() < ar.top():
+                pos.setY(ar.top())
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setFixedSize(w, h)
+        self.gamepad_tooltip.move(pos)
+        self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
 
     def _select_checkbox_row(self, widget: QCheckBox) -> bool:
         for (row, column), checkbox in self.value_widgets.items():
