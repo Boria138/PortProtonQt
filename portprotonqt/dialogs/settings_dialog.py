@@ -1067,6 +1067,9 @@ class ExeSettingsDialog(
             + self.theme.SCROLL_STYLE
         )
         combo.currentTextChanged.connect(source_widget.setCurrentText)
+        combo.highlighted.connect(
+            lambda row_idx, c=combo: self._on_combo_highlighted(row_idx, c),
+        )
         self.favorites_table.setCellWidget(row, 1, combo)
 
     def _add_favorite_line_edit(self, row: int, source_widget: QLineEdit) -> None:
