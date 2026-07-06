@@ -728,6 +728,13 @@ class ExeSettingsDialog(
                     prefix_line_edit = combo.lineEdit()
                     if prefix_line_edit is not None:
                         prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
+                    combo.highlighted.connect(
+                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    )
+                elif setting['key'] == 'PW_WINE_USE':
+                    combo.highlighted.connect(
+                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    )
 
                 current_raw = current.get(setting['key'], setting['default'])
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
@@ -1092,6 +1099,39 @@ class ExeSettingsDialog(
         """Register tooltip text for a focusable widget."""
         if text:
             self._gamepad_tooltip_map[widget] = text
+
+    def _on_combo_highlighted(self, row: int, combo: QComboBox) -> None:
+        view = combo.view()
+        index = view.model().index(row, 0)
+        if not index.isValid():
+            self.gamepad_tooltip.hide()
+            return
+        text = view.model().data(index, Qt.ItemDataRole.DisplayRole) or ''
+        if not text:
+            self.gamepad_tooltip.hide()
+            return
+        fm = view.fontMetrics()
+        text_rect = fm.boundingRect(0, 0, 480, 1000, Qt.TextFlag.TextWordWrap, text)
+        w = min(500, text_rect.width() + 25)
+        h = min(300, text_rect.height() + 25)
+        item_rect = view.visualRect(index)
+        item_center_y = view.viewport().mapToGlobal(item_rect.center()).y()
+        combo_right_x = combo.mapToGlobal(combo.rect().topRight()).x()
+        pos = QPoint(combo_right_x + 4, item_center_y - h // 2)
+        screen = QGuiApplication.screenAt(pos) or QGuiApplication.primaryScreen()
+        if screen:
+            ar = screen.availableGeometry()
+            if pos.x() + w > ar.right():
+                pos.setX(ar.right() - w)
+            if pos.y() + h > ar.bottom():
+                pos.setY(ar.bottom() - h)
+            if pos.y() < ar.top():
+                pos.setY(ar.top())
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setFixedSize(w, h)
+        self.gamepad_tooltip.move(pos)
+        self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
 
     def _select_checkbox_row(self, widget: QCheckBox) -> bool:
         for (row, column), checkbox in self.value_widgets.items():

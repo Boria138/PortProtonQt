@@ -602,13 +602,6 @@ class AutoSizeButton(QPushButton):
             if color is not None:
                 return color
 
-        if not self.isEnabled():
-            return getattr(self.theme, 'color_disabled', None)
-        if self.isDown():
-            return getattr(self.theme, 'color_accent_dark', None) or getattr(self.theme, 'color_accent', None)
-        if self.underMouse() or self.hasFocus():
-            return getattr(self.theme, 'color_accent', None)
-
         return None
 
     def setAlignment(self, alignment):
