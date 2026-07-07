@@ -152,14 +152,3 @@ ADDGAME_INPUT_STYLE = f"""
         background-color: {color_surface_hover};
     }}
 """
-
-# FUNCTION FOR DYNAMIC GRADIENT (GAME DETAILS)
-# Functions from this theme always work regardless of selected theme, functions from other themes work only in those themes
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-                                    border-radius: 0px;
-    }}
-"""

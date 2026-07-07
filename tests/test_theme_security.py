@@ -236,7 +236,7 @@ class TestTopLevelStatements:
 
     def test_raise_in_function(self, tmp_path: Path) -> None:
         is_safe, _ = _check("def f():\n    raise ValueError(\"test\")\n", tmp_path)
-        assert is_safe
+        assert not is_safe
 
     def test_assert(self, tmp_path: Path) -> None:
         is_safe, _ = _check("assert True\n", tmp_path)

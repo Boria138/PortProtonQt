@@ -13,6 +13,7 @@
 - [Library Layout Mode](#library-layout-mode)
 - [Detail Page Layout Mode](#detail-page-layout-mode)
 - [Detail Page Background Mode](#detail-page-background-mode)
+  - [Custom Gradient Stops](#custom-gradient-stops)
   - [Wave Configuration](#wave-configuration)
 - [Preloader](#preloader)
 - [Source Corner (Ribbon)](#source-corner-ribbon)
@@ -271,6 +272,25 @@ DETAIL_PAGE_BG_MODE = "gradient"
 - `gradient`: diagonal linear gradient extracted from the cover image palette (default).
 - `static_waves`: gradient background with static (non-animated) wave shapes overlaid.
 - `waves`: gradient background with animated wave shapes that drift over time.
+
+### Custom Gradient Stops
+
+By default, the detail page gradient is generated from the cover image palette with evenly distributed positions. Define `DETAIL_PAGE_GRADIENT` in `styles.py` to override positions, colors, or both:
+
+```python
+# Custom positions — palette colors redistributed to these positions
+DETAIL_PAGE_GRADIENT = [0, 0.3, 0.7, 1]
+
+# Custom colors — position and color for each stop
+DETAIL_PAGE_GRADIENT = [
+    {"position": 0, "color": "#101010"},
+    {"position": 0.5, "color": "#202020"},
+    {"position": 1, "color": "#303030"},
+]
+
+# Raw QSS stop string
+DETAIL_PAGE_GRADIENT = "stop:0 #101010, stop:0.5 #202020, stop:1 #303030"
+```
 
 ### Wave Configuration
 
