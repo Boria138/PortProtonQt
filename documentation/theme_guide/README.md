@@ -292,6 +292,39 @@ DETAIL_PAGE_GRADIENT = [
 DETAIL_PAGE_GRADIENT = "stop:0 #101010, stop:0.5 #202020, stop:1 #303030"
 ```
 
+### Gradient Type and Number of Colors Extracted from the Cover
+
+You can set the gradient type (linear or radial), by defining `DETAIL_PAGE_GRADIENT_TYPE` in `styles.py`:
+
+```python
+# Accepts `linear` or `radial`
+DETAIL_PAGE_GRADIENT_TYPE = 'linear'
+```
+
+Set the gradient direction:
+
+```python
+# For linear gradients
+DETAIL_PAGE_GRADIENT_X1 = 0
+DETAIL_PAGE_GRADIENT_Y1 = 0
+DETAIL_PAGE_GRADIENT_X2 = 1
+DETAIL_PAGE_GRADIENT_Y2 = 0
+
+# For radial gradients
+DETAIL_PAGE_GRADIENT_CX = 0.3
+DETAIL_PAGE_GRADIENT_CY = 0.3
+DETAIL_PAGE_GRADIENT_RADIUS = 0.7
+DETAIL_PAGE_GRADIENT_FX = 0.3
+DETAIL_PAGE_GRADIENT_FY = 0.3
+```
+
+Set the number of colors to extract from the cover:
+
+```python
+# Must be at least 2
+DETAIL_PAGE_PALETTE_COLORS = 5
+```
+
 ### Wave Configuration
 
 When `DETAIL_PAGE_BG_MODE` is `"static_waves"` or `"waves"`, you can customize the wave appearance via the `DETAIL_PAGE_WAVES` dictionary:

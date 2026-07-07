@@ -127,7 +127,10 @@ def _setup_palette_stylesheet(detail_page: QWidget, pixmap: QPixmap | None, main
     def on_palette_ready(palette: list) -> None:
         _on_palette_ready(palette, detail_page, main_window)
 
-    main_window.getColorPalette_from_pixmap(pixmap, num_colors=5, callback=on_palette_ready)
+    num_colors = getattr(main_window.theme, 'DETAIL_PAGE_PALETTE_COLORS', 5)
+    if num_colors < 2:
+        num_colors = 2
+    main_window.getColorPalette_from_pixmap(pixmap, num_colors=num_colors, callback=on_palette_ready)
 
 
 def _on_palette_ready(palette: list, detail_page: QWidget, main_window) -> None:
@@ -190,13 +193,37 @@ def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) 
             main_window.darkenColor(color, factor=200) for color in palette
         ]
         stops = _resolve_gradient_stops(main_window.theme, dark_palette)
-        stylesheet = f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-                                    border-radius: 0px;
-    }}
-"""
+        gradient_type = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_TYPE', 'linear')
+
+        if gradient_type == 'radial':
+            cx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CX', 0.5)
+            cy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CY', 0.5)
+            radius = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_RADIUS', 0.5)
+            fx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FX', 0.5)
+            fy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FY', 0.5)
+
+            stylesheet = f"""
+            QWidget {{
+                background: qradialgradient(cx:{cx}, cy:{cy}, radius:{radius},
+                                            fx:{fx}, fy:{fy},
+                                            {stops});
+                border-radius: 0px;
+            }}
+            """
+        else:
+            x1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X1', 0)
+            y1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y1', 0)
+            x2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X2', 1)
+            y2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y2', 1)
+
+            stylesheet = f"""
+            QWidget {{
+                background: qlineargradient(x1:{x1}, y1:{y1}, x2:{x2}, y2:{y2},
+                                            {stops});
+                border-radius: 0px;
+            }}
+            """
+
         detail_page.setStyleSheet(stylesheet)
         _setup_wave_background(detail_page, dark_palette, main_window.theme)
         detail_page.update()

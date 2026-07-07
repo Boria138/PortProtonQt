@@ -292,6 +292,39 @@ DETAIL_PAGE_GRADIENT = [
 DETAIL_PAGE_GRADIENT = "stop:0 #101010, stop:0.5 #202020, stop:1 #303030"
 ```
 
+### Тип градиента и количество цветов извлекаемых из обложки
+
+Вы можете задать тип градиента (linear/radial), задав `DETAIL_PAGE_GRADIENT_TYPE` в `styles.py`:
+
+```python
+# Принимает значения `linear` или `radial`
+DETAIL_PAGE_GRADIENT_TYPE = 'linear'
+```
+
+Задать направление градиента:
+
+```python
+# Для линейного
+DETAIL_PAGE_GRADIENT_X1 = 0
+DETAIL_PAGE_GRADIENT_Y1 = 0
+DETAIL_PAGE_GRADIENT_X2 = 1
+DETAIL_PAGE_GRADIENT_Y2 = 0
+
+# Для радиального
+DETAIL_PAGE_GRADIENT_CX = 0.3
+DETAIL_PAGE_GRADIENT_CY = 0.3
+DETAIL_PAGE_GRADIENT_RADIUS = 0.7
+DETAIL_PAGE_GRADIENT_FX = 0.3
+DETAIL_PAGE_GRADIENT_FY = 0.3
+```
+
+Задать количество цветов извлекаемых из обложки:
+
+```python
+# Не менее 2
+DETAIL_PAGE_PALETTE_COLORS = 5
+```
+
 ### Настройка волн
 
 При `DETAIL_PAGE_BG_MODE` равном `"static_waves"` или `"waves"` можно настроить внешний вид волн через словарь `DETAIL_PAGE_WAVES`:
