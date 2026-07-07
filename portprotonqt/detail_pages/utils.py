@@ -150,16 +150,138 @@ def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) 
             ]
         )
         detail_page.setStyleSheet(main_window.theme.detail_page_style(stops))
+        _setup_wave_background(detail_page, dark_palette, main_window.theme)
         detail_page.update()
         logger.debug("Stylesheet updated with palette")
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping palette update")
 
 
+_wave_states: WeakKeyDictionary[QWidget, dict] = WeakKeyDictionary()
+
+
+def _setup_wave_background(detail_page: QWidget, dark_palette: list, theme) -> None:
+    """Setup wave background overlay based on theme DETAIL_PAGE_BG_MODE."""
+    bg_mode = getattr(theme, "DETAIL_PAGE_BG_MODE", "gradient")
+
+    if bg_mode == "gradient":
+        _remove_wave_background(detail_page)
+        return
+
+    wave_config = getattr(theme, "DETAIL_PAGE_WAVES", {})
+    state = _wave_states.get(detail_page)
+    if state is None:
+        state = {
+            "palette": dark_palette,
+            "config": wave_config,
+            "phase": 0.0,
+            "timer": None,
+            "original_paint": None,
+        }
+        _wave_states[detail_page] = state
+    else:
+        state["palette"] = dark_palette
+        state["config"] = wave_config
+
+    if state["original_paint"] is not None:
+        return
+
+    state["original_paint"] = detail_page.paintEvent
+
+    def _wave_paint_event(event) -> None:
+        paint_fn = state["original_paint"]
+        if paint_fn is not None:
+            paint_fn(event)
+        _paint_waves(detail_page, state)
+
+    detail_page.paintEvent = _wave_paint_event
+
+    if bg_mode == "waves" and state["timer"] is None:
+        speed = wave_config.get("animation_speed", 0.03)
+        interval = wave_config.get("animation_interval_ms", 30)
+        timer = QTimer(detail_page)
+        timer.setInterval(interval)
+
+        def _tick() -> None:
+            if not _is_detail_page_valid(detail_page):
+                timer.stop()
+                return
+            state["phase"] += speed
+            detail_page.update()
+
+        timer.timeout.connect(_tick)
+        timer.start()
+        state["timer"] = timer
+
+
+def _remove_wave_background(detail_page: QWidget) -> None:
+    """Remove wave background overlay if present."""
+    state = _wave_states.pop(detail_page, None)
+    if state is None:
+        return
+    timer = state.get("timer")
+    if timer is not None:
+        timer.stop()
+        timer.deleteLater()
+    original = state.get("original_paint")
+    if original is not None:
+        detail_page.paintEvent = original
+
+
+def _paint_waves(detail_page: QWidget, state: dict) -> None:
+    """Paint wave shapes on the detail page background."""
+    import math
+    from PySide6.QtGui import QPainter, QPainterPath, QColor, QBrush
+
+    palette = state.get("palette", [])
+    config = state.get("config", {})
+    phase = state.get("phase", 0.0)
+    if not palette:
+        return
+
+    painter = QPainter(detail_page)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    w = float(detail_page.width())
+    h = float(detail_page.height())
+
+    layer_count = config.get("layer_count", 4)
+    amplitude = h * config.get("wave_amplitude_ratio", 0.06)
+    frequency = config.get("wave_frequency", 2.0)
+    spacing = h * config.get("layer_spacing_ratio", 0.04)
+    base_opacity = config.get("base_opacity", 0.45)
+    decay = config.get("opacity_decay", 0.85)
+
+    palette_len = len(palette)
+    for i in range(layer_count):
+        base_color = palette[i % palette_len]
+        opacity = base_opacity * (decay ** i)
+        color = QColor(base_color)
+        color.setAlphaF(min(opacity, 1.0))
+        y_offset = h - (i + 1) * spacing - amplitude
+
+        path = QPainterPath()
+        path.moveTo(0.0, h)
+        steps = max(int(w / 4), 20)
+        for s in range(steps + 1):
+            x = w * s / steps
+            wave = math.sin(frequency * math.pi * s / steps + phase + i * 0.8)
+            y = y_offset + amplitude * wave
+            path.lineTo(x, y)
+        path.lineTo(w, h)
+        path.closeSubpath()
+
+        painter.setBrush(QBrush(color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawPath(path)
+
+    painter.end()
+
+
 def _apply_no_cover_style(detail_page: QWidget, theme) -> None:
     """Apply no-cover stylesheet to detail page."""
     try:
         detail_page.setStyleSheet(theme.DETAIL_PAGE_NO_COVER_STYLE)
+        _remove_wave_background(detail_page)
         detail_page.update()
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping no-cover stylesheet update")

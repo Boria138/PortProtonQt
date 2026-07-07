@@ -12,6 +12,8 @@
   - [Overriding QSS Styles](#overriding-qss-styles)
 - [Library Layout Mode](#library-layout-mode)
 - [Detail Page Layout Mode](#detail-page-layout-mode)
+- [Detail Page Background Mode](#detail-page-background-mode)
+  - [Wave Configuration](#wave-configuration)
 - [Preloader](#preloader)
 - [Source Corner (Ribbon)](#source-corner-ribbon)
 - [Terminal Color Schemes](#terminal-color-schemes)
@@ -257,7 +259,39 @@ Economy mode also forces the compact detail page layout.
 
 ---
 
-## Preloader
+## Detail Page Background Mode
+
+You can control the detail page background style from the theme via `styles.py`:
+
+```python
+# "gradient" (default), "static_waves", or "waves"
+DETAIL_PAGE_BG_MODE = "gradient"
+```
+
+- `gradient`: diagonal linear gradient extracted from the cover image palette (default).
+- `static_waves`: gradient background with static (non-animated) wave shapes overlaid.
+- `waves`: gradient background with animated wave shapes that drift over time.
+
+### Wave Configuration
+
+When `DETAIL_PAGE_BG_MODE` is `"static_waves"` or `"waves"`, you can customize the wave appearance via the `DETAIL_PAGE_WAVES` dictionary:
+
+```python
+DETAIL_PAGE_WAVES = {
+    "layer_count": 4,              # Number of wave layers
+    "wave_amplitude_ratio": 0.06,  # Wave height as ratio of page height
+    "wave_frequency": 2.0,         # Number of wave cycles across the page
+    "layer_spacing_ratio": 0.04,   # Vertical spacing between layers as ratio of page height
+    "base_opacity": 0.45,          # Opacity of the first wave layer (0.0–1.0)
+    "opacity_decay": 0.85,         # Opacity multiplier for each subsequent layer
+    "animation_speed": 0.03,       # Phase increment per tick — "waves" mode only (higher = faster)
+    "animation_interval_ms": 30,   # Timer interval in ms — "waves" mode only (lower = smoother)
+}
+```
+
+Wave colors are derived from the darkened cover image palette. Each layer uses a different palette color with decreasing opacity. The `animation_speed` and `animation_interval_ms` parameters only affect the `"waves"` mode.
+
+---
 
 The `PRELOADER` dictionary controls the loading indicator style and animation. If not defined, the default spinner is used.
 
