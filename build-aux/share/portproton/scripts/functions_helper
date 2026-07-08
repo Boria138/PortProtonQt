@@ -4,16 +4,16 @@
 ########################################################################
 $PW_DEBUG
 
-print_error () { printf "\E[31m%s Error: $@ %s\e[0m\n" ;}
+print_error () { printf "\E[31m%s Error: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_error
 
-print_warning () { printf "\E[33m%s Warning: $@ %s\e[0m\n" ;}
+print_warning () { printf "\E[33m%s Warning: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_warning
 
-print_info () { printf "\E[36m%s Info: $@ %s\e[0m\n" ;}
+print_info () { printf "\E[36m%s Info: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_info
 
-print_ok () { printf "\E[35m%s OK: $@ %s\e[0m\n" ;}
+print_ok () { printf "\E[35m%s OK: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_ok
 
 python_module () {
