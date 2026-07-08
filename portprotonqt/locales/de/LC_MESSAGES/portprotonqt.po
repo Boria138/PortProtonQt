@@ -390,6 +390,10 @@ msgstr "Unbekannte Anwendung"
 msgid "Executable not found: {0}"
 msgstr "Ausführbare Datei nicht gefunden: {0}"
 
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "Datei nicht gefunden: {0}"
+
 msgid "Start"
 msgstr "Start"
 
@@ -400,6 +404,16 @@ msgstr "Prefix nicht gefunden"
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 "Prefix '{0}' wurde nicht gefunden. Empfohlene Bibliotheken installieren?"
+
+#, python-brace-format
+msgid "Repository x86_64-i586 is not enabled. See: {0}"
+msgstr ""
+
+msgid "Install dependencies"
+msgstr "Abhängigkeiten installieren"
+
+msgid "32-bit dependencies are missing. Install them now?"
+msgstr ""
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Ungültiges Befehlsformat (leere exec-Zeile)"
@@ -413,10 +427,6 @@ msgstr "Spiel konnte nicht gestartet werden: {0}"
 
 msgid "PortProton start script not found"
 msgstr "PortProton-Startskript nicht gefunden"
-
-#, python-brace-format
-msgid "File not found: {0}"
-msgstr "Datei nicht gefunden: {0}"
 
 msgid "Cannot launch game while another game is running"
 msgstr "Das Spiel kann nicht gestartet werden, während ein anderes Spiel läuft"
@@ -978,9 +988,6 @@ msgstr "Herunterladen: "
 msgid "Download Selected"
 msgstr "Ausgewählte herunterladen"
 
-msgid "Installed"
-msgstr "Installiert"
-
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr "Fehler beim Herunterladen von WINE/Proton: {error}"
@@ -1000,6 +1007,9 @@ msgstr "{display_name} (installiert)"
 
 msgid "No Wine/Proton versions installed"
 msgstr "Keine Wine/Proton-Versionen installiert"
+
+msgid "Installed"
+msgstr "Installiert"
 
 msgid "Select to remove this WINE/Proton"
 msgstr "Wähle, um WINE/Proton zu entfernen"
@@ -2207,30 +2217,6 @@ msgstr "Themenladen…"
 msgid "by {0}"
 msgstr "von {0}"
 
-msgid "Select Theme:"
-msgstr "Theme auswählen:"
-
-msgid "Dark"
-msgstr "Dunkel"
-
-msgid "Light"
-msgstr "Hell"
-
-msgid "Apply Theme"
-msgstr "Theme anwenden"
-
-msgid "No link"
-msgstr "Kein Link"
-
-msgid "Description:"
-msgstr "Beschreibung:"
-
-msgid "Author:"
-msgstr "Autor:"
-
-msgid "Link:"
-msgstr "Link:"
-
 msgid "Most voted"
 msgstr "Populär"
 
@@ -2242,6 +2228,12 @@ msgstr "Kürzlich aktualisiert"
 
 msgid "Name (A-Z)"
 msgstr "Name (A–Z)"
+
+msgid "Dark"
+msgstr "Dunkel"
+
+msgid "Light"
+msgstr "Hell"
 
 msgid "Loading…"
 msgstr "Laden…"
@@ -2260,6 +2252,24 @@ msgstr "Herunterladen… {0}%"
 
 msgid "Failed to install theme"
 msgstr "Installation des Themes fehlgeschlagen"
+
+msgid "Select Theme:"
+msgstr "Theme auswählen:"
+
+msgid "Apply Theme"
+msgstr "Theme anwenden"
+
+msgid "No link"
+msgstr "Kein Link"
+
+msgid "Description:"
+msgstr "Beschreibung:"
+
+msgid "Author:"
+msgstr "Autor:"
+
+msgid "Link:"
+msgstr "Link:"
 
 msgid "Prefix:"
 msgstr "Prefix:"
