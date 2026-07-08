@@ -127,7 +127,10 @@ def _setup_palette_stylesheet(detail_page: QWidget, pixmap: QPixmap | None, main
     def on_palette_ready(palette: list) -> None:
         _on_palette_ready(palette, detail_page, main_window)
 
-    main_window.getColorPalette_from_pixmap(pixmap, num_colors=5, callback=on_palette_ready)
+    num_colors = getattr(main_window.theme, 'DETAIL_PAGE_PALETTE_COLORS', 5)
+    if num_colors < 2:
+        num_colors = 2
+    main_window.getColorPalette_from_pixmap(pixmap, num_colors=num_colors, callback=on_palette_ready)
 
 
 def _on_palette_ready(palette: list, detail_page: QWidget, main_window) -> None:
@@ -137,19 +140,91 @@ def _on_palette_ready(palette: list, detail_page: QWidget, main_window) -> None:
     _apply_palette_stylesheet(detail_page, palette, main_window)
 
 
+def _build_palette_stops(dark_palette: list) -> str:
+    """Build gradient stops from palette with even positions."""
+    count = len(dark_palette)
+    if count == 0:
+        return ""
+    if count == 1:
+        return f"stop:0 {dark_palette[0].name()}"
+    n = count - 1
+    return ",\n".join(
+        f"stop:{i/n:.2f} {dark_palette[i].name()}" for i in range(count)
+    )
+
+
+def _resolve_gradient_stops(theme, dark_palette: list) -> str:
+    """Resolve gradient stops from DETAIL_PAGE_GRADIENT or palette.
+
+    DETAIL_PAGE_GRADIENT accepts:
+    - None: palette colors at even positions
+    - str: raw QSS stop string (full override)
+    - list of float: palette colors at specified positions
+    - list of dict/tuple/str: custom stops with position+color
+    """
+    gradient_stops = getattr(theme, "DETAIL_PAGE_GRADIENT", None)
+    if gradient_stops is None:
+        return _build_palette_stops(dark_palette)
+    if isinstance(gradient_stops, str):
+        return gradient_stops
+    if isinstance(gradient_stops, list) and gradient_stops and isinstance(
+        gradient_stops[0], (int, float)
+    ):
+        n = len(dark_palette)
+        return ",\n".join(
+            f"stop:{pos} {dark_palette[min(i, n - 1)].name()}"
+            for i, pos in enumerate(gradient_stops)
+        )
+    stop_parts = []
+    for item in gradient_stops:
+        if isinstance(item, str):
+            stop_parts.append(item)
+        elif isinstance(item, dict):
+            stop_parts.append(f"stop:{item['position']} {item['color']}")
+        else:
+            stop_parts.append(f"stop:{item[0]} {item[1]}")
+    return ",\n".join(stop_parts)
+
+
 def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) -> None:
     """Apply palette-based stylesheet to detail page."""
     try:
         dark_palette = [
             main_window.darkenColor(color, factor=200) for color in palette
         ]
-        stops = ",\n".join(
-            [
-                f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}"
-                for i in range(len(dark_palette))
-            ]
-        )
-        detail_page.setStyleSheet(main_window.theme.detail_page_style(stops))
+        stops = _resolve_gradient_stops(main_window.theme, dark_palette)
+        gradient_type = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_TYPE', 'linear')
+
+        if gradient_type == 'radial':
+            cx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CX', 0.5)
+            cy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CY', 0.5)
+            radius = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_RADIUS', 0.5)
+            fx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FX', 0.5)
+            fy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FY', 0.5)
+
+            stylesheet = f"""
+            QWidget {{
+                background: qradialgradient(cx:{cx}, cy:{cy}, radius:{radius},
+                                            fx:{fx}, fy:{fy},
+                                            {stops});
+                border-radius: 0px;
+            }}
+            """
+        else:
+            x1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X1', 0)
+            y1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y1', 0)
+            x2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X2', 1)
+            y2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y2', 1)
+
+            stylesheet = f"""
+            QWidget {{
+                background: qlineargradient(x1:{x1}, y1:{y1}, x2:{x2}, y2:{y2},
+                                            {stops});
+                border-radius: 0px;
+            }}
+            """
+
+        detail_page.setStyleSheet(stylesheet)
         _setup_wave_background(detail_page, dark_palette, main_window.theme)
         detail_page.update()
         logger.debug("Stylesheet updated with palette")

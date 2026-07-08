@@ -395,7 +395,8 @@ tests/
 ├── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
 ├── test_theme_store.py      # Theme store UI worker lifecycle and race regressions
 ├── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
-└── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
+├── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
+└── test_detail_pages.py     # Detail page gradient stops, wave background modes, palette handling
 ```
 
 ### Running Tests
@@ -434,6 +435,7 @@ pre-commit run pytest
 | `theme_manager` | Recursive load_theme when styles.py calls get_icon during exec_module | d5fedd8 |
 | `classic/styles.py` | Missing styles after theme rewrite (NAV, COMBOBOX, TAB, etc.) | 519edd1 |
 | `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
+| `detail_pages` | DETAIL_PAGE_GRADIENT stops override, wave background modes | — |
 
 ---
 

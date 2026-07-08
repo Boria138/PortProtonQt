@@ -493,8 +493,8 @@ class ThemeSecurityChecker:
                     f"Yield/await is forbidden in file {theme_file}"
                 )
             elif isinstance(node, ast.Raise):
-                logger.warning(
-                    "raise statement in theme file %s", theme_file
+                self._add_error(
+                    f"Raise statement is forbidden in file {theme_file}"
                 )
             elif isinstance(node, ast.Assert):
                 self._add_error(
@@ -530,7 +530,7 @@ def check_theme_safety(theme_file: str, allow_absolute_imports: bool = True) -> 
 
 
 def check_theme_directory_safety(theme_dir: str, allow_absolute_imports: bool = True) -> bool:
-    """Check all Python files in theme directory for safety."""
+    """Check all files in theme directory for safety."""
     if not os.path.isdir(theme_dir):
         logger.error("Theme directory does not exist: %s", theme_dir)
         return False
@@ -549,9 +549,6 @@ def check_theme_directory_safety(theme_dir: str, allow_absolute_imports: bool = 
                 return False
         dirs[:] = [d for d in dirs if d != "__pycache__"]
         for filename in files:
-            if not filename.endswith(".py"):
-                continue
-
             file_path = os.path.join(root, filename)
             real_path = os.path.realpath(file_path)
             if real_path != theme_root and not real_path.startswith(prefix):
@@ -559,11 +556,18 @@ def check_theme_directory_safety(theme_dir: str, allow_absolute_imports: bool = 
                 return False
 
             if os.path.islink(file_path):
-                logger.error("Symlinked Python file is not allowed in theme: %s", file_path)
+                logger.error("Symlinked file is not allowed in theme: %s", file_path)
                 return False
 
-            if not check_theme_safety(file_path, allow_absolute_imports):
-                return False
+            if filename.endswith(".py"):
+                if not check_theme_safety(file_path, allow_absolute_imports):
+                    return False
+            elif filename.endswith((".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")):
+                if not is_safe_image_file(file_path):
+                    return False
+            elif filename.endswith((".ttf", ".otf")):
+                if not is_safe_font_file(file_path):
+                    return False
 
     return True
 
@@ -573,13 +577,13 @@ def is_safe_font_file(file_path: str) -> bool:
     safe_extensions = {".ttf", ".otf"}
     _, ext = os.path.splitext(file_path.lower())
     if ext not in safe_extensions:
-        logger.warning("Unsafe font file extension for %s: %s", file_path, ext)
+        logger.error("Unsafe font file extension for %s: %s", file_path, ext)
         return False
 
     try:
         file_size = os.path.getsize(file_path)
         if file_size > 10 * 1024 * 1024:
-            logger.warning("Font file too large (%s bytes): %s", file_size, file_path)
+            logger.error("Font file too large (%s bytes): %s", file_size, file_path)
             return False
     except OSError:
         logger.error("Could not get font size for %s", file_path)
@@ -594,7 +598,7 @@ def is_safe_font_file(file_path: str) -> bool:
             and not header.startswith(b"true")
             and not header.startswith(b"ttcf")
         ):
-            logger.warning("Font file %s has invalid signature", file_path)
+            logger.error("Font file %s has invalid signature", file_path)
             return False
     except OSError as e:
         logger.error("Error checking font file signature for %s: %s", file_path, e)
@@ -614,17 +618,17 @@ def is_safe_image_file(file_path: str) -> bool:
     _, ext = os.path.splitext(file_path.lower())
 
     if ext not in safe_extensions:
-        logger.warning(f"Unsafe image file extension for {file_path}: {ext}")
+        logger.error(f"Unsafe image file extension for {file_path}: {ext}")
         return False
 
     # Check file size (prevent loading extremely large files)
     try:
         file_size = os.path.getsize(file_path)
         if file_size > 20 * 1024 * 1024:
-            logger.warning(f"Image file too large ({file_size} bytes): {file_path}")
+            logger.error(f"Image file too large ({file_size} bytes): {file_path}")
             return False
         if ext == ".svg" and file_size > 2 * 1024 * 1024:
-            logger.warning(f"SVG file too large ({file_size} bytes): {file_path}")
+            logger.error(f"SVG file too large ({file_size} bytes): {file_path}")
             return False
     except OSError:
         logger.error(f"Could not get file size for {file_path}")
@@ -640,25 +644,25 @@ def is_safe_image_file(file_path: str) -> bool:
         if ext == '.png':
             # PNG signature: 89 50 4E 47 0D 0A 1A 0A
             if not header.startswith(b'\x89PNG\r\n\x1a\n'):
-                logger.warning(f"File {file_path} does not have PNG signature")
+                logger.error(f"File {file_path} does not have PNG signature")
                 return False
         elif ext in ['.jpg', '.jpeg']:
             # JPEG signature: FF D8 FF
             if not header.startswith(b'\xff\xd8\xff'):
-                logger.warning(f"File {file_path} does not have JPEG signature")
+                logger.error(f"File {file_path} does not have JPEG signature")
                 return False
         elif ext == '.gif':
             # GIF signature: 47 49 46 38 (GIF8)
             if not header.startswith(b'GIF8'):
-                logger.warning(f"File {file_path} does not have GIF signature")
+                logger.error(f"File {file_path} does not have GIF signature")
                 return False
         elif ext == '.webp':
             if not (header.startswith(b'RIFF') and header[8:12] == b'WEBP'):
-                logger.warning(f"File {file_path} does not have WebP signature")
+                logger.error(f"File {file_path} does not have WebP signature")
                 return False
         elif ext == '.jxl':
             if not (header.startswith(b'\xff\x0a') or header.startswith(b'\x00\x00\x00\x0cJXL ')):
-                logger.warning(f"File {file_path} does not have JPEG XL signature")
+                logger.error(f"File {file_path} does not have JPEG XL signature")
                 return False
         # SVG is text-based, so we just check if it contains XML-like structure
         elif ext == '.svg':
@@ -669,7 +673,7 @@ def is_safe_image_file(file_path: str) -> bool:
                 lower_svg = header_str.lower()
                 # Basic check for SVG XML structure
                 if not ('<svg' in lower_svg or '<?xml' in lower_svg):
-                    logger.warning(f"File {file_path} does not appear to be a valid SVG")
+                    logger.error(f"File {file_path} does not appear to be a valid SVG")
                     return False
                 if (
                     "<script" in lower_svg
