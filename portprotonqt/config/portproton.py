@@ -58,6 +58,12 @@ class PortProtonConfig(BaseConfig):
             except Exception as error:
                 logger.warning("Unexpected error reading PortProton configuration file: %s", error)
 
+        flatpak_path = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
+        if os.path.isdir(flatpak_path):
+            self._portproton_location = flatpak_path
+            logger.info("PortProton path from Flatpak location: %s", flatpak_path)
+            return self._portproton_location
+
         logger.warning("PortProton configuration not found")
         return None
 
