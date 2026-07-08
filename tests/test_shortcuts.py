@@ -522,6 +522,17 @@ class TestGetShortcutPath:
         assert result.endswith("Test Game.desktop")
 
 
+class TestApplicationsDir:
+    def test_uses_xdg_data_home(self, tmp_path: Path, monkeypatch: Any) -> None:
+        from portprotonqt.context_menu_manager import ContextMenuManager
+
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+
+        result = ContextMenuManager._get_applications_dir()
+
+        assert result == str(tmp_path / "data" / "applications")
+
+
 # ── _get_steam_shortcut_path ─────────────────────────────────────────────────
 
 class TestGetSteamShortcutPath:
@@ -591,6 +602,33 @@ class TestGetSteamShortcutPath:
         result = cls._get_steam_shortcut_path(mgr, "Game\tName", str(tmp_path))
         assert "Game" in result
         assert "Name" in result
+
+
+# ── Delete installed shortcuts ───────────────────────────────────────────────
+
+class TestRemoveInstalledShortcuts:
+    def test_removes_menu_and_desktop_shortcuts(self, tmp_path: Path) -> None:
+        from portprotonqt.context_menu_manager import ContextMenuManager
+
+        menu_path = tmp_path / "applications" / "Game.desktop"
+        desktop_path = tmp_path / "Desktop" / "Game.desktop"
+        menu_path.parent.mkdir()
+        desktop_path.parent.mkdir()
+        menu_path.touch()
+        desktop_path.touch()
+
+        shortcuts = [
+            str(menu_path),
+            str(desktop_path),
+            str(tmp_path / "missing.desktop"),
+            str(menu_path),
+        ]
+        mgr = object.__new__(ContextMenuManager)
+
+        mgr._remove_installed_shortcuts("Game", shortcuts)
+
+        assert not menu_path.exists()
+        assert not desktop_path.exists()
 
 
 # ── Desktop migration with spaces in paths ───────────────────────────────────
