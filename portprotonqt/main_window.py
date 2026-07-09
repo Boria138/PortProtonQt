@@ -70,6 +70,32 @@ from datetime import datetime
 
 logger = get_logger(__name__)
 DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
+ALT_BIARCH_REPO = "x86_64-i586"
+ALT_BIARCH_URL = "https://www.altlinux.org/Biarch"
+ALT_I586_PACKAGES = (
+    "i586-glibc-core",
+    "i586-libstdc++6",
+    "i586-glibc-pthread",
+    "i586-glibc-nss",
+    "i586-libnm",
+    "i586-libnss",
+    "i586-libnss-mdns",
+    "i586-libnsl1",
+    "i586-libunwind",
+    "i586-libunixODBC2",
+    "i586-ocl-icd",
+    "i586-libfreetype",
+    "i586-libcups",
+    "i586-libfontconfig1",
+    "i586-libgnutls30",
+    "i586-libGL",
+    "i586-libEGL",
+    "i586-libvulkan1",
+    "i586-xorg-dri-swrast",
+    "i586-xorg-dri-intel",
+    "i586-xorg-dri-radeon",
+    "i586-xorg-dri-nouveau",
+)
 
 class MainWindow(
     MainWindowControlHintsMixin,
@@ -2014,6 +2040,95 @@ class MainWindow(
         prefix_name = get_prefix_name(game_exe_path)
         self._check_missing_prefix_by_name_before_launch(prefix_name, env_vars)
 
+    def _is_alt_x86_64(self) -> bool:
+        if os.uname().machine != "x86_64":
+            return False
+
+        try:
+            with open("/etc/os-release", encoding="utf-8") as os_release:
+                lines = os_release.readlines()
+        except OSError as e:
+            logger.debug("Failed to read /etc/os-release: %s", e)
+            return False
+
+        return any(line.strip() == "ID=altlinux" for line in lines)
+
+    def _has_alt_biarch_repo(self) -> bool:
+        try:
+            result = subprocess.run(
+                ["apt-repo"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.warning("Failed to check ALT repositories: %s", e)
+            return False
+
+        return ALT_BIARCH_REPO in result.stdout
+
+    def _get_missing_alt_i586_packages(self) -> list[str]:
+        try:
+            result = subprocess.run(
+                ["rpm", "-q", *ALT_I586_PACKAGES],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.warning("Failed to check ALT i586 packages: %s", e)
+            return list(ALT_I586_PACKAGES)
+
+        installed = result.stdout.splitlines()
+        return [
+            package for package in ALT_I586_PACKAGES
+            if not any(line.startswith(f"{package}-") for line in installed)
+        ]
+
+    def _check_alt_i586_dependencies_before_launch(self) -> bool:
+        if not self._is_alt_x86_64():
+            return True
+
+        if not self._has_alt_biarch_repo():
+            QMessageBox.warning(
+                self,
+                _("Error"),
+                _("Repository x86_64-i586 is not enabled. See: {0}").format(ALT_BIARCH_URL),
+            )
+            return False
+
+        if not self._get_missing_alt_i586_packages():
+            return True
+
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Install dependencies"))
+        msg_box.setText(_("32-bit dependencies are missing. Install them now?"))
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Ok)
+        msg_box.setButtonText(QMessageBox.StandardButton.Ok, _("OK"))
+        msg_box.setButtonText(QMessageBox.StandardButton.Cancel, _("Cancel"))
+        reply = msg_box.exec()
+        if reply == QMessageBox.StandardButton.Ok:
+            apt_command = (
+                "apt-get update && apt-get install -y "
+                + " ".join(shlex.quote(package) for package in ALT_I586_PACKAGES)
+            )
+            QProcess.startDetached(
+                sys.executable,
+                [
+                    "-m",
+                    "portprotonqt.scripts_utils.easyterm",
+                    "-e",
+                    f"pkexec bash -lc {shlex.quote(apt_command)}",
+                ],
+            )
+        return False
+
     def _resolve_iso_launch_parts(self, iso_path: str) -> list[str] | None:
         """Resolve executable and launch arguments from disc image autorun.inf."""
         return self.disc_image_manager.resolve_iso_launch_parts(iso_path)
@@ -2097,6 +2212,9 @@ class MainWindow(
             if not self.stop_running_game(update_button):
                 QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
         else:
+            if not self._check_alt_i586_dependencies_before_launch():
+                return
+
             # Save button reference for reset after game completion
             self.current_running_button = update_button
             self.target_exe = current_exe

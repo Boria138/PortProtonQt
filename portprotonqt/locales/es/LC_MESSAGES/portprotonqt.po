@@ -391,6 +391,10 @@ msgstr "Aplicación desconocida"
 msgid "Executable not found: {0}"
 msgstr "No se ha encontrado el archivo ejecutable: {0}"
 
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "Archivo no encontrado: {0}"
+
 msgid "Start"
 msgstr "Iniciar"
 
@@ -402,6 +406,16 @@ msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 "No se ha encontrado el prefijo «{0}». ¿Quieres instalar las bibliotecas "
 "recomendadas?"
+
+#, python-brace-format
+msgid "Repository x86_64-i586 is not enabled. See: {0}"
+msgstr ""
+
+msgid "Install dependencies"
+msgstr ""
+
+msgid "32-bit dependencies are missing. Install them now?"
+msgstr ""
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Formato de comando no válido (línea de ejecución vacía)"
@@ -415,10 +429,6 @@ msgstr "Error al iniciar el juego: {0}"
 
 msgid "PortProton start script not found"
 msgstr "No se ha encontrado el script de inicio de PortProton"
-
-#, python-brace-format
-msgid "File not found: {0}"
-msgstr "Archivo no encontrado: {0}"
 
 msgid "Cannot launch game while another game is running"
 msgstr "No se puede iniciar el juego mientras hay otro en ejecución"
@@ -994,9 +1004,6 @@ msgstr ""
 msgid "Download Selected"
 msgstr ""
 
-msgid "Installed"
-msgstr ""
-
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr ""
@@ -1015,6 +1022,9 @@ msgid "{display_name} (installed)"
 msgstr ""
 
 msgid "No Wine/Proton versions installed"
+msgstr ""
+
+msgid "Installed"
 msgstr ""
 
 msgid "Select to remove this WINE/Proton"
@@ -2198,30 +2208,6 @@ msgstr "Tienda de temas…"
 msgid "by {0}"
 msgstr ""
 
-msgid "Select Theme:"
-msgstr ""
-
-msgid "Dark"
-msgstr ""
-
-msgid "Light"
-msgstr ""
-
-msgid "Apply Theme"
-msgstr ""
-
-msgid "No link"
-msgstr ""
-
-msgid "Description:"
-msgstr ""
-
-msgid "Author:"
-msgstr ""
-
-msgid "Link:"
-msgstr ""
-
 msgid "Most voted"
 msgstr ""
 
@@ -2232,6 +2218,12 @@ msgid "Recently updated"
 msgstr ""
 
 msgid "Name (A-Z)"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Light"
 msgstr ""
 
 msgid "Loading…"
@@ -2251,6 +2243,24 @@ msgstr "Descargando… {0}%"
 
 msgid "Failed to install theme"
 msgstr "Error al instalar el tema"
+
+msgid "Select Theme:"
+msgstr ""
+
+msgid "Apply Theme"
+msgstr ""
+
+msgid "No link"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Link:"
+msgstr ""
 
 msgid "Prefix:"
 msgstr "Prefijo:"

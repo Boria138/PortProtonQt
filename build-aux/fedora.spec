@@ -47,7 +47,6 @@ Requires:       cabextract
 Requires:       gzip
 Requires:       unzip
 Requires:       curl
-Requires:       jq
 Requires:       file
 Requires:       findutils
 Requires:       gawk

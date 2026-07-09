@@ -378,6 +378,10 @@ msgstr "未知应用程序"
 msgid "Executable not found: {0}"
 msgstr "找不到可执行文件：{0}"
 
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "找不到文件：{0}"
+
 msgid "Start"
 msgstr "启动"
 
@@ -387,6 +391,16 @@ msgstr "未找到前缀"
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr "未找到前缀\"{0}\"。是否安装推荐库？"
+
+#, python-brace-format
+msgid "Repository x86_64-i586 is not enabled. See: {0}"
+msgstr ""
+
+msgid "Install dependencies"
+msgstr "安装依赖"
+
+msgid "32-bit dependencies are missing. Install them now?"
+msgstr ""
 
 msgid "Invalid command format (empty exec line)"
 msgstr "命令格式无效（exec 行为空）"
@@ -400,10 +414,6 @@ msgstr "启动游戏失败：{0}"
 
 msgid "PortProton start script not found"
 msgstr "未找到 PortProton 启动脚本"
-
-#, python-brace-format
-msgid "File not found: {0}"
-msgstr "找不到文件：{0}"
 
 msgid "Cannot launch game while another game is running"
 msgstr "另一游戏正在运行时无法启动游戏"
@@ -936,9 +946,6 @@ msgstr "正在下载： "
 msgid "Download Selected"
 msgstr "下载选定项"
 
-msgid "Installed"
-msgstr "已安装"
-
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr "加载 WINE/Proton 时出错：{error}"
@@ -958,6 +965,9 @@ msgstr "{display_name}（已安装）"
 
 msgid "No Wine/Proton versions installed"
 msgstr "未安装任何 Wine/Proton 版本"
+
+msgid "Installed"
+msgstr "已安装"
 
 msgid "Select to remove this WINE/Proton"
 msgstr "选择以移除此 WINE/Proton"
@@ -2142,30 +2152,6 @@ msgstr "主题商店…"
 msgid "by {0}"
 msgstr "作者：{0}"
 
-msgid "Select Theme:"
-msgstr "选择主题："
-
-msgid "Dark"
-msgstr "深色"
-
-msgid "Light"
-msgstr "浅色"
-
-msgid "Apply Theme"
-msgstr "应用主题"
-
-msgid "No link"
-msgstr "无链接"
-
-msgid "Description:"
-msgstr "描述："
-
-msgid "Author:"
-msgstr "作者："
-
-msgid "Link:"
-msgstr "链接："
-
 msgid "Most voted"
 msgstr "投票最多"
 
@@ -2177,6 +2163,12 @@ msgstr "最近更新"
 
 msgid "Name (A-Z)"
 msgstr "名称 (A-Z)"
+
+msgid "Dark"
+msgstr "深色"
+
+msgid "Light"
+msgstr "浅色"
 
 msgid "Loading…"
 msgstr "加载中…"
@@ -2195,6 +2187,24 @@ msgstr "正在下载… {0}%"
 
 msgid "Failed to install theme"
 msgstr "安装主题失败"
+
+msgid "Select Theme:"
+msgstr "选择主题："
+
+msgid "Apply Theme"
+msgstr "应用主题"
+
+msgid "No link"
+msgstr "无链接"
+
+msgid "Description:"
+msgstr "描述："
+
+msgid "Author:"
+msgstr "作者："
+
+msgid "Link:"
+msgstr "链接："
 
 msgid "Prefix:"
 msgstr "前缀："

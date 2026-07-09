@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-26 14:55+0500\n"
+"POT-Creation-Date: 2026-07-08 19:38+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -378,6 +378,10 @@ msgstr ""
 msgid "Executable not found: {0}"
 msgstr ""
 
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr ""
+
 msgid "Start"
 msgstr ""
 
@@ -386,6 +390,16 @@ msgstr ""
 
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
+msgstr ""
+
+#, python-brace-format
+msgid "Repository x86_64-i586 is not enabled. See: {0}"
+msgstr ""
+
+msgid "Install dependencies"
+msgstr ""
+
+msgid "32-bit dependencies are missing. Install them now?"
 msgstr ""
 
 msgid "Invalid command format (empty exec line)"
@@ -399,10 +413,6 @@ msgid "Failed to launch game: {0}"
 msgstr ""
 
 msgid "PortProton start script not found"
-msgstr ""
-
-#, python-brace-format
-msgid "File not found: {0}"
 msgstr ""
 
 msgid "Cannot launch game while another game is running"
@@ -905,9 +915,6 @@ msgstr ""
 msgid "Download Selected"
 msgstr ""
 
-msgid "Installed"
-msgstr ""
-
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr ""
@@ -926,6 +933,9 @@ msgid "{display_name} (installed)"
 msgstr ""
 
 msgid "No Wine/Proton versions installed"
+msgstr ""
+
+msgid "Installed"
 msgstr ""
 
 msgid "Select to remove this WINE/Proton"
@@ -1957,6 +1967,7 @@ msgstr ""
 msgid "Download Settings"
 msgstr ""
 
+#, python-format
 msgid "Enable Theme Store from %(source)s (%(warning)s)"
 msgstr ""
 
@@ -2106,30 +2117,6 @@ msgstr ""
 msgid "by {0}"
 msgstr ""
 
-msgid "Select Theme:"
-msgstr ""
-
-msgid "Dark"
-msgstr ""
-
-msgid "Light"
-msgstr ""
-
-msgid "Apply Theme"
-msgstr ""
-
-msgid "No link"
-msgstr ""
-
-msgid "Description:"
-msgstr ""
-
-msgid "Author:"
-msgstr ""
-
-msgid "Link:"
-msgstr ""
-
 msgid "Most voted"
 msgstr ""
 
@@ -2140,6 +2127,12 @@ msgid "Recently updated"
 msgstr ""
 
 msgid "Name (A-Z)"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Light"
 msgstr ""
 
 msgid "Loading…"
@@ -2159,6 +2152,24 @@ msgid "Downloading… {0}%"
 msgstr ""
 
 msgid "Failed to install theme"
+msgstr ""
+
+msgid "Select Theme:"
+msgstr ""
+
+msgid "Apply Theme"
+msgstr ""
+
+msgid "No link"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Link:"
 msgstr ""
 
 msgid "Prefix:"
@@ -2238,3 +2249,4 @@ msgstr ""
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr ""
+

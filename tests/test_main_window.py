@@ -546,6 +546,7 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", fake_popen)
     monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
     monkeypatch.setattr("portprotonqt.main_window.save_last_launch", lambda *_args: None)
+    monkeypatch.setattr(window, "_check_alt_i586_dependencies_before_launch", lambda: True)
     monkeypatch.setattr(window, "_check_missing_prefix_before_launch", lambda *_args: None)
     monkeypatch.setattr(window, "_start_launch_output_reader", lambda _process: None)
     monkeypatch.setattr(window, "_update_last_launch_after_start", lambda *_args: None)

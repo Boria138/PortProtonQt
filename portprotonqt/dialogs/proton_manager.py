@@ -872,7 +872,8 @@ class ProtonManager(DraggableDialog):
                 QMessageBox.warning(self, _("Error"), _("Failed to remove WINE/Proton at {path}: {error}").format(path=version_path, error=str(e)))
         if removed_count > 0:
             QMessageBox.information(self, _("Success"), _("Successfully removed {} WINE/Proton.").format(removed_count))
-            self.refresh_installed_tab()
+            self.refresh_wine_tabs()
+            self.refresh_parent_wine_combo()
 
     def refresh_installed_tab(self):
         installed_tab_index = -1

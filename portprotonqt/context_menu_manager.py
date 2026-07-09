@@ -495,13 +495,7 @@ class ContextMenuManager:
                 if os.path.exists(desktop_path)
                 else self.add_steam_to_desktop(game_card.name, game_card.appid)
             )
-            applications_dir = os.path.join(
-                os.path.expanduser("~"),
-                ".local",
-                "share",
-                "applications",
-            )
-            menu_path = self._get_steam_shortcut_path(game_card.name, applications_dir)
+            menu_path = self._get_steam_menu_shortcut_path(game_card.name)
             icon_name = "delete" if os.path.exists(menu_path) else "menu"
             text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
             menu_action = menu.addAction(self._get_safe_icon(icon_name), text)
@@ -542,8 +536,7 @@ class ContextMenuManager:
                     lambda: self.open_game_folder(game_card.name, game_card.exec_line)
                 )
             )
-            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-            menu_path = self._get_shortcut_path(game_card.name, applications_dir)
+            menu_path = self._get_menu_shortcut_path(game_card.name)
             icon_name = "delete" if os.path.exists(menu_path) else "menu"
             text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
             menu_action = menu.addAction(self._get_safe_icon(icon_name), text)
@@ -552,15 +545,16 @@ class ContextMenuManager:
                 if os.path.exists(menu_path)
                 else self.add_to_menu(game_card.name, game_card.exec_line)
             )
-            is_in_steam = is_game_in_steam(game_card.name)
-            steam_icon_name = "delete" if is_in_steam else "menu_steam"
-            steam_text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-            steam_action = menu.addAction(self._get_safe_icon(steam_icon_name), steam_text)
-            steam_action.triggered.connect(
-                lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
-                if is_in_steam
-                else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
-            )
+            if get_steam_home() is not None:
+                is_in_steam = is_game_in_steam(game_card.name)
+                steam_icon_name = "delete" if is_in_steam else "menu_steam"
+                steam_text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
+                steam_action = menu.addAction(self._get_safe_icon(steam_icon_name), steam_text)
+                steam_action.triggered.connect(
+                    lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
+                    if is_in_steam
+                    else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
+                )
 
         # Set focus to the first menu item
         actions = menu.actions()
@@ -702,6 +696,23 @@ class ContextMenuManager:
             safe_name = "Steam Game"
         return os.path.join(target_dir, f"{safe_name}.desktop")
 
+    @staticmethod
+    def _get_applications_dir() -> str:
+        """Return XDG applications directory."""
+        data_home = os.getenv(
+            "XDG_DATA_HOME",
+            os.path.join(os.path.expanduser("~"), ".local", "share")
+        )
+        return os.path.join(data_home, "applications")
+
+    def _get_menu_shortcut_path(self, game_name: str) -> str:
+        """Return PortProton shortcut path in the applications directory."""
+        return self._get_shortcut_path(game_name, self._get_applications_dir())
+
+    def _get_steam_menu_shortcut_path(self, game_name: str) -> str:
+        """Return Steam shortcut path in the applications directory."""
+        return self._get_steam_shortcut_path(game_name, self._get_applications_dir())
+
     def _get_exec_line(self, game_name, exec_line):
         """Retrieve and validate exec_line from .desktop file if necessary."""
         if exec_line and exec_line.strip() != "full":
@@ -771,6 +782,26 @@ class ContextMenuManager:
             )
             return False
 
+    def _get_installed_shortcut_paths(self, game_name: str) -> list[str]:
+        """Return menu and desktop shortcut paths for a PortProton game."""
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
+        return [
+            self._get_menu_shortcut_path(game_name),
+            self._get_shortcut_path(game_name, desktop_dir),
+        ]
+
+    def _remove_installed_shortcuts(self, game_name: str, shortcut_paths: list[str]) -> None:
+        """Remove existing menu and desktop shortcuts."""
+        removed_paths = set()
+        for shortcut_path in shortcut_paths:
+            if shortcut_path in removed_paths or not os.path.exists(shortcut_path):
+                continue
+            removed_paths.add(shortcut_path)
+            try:
+                os.remove(shortcut_path)
+            except OSError as e:
+                logger.warning("Failed to remove shortcut for '%s': %s", game_name, e)
+
     def _remove_statistics_entry(self, exe_path, game_name):
         """Remove statistics entry for exact executable path."""
         if not exe_path:
@@ -830,6 +861,7 @@ class ContextMenuManager:
         resolved_exec_line = self._get_exec_line(game_name, exec_line)
         if not resolved_exec_line:
             return
+        shortcut_paths = self._get_installed_shortcut_paths(game_name)
         exe_path = self._parse_exe_path(resolved_exec_line, game_name)
         exe_name = os.path.splitext(os.path.basename(exe_path))[0] if exe_path else None
         if not self._remove_file(
@@ -839,6 +871,7 @@ class ContextMenuManager:
             game_name
         ):
             return
+        self._remove_installed_shortcuts(game_name, shortcut_paths)
         self._remove_statistics_entry(exe_path, game_name)
         if exe_name:
             xdg_data_home = os.getenv(
@@ -865,7 +898,7 @@ class ContextMenuManager:
         self.game_library_manager.add_game_incremental(game_data)
 
     def add_to_menu(self, game_name, exec_line):
-        """Copy the .desktop file to ~/.local/share/applications."""
+        """Copy the .desktop file to the XDG applications directory."""
         if not self._check_portproton():
             return
         desktop_path = self._get_desktop_path(game_name)
@@ -875,9 +908,9 @@ class ContextMenuManager:
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
-        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        applications_dir = self._get_applications_dir()
         os.makedirs(applications_dir, exist_ok=True)
-        dest_path = self._get_shortcut_path(game_name, applications_dir)
+        dest_path = self._get_menu_shortcut_path(game_name)
         try:
             shutil.copyfile(desktop_path, dest_path)
             os.chmod(dest_path, 0o755)
@@ -891,15 +924,14 @@ class ContextMenuManager:
 
     def remove_from_menu(self, game_name):
         """
-        Removes the game from the menu by removing its .desktop file from ~/.local/share/applications.
+        Removes the game from the menu by removing its .desktop file.
 
         Args:
             game_name: The display name of the game.
         """
-        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-        desktop_path = self._get_shortcut_path(game_name, applications_dir)
+        menu_path = self._get_menu_shortcut_path(game_name)
         self._remove_file(
-            desktop_path,
+            menu_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
             _("Removed '{game_name}' from {location}"),
             game_name,
@@ -1034,25 +1066,14 @@ class ContextMenuManager:
 
     def add_steam_to_menu(self, game_name: str, appid: int | str) -> None:
         """Create an application menu shortcut for an installed Steam game."""
-        applications_dir = os.path.join(
-            os.path.expanduser("~"),
-            ".local",
-            "share",
-            "applications",
-        )
+        applications_dir = self._get_applications_dir()
         self._add_steam_shortcut(game_name, appid, (applications_dir, _("Menu")))
 
     def remove_steam_from_menu(self, game_name: str) -> None:
         """Remove a Steam game application menu shortcut."""
-        applications_dir = os.path.join(
-            os.path.expanduser("~"),
-            ".local",
-            "share",
-            "applications",
-        )
-        desktop_path = self._get_steam_shortcut_path(game_name, applications_dir)
+        menu_path = self._get_steam_menu_shortcut_path(game_name)
         self._remove_file(
-            desktop_path,
+            menu_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
             _("Removed '{game_name}' from {location}"),
             game_name,
@@ -1176,9 +1197,8 @@ class ContextMenuManager:
                     )
                     return
 
-            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-            old_menu_path = os.path.join(applications_dir, f"{game_name}.desktop")
-            new_menu_path = os.path.join(applications_dir, f"{new_name}.desktop")
+            old_menu_path = self._get_menu_shortcut_path(game_name)
+            new_menu_path = self._get_menu_shortcut_path(new_name)
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
             old_desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
             new_desktop_path_target = os.path.join(desktop_dir, f"{new_name}.desktop")

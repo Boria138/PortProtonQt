@@ -4,16 +4,16 @@
 ########################################################################
 $PW_DEBUG
 
-print_error () { printf "\E[31m%s Error: $@ %s\e[0m\n" ;}
+print_error () { printf "\E[31m%s Error: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_error
 
-print_warning () { printf "\E[33m%s Warning: $@ %s\e[0m\n" ;}
+print_warning () { printf "\E[33m%s Warning: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_warning
 
-print_info () { printf "\E[36m%s Info: $@ %s\e[0m\n" ;}
+print_info () { printf "\E[36m%s Info: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_info
 
-print_ok () { printf "\E[35m%s OK: $@ %s\e[0m\n" ;}
+print_ok () { printf "\E[35m%s OK: %s %s\e[0m\n" "" "$*" "" ;}
 export -f print_ok
 
 python_module () {
@@ -1840,8 +1840,7 @@ pw_init_db () {
     [[ -n "${PW_DEFAULT_VULKAN_USE:-}" ]] && export PW_VULKAN_USE="${PW_DEFAULT_VULKAN_USE}"
 
     if echo "$LSPCI_VGA" | grep -i -q 'nvidia.*rtx' ; then
-        export PW_USE_NVAPI_AND_DLSS="1"
-        export PW_USE_RAY_TRACING="1"
+        set_to_dxvk_conf nvidia_new
     fi
 
     if [[ -f "${PW_EXE_FILE}" ]] ; then
@@ -2384,7 +2383,6 @@ pw_optiscaler_sync_files () {
         for dll in $OPTISCALER_FILES ; do cp -fr "$OPTISCALER_PATH/$dll" "$PATH_TO_GAME/$dll" || print_error "$OPTISCALER_PATH/$dll not found for copy!"; done
         echo "$PW_OPTISCALER_VER" > "$PATH_TO_GAME/optiscaler_version"
     fi
-    export PW_USE_NVAPI_AND_DLSS="1"
     set_to_dxvk_conf nvidia_new
 }
 
@@ -2937,7 +2935,7 @@ start_portproton () {
     fi
 
     if [[ "${PW_USE_NVAPI_AND_DLSS}" == "1" ]] ; then
-        export DXVK_ENABLE_NVAPI="1"
+        set_to_dxvk_conf nvidia_new
         if echo "$LSPCI_VGA" | grep -i -q 'nvidia' ; then
             FIND_NVNGX="$(dirname $(find /usr/* -type f -name "nvngx.dll" 2>/dev/null | head -n 1 | awk '{print $1}'))"
             if [[ -n "$FIND_NVNGX" ]] ; then
@@ -4222,11 +4220,8 @@ gui_proton_downloader () {
     pw_download_get_wine () {
         local URL_VERSION_PROTON_GIT
         local VERSION="$1"
-        local ALL_CATEGORIES=$(echo "$METADATA" | jq -r 'keys[]' 2>/dev/null)
         print_info "Download and install ${VERSION}..."
-        URL_VERSION_PROTON_GIT=$(echo "$METADATA" | jq -r --arg version "$VERSION" '
-        to_entries[] | .value[]? | select((.name | ascii_downcase) == ($version | ascii_downcase)) | .url
-        ' 2>/dev/null | head -n 1)
+        URL_VERSION_PROTON_GIT=$(python_module json_tools wine-url "$VERSION" <<< "$METADATA" 2>/dev/null)
         if [[ -z "$URL_VERSION_PROTON_GIT" ]]; then
             fatal "no URL found for version ${VERSION}"
         fi
@@ -4656,9 +4651,21 @@ resize_png () {
 }
 
 portwine_create_shortcut () {
-    if [[ ! -e $PW_EXE_FILE ]]
-    then return 1
-    elif [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
+    if [[ ! -e "$PW_EXE_FILE" ]]; then
+        lnk_dir="$(dirname "$PW_EXE_FILE")"
+        lnk_name_part="$(basename "$PW_EXE_FILE")"
+        if [[ -d "$lnk_dir" ]]; then
+            actual_file="$(ls -1 "$lnk_dir/" 2>/dev/null | grep -F -i -x -- "$lnk_name_part" | head -1)"
+            if [[ -n "$actual_file" ]]; then
+                PW_EXE_FILE="$(realpath "$lnk_dir/$actual_file" 2>/dev/null)"
+                export PW_EXE_FILE
+            fi
+        fi
+        if [[ ! -e "$PW_EXE_FILE" ]]; then
+            return 1
+        fi
+    fi
+    if [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
     then return 0
     fi
     pw_create_gui_png
@@ -4690,7 +4697,18 @@ pw_download_autoinstall_ppdb () {
 
 portwine_output_yad_shortcut () {
 
-        [[ ! -e "${PW_EXE_FILE}" ]] && return 1
+        if [[ ! -e "${PW_EXE_FILE}" ]]; then
+            lnk_dir="$(dirname "${PW_EXE_FILE}")"
+            lnk_name_part="$(basename "${PW_EXE_FILE}")"
+            if [[ -d "${lnk_dir}" ]]; then
+                actual_file="$(ls -1 "${lnk_dir}/" 2>/dev/null | grep -F -i -x -- "${lnk_name_part}" | head -1)"
+                if [[ -n "${actual_file}" ]]; then
+                    PW_EXE_FILE="$(realpath "${lnk_dir}/${actual_file}" 2>/dev/null)"
+                    export PW_EXE_FILE
+                fi
+            fi
+            [[ ! -e "${PW_EXE_FILE}" ]] && return 1
+        fi
 
         pw_download_autoinstall_ppdb
         if [[ "${PW_FIND_PPDB:-}" == "1" ]] \
@@ -4698,7 +4716,6 @@ portwine_output_yad_shortcut () {
         then
             python_module shortcut_tools find-ppdb "${PW_EXE_FILE}"
         fi
-
         pw_create_gui_png
         unset name_desktop
 
@@ -4751,14 +4768,18 @@ pw_auto_create_shortcut () {
     if [[ "${PW_EXE_FILE}" =~ EpicGamesLauncher.exe$ ]]; then
         for item_file in "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Epic/EpicGamesLauncher/Data/Manifests/"*".item"; do
             if [[ -f "${item_file}" ]]; then
-                exe_path=$(jq -r '.InstallLocation + "\\" + .LaunchExecutable' "${item_file}")
+                IFS=$'\t' read -r exe_path PORTWINE_CREATE_SHORTCUT_NAME item_id < <(
+                    python_module json_tools epic-manifest "${item_file}" 2>/dev/null
+                )
+                if [[ -z "${exe_path}" ]]; then
+                    print_warning "Failed to parse Epic manifest: ${item_file}"
+                    continue
+                fi
                 get_lnk_path "${exe_path}"
-                PORTWINE_CREATE_SHORTCUT_NAME=$(jq -r '.DisplayName' "${item_file}")
                 if ! exe_path="$(realpath "${link_path}" 2>/dev/null)" || [[ ! -f "${exe_path}" ]]; then
                     print_warning "Link broken for: ${PORTWINE_CREATE_SHORTCUT_NAME}"
                 elif [[ ! -f "${exe_path}.ppdb" ]]; then
                     unset FILE_SHA256SUM DESKTOP_NAME_FILE DESKTOP_CORRECT_FILE
-                    item_id=$(jq -r '.AppName' "${item_file}")
                     PW_EXE_FILE="${exe_path}"
                     PORTWINE_DB_FILE="${PW_EXE_FILE}.ppdb"
                     LAUNCH_URI="com.epicgames.launcher://apps/${item_id}?action=launch&silent=true"
@@ -4797,15 +4818,54 @@ pw_auto_create_shortcut () {
         elif exe_path="$(realpath "${link_path//\/Games\//\/GAMES\//}" 2>/dev/null)" ; then
             export PW_EXE_FILE="$exe_path"
         else
-            print_warning "Link broken for: $link_name"
-            continue
+            lnk_dir="$(dirname "${link_path}")"
+            lnk_name_part="$(basename "${link_path}")"
+            actual_file="$(ls -1 "${lnk_dir}/" 2>/dev/null | grep -F -i -x -- "${lnk_name_part}" | head -1)"
+            if [[ -n "${actual_file}" ]] && exe_path="$(realpath "${lnk_dir}/${actual_file}" 2>/dev/null)" ; then
+                export PW_EXE_FILE="$exe_path"
+            else
+                print_warning "Link broken for: $link_name"
+                continue
+            fi
         fi
         print_info "Created link for: $link_name"
         PORTPROTON_NAME="$link_name"
+        PORTWINE_CREATE_SHORTCUT_NAME="$link_name"
         resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}"
         export PW_NO_RESTART_PPDB=1
         unset name_desktop_png
         portwine_create_shortcut
+        if [[ -n "${link_cmd:-}" ]] && [[ -n "${PW_EXE_FILE:-}" ]]; then
+            local ppdb_path ppdb_dir ppdb_name actual_ppdb lnk_launch_parameters old_launch_parameters portwine_db_name
+            ppdb_path="${PW_EXE_FILE}.ppdb"
+            ppdb_dir="$(dirname "${ppdb_path}")"
+            ppdb_name="$(basename "${ppdb_path}")"
+            if [[ ! -f "${ppdb_path}" ]] && [[ -d "${ppdb_dir}" ]]; then
+                actual_ppdb="$(ls -1 "${ppdb_dir}/" 2>/dev/null | grep -F -i -x -- "${ppdb_name}" | head -1)"
+                [[ -n "${actual_ppdb}" ]] && ppdb_path="${ppdb_dir}/${actual_ppdb}"
+            fi
+            if [[ ! -f "${ppdb_path}" ]]; then
+                portwine_db_name="$(basename "${PW_EXE_FILE%.[Ee][Xx][Ee]}")"
+                {
+                    echo "#!/usr/bin/env bash"
+                    echo "#Author: ${USER}"
+                    echo "#${portwine_db_name}.exe"
+                    echo "#Rating=1-5"
+                } > "${ppdb_path}" 2>/dev/null
+            fi
+            if [[ -w "${ppdb_path}" ]]; then
+                lnk_launch_parameters="${link_cmd}"
+                lnk_launch_parameters="${lnk_launch_parameters//\"/}"
+                lnk_launch_parameters="${lnk_launch_parameters//\\/\/}"
+                old_launch_parameters="$(sed -n 's/^export LAUNCH_PARAMETERS="\([^"]*\)".*/\1/p' "${ppdb_path}" | head -1)"
+                if [[ -n "${old_launch_parameters}" ]]; then
+                    lnk_launch_parameters="${old_launch_parameters} ${lnk_launch_parameters}"
+                fi
+                sed -i '/^export LAUNCH_PARAMETERS=/d' "${ppdb_path}"
+                printf '%s\n' "export LAUNCH_PARAMETERS=\"${lnk_launch_parameters}\"" >> "${ppdb_path}"
+            fi
+        fi
+        unset PORTWINE_CREATE_SHORTCUT_NAME
     done
 }
 export -f pw_auto_create_shortcut

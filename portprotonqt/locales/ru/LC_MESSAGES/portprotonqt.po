@@ -391,6 +391,10 @@ msgstr "Неизвестное приложение"
 msgid "Executable not found: {0}"
 msgstr "Исполняемый файл не найден: {0}"
 
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "Файл не найден: {0}"
+
 msgid "Start"
 msgstr "Запустить"
 
@@ -400,6 +404,16 @@ msgstr "Префикс не найден"
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr "Префикс '{0}' не найден. Установить рекомендуемые библиотеки?"
+
+#, python-brace-format
+msgid "Repository x86_64-i586 is not enabled. See: {0}"
+msgstr "Репозиторий x86_64-i586 не включён. См.: {0}"
+
+msgid "Install dependencies"
+msgstr "Установить зависимости"
+
+msgid "32-bit dependencies are missing. Install them now?"
+msgstr "Отсутствуют 32-битные зависимости. Установить их сейчас?"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Неправильный формат команды (пустая строка exec)"
@@ -413,10 +427,6 @@ msgstr "Не удалось запустить игру: {0}"
 
 msgid "PortProton start script not found"
 msgstr "Скрипт запуска PortProton не найден"
-
-#, python-brace-format
-msgid "File not found: {0}"
-msgstr "Файл не найден: {0}"
 
 msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
@@ -981,9 +991,6 @@ msgstr "Скачивание: "
 msgid "Download Selected"
 msgstr "Скачать выбранное"
 
-msgid "Installed"
-msgstr "Установленные"
-
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr "Ошибка загрузки WINE/Proton: {error}"
@@ -1003,6 +1010,9 @@ msgstr "{display_name} (установлен)"
 
 msgid "No Wine/Proton versions installed"
 msgstr "Отсутствуют установленные Wine/Proton"
+
+msgid "Installed"
+msgstr "Установленные"
 
 msgid "Select to remove this WINE/Proton"
 msgstr "Выберите, чтобы удалить WINE/Proton"
@@ -2204,30 +2214,6 @@ msgstr "Магазин тем…"
 msgid "by {0}"
 msgstr "от {0}"
 
-msgid "Select Theme:"
-msgstr "Выбрать тему:"
-
-msgid "Dark"
-msgstr "Тёмная"
-
-msgid "Light"
-msgstr "Светлая"
-
-msgid "Apply Theme"
-msgstr "Применить тему"
-
-msgid "No link"
-msgstr "Нет ссылки"
-
-msgid "Description:"
-msgstr "Описание:"
-
-msgid "Author:"
-msgstr "Автор:"
-
-msgid "Link:"
-msgstr "Ссылка:"
-
 msgid "Most voted"
 msgstr "По популярности"
 
@@ -2239,6 +2225,12 @@ msgstr "Недавно обновлённые"
 
 msgid "Name (A-Z)"
 msgstr "Название (А-Я)"
+
+msgid "Dark"
+msgstr "Тёмная"
+
+msgid "Light"
+msgstr "Светлая"
 
 msgid "Loading…"
 msgstr "Загрузка…"
@@ -2257,6 +2249,24 @@ msgstr "Скачивание… {0}%"
 
 msgid "Failed to install theme"
 msgstr "Не удалось установить тему"
+
+msgid "Select Theme:"
+msgstr "Выбрать тему:"
+
+msgid "Apply Theme"
+msgstr "Применить тему"
+
+msgid "No link"
+msgstr "Нет ссылки"
+
+msgid "Description:"
+msgstr "Описание:"
+
+msgid "Author:"
+msgstr "Автор:"
+
+msgid "Link:"
+msgstr "Ссылка:"
 
 msgid "Prefix:"
 msgstr "Префикс:"
