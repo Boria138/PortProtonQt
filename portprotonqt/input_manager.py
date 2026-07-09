@@ -2,17 +2,8 @@ import time
 import threading
 import os
 import math
-import ctypes
-import ctypes.util
-from functools import lru_cache
-from dataclasses import dataclass
 from typing import Protocol, cast, Any
-os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
-os.environ.setdefault("SDL_VIDEO_ALLOW_SCREENSAVER", "1")
-import pygame
-from pygame._sdl2 import controller
 from evdev import UInput, ecodes
-from enum import Enum
 from shiboken6 import isValid
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QAbstractScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
@@ -23,6 +14,32 @@ from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.config import display_config, gamepad_config, window_config
 from portprotonqt.dialogs import AddGameDialog
+from portprotonqt.gamepad_backend import (
+    GamepadType,
+    SDLGamepad,
+    SDL_GAMEPAD_AXIS_LEFTX,
+    SDL_GAMEPAD_AXIS_LEFTY,
+    SDL_GAMEPAD_AXIS_RIGHTX,
+    SDL_GAMEPAD_AXIS_RIGHTY,
+    SDL_GAMEPAD_AXIS_LEFT_TRIGGER,
+    SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
+    SDL_GAMEPAD_BUTTON_BACK,
+    SDL_GAMEPAD_BUTTON_DPAD_DOWN,
+    SDL_GAMEPAD_BUTTON_DPAD_LEFT,
+    SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+    SDL_GAMEPAD_BUTTON_DPAD_UP,
+    SDL_GAMEPAD_BUTTON_EAST,
+    SDL_GAMEPAD_BUTTON_GUIDE,
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+    SDL_GAMEPAD_BUTTON_NORTH,
+    SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
+    SDL_GAMEPAD_BUTTON_SOUTH,
+    SDL_GAMEPAD_BUTTON_START,
+    SDL_GAMEPAD_BUTTON_WEST,
+    detect_gamepad_type,
+    find_gamepad,
+    shutdown as shutdown_gamepad_backend,
+)
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -77,6 +94,22 @@ PAD_AXIS_RIGHT_X = 1202
 PAD_AXIS_RIGHT_Y = 1203
 PAD_DPAD_X = 1300
 PAD_DPAD_Y = 1301
+INPUT_AXIS_SCALE = 32767
+KEY_BACKSPACE = Qt.Key.Key_Backspace.value
+KEY_DOWN = Qt.Key.Key_Down.value
+KEY_ENTER = Qt.Key.Key_Enter.value
+KEY_ESCAPE = Qt.Key.Key_Escape.value
+KEY_F5 = Qt.Key.Key_F5.value
+KEY_F10 = Qt.Key.Key_F10.value
+KEY_F11 = Qt.Key.Key_F11.value
+KEY_LEFT = Qt.Key.Key_Left.value
+KEY_RETURN = Qt.Key.Key_Return.value
+KEY_RIGHT = Qt.Key.Key_Right.value
+KEY_UP = Qt.Key.Key_Up.value
+KEY_E = ord("e")
+KEY_Q = ord("q")
+MOD_CTRL = 1
+MOD_SHIFT = 2
 
 BUTTONS = {
     'confirm':       {PAD_BUTTON_SOUTH},           # A (Xbox) / Cross (PS) / B (Switch)
@@ -92,170 +125,26 @@ BUTTONS = {
     'decrease_size': {PAD_AXIS_LEFT_TRIGGER},
 }
 
-class GamepadType(Enum):
-    XBOX = "Xbox"
-    PLAYSTATION = "PlayStation"
-    UNKNOWN = "Unknown"
-
-SDL_INIT_GAMEPAD = 0x00002000
-SDL_GAMEPAD_TYPE_STANDARD = 1
-SDL_GAMEPAD_TYPE_XBOX360 = 2
-SDL_GAMEPAD_TYPE_XBOXONE = 3
-SDL_GAMEPAD_TYPE_PS3 = 4
-SDL_GAMEPAD_TYPE_PS4 = 5
-SDL_GAMEPAD_TYPE_PS5 = 6
-SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO = 7
-SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT = 8
-SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT = 9
-SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR = 10
-SDL_GAMEPAD_TYPE_GAMECUBE = 11
-SDL_GAMEPAD_TYPE_STEAM = 12
-SDL3_XBOX_LIKE_TYPES = {
-    SDL_GAMEPAD_TYPE_STANDARD,
-    SDL_GAMEPAD_TYPE_XBOX360,
-    SDL_GAMEPAD_TYPE_XBOXONE,
-    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO,
-    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT,
-    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT,
-    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR,
-    SDL_GAMEPAD_TYPE_GAMECUBE,
-    SDL_GAMEPAD_TYPE_STEAM,
-}
-SDL3_PLAYSTATION_TYPES = {
-    SDL_GAMEPAD_TYPE_PS3,
-    SDL_GAMEPAD_TYPE_PS4,
-    SDL_GAMEPAD_TYPE_PS5,
+SDL_CONTROLLER_BUTTON_TO_PAD = {
+    SDL_GAMEPAD_BUTTON_SOUTH: PAD_BUTTON_SOUTH,
+    SDL_GAMEPAD_BUTTON_EAST: PAD_BUTTON_EAST,
+    SDL_GAMEPAD_BUTTON_WEST: PAD_BUTTON_WEST,
+    SDL_GAMEPAD_BUTTON_NORTH: PAD_BUTTON_NORTH,
+    SDL_GAMEPAD_BUTTON_BACK: PAD_BUTTON_SELECT,
+    SDL_GAMEPAD_BUTTON_GUIDE: PAD_BUTTON_GUIDE,
+    SDL_GAMEPAD_BUTTON_START: PAD_BUTTON_START,
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: PAD_BUTTON_LEFT_SHOULDER,
+    SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: PAD_BUTTON_RIGHT_SHOULDER,
 }
 
-
-def _get_sdl3_error(sdl: ctypes.CDLL) -> str:
-    """Return the current SDL3 error message."""
-    error = sdl.SDL_GetError()
-    if not error:
-        return ""
-    return error.decode(errors="replace")
-
-
-def _configure_sdl3_gamepad_api(sdl: ctypes.CDLL) -> None:
-    """Configure ctypes signatures for the SDL3 gamepad calls used here."""
-    sdl.SDL_InitSubSystem.argtypes = [ctypes.c_uint32]
-    sdl.SDL_InitSubSystem.restype = ctypes.c_bool
-    sdl.SDL_GetGamepads.argtypes = [ctypes.POINTER(ctypes.c_int)]
-    sdl.SDL_GetGamepads.restype = ctypes.POINTER(ctypes.c_uint32)
-    sdl.SDL_GetGamepadTypeForID.argtypes = [ctypes.c_uint32]
-    sdl.SDL_GetGamepadTypeForID.restype = ctypes.c_int
-    sdl.SDL_GetGamepadNameForID.argtypes = [ctypes.c_uint32]
-    sdl.SDL_GetGamepadNameForID.restype = ctypes.c_char_p
-    sdl.SDL_GetError.argtypes = []
-    sdl.SDL_GetError.restype = ctypes.c_char_p
-    sdl.SDL_free.argtypes = [ctypes.c_void_p]
-    sdl.SDL_free.restype = None
-
-
-@lru_cache(maxsize=1)
-def _load_sdl3() -> ctypes.CDLL | None:
-    """Load SDL3 and initialize its gamepad subsystem when available."""
-    library_names = (
-        ctypes.util.find_library("SDL3"),
-        "libSDL3.so.0",
-        "libSDL3.so",
-    )
-    for library_name in library_names:
-        if not library_name:
-            continue
-        try:
-            sdl = ctypes.CDLL(library_name)
-            _configure_sdl3_gamepad_api(sdl)
-        except (AttributeError, OSError) as e:
-            logger.debug("Failed to load SDL3 from %s: %s", library_name, e)
-            continue
-        if sdl.SDL_InitSubSystem(SDL_INIT_GAMEPAD):
-            return sdl
-        logger.debug("Failed to initialize SDL3 gamepad subsystem: %s", _get_sdl3_error(sdl))
-    return None
-
-
-def _decode_sdl3_name(name: bytes | None) -> str:
-    """Decode a SDL3 device name."""
-    if not name:
-        return ""
-    return name.decode(errors="replace")
-
-
-def _gamepad_type_from_sdl3_value(sdl_type: int) -> GamepadType | None:
-    """Map SDL_GamepadType to the existing UI icon families."""
-    if sdl_type in SDL3_PLAYSTATION_TYPES:
-        return GamepadType.PLAYSTATION
-    if sdl_type in SDL3_XBOX_LIKE_TYPES:
-        return GamepadType.XBOX
-    return None
-
-
-def _get_sdl3_gamepad_type(gamepad: "PygameGamepad") -> GamepadType | None:
-    """Read SDL_GamepadType from SDL3 for the current pygame controller."""
-    sdl = _load_sdl3()
-    if sdl is None:
-        return None
-
-    count = ctypes.c_int()
-    gamepads = sdl.SDL_GetGamepads(ctypes.byref(count))
-    if not gamepads:
-        return None
-
-    try:
-        target_name = gamepad.name.casefold()
-        for index in range(count.value):
-            gamepad_id = gamepads[index]
-            sdl_name = _decode_sdl3_name(sdl.SDL_GetGamepadNameForID(gamepad_id))
-            if count.value > 1 and sdl_name.casefold() != target_name:
-                continue
-            gamepad_type = _gamepad_type_from_sdl3_value(sdl.SDL_GetGamepadTypeForID(gamepad_id))
-            if gamepad_type is not None:
-                return gamepad_type
-    finally:
-        sdl.SDL_free(gamepads)
-    return None
-
-
-@dataclass
-class PygameGamepad:
-    """Small wrapper that preserves the old InputManager gamepad contract."""
-
-    controller: Any
-    name: str
-    path: str
-    instance_id: int
-
-    def close(self) -> None:
-        """Release local references for the SDL joystick object."""
-        try:
-            self.controller.quit()
-        except (AttributeError, pygame.error) as e:
-            logger.debug("Failed to close pygame controller: %s", e)
-
-
-SDL_CONTROLLER_BUTTON_TO_ECODE = {
-    0: PAD_BUTTON_SOUTH,
-    1: PAD_BUTTON_EAST,
-    2: PAD_BUTTON_WEST,
-    3: PAD_BUTTON_NORTH,
-    4: PAD_BUTTON_SELECT,
-    5: PAD_BUTTON_GUIDE,
-    6: PAD_BUTTON_START,
-    9: PAD_BUTTON_LEFT_SHOULDER,
-    10: PAD_BUTTON_RIGHT_SHOULDER,
+SDL_CONTROLLER_AXIS_TO_PAD = {
+    SDL_GAMEPAD_AXIS_LEFTX: PAD_AXIS_LEFT_X,
+    SDL_GAMEPAD_AXIS_LEFTY: PAD_AXIS_LEFT_Y,
+    SDL_GAMEPAD_AXIS_RIGHTX: PAD_AXIS_RIGHT_X,
+    SDL_GAMEPAD_AXIS_RIGHTY: PAD_AXIS_RIGHT_Y,
+    SDL_GAMEPAD_AXIS_LEFT_TRIGGER: PAD_AXIS_LEFT_TRIGGER,
+    SDL_GAMEPAD_AXIS_RIGHT_TRIGGER: PAD_AXIS_RIGHT_TRIGGER,
 }
-
-SDL_CONTROLLER_AXIS_TO_ECODE = {
-    0: PAD_AXIS_LEFT_X,
-    1: PAD_AXIS_LEFT_Y,
-    2: PAD_AXIS_RIGHT_X,
-    3: PAD_AXIS_RIGHT_Y,
-    4: PAD_AXIS_LEFT_TRIGGER,
-    5: PAD_AXIS_RIGHT_TRIGGER,
-}
-
-PYGAME_AXIS_SCALE = 32767
 
 class MouseEmulationThread(QThread):
     """Thread for creating UInput virtual mouse device without blocking UI."""
@@ -299,8 +188,7 @@ class MouseEmulationThread(QThread):
 class InputManager(QObject):
     """
     Manages input from gamepads and keyboards for navigating the application interface.
-    Supports gamepad hotplugging, button and axis events, and pygame keyboard events
-    for seamless UI interaction.
+    Supports gamepad hotplugging, button and axis events, and keyboard shortcuts.
     """
     # Signals for gamepad events
     button_event = Signal(int, int)  # Signal for button events: (code, value) where value=1 (press), 0 (release)
@@ -329,7 +217,7 @@ class InputManager(QObject):
         self.current_axis_delay = initial_axis_move_delay
         self.last_move_time = 0.0
         self.axis_moving = False
-        self.gamepad: PygameGamepad | None = None
+        self.gamepad: SDLGamepad | None = None
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
         self._is_fullscreen = display_config.get_fullscreen()
@@ -387,11 +275,11 @@ class InputManager(QObject):
         self.guide_timer.timeout.connect(self._handle_guide_timeout)
         self.guide_combination_timeout = 0.3  # 300ms timeout for combination
         self.in_guide_combination_attempt = False  # Flag to track if we're in a guide+select combination attempt
-        self._pygame_ready = False
         self._button_states: dict[int, int] = {}
         self._hat_states: dict[int, tuple[int, int]] = {}
         self._axis_states: dict[int, int] = {}
         self._gamepad_polling_suspended = False
+        self._last_gamepad_check_time = 0.0
 
         # Focus check timer for emulation flag (runs in main thread)
         self.focus_check_timer = QTimer(self)
@@ -437,11 +325,7 @@ class InputManager(QObject):
         if app is not None:
             app.installEventFilter(self)
 
-        # Initialize pygame input backend
         self.init_gamepad()
-        self.pygame_event_timer = QTimer(self)
-        self.pygame_event_timer.timeout.connect(self._process_pygame_events)
-        self.pygame_event_timer.start(10)
 
     def _async_enable_mouse_emulation(self):
         """Asynchronously enable mouse emulation to avoid blocking startup."""
@@ -3648,13 +3532,13 @@ class InputManager(QObject):
         if event.type() == QEvent.Type.KeyPress:
             if self._redirect_gamecard_input_to_search(event):
                 return True
-            key = self._qt_event_to_pygame_key(event)
+            key = self._qt_event_to_input_key(event)
             if key is not None:
-                return self._handle_pygame_key_press(key, self._qt_modifiers_to_pygame(event))
+                return self._handle_input_key_press(key, self._qt_modifiers_to_input(event))
         if event.type() == QEvent.Type.KeyRelease:
-            key = self._qt_event_to_pygame_key(event)
+            key = self._qt_event_to_input_key(event)
             if key is not None:
-                return self._handle_pygame_key_release(key)
+                return self._handle_input_key_release(key)
 
         if event.type() == QEvent.Type.MouseButtonPress:
             button_method = getattr(event, "button", None)
@@ -3670,57 +3554,57 @@ class InputManager(QObject):
 
         return super().eventFilter(obj, event)
 
-    def _qt_event_to_pygame_key(self, event: QEvent) -> int | None:
-        native_key = self._native_scan_to_pygame_key(event)
+    def _qt_event_to_input_key(self, event: QEvent) -> int | None:
+        native_key = self._native_scan_to_input_key(event)
         if native_key is not None:
             return native_key
         text_method = getattr(event, "text", None)
         text = text_method() if callable(text_method) else ""
         text = text if isinstance(text, str) else ""
         if text and text.isascii() and text.isprintable():
-            return pygame.key.key_code(text.lower())
+            return ord(text.lower())
         key_method = getattr(event, "key", None)
         key_value = key_method() if callable(key_method) else 0
         key = key_value if isinstance(key_value, int) else 0
         name = QKeySequence(key).toString()
         if len(name) == 1 and name.isprintable():
-            return pygame.key.key_code(name.lower())
+            return ord(name.lower())
         key_names = {
-            "Backspace": pygame.K_BACKSPACE,
-            "Down": pygame.K_DOWN,
-            "Enter": pygame.K_KP_ENTER,
-            "Esc": pygame.K_ESCAPE,
-            "F5": pygame.K_F5,
-            "F10": pygame.K_F10,
-            "F11": pygame.K_F11,
-            "Left": pygame.K_LEFT,
-            "Return": pygame.K_RETURN,
-            "Right": pygame.K_RIGHT,
-            "Up": pygame.K_UP,
+            "Backspace": KEY_BACKSPACE,
+            "Down": KEY_DOWN,
+            "Enter": KEY_ENTER,
+            "Esc": KEY_ESCAPE,
+            "F5": KEY_F5,
+            "F10": KEY_F10,
+            "F11": KEY_F11,
+            "Left": KEY_LEFT,
+            "Return": KEY_RETURN,
+            "Right": KEY_RIGHT,
+            "Up": KEY_UP,
         }
         return key_names.get(name)
 
-    def _native_scan_to_pygame_key(self, event: QEvent) -> int | None:
+    def _native_scan_to_input_key(self, event: QEvent) -> int | None:
         scan_method = getattr(event, "nativeScanCode", None)
         scan_value = scan_method() if callable(scan_method) else 0
         scan_code = scan_value if isinstance(scan_value, int) else 0
         scan_keys = {
-            16: pygame.K_q,
-            18: pygame.K_e,
-            24: pygame.K_q,
-            26: pygame.K_e,
+            16: KEY_Q,
+            18: KEY_E,
+            24: KEY_Q,
+            26: KEY_E,
         }
         return scan_keys.get(scan_code)
 
-    def _qt_modifiers_to_pygame(self, event: QEvent) -> int:
+    def _qt_modifiers_to_input(self, event: QEvent) -> int:
         modifiers_method = getattr(event, "modifiers", None)
         modifiers = modifiers_method() if callable(modifiers_method) else None
-        pygame_modifiers = 0
+        input_modifiers = 0
         if isinstance(modifiers, Qt.KeyboardModifier) and modifiers & Qt.KeyboardModifier.ControlModifier:
-            pygame_modifiers |= pygame.KMOD_CTRL
+            input_modifiers |= MOD_CTRL
         if isinstance(modifiers, Qt.KeyboardModifier) and modifiers & Qt.KeyboardModifier.ShiftModifier:
-            pygame_modifiers |= pygame.KMOD_SHIFT
-        return pygame_modifiers
+            input_modifiers |= MOD_SHIFT
+        return input_modifiers
 
     def _handle_back_mouse_button(self) -> None:
         active_win = QApplication.activeWindow()
@@ -3771,62 +3655,46 @@ class InputManager(QObject):
         except RuntimeError as e:
             logger.debug("Focused widget was deleted before activation: %s", e)
 
-    def _handle_pygame_mouse_button(self, event: pygame.event.Event) -> None:
-        """Handle mouse input received from the pygame event queue."""
-        if getattr(event, "button", None) != pygame.BUTTON_X1:
-            return
-        self._handle_back_mouse_button()
+    def _handle_input_key_press(self, key: int, modifiers: int) -> bool:
+        if self._handle_input_system_key(key, modifiers):
+            return True
+        if self._handle_input_file_explorer_key(key):
+            return True
+        if self._handle_input_text_key(key):
+            return True
+        if self._handle_input_dialog_key(key):
+            return True
+        if self._handle_input_tab_key(key):
+            return True
+        if self._handle_input_arrow_press(key):
+            return True
+        return self._handle_input_action_key(key, modifiers)
 
-    def _handle_pygame_key_event(self, event: pygame.event.Event) -> None:
-        """Handle keyboard input received from the pygame event queue."""
-        key = getattr(event, "key", None)
-        if key is None:
-            return
-        if event.type == pygame.KEYDOWN:
-            self._handle_pygame_key_press(key, pygame.key.get_mods())
-        elif event.type == pygame.KEYUP:
-            self._handle_pygame_key_release(key)
-
-    def _handle_pygame_key_press(self, key: int, modifiers: int) -> bool:
-        if self._handle_pygame_system_key(key, modifiers):
-            return True
-        if self._handle_pygame_file_explorer_key(key):
-            return True
-        if self._handle_pygame_text_key(key):
-            return True
-        if self._handle_pygame_dialog_key(key):
-            return True
-        if self._handle_pygame_tab_key(key):
-            return True
-        if self._handle_pygame_arrow_press(key):
-            return True
-        return self._handle_pygame_action_key(key, modifiers)
-
-    def _handle_pygame_system_key(self, key: int, modifiers: int) -> bool:
-        if key == pygame.K_F5:
+    def _handle_input_system_key(self, key: int, modifiers: int) -> bool:
+        if key == KEY_F5:
             self._parent.refreshGames()
             return True
-        if key == pygame.K_q and modifiers & pygame.KMOD_CTRL:
+        if key == KEY_Q and modifiers & MOD_CTRL:
             app = QApplication.instance()
             if app is not None:
                 app.quit()
             return True
-        if key == pygame.K_F11 and not self._is_gamescope_session:
+        if key == KEY_F11 and not self._is_gamescope_session:
             self.toggle_fullscreen.emit(not self._is_fullscreen)
             return True
         return False
 
-    def _handle_pygame_file_explorer_key(self, key: int) -> bool:
+    def _handle_input_file_explorer_key(self, key: int) -> bool:
         file_explorer = self.file_explorer
         if not file_explorer:
             return False
         focused = self._focused_widget()
         if isinstance(focused, QLineEdit) or self._focused_editable_combo(focused):
             return False
-        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        if key in (KEY_RETURN, KEY_ENTER):
             self._activate_file_explorer_focus()
             return True
-        if key == pygame.K_BACKSPACE:
+        if key == KEY_BACKSPACE:
             file_explorer.previous_dir()
             return True
         return False
@@ -3870,10 +3738,10 @@ class InputManager(QObject):
             file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
             file_explorer.accept()
 
-    def _handle_pygame_text_key(self, key: int) -> bool:
+    def _handle_input_text_key(self, key: int) -> bool:
         focused = self._focused_widget()
-        if isinstance(focused, QLineEdit) and key in (pygame.K_LEFT, pygame.K_RIGHT):
-            if key == pygame.K_LEFT:
+        if isinstance(focused, QLineEdit) and key in (KEY_LEFT, KEY_RIGHT):
+            if key == KEY_LEFT:
                 focused.cursorBackward(False, 1)
             else:
                 focused.cursorForward(False, 1)
@@ -3886,12 +3754,12 @@ class InputManager(QObject):
         parent = focused.parentWidget() if focused else None
         return isinstance(parent, QComboBox) and parent.isEditable()
 
-    def _handle_pygame_dialog_key(self, key: int) -> bool:
+    def _handle_input_dialog_key(self, key: int) -> bool:
         active_win = QApplication.activeWindow()
         focused = self._focused_widget()
         if isinstance(active_win, FullscreenDialog):
-            return self._handle_pygame_fullscreen_dialog_key(active_win, key)
-        if key != pygame.K_ESCAPE:
+            return self._handle_input_fullscreen_dialog_key(active_win, key)
+        if key != KEY_ESCAPE:
             return False
         settings_dialog = self.settings_dialog
         if settings_dialog is not None:
@@ -3907,20 +3775,20 @@ class InputManager(QObject):
             return True
         return False
 
-    def _handle_pygame_fullscreen_dialog_key(self, active_win: FullscreenDialog, key: int) -> bool:
-        if key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_BACKSPACE):
+    def _handle_input_fullscreen_dialog_key(self, active_win: FullscreenDialog, key: int) -> bool:
+        if key in (KEY_ESCAPE, KEY_RETURN, KEY_ENTER, KEY_BACKSPACE):
             active_win.close()
             return True
-        if key == pygame.K_LEFT:
+        if key == KEY_LEFT:
             active_win.show_prev()
             return True
-        if key == pygame.K_RIGHT:
+        if key == KEY_RIGHT:
             active_win.show_next()
             return True
         return False
 
-    def _handle_pygame_tab_key(self, key: int) -> bool:
-        if key not in (pygame.K_LEFT, pygame.K_RIGHT):
+    def _handle_input_tab_key(self, key: int) -> bool:
+        if key not in (KEY_LEFT, KEY_RIGHT):
             return False
         focused = self._focused_widget()
         active = QApplication.activeWindow()
@@ -3928,7 +3796,7 @@ class InputManager(QObject):
             return False
         if isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox):
             return False
-        return self._switch_visible_tab(-1 if key == pygame.K_LEFT else 1)
+        return self._switch_visible_tab(-1 if key == KEY_LEFT else 1)
 
     def _focus_tab_from_search(self, current_index: int) -> bool:
         focused = self._focused_widget()
@@ -4078,55 +3946,54 @@ class InputManager(QObject):
         self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
         return True
 
-    def _handle_pygame_arrow_press(self, key: int) -> bool:
+    def _handle_input_arrow_press(self, key: int) -> bool:
         dpad = {
-            pygame.K_UP: (PAD_DPAD_Y, -1),
-            pygame.K_DOWN: (PAD_DPAD_Y, 1),
-            pygame.K_LEFT: (PAD_DPAD_X, -1),
-            pygame.K_RIGHT: (PAD_DPAD_X, 1),
+            KEY_UP: (PAD_DPAD_Y, -1),
+            KEY_DOWN: (PAD_DPAD_Y, 1),
+            KEY_LEFT: (PAD_DPAD_X, -1),
+            KEY_RIGHT: (PAD_DPAD_X, 1),
         }.get(key)
         if dpad is None:
             return False
         self.dpad_moved.emit(dpad[0], dpad[1], time.time())
         return True
 
-    def _handle_pygame_action_key(self, key: int, modifiers: int) -> bool:
+    def _handle_input_action_key(self, key: int, modifiers: int) -> bool:
         focused = self._focused_widget()
-        if isinstance(focused, GameCard) and key == pygame.K_F10 and modifiers & pygame.KMOD_SHIFT:
+        if isinstance(focused, GameCard) and key == KEY_F10 and modifiers & MOD_SHIFT:
             pos = QPoint(focused.width() // 2, focused.height() // 2)
             focused._show_context_menu(pos)
             return True
-        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        if key in (KEY_RETURN, KEY_ENTER):
             if isinstance(focused, QTableWidget):
                 self.handle_table_confirm(focused)
             else:
                 self._activate_focused_widget(focused)
             return True
-        elif key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
-            return self._handle_pygame_back_key(focused)
-        elif key == pygame.K_e and not isinstance(focused, QLineEdit):
+        elif key in (KEY_ESCAPE, KEY_BACKSPACE):
+            return self._handle_input_back_key(focused)
+        elif key == KEY_E and not isinstance(focused, QLineEdit):
             if self._parent.stackedWidget.currentIndex() == 0:
                 self._parent.openAddGameDialog()
                 return True
         return False
 
-    def _handle_pygame_back_key(self, focused: QWidget | None) -> bool:
+    def _handle_input_back_key(self, focused: QWidget | None) -> bool:
         if isinstance(focused, QLineEdit) or self._focused_editable_combo(focused):
             return False
         self._parent.goBackDetailPage(self._parent.currentDetailPage)
         return True
 
-    def _handle_pygame_key_release(self, key: int) -> bool:
-        if key in (pygame.K_UP, pygame.K_DOWN):
+    def _handle_input_key_release(self, key: int) -> bool:
+        if key in (KEY_UP, KEY_DOWN):
             self.dpad_moved.emit(PAD_DPAD_Y, 0, time.time())
             return True
-        elif key in (pygame.K_LEFT, pygame.K_RIGHT):
+        elif key in (KEY_LEFT, KEY_RIGHT):
             self.dpad_moved.emit(PAD_DPAD_X, 0, time.time())
             return True
         return False
 
     def init_gamepad(self) -> None:
-        self._init_pygame_backend()
         self.gamepad_hotplug.connect(self._on_gamepad_hotplug)
         self.gamepad_check_timer = QTimer(self)
         self.gamepad_check_timer.setSingleShot(True)
@@ -4135,16 +4002,7 @@ class InputManager(QObject):
         if not self.gamepad_thread or not self.gamepad_thread.is_alive():
             self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
             self.gamepad_thread.start()
-        logger.info("Gamepad support initialized with pygame events")
-
-    def _init_pygame_backend(self) -> None:
-        """Initialize pygame subsystems required for joystick polling."""
-        if self._pygame_ready:
-            return
-        pygame.init()
-        controller.init()
-        self._pygame_ready = True
-
+        logger.info("Gamepad support initialized with SDL3 events")
 
     def _on_gamepad_hotplug(self, action: str) -> None:
         try:
@@ -4157,7 +4015,7 @@ class InputManager(QObject):
                 if self.gamepad:
                     self.gamepad.close()
                 self.gamepad = None
-                self._reset_pygame_state()
+                self._reset_input_state()
                 self._refresh_gamepad_ui()
                 self.check_gamepad()
 
@@ -4182,7 +4040,8 @@ class InputManager(QObject):
                 self.detect_gamepad_axes(new_gamepad)
                 logger.info(f"Gamepad connected: {new_gamepad.name} at {new_gamepad.path}")
                 self.gamepad = new_gamepad
-                self._reset_pygame_state()
+                self._reset_input_state()
+                self._last_gamepad_check_time = 0.0
                 self.gamepad_type = self._get_effective_gamepad_type(new_gamepad)
                 self._refresh_gamepad_ui()
 
@@ -4193,7 +4052,7 @@ class InputManager(QObject):
                 logger.info("Gamepad no longer detected")
                 self.gamepad.close()
                 self.gamepad = None
-                self._reset_pygame_state()
+                self._reset_input_state()
                 self._refresh_gamepad_ui()
 
                 if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
@@ -4202,7 +4061,7 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error checking gamepad: {e}", exc_info=True)
 
-    def _reset_pygame_state(self) -> None:
+    def _reset_input_state(self) -> None:
         """Reset cached joystick state when the active device changes."""
         self._button_states.clear()
         self._hat_states.clear()
@@ -4228,7 +4087,7 @@ class InputManager(QObject):
             return GamepadType.XBOX
         return GamepadType.UNKNOWN
 
-    def _get_effective_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
+    def _get_effective_gamepad_type(self, gamepad: SDLGamepad) -> GamepadType:
         """Use manual gamepad type when configured, otherwise auto-detect."""
         configured_type = self._get_configured_gamepad_type()
         if configured_type != GamepadType.UNKNOWN:
@@ -4242,12 +4101,9 @@ class InputManager(QObject):
             return
         self.gamepad_type = self._get_effective_gamepad_type(self.gamepad)
 
-    def _detect_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
+    def _detect_gamepad_type(self, gamepad: SDLGamepad) -> GamepadType:
         """Read gamepad type from SDL or fall back to Xbox."""
-        sdl3_type = _get_sdl3_gamepad_type(gamepad)
-        if sdl3_type is not None:
-            return sdl3_type
-        return GamepadType.XBOX
+        return detect_gamepad_type(gamepad)
 
     def _refresh_gamepad_ui(self) -> None:
         """Refresh control hints and virtual keyboard after gamepad changes."""
@@ -4258,118 +4114,29 @@ class InputManager(QObject):
         if keyboard and hasattr(keyboard, "update_keyboard"):
             keyboard.update_keyboard()
 
-    def find_gamepad(self) -> PygameGamepad | None:
-        """Find the first SDL controller with a stable standardized mapping."""
+    def find_gamepad(self) -> SDLGamepad | None:
+        """Find the first SDL3 gamepad with a standardized mapping."""
         try:
-            if not self._pygame_ready:
-                return None
-            controller_count = controller.get_count()
-            if controller_count <= 0:
-                return None
-
-            for index in range(controller_count):
-                if not controller.is_controller(index):
-                    continue
-                try:
-                    game_controller = controller.Controller(index)
-                except pygame.error as e:
-                    logger.debug("Skipping unavailable controller %s: %s", index, e)
-                    continue
-                joystick = game_controller.as_joystick()
-                instance_id = joystick.get_instance_id()
-                gamepad = PygameGamepad(
-                    controller=game_controller,
-                    name=game_controller.name,
-                    path=f"pygame-controller:{instance_id}",
-                    instance_id=instance_id,
-                )
-                return gamepad
+            return find_gamepad()
         except Exception as e:
             logger.error(f"Error finding gamepad: {e}", exc_info=True)
         return None
 
-    def detect_gamepad_axes(self, device: PygameGamepad) -> None:
-        """Use normalized pygame axis ranges for navigation and mouse emulation."""
-        self.min_value = -PYGAME_AXIS_SCALE
-        self.max_value = PYGAME_AXIS_SCALE
+    def detect_gamepad_axes(self, device: SDLGamepad) -> None:
+        """Use normalized SDL axis ranges for navigation and mouse emulation."""
+        self.min_value = -INPUT_AXIS_SCALE
+        self.max_value = INPUT_AXIS_SCALE
         self.center_x = 0
         self.center_y = 0
         self.deadzone_value = 4000
         self.scroll_axis_code = PAD_AXIS_RIGHT_Y
         self.scroll_center = 0
-        self.scroll_min_value = -PYGAME_AXIS_SCALE
-        self.scroll_max_value = PYGAME_AXIS_SCALE
+        self.scroll_min_value = -INPUT_AXIS_SCALE
+        self.scroll_max_value = INPUT_AXIS_SCALE
         self.scroll_deadzone_value = self.deadzone_value
         self.stick_x_raw = self.center_x
         self.stick_y_raw = self.center_y
-        logger.info("Gamepad axes configured for pygame backend: %s", device.name)
-
-    def _read_controller_axis_value(self, gamepad: PygameGamepad, axis_index: int) -> int:
-        """Return a stable signed 16-bit axis value from the SDL controller backend."""
-        axis_value = gamepad.controller.get_axis(axis_index)
-        if isinstance(axis_value, float):
-            axis_value = axis_value * PYGAME_AXIS_SCALE
-        return int(max(-PYGAME_AXIS_SCALE, min(PYGAME_AXIS_SCALE, axis_value)))
-
-    def _process_pygame_events(self) -> None:
-        """Handle SDL input events from the pygame event queue."""
-        if not self._pygame_ready or self._gamepad_polling_suspended:
-            return
-        event_types = (
-            pygame.CONTROLLERDEVICEADDED,
-            pygame.CONTROLLERDEVICEREMOVED,
-            pygame.KEYDOWN,
-            pygame.KEYUP,
-            pygame.MOUSEBUTTONDOWN,
-        )
-        for event in pygame.event.get(event_types):
-            if event.type == pygame.CONTROLLERDEVICEADDED:
-                device_index = getattr(event, "device_index", None)
-                if device_index is not None and controller.is_controller(device_index):
-                    self.gamepad_hotplug.emit('add')
-            elif event.type == pygame.CONTROLLERDEVICEREMOVED:
-                if self.gamepad and getattr(event, "instance_id", None) == self.gamepad.instance_id:
-                    self.gamepad_hotplug.emit('remove')
-            elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
-                self._handle_pygame_key_event(event)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                self._handle_pygame_mouse_button(event)
-
-    def _poll_button_events(self, gamepad: PygameGamepad, current_time: float) -> None:
-        """Emit button changes using evdev-compatible codes."""
-        for button_index, button_code in SDL_CONTROLLER_BUTTON_TO_ECODE.items():
-            value = int(gamepad.controller.get_button(button_index))
-            if self._button_states.get(button_index) == value:
-                continue
-            self._button_states[button_index] = value
-            if button_code in BUTTONS['guide']:
-                self.guide_held = value == 1
-            if button_code in BUTTONS['menu']:
-                self.select_held = value == 1
-            if button_code == PAD_BUTTON_START:
-                self.start_held = value == 1
-            emulation_combo = value == 1 and (
-                (button_code in BUTTONS['menu'] and self.start_held) or
-                (button_code == PAD_BUTTON_START and self.select_held)
-            )
-            if emulation_combo:
-                self.emulation_triggered = not self.emulation_triggered
-                self.pending_menu_fullscreen_time = 0.0
-            if self._is_mouse_emulation_active() and value == 1:
-                if button_code in BUTTONS['confirm']:
-                    self.click_left()
-                elif button_code in BUTTONS['back']:
-                    self.click_right()
-            if self._should_skip_regular_events():
-                continue
-            self.button_event.emit(button_code, value)
-            if (
-                value == 1 and button_code in BUTTONS['menu'] and
-                not emulation_combo and
-                not self._is_gamescope_session and not self.in_guide_combination_attempt and
-                self._parent.isActiveWindow()
-            ):
-                self.pending_menu_fullscreen_time = current_time + self.guide_combination_timeout
+        logger.info("Gamepad axes configured for SDL backend: %s", device.name)
 
     def _handle_pending_menu_fullscreen(self, current_time: float) -> None:
         if not self.pending_menu_fullscreen_time:
@@ -4381,13 +4148,58 @@ class InputManager(QObject):
             return
         self.toggle_fullscreen.emit(not self._is_fullscreen)
 
-    def _poll_hat_events(self, gamepad: PygameGamepad, current_time: float) -> None:
-        """Read the joystick hat directly for reliable D-pad support."""
-        joystick = gamepad.controller.as_joystick()
-        if joystick.get_numhats() <= 0:
-            return
+    def _poll_button_events(self, gamepad: SDLGamepad, current_time: float) -> None:
+        """Emit button changes using SDL's standardized controller mapping."""
+        for button_index, button_code in SDL_CONTROLLER_BUTTON_TO_PAD.items():
+            value = gamepad.get_button(button_index)
+            self._handle_button_value(button_index, button_code, value, current_time)
 
-        hat_value = joystick.get_hat(0)
+    def _handle_button_value(self, button_index: int, button_code: int, value: int, current_time: float) -> None:
+        if self._button_states.get(button_index) == value:
+            return
+        self._button_states[button_index] = value
+        if button_code in BUTTONS['guide']:
+            self.guide_held = value == 1
+        if button_code in BUTTONS['menu']:
+            self.select_held = value == 1
+        if button_code == PAD_BUTTON_START:
+            self.start_held = value == 1
+        emulation_combo = self._handle_emulation_combo(button_code, value)
+        if self._is_mouse_emulation_active() and value == 1:
+            if button_code in BUTTONS['confirm']:
+                self.click_left()
+            elif button_code in BUTTONS['back']:
+                self.click_right()
+        if self._should_skip_regular_events():
+            return
+        self.button_event.emit(button_code, value)
+        if self._should_schedule_menu_fullscreen(button_code, value, emulation_combo):
+            self.pending_menu_fullscreen_time = current_time + self.guide_combination_timeout
+
+    def _handle_emulation_combo(self, button_code: int, value: int) -> bool:
+        emulation_combo = value == 1 and (
+            (button_code in BUTTONS['menu'] and self.start_held) or
+            (button_code == PAD_BUTTON_START and self.select_held)
+        )
+        if emulation_combo:
+            self.emulation_triggered = not self.emulation_triggered
+            self.pending_menu_fullscreen_time = 0.0
+        return emulation_combo
+
+    def _should_schedule_menu_fullscreen(self, button_code: int, value: int, emulation_combo: bool) -> bool:
+        return (
+            value == 1 and button_code in BUTTONS['menu'] and
+            not emulation_combo and
+            not self._is_gamescope_session and not self.in_guide_combination_attempt and
+            self._parent.isActiveWindow()
+        )
+
+    def _poll_hat_events(self, gamepad: SDLGamepad, current_time: float) -> None:
+        """Read D-pad state from SDL's standardized gamepad buttons."""
+        hat_value = (
+            self._read_dpad_button_axis(gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT, SDL_GAMEPAD_BUTTON_DPAD_RIGHT),
+            self._read_dpad_button_axis(gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP, SDL_GAMEPAD_BUTTON_DPAD_DOWN),
+        )
         previous_value = self._hat_states.get(0, (0, 0))
         self._hat_states[0] = hat_value
 
@@ -4411,12 +4223,15 @@ class InputManager(QObject):
         if previous_value[1] != hat_value[1]:
             self.dpad_moved.emit(PAD_DPAD_Y, -hat_value[1], current_time)
 
-    def _poll_axis_events(self, gamepad: PygameGamepad, current_time: float) -> None:
+    def _read_dpad_button_axis(self, gamepad: SDLGamepad, negative_button: int, positive_button: int) -> int:
+        negative = gamepad.get_button(negative_button)
+        positive = gamepad.get_button(positive_button)
+        return positive - negative
+
+    def _poll_axis_events(self, gamepad: SDLGamepad, current_time: float) -> None:
         """Emit axis changes using the same evdev-like codes used by the UI."""
-        for axis_index, axis_code in SDL_CONTROLLER_AXIS_TO_ECODE.items():
-            raw_value = self._read_controller_axis_value(gamepad, axis_index)
-            if axis_code is None:
-                continue
+        for axis_index, axis_code in SDL_CONTROLLER_AXIS_TO_PAD.items():
+            raw_value = gamepad.get_axis(axis_index)
             previous_value = self._axis_states.get(axis_index)
             if previous_value == raw_value:
                 continue
@@ -4437,7 +4252,7 @@ class InputManager(QObject):
             self.dpad_moved.emit(axis_code, raw_value, current_time)
 
     def _emit_trigger_event(self, axis_code: int, raw_value: int, current_time: float) -> None:
-        """Convert pygame trigger axis values into press/release button events."""
+        """Convert SDL trigger axis values into press/release button events."""
         if current_time - self.last_trigger_time < self.trigger_cooldown:
             return
         is_pressed = raw_value > 16384
@@ -4467,9 +4282,17 @@ class InputManager(QObject):
                     continue
                 active_gamepad = self.gamepad
                 if not active_gamepad:
+                    if current_time - self._last_gamepad_check_time >= 1.0:
+                        self.gamepad_hotplug.emit('add')
+                        self._last_gamepad_check_time = current_time
                     time.sleep(0.1)
                     continue
                 try:
+                    active_gamepad.update()
+                    if not active_gamepad.connected():
+                        self.gamepad_hotplug.emit('remove')
+                        time.sleep(0.1)
+                        continue
                     self._poll_button_events(active_gamepad, current_time)
                     self._handle_pending_menu_fullscreen(current_time)
                     self._poll_hat_events(active_gamepad, current_time)
@@ -4481,10 +4304,6 @@ class InputManager(QObject):
                         self.update_mouse_position()
                         self.last_update = current_time
                     time.sleep(0.01)
-                except pygame.error as e:
-                    logger.info("Gamepad disconnected during monitoring: %s", e)
-                    self.gamepad_hotplug.emit('remove')
-                    time.sleep(0.1)
                 except Exception as ex:
                     logger.error(f"Unexpected error in gamepad monitoring: {ex}")
                     time.sleep(0.1)
@@ -4497,7 +4316,7 @@ class InputManager(QObject):
                 except Exception as e:
                     logger.debug("Failed to close gamepad: %s", e)
             self.gamepad = None
-            self._reset_pygame_state()
+            self._reset_input_state()
 
     def cleanup(self) -> None:
         """
@@ -4516,8 +4335,6 @@ class InputManager(QObject):
             # Stop all timers
             if hasattr(self, 'gamepad_check_timer'):
                 self.gamepad_check_timer.stop()
-            if hasattr(self, 'pygame_event_timer'):
-                self.pygame_event_timer.stop()
             self.dpad_timer.stop()
             self.nav_timer.stop()
 
@@ -4528,12 +4345,9 @@ class InputManager(QObject):
                 self.gamepad.close()
 
             self.gamepad = None
-            self._reset_pygame_state()
+            self._reset_input_state()
             self.gamepad_type = self._get_configured_gamepad_type()
-            if self._pygame_ready:
-                controller.quit()
-                pygame.quit()
-                self._pygame_ready = False
+            shutdown_gamepad_backend()
 
             logger.info("Gamepad cleanup completed")
 

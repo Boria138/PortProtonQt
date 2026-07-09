@@ -30,7 +30,6 @@ Requires:       python3-websocket-client
 Requires:       python3-orjson
 Requires:       python3-psutil
 Requires:       python3-pyside6
-Requires:       python3-pygame
 Requires:       python3-requests
 Requires:       python3-tqdm
 Requires:       python3-vdf
