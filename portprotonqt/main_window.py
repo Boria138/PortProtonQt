@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import signal
@@ -7,6 +9,7 @@ import psutil
 import re
 from queue import Empty, Queue
 from threading import Thread
+from typing import TYPE_CHECKING
 from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs import FileExplorer, ExeSettingsDialog
@@ -67,6 +70,9 @@ from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from portprotonqt.appimage_updater import AppImageUpdateWorker
 
 logger = get_logger(__name__)
 DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
@@ -274,6 +280,7 @@ class MainWindow(
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
         self.launch_exe = launch_exe  # Store launch_exe path
+        self.appimageUpdateWorker: AppImageUpdateWorker | None = None
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
 

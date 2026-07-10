@@ -1,6 +1,7 @@
 """Dialogs package for PortProtonQt."""
 
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
+from portprotonqt.dialogs.appimage_update import AppImageUpdateDialog
 from portprotonqt.dialogs.file_explorer import FileExplorer
 from portprotonqt.dialogs.winetricks_dialog import WinetricksDialog
 from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
@@ -11,6 +12,7 @@ from portprotonqt.dialogs.base import GameLaunchDialog, AddGameDialog, FileSelec
 __all__ = [
     'create_dialog_hints_widget',
     'update_dialog_hints',
+    'AppImageUpdateDialog',
     'FileExplorer',
     'WinetricksDialog',
     'ExeSettingsDialog',

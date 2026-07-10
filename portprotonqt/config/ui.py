@@ -428,6 +428,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "auto_download_ppdb")
         self._save_download_value("auto_download_ppdb", enabled)
 
+    def get_auto_appimage_updates(self) -> bool:
+        """Get AppImage self-update setting."""
+        return self._get_download_bool("auto_appimage_updates", True)
+
+    def set_auto_appimage_updates(self, enabled: bool) -> None:
+        """Set AppImage self-update setting."""
+        validate_bool(enabled, "auto_appimage_updates")
+        self._save_download_value("auto_appimage_updates", enabled)
+
     def get_enable_theme_store(self) -> bool:
         """Get theme store visibility setting."""
         return self._get_bool("enable_theme_store", False)

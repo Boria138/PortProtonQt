@@ -11,6 +11,7 @@ class MainWindowWorkersMixin:
             "storageWorker": 3000,
             "audioWorker": 3000,
             "autoInstallLoadThread": 3000,
+            "appimageUpdateWorker": 3000,
         }
         for worker_name, timeout_ms in worker_timeouts.items():
             self._stopWorkerThread(worker_name, timeout_ms)
@@ -23,15 +24,18 @@ class MainWindowWorkersMixin:
         if worker is None:
             return
         request_interruption = getattr(worker, "requestInterruption", None)
-        if callable(request_interruption):
-            request_interruption()
+        try:
+            if callable(request_interruption):
+                request_interruption()
 
-        is_running = getattr(worker, "isRunning", None)
-        wait_method = getattr(worker, "wait", None)
-        if callable(is_running) and is_running() and callable(wait_method):
-            wait_method(timeout_ms)
+            is_running = getattr(worker, "isRunning", None)
+            wait_method = getattr(worker, "wait", None)
+            if callable(is_running) and is_running() and callable(wait_method):
+                wait_method(timeout_ms)
 
-        if callable(is_running) and is_running():
-            logger.warning("%s is still running during shutdown", worker_name)
+            if callable(is_running) and is_running():
+                logger.warning("%s is still running during shutdown", worker_name)
+        except RuntimeError as error:
+            logger.debug("%s already deleted during shutdown: %s", worker_name, error)
 
         setattr(self, worker_name, None)

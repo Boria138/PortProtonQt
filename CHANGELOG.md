@@ -19,6 +19,7 @@
 - Добавлен перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 - Добавлен магазин тем с загрузкой и применением тем из `ppdb.linux-gaming.ru` (скрыт за настройкой по умолчанию, так как сторонние темы могут быть небезопасны)
 - Добавлена поддержка установки тем по URI `portprotonqt://theme/<id>` с `ppdb.linux-gaming.ru`
+- Добавлено автообновление AppImage через интерфейс с резервным GitHub-зеркалом
 - Добавлена запись параметров запуска из `.lnk` в `.ppdb`
 - Добавлен автовыбор директории Flatpak-версии PortProton (`~/.var/app/ru.linux_gaming.PortProton`) как `portdatapath`, если директория существует
 - Добавлена кнопка «Открыть папку» на детальной странице для игр PortProton
