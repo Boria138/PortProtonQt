@@ -44,7 +44,7 @@ jobs:
         uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
-          path: build-aux/AppImage/dist/*.AppImage
+          path: build-aux/AppImage/dist/*.AppImage*
 
   build-arch:
     name: Build Arch Package
