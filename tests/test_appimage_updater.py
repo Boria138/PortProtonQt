@@ -35,7 +35,27 @@ def test_extract_latest_version_changelog_skips_unreleased() -> None:
     assert "## [1.2.0] - 2026-06-10" in section
     assert "New release change" in section
     assert "Future change" not in section
-    assert "Old release change" not in section
+    assert "Old release change" in section
+
+
+def test_extract_changelog_from_current_version() -> None:
+    changelog = (
+        "## [Unreleased]\n\n"
+        "- Future change\n\n"
+        "## [1.3.0] - 2026-07-01\n\n"
+        "- Latest change\n\n"
+        "## [1.2.0] - 2026-06-10\n\n"
+        "- Middle change\n\n"
+        "## [1.1.0] - 2026-05-01\n\n"
+        "- Old change\n"
+    )
+
+    section = appimage_updater._extract_latest_version_changelog(changelog, "1.1.0")
+
+    assert "Latest change" in section
+    assert "Middle change" in section
+    assert "Old change" not in section
+    assert "Future change" not in section
 
 
 def test_appimage_update_worker_skips_when_disabled(

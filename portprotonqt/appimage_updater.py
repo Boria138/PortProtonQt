@@ -32,8 +32,12 @@ CHANGELOG_URL = (
     "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/"
     "CHANGELOG.md"
 )
+CHANGELOG_FALLBACK_URL = (
+    "https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/"
+    "CHANGELOG.md"
+)
 CHANGELOG_TIMEOUT = 10
-CHANGELOG_MAX_CHARS = 12000
+CHANGELOG_MAX_CHARS = 120000
 
 
 def _appimage_path() -> str:
@@ -115,26 +119,52 @@ def _run_appimageupdatetool(
 
 
 def _download_changelog() -> str:
-    try:
-        session = get_requests_session()
-        with session.get(CHANGELOG_URL, timeout=CHANGELOG_TIMEOUT) as response:
-            response.raise_for_status()
-            data = response.content[:CHANGELOG_MAX_CHARS]
-    except (OSError, requests.RequestException) as error:
-        logger.debug("Failed to download changelog: %s", error)
-        return ""
-    return data.decode("utf-8", errors="replace")
+    session = get_requests_session()
+    for url in (CHANGELOG_URL, CHANGELOG_FALLBACK_URL):
+        try:
+            with session.get(url, timeout=CHANGELOG_TIMEOUT) as response:
+                response.raise_for_status()
+                data = response.content[:CHANGELOG_MAX_CHARS]
+                return data.decode("utf-8", errors="replace")
+        except (OSError, requests.RequestException) as error:
+            logger.debug("Failed to download changelog from %s: %s", url, error)
+    return ""
 
 
-def _extract_latest_version_changelog(changelog: str) -> str:
-    version_header = re.compile(r"^##\s+\[(?!Unreleased\])[^]]+\].*$", re.MULTILINE)
-    match = version_header.search(changelog)
-    if match is None:
+def _extract_latest_version_changelog(changelog: str, current_version: str = "") -> str:
+    version_header = re.compile(r"^##\s+\[([^\]]+)\].*$", re.MULTILINE)
+    matches = list(version_header.finditer(changelog))
+    if not matches:
         return changelog
 
-    next_match = re.search(r"^##\s+", changelog[match.end():], re.MULTILINE)
-    end = match.end() + next_match.start() if next_match else len(changelog)
-    return changelog[match.start():end].strip()
+    if current_version:
+        version_idx = len(matches)
+        for i, m in enumerate(matches):
+            ver = m.group(1)
+            if ver.startswith("["):
+                ver = ver[1:]
+            if ver == current_version:
+                version_idx = i
+                break
+    else:
+        version_idx = len(matches)
+
+    end = len(changelog)
+    result_parts = []
+    for m in matches[:version_idx]:
+        ver = m.group(1)
+        if ver.startswith("["):
+            ver = ver[1:]
+        if ver == "Unreleased":
+            continue
+        next_match_pos = end
+        for later in matches[matches.index(m) + 1:]:
+            if later.start() > m.start():
+                next_match_pos = later.start()
+                break
+        result_parts.append(changelog[m.start():next_match_pos].strip())
+
+    return "\n\n".join(result_parts)
 
 
 class AppImageUpdateWorker(QThread):
@@ -157,7 +187,10 @@ class AppImageUpdateWorker(QThread):
         return args
 
     def _get_changelog(self) -> str:
-        return _extract_latest_version_changelog(_download_changelog())
+        from portprotonqt.app import __app_version__
+        return _extract_latest_version_changelog(
+            _download_changelog(), __app_version__
+        )
 
     def _run_tool_with_progress(self, args: list[str]) -> bool:
         try:

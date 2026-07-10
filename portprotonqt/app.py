@@ -20,7 +20,7 @@ except ImportError:
     APP_COMMIT = ""
     APP_VERSION = "1.2.0"
 
-__app_version__ = APP_VERSION
+__app_version__ = os.environ.get("PORTPROTONQT_VERSION", APP_VERSION)
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
