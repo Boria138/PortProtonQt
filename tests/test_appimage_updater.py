@@ -58,6 +58,14 @@ def test_extract_changelog_from_current_version() -> None:
     assert "Future change" not in section
 
 
+def test_parse_appimage_update_progress_line() -> None:
+    line = "PortProtonQt.AppImage [bar]  42% \u2193 54.0 MB/128.0 MB"
+
+    progress = appimage_updater._parse_progress(line)
+
+    assert progress == (42, "42% \u2193 54.0 MB/128.0 MB")
+
+
 def test_appimage_update_worker_skips_when_disabled(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -166,6 +174,43 @@ def test_appimage_update_worker_uses_fallback_mirror(
         ],
     ]
     assert available == [("Repo changelog", appimage_updater.FALLBACK_UPDATE_INFO)]
+
+
+def test_appimage_update_worker_emits_pty_progress(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    appimage = tmp_path / "PortProtonQt.AppImage"
+    appimage.write_text("old version\n", encoding="utf-8")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    tool_path = bin_dir / "appimageupdatetool"
+    tool_path.write_text(
+        "#!/bin/sh\n"
+        "if [ \"$1\" = \"-Or\" ]; then\n"
+        "  printf 'PortProtonQt.AppImage [bar]  25%% \\342\\206\\223 32.0 MB/128.0 MB\\r'\n"
+        "  exit 0\n"
+        "fi\n"
+        "exit 2\n",
+        encoding="utf-8",
+    )
+    tool_path.chmod(0o755)
+    monkeypatch.setenv("APPIMAGE", str(appimage))
+    monkeypatch.setenv("PATH", str(bin_dir))
+    monkeypatch.setattr(
+        appimage_updater.ui_config,
+        "get_auto_appimage_updates",
+        lambda: True,
+    )
+
+    progress_values: list[tuple[int, str]] = []
+    worker = appimage_updater.AppImageUpdateWorker("update")
+    worker.update_progress.connect(
+        lambda percent, message: progress_values.append((percent, message))
+    )
+    worker.run()
+
+    assert progress_values == [(25, "25% \u2193 32.0 MB/128.0 MB")]
 
 
 def test_appimage_update_worker_applies_fake_update(

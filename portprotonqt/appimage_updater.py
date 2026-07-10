@@ -1,7 +1,10 @@
 """AppImage self-update support."""
+import errno
 import os
 import platform
+import pty
 import re
+import select
 import shutil
 import subprocess
 import time
@@ -38,6 +41,13 @@ CHANGELOG_FALLBACK_URL = (
 )
 CHANGELOG_TIMEOUT = 10
 CHANGELOG_MAX_CHARS = 120000
+TOOL_OUTPUT_CHUNK_SIZE = 4096
+DOWN_ARROW = "\u2193"
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+PROGRESS_RE = re.compile(
+    rf"(?P<percent>\d{{1,3}})%\s+{DOWN_ARROW}\s+"
+    r"(?P<done>[^/\r\n]+)/(?P<total>[^/\r\n]+)"
+)
 
 
 def _appimage_path() -> str:
@@ -167,12 +177,26 @@ def _extract_latest_version_changelog(changelog: str, current_version: str = "")
     return "\n\n".join(result_parts)
 
 
+def _clean_tool_output(text: str) -> str:
+    return ANSI_ESCAPE_RE.sub("", text).strip()
+
+
+def _parse_progress(text: str) -> tuple[int, str] | None:
+    match = PROGRESS_RE.search(text)
+    if not match:
+        return None
+    percent = min(int(match.group("percent")), 100)
+    message = f"{percent}% {DOWN_ARROW} {match.group('done').strip()}/{match.group('total').strip()}"
+    return percent, message
+
+
 class AppImageUpdateWorker(QThread):
     """Check and update the running AppImage in a worker thread."""
 
     update_available = Signal(str, str)
     update_finished = Signal(bool)
     update_output = Signal(str)
+    update_progress = Signal(int, str)
 
     def __init__(self, action: str = "check", update_info: str = "") -> None:
         super().__init__()
@@ -192,36 +216,74 @@ class AppImageUpdateWorker(QThread):
             _download_changelog(), __app_version__
         )
 
+    def _emit_tool_output(self, text: str) -> None:
+        line = _clean_tool_output(text)
+        if not line:
+            return
+        progress = _parse_progress(line)
+        if progress is not None:
+            percent, message = progress
+            self.update_progress.emit(percent, message)
+            return
+        self.update_output.emit(line)
+
+    def _read_pty_output(self, master_fd: int, process: subprocess.Popen[bytes]) -> None:
+        buffer = ""
+        start_time = time.monotonic()
+        while process.poll() is None:
+            if time.monotonic() - start_time > APPIMAGE_UPDATE_TIMEOUT:
+                process.kill()
+                logger.warning("AppImage update timed out")
+                return
+            ready, _, _ = select.select([master_fd], [], [], 0.2)
+            if not ready:
+                continue
+            try:
+                data = os.read(master_fd, TOOL_OUTPUT_CHUNK_SIZE)
+            except OSError as error:
+                if error.errno == errno.EIO:
+                    break
+                raise
+            if not data:
+                break
+            buffer = self._process_tool_chunk(buffer, data)
+        if buffer:
+            self._emit_tool_output(buffer)
+
+    def _process_tool_chunk(self, buffer: str, data: bytes) -> str:
+        buffer += data.decode("utf-8", errors="replace")
+        parts = re.split(r"[\r\n]", buffer)
+        for part in parts[:-1]:
+            self._emit_tool_output(part)
+        return parts[-1]
+
     def _run_tool_with_progress(self, args: list[str]) -> bool:
+        master_fd = -1
         try:
+            master_fd, slave_fd = pty.openpty()
             process = subprocess.Popen(
                 args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
+                stdin=subprocess.DEVNULL,
+                stdout=slave_fd,
+                stderr=slave_fd,
+                close_fds=True,
             )
+            os.close(slave_fd)
         except OSError as error:
+            if master_fd >= 0:
+                os.close(master_fd)
             logger.warning("Failed to run appimageupdatetool: %s", error)
             return False
 
-        start_time = time.monotonic()
-        output = process.stdout
-        if output is not None:
-            for line in output:
-                line = line.strip()
-                if line:
-                    self.update_output.emit(line)
-                if time.monotonic() - start_time > APPIMAGE_UPDATE_TIMEOUT:
-                    process.kill()
-                    logger.warning("AppImage update timed out")
-                    return False
-
         try:
+            self._read_pty_output(master_fd, process)
             return process.wait(timeout=1) == 0
-        except subprocess.TimeoutExpired:
+        except (OSError, subprocess.TimeoutExpired) as error:
             process.kill()
-            logger.warning("AppImage update timed out")
+            logger.warning("Failed to read appimageupdatetool output: %s", error)
             return False
+        finally:
+            os.close(master_fd)
 
     def _run_update(self, tool_path: str, appimage_path: str) -> None:
         success = self._run_tool_with_progress(

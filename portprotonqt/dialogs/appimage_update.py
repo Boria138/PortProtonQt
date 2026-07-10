@@ -119,11 +119,18 @@ class AppImageUpdateProgressDialog(QProgressDialog):
     def start_update(self) -> None:
         self.worker = AppImageUpdateWorker("update", self.update_info)
         self.worker.update_output.connect(self.setLabelText)
+        self.worker.update_progress.connect(self._set_progress)
         self.worker.update_finished.connect(self._finish_update)
         self.worker.finished.connect(self._clear_worker)
         self.worker.finished.connect(self.worker.deleteLater)
         self.show()
         self.worker.start()
+
+    def _set_progress(self, percent: int, message: str) -> None:
+        if self.maximum() == 0:
+            self.setRange(0, 100)
+        self.setValue(percent)
+        self.setLabelText(message)
 
     def _finish_update(self, success: bool) -> None:
         self.close()
