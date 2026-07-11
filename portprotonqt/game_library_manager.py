@@ -1,6 +1,11 @@
 from typing import Protocol
 from portprotonqt.game_card import GameCard
-from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
+from portprotonqt.search_utils import (
+    SearchOptimizer,
+    ThreadedSearch,
+    build_search_items,
+    search_index,
+)
 from PySide6.QtWidgets import QAbstractButton
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
 from PySide6.QtCore import Qt, QTimer
@@ -700,28 +705,13 @@ class GameLibraryManager:
 
     def _build_search_indices(self, games: list[tuple]):
         """Build search indices for fast searching."""
-        # Prepare items for indexing: (search_key, game_data)
-        # We'll index by game name (index 0) and potentially other fields
-        items = []
-        for game in games:
-            # game is a tuple: (name, description, cover, appid, controller_support, exec_line,
-            #                   last_launch, formatted_playtime, protondb_tier, anticheat_status,
-            #                   last_played_timestamp, playtime_seconds, game_source)
-            name = str(game[0]).lower() if game[0] else ""
-            description = str(game[1]).lower() if game[1] else ""
-
-            # Create multiple search entries for better matching
-            items.append((name, game))  # Exact name
-            # Add other searchable fields if needed
-            if description:
-                items.append((description, game))
-
-            # Also add individual words from the name for partial matching
-            for word in name.split():
-                if len(word) > 2:  # Only index words longer than 2 characters
-                    items.append((word, game))
-
-        self.search_optimizer.build_indices(items)
+        self.search_optimizer.build_indices(
+            build_search_items(
+                games,
+                lambda game: game[0],
+                lambda game: game[1],
+            )
+        )
 
     def add_game_incremental(self, game_data: tuple):
         """Add a single game without full reload."""
@@ -785,37 +775,5 @@ class GameLibraryManager:
             self.update_game_grid(is_filter=True)
             return
 
-        # Use exact search first
-        exact_result = self.search_optimizer.exact_search(search_text)
-        if exact_result:
-            # If exact match found, show only that game
-            self.filtered_games = [exact_result]
-            self.update_game_grid(is_filter=True)
-            return
-
-        # Try prefix search
-        prefix_results = self.search_optimizer.prefix_search(search_text)
-        if prefix_results:
-            # Get the actual game data from the prefix matches
-            filtered_games = []
-            for _match_text, game_data in prefix_results:
-                if game_data not in filtered_games:  # Avoid duplicates
-                    filtered_games.append(game_data)
-            self.filtered_games = filtered_games
-            self.update_game_grid(is_filter=True)
-            return
-
-        # Finally, try fuzzy search
-        fuzzy_results = self.search_optimizer.fuzzy_search(search_text, limit=20, min_score=60.0)
-        if fuzzy_results:
-            # Get the actual game data from the fuzzy matches
-            filtered_games = []
-            for _match_text, game_data, _score in fuzzy_results:
-                if game_data not in filtered_games:  # Avoid duplicates
-                    filtered_games.append(game_data)
-            self.filtered_games = filtered_games
-            self.update_game_grid(is_filter=True)
-        else:
-            # If no results found, show empty list
-            self.filtered_games = []
-            self.update_game_grid(is_filter=True)
+        self.filtered_games = search_index(self.search_optimizer, search_text)
+        self.update_game_grid(is_filter=True)

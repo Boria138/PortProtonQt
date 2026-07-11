@@ -252,6 +252,41 @@ def test_autoinstall_search_keeps_expanded_for_active_virtual_keyboard(monkeypat
     assert animation.collapsed is False
 
 
+def test_autoinstall_search_matches_library_index_fields() -> None:
+    class Window(AutoInstallMixin):
+        pass
+
+    class FakeSearchEdit:
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def text(self) -> str:
+            return self._text
+
+    class FakeCard:
+        def __init__(self, name: str, description: str) -> None:
+            self.name = name
+            self.description = description
+            self.visible = False
+
+        def setVisible(self, visible: bool) -> None:
+            self.visible = visible
+
+    window: Any = Window()
+    target_card = FakeCard("VK Play", "Launcher for the VK Play game library.")
+    other_card = FakeCard("Another Game", "Different installer.")
+    window.allAutoInstallCards = [target_card, other_card]
+    window.autoInstallSearchLineEdit = FakeSearchEdit("launcher")
+    window.autoInstallContainerLayout = SimpleNamespace(invalidate=lambda: None)
+    window.autoInstallContainer = SimpleNamespace(updateGeometry=lambda: None)
+    window.autoInstallScrollArea = SimpleNamespace(updateGeometry=lambda: None)
+
+    window.filterAutoInstallGames()
+
+    assert target_card.visible is True
+    assert other_card.visible is False
+
+
 def test_tab_methods_resolve_from_expected_modules() -> None:
     for mixin, method_names in TAB_METHODS.items():
         for method_name in method_names:
