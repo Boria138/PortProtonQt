@@ -5,6 +5,7 @@ import sys
 import signal
 import shlex
 import subprocess
+import tempfile
 import psutil
 import re
 from queue import Empty, Queue
@@ -78,30 +79,54 @@ logger = get_logger(__name__)
 DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 ALT_BIARCH_REPO = "x86_64-i586"
 ALT_BIARCH_URL = "https://www.altlinux.org/Biarch"
-ALT_I586_PACKAGES = (
-    "i586-glibc-core",
-    "i586-libstdc++6",
-    "i586-glibc-pthread",
-    "i586-glibc-nss",
-    "i586-libnm",
-    "i586-libnss",
-    "i586-libnss-mdns",
-    "i586-libnsl1",
-    "i586-libunwind",
-    "i586-libunixODBC2",
-    "i586-ocl-icd",
-    "i586-libfreetype",
-    "i586-libcups",
-    "i586-libfontconfig1",
-    "i586-libgnutls30",
-    "i586-libGL",
-    "i586-libEGL",
-    "i586-libvulkan1",
-    "i586-xorg-dri-swrast",
-    "i586-xorg-dri-intel",
-    "i586-xorg-dri-radeon",
-    "i586-xorg-dri-nouveau",
+ALT_I586_BASE_PACKAGES = (
+    "glibc-nss",
+    "glibc-gconv-modules",
+    "libnm",
+    "libvulkan1",
+    "libd3d",
+    "libfreetype",
 )
+ALT_I586_PACKAGE_PREFIXES = ("libnss-", "xorg-dri-")
+ALT_I586_EXCLUDED_PACKAGES = ("libnss-fallback",)
+ALT_INSTALL_SCRIPT_MODE = 0o700
+ALT_I586_INSTALL_SCRIPT = """#!/bin/sh
+set -u
+trap 'rm -f "$0"' EXIT
+
+LIST=""
+
+add_if_needed() {
+    package="$1"
+    i586_package="i586-$package"
+
+    if rpm -q "$package" >/dev/null 2>&1 && ! rpm -q "$i586_package" >/dev/null 2>&1; then
+        LIST="$LIST $i586_package"
+    fi
+}
+
+for package in glibc-nss glibc-gconv-modules libnm libvulkan1 libd3d libfreetype; do
+    add_if_needed "$package"
+done
+
+for package in $(rpm -qa --qf '%{NAME}\\n' \
+    | grep '^libnss-' \
+    | grep -v '^libnss-fallback$' || true); do
+    add_if_needed "$package"
+done
+
+for package in $(rpm -qa --qf '%{NAME}\\n' | grep '^xorg-dri-' || true); do
+    add_if_needed "$package"
+done
+
+if ! apt-get update; then
+    exit 1
+fi
+
+if [ -n "$LIST" ]; then
+    apt-get install -y $LIST
+fi
+"""
 
 class MainWindow(
     MainWindowControlHintsMixin,
@@ -2082,22 +2107,59 @@ class MainWindow(
 
     def _get_missing_alt_i586_packages(self) -> list[str]:
         try:
-            result = subprocess.run(
-                ["rpm", "-q", *ALT_I586_PACKAGES],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
+            installed = set(self._get_installed_alt_package_names())
         except (OSError, subprocess.SubprocessError) as e:
             logger.warning("Failed to check ALT i586 packages: %s", e)
-            return list(ALT_I586_PACKAGES)
+            return [f"i586-{package}" for package in ALT_I586_BASE_PACKAGES]
 
-        installed = result.stdout.splitlines()
         return [
-            package for package in ALT_I586_PACKAGES
-            if not any(line.startswith(f"{package}-") for line in installed)
+            f"i586-{package}" for package in self._get_alt_i586_package_names(installed)
+            if f"i586-{package}" not in installed
         ]
+
+    def _get_installed_alt_package_names(self) -> list[str]:
+        result = subprocess.run(
+            ["rpm", "-qa", "--qf", "%{NAME}\n"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise subprocess.SubprocessError(result.stderr.strip())
+
+        return result.stdout.splitlines()
+
+    def _get_alt_i586_package_names(self, installed: set[str]) -> list[str]:
+        packages = [
+            package for package in ALT_I586_BASE_PACKAGES
+            if package in installed
+        ]
+        packages.extend(
+            package for package in sorted(installed)
+            if self._is_alt_i586_prefixed_package(package)
+        )
+        return packages
+
+    def _is_alt_i586_prefixed_package(self, package: str) -> bool:
+        if package in ALT_I586_EXCLUDED_PACKAGES:
+            return False
+        return any(package.startswith(prefix) for prefix in ALT_I586_PACKAGE_PREFIXES)
+
+    def _create_alt_i586_install_script(self) -> str | None:
+        try:
+            fd, script_path = tempfile.mkstemp(
+                prefix="portprotonqt-alt-i586-",
+                suffix=".sh",
+            )
+            with os.fdopen(fd, "w", encoding="utf-8") as script:
+                script.write(ALT_I586_INSTALL_SCRIPT)
+            os.chmod(script_path, ALT_INSTALL_SCRIPT_MODE)
+        except OSError as e:
+            logger.warning("Failed to create ALT i586 install script: %s", e)
+            return None
+
+        return script_path
 
     def _check_alt_i586_dependencies_before_launch(self) -> bool:
         if not self._is_alt_x86_64():
@@ -2126,17 +2188,17 @@ class MainWindow(
         msg_box.setButtonText(QMessageBox.StandardButton.Cancel, _("Cancel"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Ok:
-            apt_command = (
-                "apt-get update && apt-get install -y "
-                + " ".join(shlex.quote(package) for package in ALT_I586_PACKAGES)
-            )
+            script_path = self._create_alt_i586_install_script()
+            if not script_path:
+                return False
+
             QProcess.startDetached(
                 sys.executable,
                 [
                     "-m",
                     "portprotonqt.scripts_utils.easyterm",
                     "-e",
-                    f"pkexec bash -lc {shlex.quote(apt_command)}",
+                    f"pkexec /bin/sh {shlex.quote(script_path)}",
                 ],
             )
         return False
