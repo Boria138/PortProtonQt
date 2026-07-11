@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-07-05 15:07+0000\n"
-"Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-07-11 07:06+0000\n"
+"Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
 "Language: es\n"
@@ -31,19 +31,19 @@ msgstr ""
 "La carpeta de datos de PortProton no tiene permisos de lectura ni escritura. "
 "Elija otra carpeta para los datos de PortProton."
 
-#, fuzzy
 msgid "Update complete"
-msgstr "Restauración del prefijo completado."
+msgstr "Actualización completada"
 
 msgid "AppImage updated. Restart the application to use the new version."
 msgstr ""
+"Se ha actualizado AppImage. Reinicia la aplicación para utilizar la nueva "
+"versión."
 
 msgid "Error"
 msgstr "Error"
 
-#, fuzzy
 msgid "Failed to update AppImage."
-msgstr "Error al detener el juego"
+msgstr "Error al actualizar AppImage."
 
 msgid "PortProton directory not found"
 msgstr "No encontrado el directorio PortProton"
@@ -420,13 +420,13 @@ msgstr ""
 
 #, python-brace-format
 msgid "Repository x86_64-i586 is not enabled. See: {0}"
-msgstr ""
+msgstr "El repositorio x86_64-i586 no está habilitado. Véase: {0}"
 
 msgid "Install dependencies"
-msgstr ""
+msgstr "Instalar las dependencias"
 
 msgid "32-bit dependencies are missing. Install them now?"
-msgstr ""
+msgstr "Faltan algunas dependencias de 32 bits. ¿Las instalas ahora?"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Formato de comando no válido (línea de ejecución vacía)"
@@ -541,7 +541,7 @@ msgid "Run the application in a terminal"
 msgstr "Ejecuta la aplicación en un terminal"
 
 msgid "Force US keyboard layout"
-msgstr "Forzar la distribución del teclado de EE. UU."
+msgstr "Forzar la distribución del teclado estadounidense"
 
 msgid "Force DirectInput protocol instead of XInput"
 msgstr "Forzar el protocolo DirectInput en lugar de XInput"
@@ -890,24 +890,22 @@ msgid "none"
 msgstr "ninguna"
 
 msgid "Update available"
-msgstr ""
+msgstr "Actualización disponible"
 
 msgid "A new AppImage update is available."
-msgstr ""
+msgstr "Hay una nueva actualización de AppImage disponible."
 
-#, fuzzy
 msgid "Update"
-msgstr "Pegar"
+msgstr "Actualizar"
 
-#, fuzzy
 msgid "Later"
-msgstr "Pegar"
+msgstr "Más tarde"
 
 msgid "Disable updates"
-msgstr ""
+msgstr "Desactivar las actualizaciones"
 
 msgid "Updating AppImage..."
-msgstr ""
+msgstr "Actualizando AppImage…"
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -935,96 +933,96 @@ msgid "Cover Preview:"
 msgstr "Vista previa de la portada:"
 
 msgid "Apply"
-msgstr ""
+msgstr "Aplicar"
 
 msgid "Invalid image"
-msgstr ""
+msgstr "Imagen no válida"
 
 msgid "Failed to download cover"
-msgstr ""
+msgstr "No se ha podido descargar la portada"
 
 msgid "Downloading cover…"
 msgstr "Descargando portada…"
 
 msgid "No cover selected"
-msgstr ""
+msgstr "No se ha seleccionado ninguna portada"
 
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 msgid "Select Dir"
-msgstr ""
+msgstr "Seleccionar directorio"
 
 msgid "Prev Dir"
-msgstr ""
+msgstr "Director anterior"
 
 msgid "Toggle"
-msgstr ""
+msgstr "Alternar"
 
 msgid "Force Install"
-msgstr ""
+msgstr "Instalación forzada"
 
 msgid "Prev Tab"
-msgstr ""
+msgstr "Pestaña anterior"
 
 msgid "Next Tab"
-msgstr ""
+msgstr "Pestaña siguiente"
 
 msgid "Save"
-msgstr ""
+msgstr "Guardar"
 
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 msgid "Download"
-msgstr ""
+msgstr "Descargar"
 
 msgid "Clear All"
-msgstr ""
+msgstr "Limpiar todo"
 
 msgid "File Explorer"
-msgstr ""
+msgstr "Explorador de archivos"
 
 msgid "Select"
-msgstr ""
+msgstr "Seleccionar"
 
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 msgid "Path: "
-msgstr ""
+msgstr "Ruta: "
 
 #, python-format
 msgid "Access denied: %s"
-msgstr ""
+msgstr "Acceso denegado: %s"
 
 msgid "Prefix backup"
-msgstr ""
+msgstr "Prefijo de copia de seguridad"
 
 msgid "Prefix restore"
-msgstr ""
+msgstr "Restaurar prefijo"
 
 #, python-brace-format
 msgid "File: {0}"
-msgstr ""
+msgstr "Archivo: {0}"
 
 #, python-brace-format
 msgid "{0}/{1} files"
-msgstr ""
+msgstr "{0}/{1} archivos"
 
 #, python-brace-format
 msgid "{0} files"
-msgstr ""
+msgstr "{0} archivos"
 
 #, python-brace-format
 msgid "{0}, Speed: {1:.1f} MB/s"
-msgstr ""
+msgstr "{0}, Velocidad: {1:.1f} MB/s"
 
 msgid "Manage WINE versions"
-msgstr ""
+msgstr "Gestionar versiones de WINE"
 
 msgid "Selected WINE/Proton:"
-msgstr ""
+msgstr "Vino/Proton seleccionado:"
 
 msgid "No WINE/Proton selected"
 msgstr ""
