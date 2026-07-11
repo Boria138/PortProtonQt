@@ -90,7 +90,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
         self.prefixes = get_available_prefix_options(self.portproton_location)
-        self.prefixCombo = CustomComboBox(self, theme=self.theme)
+        self.prefixCombo = CustomComboBox(theme=self.theme)
         self.prefixCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         )
