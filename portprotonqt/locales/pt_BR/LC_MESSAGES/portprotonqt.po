@@ -195,14 +195,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "Nenhum arquivo .desktop encontrado para '{game_name}'"
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr ""
-"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
-".desktop e os dados personalizados."
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr "Falha ao excluir o arquivo .desktop: {error}"
 
@@ -213,6 +205,14 @@ msgstr "'{game_name}' excluído com sucesso"
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "Falha ao excluir os dados personalizados: {error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
+msgstr ""
+"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
+".desktop e os dados personalizados."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
@@ -2002,6 +2002,10 @@ msgstr "Definir saída"
 msgid "Quick Launch"
 msgstr "Início Rápido"
 
+#, fuzzy
+msgid "Delete cards without executable"
+msgstr "Caminho do Executável:"
+
 msgid "Library Settings"
 msgstr "Configurações da Biblioteca"
 
@@ -2034,6 +2038,14 @@ msgstr "Modo de Exibição do Selo:"
 
 msgid "Refreshing…"
 msgstr "Atualizando…"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
+msgstr ""
+"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
+".desktop e os dados personalizados."
 
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"

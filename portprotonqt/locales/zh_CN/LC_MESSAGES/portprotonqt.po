@@ -187,12 +187,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "未找到\"{game_name}\"的 .desktop 文件"
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr "确定要删除\"{game_name}\"吗？这将移除 .desktop 文件和自定义数据。"
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr "删除 .desktop 文件失败：{error}"
 
@@ -203,6 +197,12 @@ msgstr "已成功删除\"{game_name}\""
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "删除自定义数据失败：{error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
+msgstr "确定要删除\"{game_name}\"吗？这将移除 .desktop 文件和自定义数据。"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
@@ -1941,6 +1941,10 @@ msgstr "设置输出"
 msgid "Quick Launch"
 msgstr "快速启动"
 
+#, fuzzy
+msgid "Delete cards without executable"
+msgstr "可执行文件路径："
+
 msgid "Library Settings"
 msgstr "库设置"
 
@@ -1973,6 +1977,12 @@ msgstr "徽章视图类型："
 
 msgid "Refreshing…"
 msgstr "正在刷新…"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
+msgstr "确定要删除\"{game_name}\"吗？这将移除 .desktop 文件和自定义数据。"
 
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
