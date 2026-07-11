@@ -183,12 +183,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
     def _add_library_refresh_button(self, buttons_layout: QHBoxLayout) -> None:
         self.refreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.refreshButton.setStyleSheet(button_style)
+        self.refreshButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
         self._register_gamepad_tooltip(self.refreshButton, _("Refresh Grid"))
@@ -198,12 +193,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self.libraryControlsButton = AutoSizeButton(
             icon=self.theme_manager.get_icon("menu", as_path=True)
         )
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.libraryControlsButton.setStyleSheet(button_style)
+        self.libraryControlsButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.libraryControlsButton.setCheckable(True)
         self.libraryControlsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.libraryControlsButton.clicked.connect(self._toggle_library_controls)

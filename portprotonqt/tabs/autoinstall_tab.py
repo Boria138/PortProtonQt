@@ -73,12 +73,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         searchLayout.addWidget(self.autoInstallSearchLineEdit)
 
         self.autoInstallRefreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.autoInstallRefreshButton.setStyleSheet(button_style)
+        self.autoInstallRefreshButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.autoInstallRefreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoInstallRefreshButton.clicked.connect(self._refresh_autoinstall_games)
         self._register_gamepad_tooltip(self.autoInstallRefreshButton, _("Refresh Grid"))

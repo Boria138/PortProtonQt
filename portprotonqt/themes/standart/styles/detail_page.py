@@ -41,7 +41,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:pressed,
     QPushButton:focus,
     QPushButton:checked {{
-        background: {color_detail_overlay};
+        background: {color_accent};
         border: {border_thin} {color_accent};
     }}
 """
