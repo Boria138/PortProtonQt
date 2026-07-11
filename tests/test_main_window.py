@@ -11,6 +11,7 @@ from pytest import MonkeyPatch
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
+from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
 import portprotonqt.tabs.library_tab as library_tab_module
 from portprotonqt.tabs import (
@@ -601,3 +602,20 @@ def test_process_portproton_desktop_calls_callback_without_asset_download(
     assert results[0] is not None
     assert results[0][0] == "Test Game"
     assert results[0][5] == f"portproton {exe_path}"
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    assert not custom_data_path.exists()
+
+
+def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path) -> None:
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    (custom_data_path / "praest").mkdir(parents=True)
+    (custom_data_path / "Akalabeth - World of Doom").mkdir()
+    kept_dir = custom_data_path / "Edited Game"
+    kept_dir.mkdir()
+    (kept_dir / "metadata.txt").write_text("name=Edited Game\n", encoding="utf-8")
+
+    remove_empty_custom_data_dirs(str(custom_data_path))
+
+    assert not (custom_data_path / "praest").exists()
+    assert not (custom_data_path / "Akalabeth - World of Doom").exists()
+    assert kept_dir.exists()

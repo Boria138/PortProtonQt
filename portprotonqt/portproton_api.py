@@ -37,6 +37,23 @@ HEAD_CACHE_NAME = "head_cache"
 HEAD_CACHE_OLD_PATTERN = "head_*.json"
 
 
+def remove_empty_custom_data_dirs(custom_data_dir: str) -> None:
+    if not os.path.isdir(custom_data_dir):
+        return
+
+    for root, dirs, _files in os.walk(custom_data_dir, topdown=False):
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            try:
+                os.rmdir(dir_path)
+            except OSError:
+                continue
+    try:
+        os.rmdir(custom_data_dir)
+    except OSError:
+        return
+
+
 def _create_bootstrap_file_explorer_parent() -> tuple[QObject | None, Any]:
     """Create a minimal parent with InputManager before MainWindow exists."""
     parent = QApplication.activeWindow()
@@ -113,7 +130,6 @@ class PortProtonAPI:
         self.downloader = downloader or Downloader(max_workers=4)
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
-        os.makedirs(self.custom_data_dir, exist_ok=True)
         self.portproton_location = get_portproton_location()
         self._autoinstall_cache = None  # In-memory cache
         self._head_positive_cache: set[str] = set()
@@ -348,11 +364,21 @@ class PortProtonAPI:
             return
 
         exe_name = os.path.splitext(os.path.basename(exe_file))[0]
-        game_dir = self._get_custom_game_dir(exe_name)
-        self._write_autoinstall_metadata(game_data, game_dir)
         cover_path = game_data.get("cover_path", "")
-        if isinstance(cover_path, str):
+        has_cover = isinstance(cover_path, str) and cover_path.startswith(("http://", "https://"))
+        has_metadata = any(
+            isinstance(game_data.get(key, ""), str) and game_data.get(key, "").strip()
+            for key in ("name", "description")
+        )
+        if not has_metadata and not has_cover:
+            return
+
+        game_dir = self._get_custom_game_dir(exe_name)
+        if has_metadata:
+            self._write_autoinstall_metadata(game_data, game_dir)
+        if has_cover:
             self._cache_autoinstall_cover(cover_path, game_dir)
+        remove_empty_custom_data_dirs(self.custom_data_dir)
 
     def _get_autoinstall_script_path(self, ppai_url: str) -> str:
         script_name = os.path.basename(urllib.parse.urlparse(ppai_url).path)

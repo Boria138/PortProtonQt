@@ -17,7 +17,7 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.detail_pages import DetailPageManager
-from portprotonqt.portproton_api import PortProtonAPI
+from portprotonqt.portproton_api import PortProtonAPI, remove_empty_custom_data_dirs
 from portprotonqt.debug_utils import get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager
@@ -1020,6 +1020,13 @@ class MainWindow(
 
     def _load_portproton_games_async(self, callback: Callable[[list[tuple]], None]):
         games = []
+        xdg_data_home = os.getenv(
+            "XDG_DATA_HOME",
+            os.path.join(os.path.expanduser("~"), ".local", "share"),
+        )
+        remove_empty_custom_data_dirs(
+            os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
+        )
         if not self.portproton_location:
             callback(games)
             return
@@ -1100,7 +1107,6 @@ class MainWindow(
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
         user_custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
-        os.makedirs(user_custom_folder, exist_ok=True)
 
         user_cover = ""
         user_game_folder = ""
@@ -1110,13 +1116,12 @@ class MainWindow(
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             user_game_folder = os.path.join(user_custom_folder, exe_name)
-            os.makedirs(user_game_folder, exist_ok=True)
             themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(game_exe)[1].lower(), "")
             generated_img_icon = self._generate_missing_portproton_icon(
                 game_exe, entry.get("Icon", ""), desktop_name
             )
 
-            user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
+            user_files = set(os.listdir(user_game_folder)) if os.path.isdir(user_game_folder) else set()
             for ext in COVER_IMAGE_EXTENSIONS:
                 candidate = f"cover{ext}"
                 if candidate in user_files:

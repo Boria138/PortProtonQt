@@ -497,13 +497,13 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                     "custom_data",
                     exe_name
                 )
-                os.makedirs(custom_folder, exist_ok=True)
 
                 # Handle user cover copy
                 cover_path = None
                 if user_cover:
                     ext = os.path.splitext(user_cover)[1].lower()
                     if os.path.isfile(user_cover) and ext in COVER_IMAGE_EXTENSIONS:
+                        os.makedirs(custom_folder, exist_ok=True)
                         copied_cover = os.path.join(custom_folder, f"cover{ext}")
                         shutil.copyfile(user_cover, copied_cover)
                         cover_path = copied_cover
