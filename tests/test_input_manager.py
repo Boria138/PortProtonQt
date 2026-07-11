@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from typing import cast
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QFrame, QWidget
+from PySide6.QtWidgets import QApplication, QFrame, QStackedWidget, QWidget
 from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
@@ -45,3 +45,38 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     manager._navigate_game_cards(container, 0, PAD_DPAD_X, 1)
 
     assert QApplication.focusWidget() is next_card
+
+
+def test_library_toolbar_navigation_includes_delete_missing_button() -> None:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    toolbar = QWidget()
+    toolbar.show()
+
+    widgets = []
+    for _index in range(5):
+        widget = QWidget(toolbar)
+        widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        widget.show()
+        widgets.append(widget)
+    app.processEvents()
+
+    parent = SimpleNamespace(
+        quickLaunchButton=widgets[0],
+        addGameButton=widgets[1],
+        searchEdit=widgets[2],
+        refreshButton=widgets[3],
+        deleteMissingExeButton=widgets[4],
+        libraryControlsButton=QWidget(toolbar),
+        stackedWidget=QStackedWidget(),
+        tabButtons={0: QWidget()},
+    )
+    parent.stackedWidget.addWidget(QWidget())
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, parent)
+
+    widgets[3].setFocus(Qt.FocusReason.OtherFocusReason)
+    handled = manager._handle_toolbar_navigation(PAD_DPAD_X, 1)
+
+    assert handled is True
+    assert QApplication.focusWidget() is widgets[4]

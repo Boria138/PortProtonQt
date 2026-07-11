@@ -702,6 +702,7 @@ class GameLibraryManager:
             self._update_timer.start(0)
         else:
             self._update_game_grid_immediate()
+        self._update_missing_exe_button()
 
     def _build_search_indices(self, games: list[tuple]):
         """Build search indices for fast searching."""
@@ -713,12 +714,18 @@ class GameLibraryManager:
             )
         )
 
+    def _update_missing_exe_button(self) -> None:
+        update_button = getattr(self.main_window, "updateDeleteMissingExeButton", None)
+        if callable(update_button):
+            update_button()
+
     def add_game_incremental(self, game_data: tuple):
         """Add a single game without full reload."""
         self.games.append(game_data)
         self.filtered_games.append(game_data)  # Assume no filter active; adjust if needed
         self.dirty = True
         self.update_game_grid()
+        self._update_missing_exe_button()
 
     def replace_game_incremental(self, old_name: str, old_exec_line: str, game_data: tuple):
         """Replace a single game without full reload."""
@@ -740,6 +747,7 @@ class GameLibraryManager:
             self.filtered_games.append(game_data)
         self.dirty = True
         self.update_game_grid()
+        self._update_missing_exe_button()
 
     def remove_game_incremental(self, game_name: str, exec_line: str):
         """Remove a single game without full reload."""
@@ -755,6 +763,7 @@ class GameLibraryManager:
                 del self.pending_images[key]
         self.dirty = True
         self.update_game_grid()
+        self._update_missing_exe_button()
 
     def filter_games_delayed(self):
         """Filters games based on search text and updates the grid."""

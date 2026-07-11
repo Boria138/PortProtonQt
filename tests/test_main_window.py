@@ -57,6 +57,7 @@ TAB_METHODS = {
         "_add_library_action_buttons",
         "_add_library_search",
         "_add_library_refresh_button",
+        "_add_library_delete_missing_button",
         "_add_library_controls_button",
         "_setup_library_search_animation",
         "_wrap_search_focus_event",
@@ -67,6 +68,9 @@ TAB_METHODS = {
         "_allow_library_controls_hover_close",
         "createSearchWidget",
         "refreshGames",
+        "_get_games_without_exe",
+        "updateDeleteMissingExeButton",
+        "deleteMissingExeCards",
         "quickLaunch",
         "on_search_text_changed",
         "on_search_changed",
@@ -654,3 +658,75 @@ def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path
     assert not (custom_data_path / "praest").exists()
     assert not (custom_data_path / "Akalabeth - World of Doom").exists()
     assert kept_dir.exists()
+
+
+def test_get_games_without_exe_skips_existing_and_steam(tmp_path: Path) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.game_library_manager = SimpleNamespace(
+        games=[
+            ("Existing", "", "", "", "", str(exe_path), "", "", "", "", 0, 0, "portproton"),
+            (
+                "Missing",
+                "",
+                "",
+                "",
+                "",
+                str(tmp_path / "Missing.exe"),
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                "portproton",
+            ),
+            ("Steam", "", "", "", "", "steam://rungameid/1", "", "", "", "", 0, 0, "steam"),
+        ]
+    )
+
+    missing_games = MainWindowLibraryTabMixin._get_games_without_exe(window)
+
+    assert [game[0] for game in missing_games] == ["Missing"]
+
+
+def test_update_delete_missing_exe_button_visibility(tmp_path: Path) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    button = SimpleNamespace(visible=None)
+    button.setVisible = lambda visible: setattr(button, "visible", visible)
+    test_window.deleteMissingExeButton = button
+    test_window.game_library_manager = SimpleNamespace(
+        games=[
+            ("Existing", "", "", "", "", str(exe_path), "", "", "", "", 0, 0, "portproton"),
+            ("Steam", "", "", "", "", "steam://rungameid/1", "", "", "", "", 0, 0, "steam"),
+        ]
+    )
+
+    MainWindowLibraryTabMixin.updateDeleteMissingExeButton(window)
+    assert button.visible is False
+
+    test_window.game_library_manager.games.append(
+        (
+            "Missing",
+            "",
+            "",
+            "",
+            "",
+            str(tmp_path / "Missing.exe"),
+            "",
+            "",
+            "",
+            "",
+            0,
+            0,
+            "portproton",
+        )
+    )
+    MainWindowLibraryTabMixin.updateDeleteMissingExeButton(window)
+
+    assert button.visible is True

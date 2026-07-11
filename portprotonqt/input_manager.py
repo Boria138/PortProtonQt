@@ -3952,6 +3952,7 @@ class InputManager(QObject):
             "addGameButton",
             "searchEdit",
             "refreshButton",
+            "deleteMissingExeButton",
             "libraryControlsButton",
         ):
             widget = getattr(self._parent, attr_name, None)

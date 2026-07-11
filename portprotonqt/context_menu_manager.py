@@ -836,19 +836,8 @@ class ContextMenuManager:
         except OSError as e:
             logger.warning("Failed to clean statistics for '%s': %s", game_name, e)
 
-    def delete_game(self, game_name, exec_line):
+    def _delete_game_without_confirm(self, game_name: str, exec_line: str) -> None:
         card_exec_line = exec_line
-        msg_box = QMessageBox(self.parent)
-        msg_box.setIcon(QMessageBox.Icon.Question)
-        msg_box.setWindowTitle(_("Confirm Deletion"))
-        msg_box.setText(_("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name))
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
-        reply = msg_box.exec()
-        if reply != QMessageBox.StandardButton.Yes:
-            return
         if not self._check_portproton():
             return
         desktop_path = self._get_desktop_path(game_name)
@@ -889,6 +878,20 @@ class ContextMenuManager:
                     )
 
         self.game_library_manager.remove_game_incremental(game_name, card_exec_line or resolved_exec_line)
+
+    def delete_game(self, game_name, exec_line):
+        msg_box = QMessageBox(self.parent)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(_("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self._delete_game_without_confirm(game_name, exec_line)
 
     def add_game_incremental(self, game_data: tuple):
         """Add game after .desktop creation."""
