@@ -378,6 +378,7 @@ tests/
 ├── test_utils.py            # Steam API utils (normalize_name, search, VDF, Steam utils)
 ├── test_validators.py       # Config validators (string, int, bool, path, url)
 ├── test_cache_manager.py    # CacheManager (save/load/TTL/atomic writes)
+├── test_appimage_updater.py # AppImage auto-update worker, mirrors, changelog parsing
 ├── test_dark_theme.py       # Dark theme detection (XFCE/MATE/Cinnamon/GNOME)
 ├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
 ├── test_base_config.py      # BaseConfig read/write, caching, versioning

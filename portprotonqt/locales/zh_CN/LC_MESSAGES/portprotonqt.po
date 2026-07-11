@@ -29,8 +29,19 @@ msgid ""
 "folder for PortProton data."
 msgstr "PortProton 数据文件夹不可读写。请为 PortProton 数据选择其他文件夹。"
 
+#, fuzzy
+msgid "Update complete"
+msgstr "下载完成"
+
+msgid "AppImage updated. Restart the application to use the new version."
+msgstr ""
+
 msgid "Error"
 msgstr "错误"
+
+#, fuzzy
+msgid "Failed to update AppImage."
+msgstr "打开 PPDB 文件失败：\n"
 
 msgid "PortProton directory not found"
 msgstr "未找到 PortProton 目录"
@@ -819,6 +830,29 @@ msgstr "部分"
 
 msgid "none"
 msgstr "无"
+
+#, fuzzy
+msgid "Update available"
+msgstr "可用"
+
+#, fuzzy
+msgid "A new AppImage update is available."
+msgstr "可执行文件路径不可用。"
+
+#, fuzzy
+msgid "Update"
+msgstr "粘贴"
+
+#, fuzzy
+msgid "Later"
+msgstr "晚"
+
+#, fuzzy
+msgid "Disable updates"
+msgstr "已禁用"
+
+msgid "Updating AppImage..."
+msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -1996,6 +2030,9 @@ msgstr "下载镜像："
 
 msgid "Auto download PPDB from"
 msgstr "自动从以下位置下载 PPDB"
+
+msgid "Auto update AppImage"
+msgstr ""
 
 msgid "Force system DPI for Wine"
 msgstr "强制为 Wine 设置系统 DPI"

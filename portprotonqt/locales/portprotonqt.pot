@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 19:38+0500\n"
+"POT-Creation-Date: 2026-07-10 14:54+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,16 @@ msgid ""
 "folder for PortProton data."
 msgstr ""
 
+msgid "Update complete"
+msgstr ""
+
+msgid "AppImage updated. Restart the application to use the new version."
+msgstr ""
+
 msgid "Error"
+msgstr ""
+
+msgid "Failed to update AppImage."
 msgstr ""
 
 msgid "PortProton directory not found"
@@ -787,6 +796,24 @@ msgid "partial"
 msgstr ""
 
 msgid "none"
+msgstr ""
+
+msgid "Update available"
+msgstr ""
+
+msgid "A new AppImage update is available."
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Later"
+msgstr ""
+
+msgid "Disable updates"
+msgstr ""
+
+msgid "Updating AppImage..."
 msgstr ""
 
 #, python-brace-format
@@ -1959,6 +1986,9 @@ msgid "Download mirror:"
 msgstr ""
 
 msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Auto update AppImage"
 msgstr ""
 
 msgid "Force system DPI for Wine"

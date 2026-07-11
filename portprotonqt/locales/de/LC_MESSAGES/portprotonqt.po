@@ -29,8 +29,19 @@ msgid ""
 "folder for PortProton data."
 msgstr "Kein Lese/Schreibzugriff auf den Ordner. Wähle anderen Benutzerordner."
 
+#, fuzzy
+msgid "Update complete"
+msgstr "Download abgeschlossen"
+
+msgid "AppImage updated. Restart the application to use the new version."
+msgstr ""
+
 msgid "Error"
 msgstr "Fehler"
+
+#, fuzzy
+msgid "Failed to update AppImage."
+msgstr "Fehler beim Öffnen der PPDB-Datei:\n"
 
 msgid "PortProton directory not found"
 msgstr "Portproton-Ordner nicht gefunden"
@@ -861,6 +872,29 @@ msgstr "teilweise"
 
 msgid "none"
 msgstr "fehlt"
+
+#, fuzzy
+msgid "Update available"
+msgstr "Verfügbar"
+
+#, fuzzy
+msgid "A new AppImage update is available."
+msgstr "Der Pfad zur ausführbaren Datei ist nicht verfügbar."
+
+#, fuzzy
+msgid "Update"
+msgstr "Einfügen"
+
+#, fuzzy
+msgid "Later"
+msgstr "Nach Bildausgabe"
+
+#, fuzzy
+msgid "Disable updates"
+msgstr "deaktiviert"
+
+msgid "Updating AppImage..."
+msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -2057,6 +2091,9 @@ msgstr "Download-Quelle:"
 
 msgid "Auto download PPDB from"
 msgstr "Automatischer Download von PPDB von"
+
+msgid "Auto update AppImage"
+msgstr ""
 
 msgid "Force system DPI for Wine"
 msgstr "System-DPI für Wine erzwingen"

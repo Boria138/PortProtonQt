@@ -1226,6 +1226,8 @@ class InputManager(QObject):
             self.file_explorer = dialog_instance
         elif dialog_attr_name == 'proton_manager_dialog':
             self.proton_manager_dialog = dialog_instance
+        elif dialog_attr_name == 'appimage_update_dialog':
+            self.appimage_update_dialog = dialog_instance
 
         # Set new handlers
         self.handle_button_slot = button_handler
@@ -1262,6 +1264,8 @@ class InputManager(QObject):
             self.file_explorer = None
         elif dialog_attr_name == 'proton_manager_dialog':
             self.proton_manager_dialog = None
+        elif dialog_attr_name == 'appimage_update_dialog':
+            self.appimage_update_dialog = None
 
         # Reset the flag so original handlers can be saved again on next enable
         if hasattr(self, '_original_handlers_saved'):
@@ -1407,6 +1411,111 @@ class InputManager(QObject):
         if table and table.rowCount() > 0:
             table.setCurrentCell(0, 0)
             table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def enable_appimage_update_mode(self, appimage_update_dialog):
+        """Setup gamepad handling for AppImageUpdateDialog"""
+        try:
+            self._setup_mode_handlers(
+                appimage_update_dialog,
+                self.handle_appimage_update_button,
+                self.handle_appimage_update_dpad,
+                'appimage_update_dialog'
+            )
+            logger.debug("Gamepad handling successfully connected for AppImageUpdateDialog")
+        except Exception as e:
+            logger.error(f"Error connecting gamepad handlers for AppImageUpdateDialog: {e}")
+
+    def disable_appimage_update_mode(self):
+        """Restore original main window handlers"""
+        try:
+            if self.appimage_update_dialog:
+                self._restore_original_handlers('appimage_update_dialog')
+                logger.debug("Gamepad handling successfully restored from AppImageUpdateDialog")
+        except Exception as e:
+            logger.error(f"Error restoring gamepad handlers from AppImageUpdateDialog: {e}")
+
+    def handle_appimage_update_button(self, button_code, value):
+        if self.appimage_update_dialog is None or value == 0:
+            return
+
+        try:
+            if self._handle_common_ui_elements(button_code):
+                return
+
+            focused = QApplication.focusWidget()
+
+            if button_code in BUTTONS['confirm']:
+                if isinstance(focused, AutoSizeButton):
+                    focused.click()
+                return
+
+            elif button_code in BUTTONS['back']:
+                self.appimage_update_dialog.reject()
+                return
+
+            self._parent.activateFocusedWidget()
+
+        except Exception as e:
+            logger.error(f"Error in handle_appimage_update_button: {e}")
+
+    def handle_appimage_update_dpad(self, code, value, now):
+        if self.appimage_update_dialog is None:
+            return
+
+        try:
+            if value == 0:
+                self.dpad_timer.stop()
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                return
+
+            if self.current_dpad_code != code or self.current_dpad_value != value:
+                self.dpad_timer.stop()
+                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)
+                self.dpad_timer.start()
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+
+            changelog = self.appimage_update_dialog.changelog_text
+            buttons = self.appimage_update_dialog.action_buttons
+
+            if changelog and changelog.hasFocus():
+                if code == PAD_DPAD_Y and value != 0:
+                    scrollbar = changelog.verticalScrollBar()
+                    at_bottom = scrollbar.value() >= scrollbar.maximum()
+                    at_top = scrollbar.value() <= scrollbar.minimum()
+                    if value > 0 and at_bottom:
+                        if buttons:
+                            buttons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+                    if value < 0 and at_top:
+                        return
+                    step = 40
+                    scrollbar.setValue(scrollbar.value() + (step if value > 0 else -step))
+                return
+
+            if code == PAD_DPAD_Y and value != 0 and buttons:
+                focused = QApplication.focusWidget()
+                if focused in buttons:
+                    if value < 0 and focused == buttons[0]:
+                        if changelog:
+                            changelog.setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+
+            if code == PAD_DPAD_X and value != 0 and buttons:
+                focused = QApplication.focusWidget()
+                if focused in buttons:
+                    idx = buttons.index(focused)
+                    if value < 0:
+                        new_idx = max(0, idx - 1)
+                    else:
+                        new_idx = min(len(buttons) - 1, idx + 1)
+                    buttons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                else:
+                    buttons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+
+        except Exception as e:
+            logger.error(f"Error in handle_appimage_update_dpad: {e}")
 
     # SETTINGS MODE
     def enable_settings_mode(self, settings_dialog):

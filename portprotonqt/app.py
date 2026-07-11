@@ -20,10 +20,15 @@ except ImportError:
     APP_COMMIT = ""
     APP_VERSION = "1.2.0"
 
-__app_version__ = APP_VERSION
+__app_version__ = os.environ.get("PORTPROTONQT_VERSION", APP_VERSION)
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QMenu,
+    QMessageBox,
+    QSystemTrayIcon,
+)
 from PySide6.QtGui import QAction, QIcon
 
 from portprotonqt.config import (
@@ -316,6 +321,10 @@ def main():
 
     from PySide6.QtCore import QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
+    from portprotonqt.appimage_updater import (
+        APPIMAGE_UPDATE_START_DELAY_MS,
+        AppImageUpdateWorker,
+    )
     from portprotonqt.main_window import MainWindow
     from portprotonqt.port_data_path_selector import ask_portdata_path, is_portdata_path_read_write
     from portprotonqt.portproton_api import (
@@ -324,6 +333,10 @@ def main():
         set_user_conf_setting,
     )
     from portprotonqt.downloader import Downloader
+    from portprotonqt.dialogs.appimage_update import (
+        AppImageUpdateDialog,
+        AppImageUpdateProgressDialog,
+    )
     from portprotonqt.debug_utils import (
         get_selectable_gpu_entries,
     )
@@ -599,6 +612,47 @@ def main():
         logger.info("Launching in normal mode")
         display_config.set_fullscreen(False)
         window.showNormal()
+
+    appimage_update_progress: AppImageUpdateProgressDialog | None = None
+
+    def start_appimage_update(update_info: str) -> None:
+        nonlocal appimage_update_progress
+        appimage_update_progress = AppImageUpdateProgressDialog(window, update_info)
+        appimage_update_progress.update_finished.connect(show_appimage_update_result)
+        appimage_update_progress.finished.connect(
+            lambda _result: clear_appimage_update_progress()
+        )
+        appimage_update_progress.start_update()
+
+    def clear_appimage_update_progress() -> None:
+        nonlocal appimage_update_progress
+        appimage_update_progress = None
+
+    def show_appimage_update_prompt(changelog: str, update_info: str) -> None:
+        dialog = AppImageUpdateDialog(window, window.theme, changelog)
+        result = dialog.exec()
+        if result == AppImageUpdateDialog.UPDATE:
+            start_appimage_update(update_info)
+        elif result == AppImageUpdateDialog.DISABLE:
+            ui_config.set_auto_appimage_updates(False)
+
+    def show_appimage_update_result(success: bool) -> None:
+        if success:
+            QMessageBox.information(
+                window,
+                _("Update complete"),
+                _("AppImage updated. Restart the application to use the new version."),
+            )
+            return
+        QMessageBox.warning(window, _("Error"), _("Failed to update AppImage."))
+
+    window.appimageUpdateWorker = AppImageUpdateWorker("check")
+    window.appimageUpdateWorker.update_available.connect(show_appimage_update_prompt)
+    window.appimageUpdateWorker.finished.connect(
+        lambda: setattr(window, "appimageUpdateWorker", None)
+    )
+    window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
+    QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
 
     # Execute the initial PortProton command after the UI is set up
     class InitialCommandWorker(QThread):

@@ -2,6 +2,7 @@
 install_data(
   ['__init__.py',
    'app.py',
+   'appimage_updater.py',
    'cli.py',
    'context_menu_manager.py',
    'custom_widgets.py',
@@ -63,6 +64,7 @@ install_data(
 # Install dialogs package
 install_data(
   ['dialogs/__init__.py',
+   'dialogs/appimage_update.py',
    'dialogs/base.py',
    'dialogs/dialog_utils.py',
    'dialogs/file_explorer.py',

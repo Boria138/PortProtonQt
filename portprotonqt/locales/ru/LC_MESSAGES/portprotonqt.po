@@ -32,8 +32,17 @@ msgstr ""
 "Папка с данными PortProton не доступна для чтения и записи. Выберите "
 "другую папку для данных PortProton."
 
+msgid "Update complete"
+msgstr "Обновление завершено"
+
+msgid "AppImage updated. Restart the application to use the new version."
+msgstr "AppImage обновлён. Перезапустите приложение для использования новой версии."
+
 msgid "Error"
 msgstr "Ошибка"
+
+msgid "Failed to update AppImage."
+msgstr "Не удалось обновить AppImage."
 
 msgid "PortProton directory not found"
 msgstr "Не найден каталог PortProton"
@@ -864,6 +873,24 @@ msgstr "частичная"
 
 msgid "none"
 msgstr "отсутствует"
+
+msgid "Update available"
+msgstr "Доступно обновление"
+
+msgid "A new AppImage update is available."
+msgstr "Доступно новое обновление AppImage."
+
+msgid "Update"
+msgstr "Обновить"
+
+msgid "Later"
+msgstr "Позже"
+
+msgid "Disable updates"
+msgstr "Отключить обновления"
+
+msgid "Updating AppImage..."
+msgstr "Обновление AppImage..."
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -2056,6 +2083,9 @@ msgstr "Зеркало для скачивания:"
 
 msgid "Auto download PPDB from"
 msgstr "Автоматическая загрузка PPDB с"
+
+msgid "Auto update AppImage"
+msgstr "Автоматическое обновление AppImage"
 
 msgid "Force system DPI for Wine"
 msgstr "Принудительно установить системный DPI для Wine"

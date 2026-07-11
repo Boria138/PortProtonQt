@@ -403,6 +403,22 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         auto_download_ppdb_layout.addWidget(self.autoDownloadPPDBTitle)
         auto_download_ppdb_layout.addStretch()
 
+        auto_appimage_updates_layout = None
+        if os.getenv("APPIMAGE"):
+            self.autoAppImageUpdatesCheckBox = QCheckBox()
+            self.autoAppImageUpdatesCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.autoAppImageUpdatesCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.autoAppImageUpdatesTitle = QLabel(_("Auto update AppImage"))
+            self.autoAppImageUpdatesTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.autoAppImageUpdatesTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.autoAppImageUpdatesTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.autoAppImageUpdatesCheckBox.setChecked(ui_config.get_auto_appimage_updates())
+            auto_appimage_updates_layout = QHBoxLayout()
+            auto_appimage_updates_layout.setContentsMargins(0, 0, 0, 0)
+            auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesCheckBox)
+            auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesTitle)
+            auto_appimage_updates_layout.addStretch()
+
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.forceSystemDpiCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -432,6 +448,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         downloadForm.addRow(economy_mode_layout)
         downloadForm.addRow(auto_download_ppdb_layout)
+        if auto_appimage_updates_layout is not None:
+            downloadForm.addRow(auto_appimage_updates_layout)
 
         self.enableThemeStoreCheckBox = QCheckBox()
         self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -741,6 +759,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
         ui_config.set_auto_download_ppdb(self.autoDownloadPPDBCheckBox.isChecked())
+        if hasattr(self, 'autoAppImageUpdatesCheckBox'):
+            ui_config.set_auto_appimage_updates(self.autoAppImageUpdatesCheckBox.isChecked())
 
         enable_theme_store = self.enableThemeStoreCheckBox.isChecked()
         ui_config.set_enable_theme_store(enable_theme_store)

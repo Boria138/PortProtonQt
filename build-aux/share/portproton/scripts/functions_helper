@@ -1840,7 +1840,8 @@ pw_init_db () {
     [[ -n "${PW_DEFAULT_VULKAN_USE:-}" ]] && export PW_VULKAN_USE="${PW_DEFAULT_VULKAN_USE}"
 
     if echo "$LSPCI_VGA" | grep -i -q 'nvidia.*rtx' ; then
-        set_to_dxvk_conf nvidia_new
+        export PW_USE_NVAPI_AND_DLSS="1"
+        export PW_USE_RAY_TRACING="1"
     fi
 
     if [[ -f "${PW_EXE_FILE}" ]] ; then
@@ -2383,6 +2384,7 @@ pw_optiscaler_sync_files () {
         for dll in $OPTISCALER_FILES ; do cp -fr "$OPTISCALER_PATH/$dll" "$PATH_TO_GAME/$dll" || print_error "$OPTISCALER_PATH/$dll not found for copy!"; done
         echo "$PW_OPTISCALER_VER" > "$PATH_TO_GAME/optiscaler_version"
     fi
+    export PW_USE_NVAPI_AND_DLSS="1"
     set_to_dxvk_conf nvidia_new
 }
 
@@ -2935,7 +2937,7 @@ start_portproton () {
     fi
 
     if [[ "${PW_USE_NVAPI_AND_DLSS}" == "1" ]] ; then
-        set_to_dxvk_conf nvidia_new
+        export DXVK_ENABLE_NVAPI="1"
         if echo "$LSPCI_VGA" | grep -i -q 'nvidia' ; then
             FIND_NVNGX="$(dirname $(find /usr/* -type f -name "nvngx.dll" 2>/dev/null | head -n 1 | awk '{print $1}'))"
             if [[ -n "$FIND_NVNGX" ]] ; then

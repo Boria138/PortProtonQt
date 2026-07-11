@@ -31,8 +31,19 @@ msgstr ""
 "La carpeta de datos de PortProton no tiene permisos de lectura ni escritura. "
 "Elija otra carpeta para los datos de PortProton."
 
+#, fuzzy
+msgid "Update complete"
+msgstr "Restauración del prefijo completado."
+
+msgid "AppImage updated. Restart the application to use the new version."
+msgstr ""
+
 msgid "Error"
 msgstr "Error"
+
+#, fuzzy
+msgid "Failed to update AppImage."
+msgstr "Error al detener el juego"
 
 msgid "PortProton directory not found"
 msgstr "No encontrado el directorio PortProton"
@@ -877,6 +888,26 @@ msgstr "parcial"
 
 msgid "none"
 msgstr "ninguna"
+
+msgid "Update available"
+msgstr ""
+
+msgid "A new AppImage update is available."
+msgstr ""
+
+#, fuzzy
+msgid "Update"
+msgstr "Pegar"
+
+#, fuzzy
+msgid "Later"
+msgstr "Pegar"
+
+msgid "Disable updates"
+msgstr ""
+
+msgid "Updating AppImage..."
+msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -2051,6 +2082,9 @@ msgid "Download mirror:"
 msgstr ""
 
 msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Auto update AppImage"
 msgstr ""
 
 msgid "Force system DPI for Wine"
