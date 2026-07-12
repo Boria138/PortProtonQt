@@ -44,6 +44,7 @@
 - Улучшено адаптивное отображение детальной страниц
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
+- Обновлён перевод на Испанский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/`
 - Кеш ProtonDB теперь очищается при обновлении списка приложений Steam
 - Убрана поддержка `.lnк` файлов из `start.sh`
 - Устаревший `Proton-Sarek` заменён на `dwproton`
@@ -75,6 +76,7 @@
 - @rogerio-mattos
 - @Simple16
 - @Rubin13
+- @gallegonovato
 
 ---
 
