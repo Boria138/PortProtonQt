@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 14:54+0500\n"
+"POT-Creation-Date: 2026-07-11 11:54+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,12 +182,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr ""
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr ""
 
@@ -197,6 +191,12 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
 msgstr ""
 
 #, python-brace-format
@@ -1898,6 +1898,9 @@ msgstr ""
 msgid "Quick Launch"
 msgstr ""
 
+msgid "Delete cards without executable"
+msgstr ""
+
 msgid "Library Settings"
 msgstr ""
 
@@ -1929,6 +1932,12 @@ msgid "Badge View Type:"
 msgstr ""
 
 msgid "Refreshing…"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
 msgstr ""
 
 msgid "PortProton Settings"

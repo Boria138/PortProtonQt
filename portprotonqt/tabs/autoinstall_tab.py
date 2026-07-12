@@ -20,6 +20,7 @@ from portprotonqt.custom_widgets import AutoHideScrollArea, AutoSizeButton, Flow
 from portprotonqt.game_card import GameCard
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
+from portprotonqt.search_utils import SearchOptimizer, build_search_items, search_index
 
 logger = get_logger(__name__)
 
@@ -73,12 +74,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         searchLayout.addWidget(self.autoInstallSearchLineEdit)
 
         self.autoInstallRefreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.autoInstallRefreshButton.setStyleSheet(button_style)
+        self.autoInstallRefreshButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.autoInstallRefreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoInstallRefreshButton.clicked.connect(self._refresh_autoinstall_games)
         self._register_gamepad_tooltip(self.autoInstallRefreshButton, _("Refresh Grid"))
@@ -124,6 +120,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         # Store cards
         self.autoInstallGameCards = {}
         self.allAutoInstallCards = []
+        self.autoInstallSearchOptimizer = SearchOptimizer()
         self.autoInstallLoaded = False
         self.autoInstallLoading = False
 
@@ -203,6 +200,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
                 self.allAutoInstallCards.append(card)
                 self.autoInstallContainerLayout.addWidget(card)
 
+            self._build_autoinstall_search_indices()
             self.autoInstallContainer.updateGeometry()
             self.autoInstallScrollArea.updateGeometry()
             self.filterAutoInstallGames()
@@ -330,15 +328,27 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         self.autoInstallContainer.updateGeometry()
         self.autoInstallScrollArea.updateGeometry()
 
+    def _build_autoinstall_search_indices(self) -> None:
+        self.autoInstallSearchOptimizer.build_indices(
+            build_search_items(
+                self.allAutoInstallCards,
+                lambda card: card.name,
+                lambda card: card.description,
+            )
+        )
+
     def filterAutoInstallGames(self):
         """Filter auto install game cards based on search text."""
         search_text = self.autoInstallSearchLineEdit.text().lower().strip()
+        if not hasattr(self, "autoInstallSearchOptimizer"):
+            self.autoInstallSearchOptimizer = SearchOptimizer()
+            self._build_autoinstall_search_indices()
+        visible_cards = self.allAutoInstallCards
+        if search_text:
+            visible_cards = search_index(self.autoInstallSearchOptimizer, search_text)
 
         for card in self.allAutoInstallCards:
-            if search_text in card.name.lower():
-                card.setVisible(True)
-            else:
-                card.setVisible(False)
+            card.setVisible(card in visible_cards)
 
         # Re-layout the container
         self.autoInstallContainerLayout.invalidate()

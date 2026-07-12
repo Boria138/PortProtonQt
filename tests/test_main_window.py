@@ -11,6 +11,7 @@ from pytest import MonkeyPatch
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.main_window import MainWindow
+from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
 import portprotonqt.tabs.library_tab as library_tab_module
 from portprotonqt.tabs import (
@@ -56,6 +57,7 @@ TAB_METHODS = {
         "_add_library_action_buttons",
         "_add_library_search",
         "_add_library_refresh_button",
+        "_add_library_delete_missing_button",
         "_add_library_controls_button",
         "_setup_library_search_animation",
         "_wrap_search_focus_event",
@@ -66,6 +68,9 @@ TAB_METHODS = {
         "_allow_library_controls_hover_close",
         "createSearchWidget",
         "refreshGames",
+        "_get_games_without_exe",
+        "updateDeleteMissingExeButton",
+        "deleteMissingExeCards",
         "quickLaunch",
         "on_search_text_changed",
         "on_search_changed",
@@ -249,6 +254,41 @@ def test_autoinstall_search_keeps_expanded_for_active_virtual_keyboard(monkeypat
     handler(object())
 
     assert animation.collapsed is False
+
+
+def test_autoinstall_search_matches_library_index_fields() -> None:
+    class Window(AutoInstallMixin):
+        pass
+
+    class FakeSearchEdit:
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def text(self) -> str:
+            return self._text
+
+    class FakeCard:
+        def __init__(self, name: str, description: str) -> None:
+            self.name = name
+            self.description = description
+            self.visible = False
+
+        def setVisible(self, visible: bool) -> None:
+            self.visible = visible
+
+    window: Any = Window()
+    target_card = FakeCard("VK Play", "Launcher for the VK Play game library.")
+    other_card = FakeCard("Another Game", "Different installer.")
+    window.allAutoInstallCards = [target_card, other_card]
+    window.autoInstallSearchLineEdit = FakeSearchEdit("launcher")
+    window.autoInstallContainerLayout = SimpleNamespace(invalidate=lambda: None)
+    window.autoInstallContainer = SimpleNamespace(updateGeometry=lambda: None)
+    window.autoInstallScrollArea = SimpleNamespace(updateGeometry=lambda: None)
+
+    window.filterAutoInstallGames()
+
+    assert target_card.visible is True
+    assert other_card.visible is False
 
 
 def test_tab_methods_resolve_from_expected_modules() -> None:
@@ -601,3 +641,92 @@ def test_process_portproton_desktop_calls_callback_without_asset_download(
     assert results[0] is not None
     assert results[0][0] == "Test Game"
     assert results[0][5] == f"portproton {exe_path}"
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    assert not custom_data_path.exists()
+
+
+def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path) -> None:
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    (custom_data_path / "praest").mkdir(parents=True)
+    (custom_data_path / "Akalabeth - World of Doom").mkdir()
+    kept_dir = custom_data_path / "Edited Game"
+    kept_dir.mkdir()
+    (kept_dir / "metadata.txt").write_text("name=Edited Game\n", encoding="utf-8")
+
+    remove_empty_custom_data_dirs(str(custom_data_path))
+
+    assert not (custom_data_path / "praest").exists()
+    assert not (custom_data_path / "Akalabeth - World of Doom").exists()
+    assert kept_dir.exists()
+
+
+def test_get_games_without_exe_skips_existing_and_steam(tmp_path: Path) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.game_library_manager = SimpleNamespace(
+        games=[
+            ("Existing", "", "", "", "", str(exe_path), "", "", "", "", 0, 0, "portproton"),
+            (
+                "Missing",
+                "",
+                "",
+                "",
+                "",
+                str(tmp_path / "Missing.exe"),
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                "portproton",
+            ),
+            ("Steam", "", "", "", "", "steam://rungameid/1", "", "", "", "", 0, 0, "steam"),
+        ]
+    )
+
+    missing_games = MainWindowLibraryTabMixin._get_games_without_exe(window)
+
+    assert [game[0] for game in missing_games] == ["Missing"]
+
+
+def test_update_delete_missing_exe_button_visibility(tmp_path: Path) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    button = SimpleNamespace(visible=None)
+    button.setVisible = lambda visible: setattr(button, "visible", visible)
+    test_window.deleteMissingExeButton = button
+    test_window.game_library_manager = SimpleNamespace(
+        games=[
+            ("Existing", "", "", "", "", str(exe_path), "", "", "", "", 0, 0, "portproton"),
+            ("Steam", "", "", "", "", "steam://rungameid/1", "", "", "", "", 0, 0, "steam"),
+        ]
+    )
+
+    MainWindowLibraryTabMixin.updateDeleteMissingExeButton(window)
+    assert button.visible is False
+
+    test_window.game_library_manager.games.append(
+        (
+            "Missing",
+            "",
+            "",
+            "",
+            "",
+            str(tmp_path / "Missing.exe"),
+            "",
+            "",
+            "",
+            "",
+            0,
+            0,
+            "portproton",
+        )
+    )
+    MainWindowLibraryTabMixin.updateDeleteMissingExeButton(window)
+
+    assert button.visible is True

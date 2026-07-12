@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLineEdit,
+    QMessageBox,
     QSizePolicy,
     QToolButton,
     QVBoxLayout,
@@ -20,6 +21,7 @@ from portprotonqt.animations import ExpandingSearchAnimation, LibraryControlsAni
 from portprotonqt.cli import is_autoinstall_file
 from portprotonqt.config import (
     LAUNCH_FILE_EXTENSIONS,
+    extract_exec_target_path,
     game_config,
     parse_desktop_entry,
     ui_config,
@@ -183,27 +185,31 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
     def _add_library_refresh_button(self, buttons_layout: QHBoxLayout) -> None:
         self.refreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.refreshButton.setStyleSheet(button_style)
+        self.refreshButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
         self._register_gamepad_tooltip(self.refreshButton, _("Refresh Grid"))
         buttons_layout.addWidget(self.refreshButton)
 
+    def _add_library_delete_missing_button(self, buttons_layout: QHBoxLayout) -> None:
+        self.deleteMissingExeButton = AutoSizeButton(
+            icon=self.theme_manager.get_icon("delete", as_path=True)
+        )
+        self.deleteMissingExeButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
+        self.deleteMissingExeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.deleteMissingExeButton.clicked.connect(self.deleteMissingExeCards)
+        self._register_gamepad_tooltip(
+            self.deleteMissingExeButton,
+            _("Delete cards without executable"),
+        )
+        self.deleteMissingExeButton.setVisible(False)
+        buttons_layout.addWidget(self.deleteMissingExeButton)
+
     def _add_library_controls_button(self, buttons_layout: QHBoxLayout) -> None:
         self.libraryControlsButton = AutoSizeButton(
             icon=self.theme_manager.get_icon("menu", as_path=True)
         )
-        button_style = getattr(
-            self.theme,
-            "LIBRARY_CONTROLS_BUTTON_STYLE",
-            self.theme.ADDGAME_BACK_BUTTON_STYLE,
-        )
-        self.libraryControlsButton.setStyleSheet(button_style)
+        self.libraryControlsButton.setStyleSheet(self.theme.LIBRARY_CONTROLS_BUTTON_STYLE)
         self.libraryControlsButton.setCheckable(True)
         self.libraryControlsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.libraryControlsButton.clicked.connect(self._toggle_library_controls)
@@ -317,6 +323,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._add_library_action_buttons(buttons_layout)
         self._add_library_search(buttons_layout)
         self._add_library_refresh_button(buttons_layout)
+        self._add_library_delete_missing_button(buttons_layout)
         self.libraryControlsAnimation = LibraryControlsAnimation(
             self.libraryControlsWidget,
             self.theme,
@@ -371,6 +378,45 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh
         QTimer.singleShot(50, lambda: self.loadGames(force_load=True))
+
+    def _get_games_without_exe(self) -> list[tuple]:
+        missing_games = []
+        for game in self.game_library_manager.games:
+            if len(game) <= 12 or game[12] == "steam":
+                continue
+            exec_line = game[5] if len(game) > 5 else ""
+            exe_path = extract_exec_target_path(exec_line) if exec_line else None
+            if not exe_path or not os.path.exists(exe_path):
+                missing_games.append(game)
+        return missing_games
+
+    def updateDeleteMissingExeButton(self) -> None:
+        button = getattr(self, "deleteMissingExeButton", None)
+        if button is None:
+            return
+        button.setVisible(bool(self._get_games_without_exe()))
+
+    def deleteMissingExeCards(self) -> None:
+        """Delete PortProton cards whose executable is missing."""
+        if not getattr(self, "context_menu_manager", None):
+            return
+        missing_games = self._get_games_without_exe()
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(
+            _("Are you sure you want to delete {count} cards without executable? This will remove the .desktop files and custom data.")
+            .format(count=len(missing_games))
+        )
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        if msg_box.exec() != QMessageBox.StandardButton.Yes:
+            return
+        for game in missing_games:
+            self.context_menu_manager._delete_game_without_confirm(game[0], game[5])
+        self.updateDeleteMissingExeButton()
 
     def quickLaunch(self):
         """Open file manager to select executable and then open its detail page."""
@@ -497,13 +543,13 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                     "custom_data",
                     exe_name
                 )
-                os.makedirs(custom_folder, exist_ok=True)
 
                 # Handle user cover copy
                 cover_path = None
                 if user_cover:
                     ext = os.path.splitext(user_cover)[1].lower()
                     if os.path.isfile(user_cover) and ext in COVER_IMAGE_EXTENSIONS:
+                        os.makedirs(custom_folder, exist_ok=True)
                         copied_cover = os.path.join(custom_folder, f"cover{ext}")
                         shutil.copyfile(user_cover, copied_cover)
                         cover_path = copied_cover

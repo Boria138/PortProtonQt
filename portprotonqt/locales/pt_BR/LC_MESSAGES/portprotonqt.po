@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-07-05 15:07+0000\n"
+"PO-Revision-Date: 2026-07-11 07:06+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -31,19 +31,17 @@ msgstr ""
 "A pasta de dados do PortProton não pode ser lida nem gravada. Escolha "
 "outra pasta para os dados do PortProton."
 
-#, fuzzy
 msgid "Update complete"
-msgstr "Download Concluído"
+msgstr "Atualização concluída"
 
 msgid "AppImage updated. Restart the application to use the new version."
-msgstr ""
+msgstr "AppImage atualizado. Reinicie o aplicativo para usar a nova versão."
 
 msgid "Error"
 msgstr "Erro"
 
-#, fuzzy
 msgid "Failed to update AppImage."
-msgstr "Falha ao abrir o arquivo PPDB:\n"
+msgstr "Falha ao atualizar o AppImage."
 
 msgid "PortProton directory not found"
 msgstr "Diretório do PortProton não encontrado"
@@ -195,14 +193,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "Nenhum arquivo .desktop encontrado para '{game_name}'"
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr ""
-"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
-".desktop e os dados personalizados."
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr "Falha ao excluir o arquivo .desktop: {error}"
 
@@ -213,6 +203,14 @@ msgstr "'{game_name}' excluído com sucesso"
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "Falha ao excluir os dados personalizados: {error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
+msgstr ""
+"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
+".desktop e os dados personalizados."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
@@ -419,13 +417,13 @@ msgstr "O prefixo '{0}' não foi encontrado. Instalar as bibliotecas recomendada
 
 #, python-brace-format
 msgid "Repository x86_64-i586 is not enabled. See: {0}"
-msgstr ""
+msgstr "O repositório x86_64-i586 não está habilitado. Consulte: {0}"
 
 msgid "Install dependencies"
 msgstr "Instalar dependências"
 
 msgid "32-bit dependencies are missing. Install them now?"
-msgstr ""
+msgstr "As dependências de 32 bits estão faltando. Instalá-las agora?"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Formato de comando inválido (linha exec vazia)"
@@ -876,28 +874,23 @@ msgstr "parcial"
 msgid "none"
 msgstr "nenhum"
 
-#, fuzzy
 msgid "Update available"
-msgstr "Disponível"
+msgstr "Atualização disponível"
 
-#, fuzzy
 msgid "A new AppImage update is available."
-msgstr "O caminho do executável não está disponível."
+msgstr "Uma nova atualização do AppImage está disponível."
 
-#, fuzzy
 msgid "Update"
-msgstr "Colar"
+msgstr "Atualizar"
 
-#, fuzzy
 msgid "Later"
-msgstr "Tardio"
+msgstr "Mais tarde"
 
-#, fuzzy
 msgid "Disable updates"
-msgstr "desativado"
+msgstr "Desativar atualizações"
 
 msgid "Updating AppImage..."
-msgstr ""
+msgstr "Atualizando AppImage..."
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -1982,7 +1975,7 @@ msgid "Enable/Disable"
 msgstr "Ativar/Desativar"
 
 msgid "Refresh"
-msgstr "Atualizar"
+msgstr "Recarregar"
 
 msgid "Add VPN"
 msgstr "Adicionar VPN"
@@ -2001,6 +1994,10 @@ msgstr "Definir saída"
 
 msgid "Quick Launch"
 msgstr "Início Rápido"
+
+#, fuzzy
+msgid "Delete cards without executable"
+msgstr "Caminho do Executável:"
 
 msgid "Library Settings"
 msgstr "Configurações da Biblioteca"
@@ -2034,6 +2031,14 @@ msgstr "Modo de Exibição do Selo:"
 
 msgid "Refreshing…"
 msgstr "Atualizando…"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
+msgstr ""
+"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
+".desktop e os dados personalizados."
 
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"
@@ -2093,7 +2098,7 @@ msgid "Auto download PPDB from"
 msgstr "Baixar automaticamente o PPDB de"
 
 msgid "Auto update AppImage"
-msgstr ""
+msgstr "Atualização automática do AppImage"
 
 msgid "Force system DPI for Wine"
 msgstr "Forçar DPI do sistema para o Wine"

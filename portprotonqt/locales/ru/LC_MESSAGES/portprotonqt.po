@@ -192,14 +192,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "Не найден файл .desktop для '{game_name}'"
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr ""
-"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
-"файла .desktop и пользовательских данных."
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr "Не удалось удалить файл .desktop: {error}"
 
@@ -210,6 +202,14 @@ msgstr "'{game_name}' успешно удалён(а)"
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "Не удалось удалить пользовательские данные: {error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
+msgstr ""
+"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
+"файла .desktop и пользовательских данных."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
@@ -1994,6 +1994,9 @@ msgstr "Выбрать выход"
 msgid "Quick Launch"
 msgstr "Быстрый запуск"
 
+msgid "Delete cards without executable"
+msgstr "Удалить карточки без исполняемого файла"
+
 msgid "Library Settings"
 msgstr "Настройки Библиотеки"
 
@@ -2026,6 +2029,14 @@ msgstr "Тип отображения бейджей:"
 
 msgid "Refreshing…"
 msgstr "Обновление…"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
+msgstr ""
+"Вы уверены, что хотите удалить {count} карточек без исполняемого файла? "
+"Это приведёт к удалению файлов .desktop и пользовательских данных."
 
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"

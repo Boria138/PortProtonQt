@@ -17,6 +17,11 @@ class DummyDownloader:
         return local_path
 
 
+class FailingDownloader:
+    def download(self, url: str, local_path: str, timeout: int = 5) -> str:
+        return ""
+
+
 class DummyResponse:
     text = "new script"
 
@@ -27,6 +32,13 @@ class DummyResponse:
 class DummySession:
     def get(self, url: str, timeout: int = 10) -> DummyResponse:
         return DummyResponse()
+
+
+def test_api_init_does_not_create_custom_data_dir(tmp_config_dir: Path) -> None:
+    PortProtonAPI()
+
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    assert not custom_data_path.exists()
 
 
 def test_autoinstall_description_falls_back_to_english(tmp_config_dir: Path) -> None:
@@ -135,6 +147,24 @@ def test_autoinstall_script_caches_cover_for_target_exe(
     assert cover_path.exists()
     assert downloader.downloads[0][1] == str(cover_path)
     assert downloader.downloads[0][0] == game_data["cover_path"]
+
+
+def test_autoinstall_removes_empty_custom_data_after_cover_failure(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+) -> None:
+    api = PortProtonAPI(downloader=cast(Any, FailingDownloader()))
+    game_data = {"cover_path": "https://example.org/missing.webp"}
+    script_path = tmp_path / "game_45_test.ppai"
+    script_path.write_text(
+        'PW_EXE_FILE="$WINEPREFIX/drive_c/FailedCover.exe"\n',
+        encoding="utf-8",
+    )
+
+    api.write_autoinstall_custom_data(str(script_path), game_data)
+
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    assert not custom_data_path.exists()
 
 
 def test_autoinstall_script_uses_cached_card_data(

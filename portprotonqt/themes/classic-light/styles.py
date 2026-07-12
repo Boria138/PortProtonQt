@@ -41,6 +41,11 @@ color_text_dark = "#212529"
 color_detail_overlay = "rgba(220, 222, 226, 0.40)"
 color_detail_line = "rgba(0,0,0,0.12)"
 
+SOURCE_CORNER = {
+    **SOURCE_CORNER,
+    "ribbon_color": color_surface,
+}
+
 # === Button Icons Color ===
 ICON_COLORS = {
     "*_hover": color_text,

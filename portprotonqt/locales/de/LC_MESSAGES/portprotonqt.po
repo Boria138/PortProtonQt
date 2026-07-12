@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-25 07:06+0000\n"
+"PO-Revision-Date: 2026-07-11 07:06+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -29,19 +29,19 @@ msgid ""
 "folder for PortProton data."
 msgstr "Kein Lese/Schreibzugriff auf den Ordner. Wähle anderen Benutzerordner."
 
-#, fuzzy
 msgid "Update complete"
-msgstr "Download abgeschlossen"
+msgstr "Aktualisierung abgeschlossen"
 
 msgid "AppImage updated. Restart the application to use the new version."
 msgstr ""
+"AppImage aktualisiert. Starte die Anwendung neu, um die neue Version zu "
+"verwenden."
 
 msgid "Error"
 msgstr "Fehler"
 
-#, fuzzy
 msgid "Failed to update AppImage."
-msgstr "Fehler beim Öffnen der PPDB-Datei:\n"
+msgstr "Das AppImage konnte nicht aktualisiert werden."
 
 msgid "PortProton directory not found"
 msgstr "Portproton-Ordner nicht gefunden"
@@ -193,14 +193,6 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "Keine .desktop-Datei gefunden für '{game_name}'"
 
 #, python-brace-format
-msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
-msgstr ""
-"Soll das Spiel '{game_name}' wirklich gelöscht werden? Benutzerdaten und "
-".desktop-Datei werden gelöscht."
-
-#, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr "Die .desktop-Datei konnte nicht gelöscht werden: {error}"
 
@@ -211,6 +203,14 @@ msgstr "'{game_name}' wurde erfolgreich gelöscht"
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "Fehler beim Löschen der Benutzerdaten: {error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
+msgstr ""
+"Soll das Spiel '{game_name}' wirklich gelöscht werden? Benutzerdaten und "
+".desktop-Datei werden gelöscht."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
@@ -418,13 +418,13 @@ msgstr ""
 
 #, python-brace-format
 msgid "Repository x86_64-i586 is not enabled. See: {0}"
-msgstr ""
+msgstr "Das Repository x86_64-i586 ist nicht aktiviert. Siehe: {0}"
 
 msgid "Install dependencies"
 msgstr "Abhängigkeiten installieren"
 
 msgid "32-bit dependencies are missing. Install them now?"
-msgstr ""
+msgstr "Notwendige 32-Bit-Software fehlen. Jetzt installieren?"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "Ungültiges Befehlsformat (leere exec-Zeile)"
@@ -873,28 +873,23 @@ msgstr "teilweise"
 msgid "none"
 msgstr "fehlt"
 
-#, fuzzy
 msgid "Update available"
-msgstr "Verfügbar"
+msgstr "Update verfügbar"
 
-#, fuzzy
 msgid "A new AppImage update is available."
-msgstr "Der Pfad zur ausführbaren Datei ist nicht verfügbar."
+msgstr "Ein neues AppImage-Update ist verfügbar."
 
-#, fuzzy
 msgid "Update"
-msgstr "Einfügen"
+msgstr "Aktualisierung"
 
-#, fuzzy
 msgid "Later"
-msgstr "Nach Bildausgabe"
+msgstr "Später"
 
-#, fuzzy
 msgid "Disable updates"
-msgstr "deaktiviert"
+msgstr "Updates deaktivieren"
 
 msgid "Updating AppImage..."
-msgstr ""
+msgstr "AppImage aktualisieren..."
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -2002,6 +1997,10 @@ msgstr "Ausgabe festlegen"
 msgid "Quick Launch"
 msgstr "Schnellstart"
 
+#, fuzzy
+msgid "Delete cards without executable"
+msgstr "Pfad zur ausführbaren Datei:"
+
 msgid "Library Settings"
 msgstr "Bibliothekseinstellungen"
 
@@ -2034,6 +2033,14 @@ msgstr "Anzeigetyp von Titelbildern:"
 
 msgid "Refreshing…"
 msgstr "Aktualisieren…"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete {count} cards without executable? This "
+"will remove the .desktop files and custom data."
+msgstr ""
+"Soll das Spiel '{game_name}' wirklich gelöscht werden? Benutzerdaten und "
+".desktop-Datei werden gelöscht."
 
 msgid "PortProton Settings"
 msgstr "PortProton-Einstellungen"
@@ -2093,7 +2100,7 @@ msgid "Auto download PPDB from"
 msgstr "Automatischer Download von PPDB von"
 
 msgid "Auto update AppImage"
-msgstr ""
+msgstr "AppImage automatisch aktualisieren"
 
 msgid "Force system DPI for Wine"
 msgstr "System-DPI für Wine erzwingen"

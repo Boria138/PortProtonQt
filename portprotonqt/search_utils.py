@@ -1,6 +1,7 @@
 """
 Utility module for search optimizations including Trie, hash tables, and fuzzy matching.
 """
+from collections.abc import Callable
 from typing import Any
 from rapidfuzz import fuzz
 from threading import Lock
@@ -8,6 +9,57 @@ from portprotonqt.logger import get_logger
 from PySide6.QtCore import QThread, Signal, QObject
 
 logger = get_logger(__name__)
+
+SEARCH_RESULT_LIMIT = 20
+SEARCH_MIN_SCORE = 60.0
+MIN_WORD_SEARCH_LENGTH = 3
+
+
+def build_search_items(
+    entries: list[Any],
+    name_getter: Callable[[Any], Any],
+    description_getter: Callable[[Any], Any],
+) -> list[tuple[str, Any]]:
+    items: list[tuple[str, Any]] = []
+    for entry in entries:
+        raw_name = name_getter(entry)
+        raw_description = description_getter(entry)
+        name = str(raw_name).lower() if raw_name else ""
+        description = str(raw_description).lower() if raw_description else ""
+        items.append((name, entry))
+        if description:
+            items.append((description, entry))
+        for word in name.split():
+            if len(word) >= MIN_WORD_SEARCH_LENGTH:
+                items.append((word, entry))
+    return items
+
+
+def search_index(
+    optimizer: Any,
+    search_text: str,
+    limit: int = SEARCH_RESULT_LIMIT,
+    min_score: float = SEARCH_MIN_SCORE,
+) -> list[Any]:
+    exact_result = optimizer.exact_search(search_text)
+    if exact_result:
+        return [exact_result]
+
+    prefix_results = optimizer.prefix_search(search_text)
+    if prefix_results:
+        return _unique_search_results([payload for _match_text, payload in prefix_results])
+
+    fuzzy_results = optimizer.fuzzy_search(search_text, limit=limit, min_score=min_score)
+    return _unique_search_results([payload for _match_text, payload, _score in fuzzy_results])
+
+
+def _unique_search_results(results: list[Any]) -> list[Any]:
+    unique_results: list[Any] = []
+    for result in results:
+        if result not in unique_results:
+            unique_results.append(result)
+    return unique_results
+
 
 class TrieNode:
     """Node in the Trie data structure."""
