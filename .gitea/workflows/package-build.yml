@@ -249,7 +249,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.debian == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: debian:13@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a
+      image: debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a
       options: --privileged
 
     steps:
