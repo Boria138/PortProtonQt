@@ -50,15 +50,22 @@ def setup_image_loading(
     )
     _pixmap_relays[detail_page] = relay
 
+    fallback_exe = detail_page.property("fallbackExe") or ""
+    fallback_icon_path = detail_page.property("fallbackIconPath") or ""
     if cover_path:
         _prepare_cover_reveal(image_label)
         if _set_animated_cover((detail_page, image_label), cover_path, (cover_width, cover_height), main_window):
             return
+    if cover_path or fallback_exe:
+        if not cover_path:
+            _prepare_cover_reveal(image_label)
         load_pixmap_async(
-            cover_path,
+            cover_path or "",
             cover_width,
             cover_height,
             lambda pixmap: relay.pixmap_ready.emit(pixmap),
+            fallback_exe=fallback_exe,
+            fallback_icon_path=fallback_icon_path,
         )
     else:
         _apply_no_cover_style(detail_page, main_window.theme)

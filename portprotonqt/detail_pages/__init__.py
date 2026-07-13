@@ -78,6 +78,9 @@ class DetailPageManager:
         """Open detailed game information page."""
         self._current_detail_source = ("game", dict(game_data))
         detail_page = QWidget()
+        fallback_exe, fallback_icon_path = self._get_exe_icon_fallback(game_data)
+        detail_page.setProperty("fallbackExe", fallback_exe)
+        detail_page.setProperty("fallbackIconPath", fallback_icon_path)
         compact_layout = self._is_compact_detail_layout()
         image_label = self._create_detail_image_label(compact_layout)
 
@@ -116,6 +119,27 @@ class DetailPageManager:
             detail_page, cover_frame, details_widget, image_label,
             game_data.get("exec_line", ""), game_data.get("cover_path")
         )
+
+    @staticmethod
+    def _get_exe_icon_fallback(game_data: dict) -> tuple[str, str]:
+        exe_path = extract_exec_target_path(game_data.get("exec_line", ""))
+        if not exe_path or not os.path.isfile(exe_path):
+            return "", ""
+        if not exe_path.lower().endswith(".exe"):
+            return "", ""
+        xdg_cache_home = os.getenv(
+            "XDG_CACHE_HOME",
+            os.path.join(os.path.expanduser("~"), ".cache"),
+        )
+        game_name = os.path.basename(game_data.get("name", ""))
+        icon_name = game_name or os.path.splitext(os.path.basename(exe_path))[0]
+        icon_path = os.path.join(
+            xdg_cache_home,
+            "PortProtonQt",
+            "images",
+            f"{icon_name}.png",
+        )
+        return exe_path, icon_path
 
     def _get_favorite_icon_name(self, name: str) -> str:
         return "star_fav_full" if name in favorites_config.get_games() else "star_fav"
