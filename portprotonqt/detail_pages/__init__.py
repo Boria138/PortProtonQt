@@ -316,8 +316,11 @@ class DetailPageManager:
         if self._is_compact_detail_layout():
             return
         hltb = HowLongToBeat(parent=self.main_window)
+        detail_page = self._current_detail_page
 
         def on_hltb_results(results: list) -> None:
+            if detail_page is not self._current_detail_page:
+                return
             self._on_hltb_results(results, hltb, hltb_layout, game_info_layout)
 
         hltb.searchCompleted.connect(on_hltb_results)

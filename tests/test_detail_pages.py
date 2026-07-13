@@ -1,6 +1,9 @@
 """Tests for detail page utilities: gradient stops, wave background."""
 from unittest.mock import MagicMock
 
+from PySide6.QtWidgets import QWidget
+
+from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.detail_pages.utils import (
     _build_palette_stops,
     _resolve_gradient_stops,
@@ -8,6 +11,24 @@ from portprotonqt.detail_pages.utils import (
     _remove_wave_background,
     _wave_states,
 )
+
+
+def test_hltb_results_ignored_after_detail_page_replaced(monkeypatch):
+    manager = DetailPageManager.__new__(DetailPageManager)
+    original_page: QWidget = MagicMock(spec=QWidget)
+    manager.main_window = MagicMock()
+    manager._current_detail_page = original_page
+    manager._is_compact_detail_layout = MagicMock(return_value=False)
+    manager._on_hltb_results = MagicMock()
+    hltb = MagicMock()
+    monkeypatch.setattr("portprotonqt.detail_pages.HowLongToBeat", MagicMock(return_value=hltb))
+
+    manager._setup_hltb_data("Game", MagicMock(), MagicMock())
+    callback = hltb.searchCompleted.connect.call_args.args[0]
+    manager._current_detail_page = MagicMock(spec=QWidget)
+    callback([MagicMock()])
+
+    manager._on_hltb_results.assert_not_called()
 
 
 def _make_palette(colors):
