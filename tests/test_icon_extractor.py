@@ -1,10 +1,16 @@
 """Tests for icon_extractor.py — NE/PE parsing, DIB decoding, thumbnail generation."""
 import io
 import struct
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 from unittest.mock import patch
 
 from PIL import Image
+from pytest import MonkeyPatch
 
+import portprotonqt.game_card as game_card_module
+from portprotonqt.game_card import GameCard
 from portprotonqt.icon_extractor import (
     IconExtractor,
     generate_thumbnail,
@@ -465,3 +471,52 @@ class TestGenerateThumbnail:
         with patch.object(IconExtractor, "get_icon", return_value=io.BytesIO(png_data)):
             result = generate_thumbnail(str(f), str(out), size=THUMBNAIL_SIZE, force_resize=False)
             assert result is True
+
+
+def test_game_card_exe_fallback_uses_image_cache(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    exe_path = tmp_path / "game.exe"
+    exe_path.write_bytes(b"MZ")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+    card: Any = SimpleNamespace(
+        exec_line=str(exe_path),
+        name="Game",
+        _extract_executable_path=GameCard._extract_executable_path,
+    )
+
+    fallback_exe, fallback_path = GameCard._get_exe_icon_fallback(card)
+
+    assert fallback_exe == str(exe_path)
+    assert fallback_path == str(
+        tmp_path / "cache" / "PortProtonQt" / "images" / "Game.png"
+    )
+
+
+def test_game_card_uses_exe_fallback_without_valid_cover(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    broken_cover = tmp_path / "broken.jpg"
+    broken_cover.write_bytes(b"broken")
+    calls: list[dict[str, str]] = []
+    card: Any = SimpleNamespace(
+        list_layout=False,
+        base_card_width=100,
+        on_cover_loaded=lambda _pixmap: None,
+        _set_animated_cover=lambda *_args: False,
+        _get_exe_icon_fallback=lambda: ("/games/game.exe", "/cache/images/Game.png"),
+    )
+
+    def fake_load(_cover: str, _width: int, _height: int, _callback: Any, **kwargs: str) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr(game_card_module, "load_pixmap_async", fake_load)
+    GameCard._load_cover_image(card, "")
+    GameCard._load_cover_image(card, str(broken_cover))
+
+    assert calls == [
+        {"fallback_exe": "/games/game.exe", "fallback_icon_path": "/cache/images/Game.png"},
+        {"fallback_exe": "/games/game.exe", "fallback_icon_path": "/cache/images/Game.png"},
+    ]
