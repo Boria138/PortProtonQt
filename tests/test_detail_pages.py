@@ -63,18 +63,20 @@ def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) 
     }
 
 
-def test_compact_game_detail_always_loads_exe_icon() -> None:
+def test_compact_game_detail_loads_exe_icon_before_cover() -> None:
     manager = DetailPageManager.__new__(DetailPageManager)
     manager.main_window = SimpleNamespace(current_exec_line="")
     manager._get_content_frame_layout = MagicMock(return_value=None)
     manager._get_main_layout = MagicMock(return_value=None)
     manager._setup_detail_page_animation = MagicMock()
     detail_page = MagicMock(spec=QWidget)
+    detail_page.property.return_value = "/games/game.exe"
     image_label = MagicMock()
 
     manager._finalize_compact_game_page(detail_page, {
         "exec_line": "/games/game.exe",
         "image_label": image_label,
+        "cover_path": "/covers/game.jpg",
     })
 
     manager._setup_detail_page_animation.assert_called_once_with(
@@ -82,6 +84,43 @@ def test_compact_game_detail_always_loads_exe_icon() -> None:
         image_label,
         detail_page,
         None,
+    )
+
+
+def test_compact_steam_detail_loads_local_cover_without_exe(monkeypatch: MonkeyPatch) -> None:
+    manager = DetailPageManager.__new__(DetailPageManager)
+    manager.main_window = SimpleNamespace(current_exec_line="")
+    manager._get_content_frame_layout = MagicMock(return_value=None)
+    manager._get_main_layout = MagicMock(return_value=None)
+    manager._setup_detail_page_animation = MagicMock()
+    detail_page = MagicMock(spec=QWidget)
+    detail_page.property.return_value = ""
+    image_label = MagicMock()
+    monkeypatch.setattr(
+        "portprotonqt.detail_pages.get_local_steam_cover",
+        lambda _appid: "/steam/librarycache/242760/library_600x900.jpg",
+    )
+    page_data = manager._create_compact_game_data(
+        (MagicMock(), image_label),
+        {
+            "name": "The Forest",
+            "description": "",
+            "exec_line": "steam://rungameid/242760",
+            "cover_path": "/covers/the-forest.jpg",
+            "game_source": "steam",
+            "appid": 242760,
+        },
+        MagicMock(),
+        MagicMock(),
+    )
+
+    manager._finalize_compact_game_page(detail_page, page_data)
+
+    manager._setup_detail_page_animation.assert_called_once_with(
+        detail_page,
+        image_label,
+        detail_page,
+        "/steam/librarycache/242760/library_600x900.jpg",
     )
 
 
