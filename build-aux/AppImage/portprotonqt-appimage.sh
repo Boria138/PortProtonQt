@@ -3,7 +3,6 @@
 set -eu
 
 SHARUN="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/quick-sharun.sh"
-EXECVE_SHARUN_HACK="https://raw.githubusercontent.com/pkgforge-dev/Protontricks-AppImage/refs/heads/main/execve-sharun-hack.c"
 ARCH="$(uname -m)"
 VERSION="$(cat ~/version)"
 export ARCH VERSION
@@ -23,8 +22,6 @@ export DWARFS_COMP="zstd:level=15 -S22 -B5"
 # DEPLOY ALL LIBS
 wget --retry-connrefused --tries=30 "$SHARUN" -O ./quick-sharun
 chmod +x ./quick-sharun
-wget --retry-connrefused --tries=30 "$EXECVE_SHARUN_HACK" \
-	-O ./execve-sharun-hack.c
 
 # Add udev rules
 mkdir -p ./AppDir/etc/udev/rules.d
@@ -49,15 +46,6 @@ fi
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Network.so* \
 	/usr/lib/qt6/plugins/imageformats/libqwebp.so
-
-cc -shared -fPIC -O2 \
-	-o ./AppDir/lib/execve-sharun-hack.so \
-	./execve-sharun-hack.c \
-	-ldl
-echo 'execve-sharun-hack.so' >> ./AppDir/.preload
-echo 'unset VK_DRIVER_FILES' >> ./AppDir/.env
-echo 'export ANYLINUX_EXECVE_WRAP_PATHS="$APPDIR"' \
-	>> ./AppDir/bin/execve-wrap-path.hook
 
 # Turn AppDir into AppImage
 ./quick-sharun --make-appimage
