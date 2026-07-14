@@ -32,7 +32,7 @@ def test_detail_page_exe_fallback_uses_image_cache(
 
     assert fallback_exe == str(exe_path)
     assert fallback_path == str(
-        tmp_path / "cache" / "PortProtonQt" / "images" / "Game.png"
+        tmp_path / "cache" / "PortProtonQt" / "images" / "exe_icons" / "game.exe.png"
     )
 
 
@@ -61,6 +61,28 @@ def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) 
         "fallback_exe": "/games/game.exe",
         "fallback_icon_path": "/cache/images/Game.png",
     }
+
+
+def test_compact_game_detail_always_loads_exe_icon() -> None:
+    manager = DetailPageManager.__new__(DetailPageManager)
+    manager.main_window = SimpleNamespace(current_exec_line="")
+    manager._get_content_frame_layout = MagicMock(return_value=None)
+    manager._get_main_layout = MagicMock(return_value=None)
+    manager._setup_detail_page_animation = MagicMock()
+    detail_page = MagicMock(spec=QWidget)
+    image_label = MagicMock()
+
+    manager._finalize_compact_game_page(detail_page, {
+        "exec_line": "/games/game.exe",
+        "image_label": image_label,
+    })
+
+    manager._setup_detail_page_animation.assert_called_once_with(
+        detail_page,
+        image_label,
+        detail_page,
+        None,
+    )
 
 
 def test_hltb_results_ignored_after_detail_page_replaced(monkeypatch):

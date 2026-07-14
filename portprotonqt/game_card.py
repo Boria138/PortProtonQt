@@ -42,6 +42,7 @@ from portprotonqt.config import (
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.animations import GameCardAnimations
+from portprotonqt.icon_extractor import get_exe_icon_cache_path
 
 PROTONDB_TIERS = ("platinum", "gold", "silver", "bronze", "borked", "pending")
 
@@ -444,18 +445,7 @@ class GameCard(QFrame):
             return "", ""
         if not exe_path.lower().endswith(".exe"):
             return "", ""
-        xdg_cache_home = os.getenv(
-            "XDG_CACHE_HOME",
-            os.path.join(os.path.expanduser("~"), ".cache"),
-        )
-        icon_name = os.path.basename(self.name) or os.path.splitext(os.path.basename(exe_path))[0]
-        icon_path = os.path.join(
-            xdg_cache_home,
-            "PortProtonQt",
-            "images",
-            f"{icon_name}.png",
-        )
-        return exe_path, icon_path
+        return exe_path, get_exe_icon_cache_path(exe_path)
 
     def _set_animated_cover(self, cover_path: str, width: int, height: int) -> bool:
         if not cover_path or not os.path.isfile(cover_path):
