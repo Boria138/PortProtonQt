@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-19 11:38+0000\n"
+"PO-Revision-Date: 2026-07-14 13:07+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
@@ -29,19 +29,17 @@ msgid ""
 "folder for PortProton data."
 msgstr "PortProton 数据文件夹不可读写。请为 PortProton 数据选择其他文件夹。"
 
-#, fuzzy
 msgid "Update complete"
-msgstr "下载完成"
+msgstr "更新完成"
 
 msgid "AppImage updated. Restart the application to use the new version."
-msgstr ""
+msgstr "AppImage 已更新。请重新启动应用程序以使用新版本。"
 
 msgid "Error"
 msgstr "错误"
 
-#, fuzzy
 msgid "Failed to update AppImage."
-msgstr "打开 PPDB 文件失败：\n"
+msgstr "AppImage 更新失败。"
 
 msgid "PortProton directory not found"
 msgstr "未找到 PortProton 目录"
@@ -405,13 +403,13 @@ msgstr "未找到前缀\"{0}\"。是否安装推荐库？"
 
 #, python-brace-format
 msgid "Repository x86_64-i586 is not enabled. See: {0}"
-msgstr ""
+msgstr "未启用 x86_64-i586 仓库。请参阅：{0}"
 
 msgid "Install dependencies"
 msgstr "安装依赖"
 
 msgid "32-bit dependencies are missing. Install them now?"
-msgstr ""
+msgstr "缺少 32 位依赖项。现在安装吗?"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "命令格式无效（exec 行为空）"
@@ -831,28 +829,23 @@ msgstr "部分"
 msgid "none"
 msgstr "无"
 
-#, fuzzy
 msgid "Update available"
-msgstr "可用"
+msgstr "有可用更新"
 
-#, fuzzy
 msgid "A new AppImage update is available."
-msgstr "可执行文件路径不可用。"
+msgstr "有新的 AppImage 更新可用。"
 
-#, fuzzy
 msgid "Update"
-msgstr "粘贴"
+msgstr "更新"
 
-#, fuzzy
 msgid "Later"
-msgstr "晚"
+msgstr "稍后"
 
-#, fuzzy
 msgid "Disable updates"
-msgstr "已禁用"
+msgstr "禁用更新"
 
 msgid "Updating AppImage..."
-msgstr ""
+msgstr "正在更新 AppImage..."
 
 #, python-brace-format
 msgid "Launching {0}"
@@ -1941,9 +1934,8 @@ msgstr "设置输出"
 msgid "Quick Launch"
 msgstr "快速启动"
 
-#, fuzzy
 msgid "Delete cards without executable"
-msgstr "可执行文件路径："
+msgstr "删除没有可执行文件的卡片"
 
 msgid "Library Settings"
 msgstr "库设置"
@@ -1978,11 +1970,13 @@ msgstr "徽章视图类型："
 msgid "Refreshing…"
 msgstr "正在刷新…"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
 "will remove the .desktop files and custom data."
-msgstr "确定要删除\"{game_name}\"吗？这将移除 .desktop 文件和自定义数据。"
+msgstr ""
+"确定要删除 {count} 个没有可执行文件的卡片吗？这将删除 .desktop 文件和自定义数"
+"据。"
 
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
@@ -2042,7 +2036,7 @@ msgid "Auto download PPDB from"
 msgstr "自动从以下位置下载 PPDB"
 
 msgid "Auto update AppImage"
-msgstr ""
+msgstr "自动更新 AppImage"
 
 msgid "Force system DPI for Wine"
 msgstr "强制为 Wine 设置系统 DPI"
