@@ -1216,6 +1216,56 @@ pw_init_runtime () {
         return 0
     fi
 
+    # Do not let pressure-vessel treat graphics libraries and Vulkan ICDs
+    # bundled in the AppImage as part of the host graphics stack. Remove only
+    # paths belonging to this AppImage and preserve all host paths.
+    if [[ -n "${APPDIR:-}" ]] ; then
+        local env_name
+        local env_value
+        local path_entry
+        local filtered_value
+        local -a path_entries
+
+        for env_name in \
+            VK_DRIVER_FILES \
+            VK_ADD_DRIVER_FILES \
+            VK_ICD_FILENAMES \
+            __EGL_VENDOR_LIBRARY_FILENAMES \
+            __EGL_VENDOR_LIBRARY_DIRS \
+            LIBGL_DRIVERS_PATH \
+            LIBVA_DRIVERS_PATH \
+            GBM_BACKENDS_PATH \
+            AMDGPU_ASIC_ID_TABLE_PATHS \
+            XDG_DATA_DIRS
+        do
+            env_value="${!env_name:-}"
+            filtered_value=""
+            path_entries=()
+
+            IFS=':' read -r -a path_entries <<< "$env_value"
+
+            for path_entry in "${path_entries[@]}" ; do
+                # Empty loader-path entries can mean the current directory.
+                [[ -z "$path_entry" ]] && continue
+
+                if [[ "$path_entry" == "$APPDIR" ]] \
+                || [[ "$path_entry" == "$APPDIR/"* ]]
+                then
+                    continue
+                fi
+
+                filtered_value="${filtered_value:+${filtered_value}:}${path_entry}"
+            done
+
+            if [[ -n "$filtered_value" ]] ; then
+                printf -v "$env_name" '%s' "$filtered_value"
+                export "$env_name"
+            else
+                unset "$env_name"
+            fi
+        done
+    fi
+
     if grep -i "altlinux" "/etc/os-release" &>/dev/null ; then
         export LIBGL_DRIVERS_PATH="/usr/lib/X11/modules/dri:/usr/lib64/X11/modules/dri"
         if [[ "${LSPCI_VGA,,}" == *nvidia* ]] ; then
