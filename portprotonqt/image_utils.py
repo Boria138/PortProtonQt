@@ -484,9 +484,10 @@ def load_pixmap_async(
                         if result and os.path.exists(result):
                             pixmap.load(result)
                         if pixmap.isNull():
-                            pixmap = load_fallback_pixmap()
+                            return
                         finish_with(pixmap)
 
+                    finish_with(load_fallback_pixmap())
                     downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                     return
             except Exception as e:
@@ -517,10 +518,11 @@ def load_pixmap_async(
                     if result and os.path.exists(result):
                         pixmap.load(result)
                     if pixmap.isNull():
-                        pixmap = load_fallback_pixmap()
+                        return
                     finish_with(pixmap)
 
                 logger.info("Downloading SGDB cover for %s -> %s", app_name or "unknown", filename)
+                finish_with(load_fallback_pixmap())
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                 return
 
@@ -548,9 +550,10 @@ def load_pixmap_async(
                     if result and os.path.exists(result):
                         pixmap.load(result)
                     if pixmap.isNull():
-                        pixmap = load_fallback_pixmap()
+                        return
                     finish_with(pixmap)
 
+                finish_with(load_fallback_pixmap())
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                 return
             except Exception as e:

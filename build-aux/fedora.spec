@@ -1,5 +1,5 @@
 %global pypi_name portprotonqt
-%global pypi_version 1.2.0
+%global pypi_version 1.3.0
 %global oname PortProtonQt
 %global _python_no_extras_requires 1
 
@@ -30,7 +30,6 @@ Requires:       python3-websocket-client
 Requires:       python3-orjson
 Requires:       python3-psutil
 Requires:       python3-pyside6
-Requires:       python3-pygame
 Requires:       python3-requests
 Requires:       python3-tqdm
 Requires:       python3-vdf

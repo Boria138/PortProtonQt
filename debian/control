@@ -37,7 +37,6 @@ Depends:
  python3-pefile,
  python3-pil,
  python3-psutil,
- python3-pygame,
  python3-pyside6.qtcore,
  python3-pyside6.qtgui,
  python3-pyside6.qtnetwork,

@@ -10,6 +10,7 @@ install_data(
    'disc_image_utils.py',
    'downloader.py',
   'game_card.py',
+  'gamepad_backend.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',
   'image_utils.py',

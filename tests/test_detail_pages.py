@@ -1,6 +1,13 @@
 """Tests for detail page utilities: gradient stops, wave background."""
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+from pytest import MonkeyPatch
+from PySide6.QtWidgets import QWidget
+
+import portprotonqt.detail_pages.utils as detail_utils
+from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.detail_pages.utils import (
     _build_palette_stops,
     _resolve_gradient_stops,
@@ -8,6 +15,70 @@ from portprotonqt.detail_pages.utils import (
     _remove_wave_background,
     _wave_states,
 )
+
+
+def test_detail_page_exe_fallback_uses_image_cache(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    exe_path = tmp_path / "game.exe"
+    exe_path.write_bytes(b"MZ")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+
+    fallback_exe, fallback_path = DetailPageManager._get_exe_icon_fallback({
+        "exec_line": str(exe_path),
+        "name": "Game",
+    })
+
+    assert fallback_exe == str(exe_path)
+    assert fallback_path == str(
+        tmp_path / "cache" / "PortProtonQt" / "images" / "Game.png"
+    )
+
+
+def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) -> None:
+    detail_page = MagicMock()
+    detail_page.property.side_effect = {
+        "fallbackExe": "/games/game.exe",
+        "fallbackIconPath": "/cache/images/Game.png",
+    }.get
+    image_label = MagicMock()
+    relay = SimpleNamespace(pixmap_ready=MagicMock())
+    load_pixmap = MagicMock()
+    monkeypatch.setattr(detail_utils, "_PixmapReadyRelay", lambda _parent: relay)
+    monkeypatch.setattr(detail_utils, "_prepare_cover_reveal", MagicMock())
+    monkeypatch.setattr(detail_utils, "load_pixmap_async", load_pixmap)
+
+    detail_utils.setup_image_loading(
+        detail_page,
+        image_label,
+        None,
+        SimpleNamespace(theme=MagicMock()),
+    )
+
+    assert load_pixmap.call_args.args[:3] == ("", 300, 450)
+    assert load_pixmap.call_args.kwargs == {
+        "fallback_exe": "/games/game.exe",
+        "fallback_icon_path": "/cache/images/Game.png",
+    }
+
+
+def test_hltb_results_ignored_after_detail_page_replaced(monkeypatch):
+    manager = DetailPageManager.__new__(DetailPageManager)
+    original_page: QWidget = MagicMock(spec=QWidget)
+    manager.main_window = MagicMock()
+    manager._current_detail_page = original_page
+    manager._is_compact_detail_layout = MagicMock(return_value=False)
+    manager._on_hltb_results = MagicMock()
+    hltb = MagicMock()
+    monkeypatch.setattr("portprotonqt.detail_pages.HowLongToBeat", MagicMock(return_value=hltb))
+
+    manager._setup_hltb_data("Game", MagicMock(), MagicMock())
+    callback = hltb.searchCompleted.connect.call_args.args[0]
+    manager._current_detail_page = MagicMock(spec=QWidget)
+    callback([MagicMock()])
+
+    manager._on_hltb_results.assert_not_called()
 
 
 def _make_palette(colors):

@@ -28,17 +28,20 @@ mkdir -p ./AppDir/etc/udev/rules.d
 cp /usr/lib/udev/rules.d/60-portprotonqt.rules ./AppDir/etc/udev/rules.d
 
 # Add PortProton scripts
+# Copy manual because im to lazzy for wait ./quick-sharun strace 208 .ppdb
 mkdir -p ./AppDir/share
 if [ -d /usr/local/share/portproton ]; then
-	cp -r /usr/local/share/portproton ./AppDir/share
+       cp -r /usr/local/share/portproton ./AppDir/share
 elif [ -d /usr/share/portproton ]; then
-	cp -r /usr/share/portproton ./AppDir/share
+       cp -r /usr/share/portproton ./AppDir/share
 fi
+
 
 # Deploy dependencies
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
+	/usr/bin/vk_gpu_info \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Network.so* \

@@ -1,8 +1,11 @@
 """Tests for steam_api/utils.py — normalize_name, search, VDF loading."""
+import struct
 from pathlib import Path
 from unittest.mock import patch
 
 from portprotonqt.steam_api.utils import (
+    APPINFO_ENTRY_METADATA_SIZE,
+    APPINFO_MAGIC_V41,
     normalize_name,
     is_valid_candidate,
     filter_candidates,
@@ -28,6 +31,29 @@ from portprotonqt.steam_api.cache import (
     build_ppdb_index,
     search_ppdb_entry,
 )
+
+
+def _write_appinfo(path: Path, apps: list[tuple[int, str, str]]) -> None:
+    strings = ["appinfo", "common", "type", "oslist"]
+    entries = bytearray()
+    for appid, app_type, oslist in apps:
+        blob = (
+            b"\x00" + struct.pack("<I", 0)
+            + b"\x00" + struct.pack("<I", 1)
+            + b"\x01" + struct.pack("<I", 2) + app_type.encode() + b"\x00"
+            + b"\x01" + struct.pack("<I", 3) + oslist.encode() + b"\x00"
+            + b"\x08\x08\x08"
+        )
+        entry_data = bytes(APPINFO_ENTRY_METADATA_SIZE) + blob
+        entries.extend(struct.pack("<II", appid, len(entry_data)) + entry_data)
+    table_offset = 16 + len(entries) + 4
+    string_table = b"\x00".join(value.encode() for value in strings) + b"\x00"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(
+        struct.pack("<IIq", APPINFO_MAGIC_V41, 1, table_offset)
+        + entries + struct.pack("<I", 0)
+        + struct.pack("<I", len(strings)) + string_table
+    )
 
 
 class TestNormalizeName:
@@ -387,6 +413,55 @@ class TestGetSteamInstalledGames:
     def test_no_steam_home(self):
         with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=None):
             assert get_steam_installed_games() == []
+
+    def test_excludes_soundtracks_and_native_games(self, tmp_path: Path):
+        steam_dir = tmp_path / "Steam"
+        steamapps = steam_dir / "steamapps"
+        steamapps.mkdir(parents=True)
+        apps = (
+            (10, "Windows Game", "game", "windows"),
+            (20, "Game Soundtrack", "music", "windows"),
+            (30, "Linux Game", "game", "windows,linux"),
+        )
+        for appid, name, _, _ in apps:
+            (steamapps / f"appmanifest_{appid}.acf").write_text(
+                f'"AppState"\n{{\n"appid" "{appid}"\n"name" "{name}"\n}}\n',
+                encoding="utf-8",
+            )
+        _write_appinfo(
+            steam_dir / "appcache" / "appinfo.vdf",
+            [(appid, app_type, oslist) for appid, _, app_type, oslist in apps],
+        )
+
+        with (
+            patch("portprotonqt.steam_api.utils.get_steam_home", return_value=steam_dir),
+            patch("portprotonqt.steam_api.utils.get_steam_libs", return_value={steam_dir}),
+            patch("portprotonqt.steam_api.utils.get_playtime_data", return_value={}),
+        ):
+            games = get_steam_installed_games()
+
+        assert [game[1] for game in games] == [10]
+
+    def test_keeps_games_when_appinfo_is_unreadable(self, tmp_path: Path):
+        steam_dir = tmp_path / "Steam"
+        steamapps = steam_dir / "steamapps"
+        steamapps.mkdir(parents=True)
+        (steamapps / "appmanifest_10.acf").write_text(
+            '"AppState"\n{\n"appid" "10"\n"name" "Test Game"\n}\n',
+            encoding="utf-8",
+        )
+        appinfo = steam_dir / "appcache" / "appinfo.vdf"
+        appinfo.parent.mkdir()
+        appinfo.write_bytes(b"invalid")
+
+        with (
+            patch("portprotonqt.steam_api.utils.get_steam_home", return_value=steam_dir),
+            patch("portprotonqt.steam_api.utils.get_steam_libs", return_value={steam_dir}),
+            patch("portprotonqt.steam_api.utils.get_playtime_data", return_value={}),
+        ):
+            games = get_steam_installed_games()
+
+        assert [game[1] for game in games] == [10]
 
 
 class TestGetSteamCompatibilitytoolsDir:

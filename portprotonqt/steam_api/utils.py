@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import struct
 from pathlib import Path
+from typing import BinaryIO
 
 from PIL import Image, UnidentifiedImageError
 import vdf
@@ -18,6 +20,9 @@ STEAM_DATA_DIRS = (
     "~/.var/app/com.valvesoftware.Steam/data/Steam",
     "/usr/share/steam",
 )
+APPINFO_MAGIC_V40 = 0x07564428
+APPINFO_MAGIC_V41 = 0x07564429
+APPINFO_ENTRY_METADATA_SIZE = 60
 
 
 def safe_vdf_load(path: str | Path) -> dict:
@@ -358,6 +363,103 @@ def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, in
     return play_data
 
 
+def _read_appinfo_string_table(appinfo: BinaryIO, table_offset: int) -> list[str]:
+    appinfo.seek(table_offset)
+    string_count = struct.unpack("<I", appinfo.read(4))[0]
+    strings = appinfo.read().split(b"\x00", string_count)
+    if len(strings) < string_count:
+        raise ValueError("Incomplete Steam appinfo string table")
+    return [value.decode("utf-8", "replace") for value in strings[:string_count]]
+
+
+def _expand_appinfo_keys(data: bytes, strings: list[str]) -> bytes:
+    """Expand appinfo v41 string indexes for python-vdf."""
+    expanded = bytearray()
+    position = 0
+    fixed_sizes = {
+        vdf.BIN_NONE[0]: 0,
+        vdf.BIN_INT32[0]: 4,
+        vdf.BIN_FLOAT32[0]: 4,
+        vdf.BIN_POINTER[0]: 4,
+        vdf.BIN_COLOR[0]: 4,
+        vdf.BIN_UINT64[0]: 8,
+        vdf.BIN_INT64[0]: 8,
+    }
+    while position < len(data):
+        value_type = data[position]
+        position += 1
+        expanded.append(value_type)
+        if value_type == vdf.BIN_END[0]:
+            continue
+        string_index = struct.unpack_from("<I", data, position)[0]
+        position += 4
+        expanded.extend(strings[string_index].encode("utf-8") + b"\x00")
+        if value_type in fixed_sizes:
+            value_end = position + fixed_sizes[value_type]
+        elif value_type == vdf.BIN_STRING[0]:
+            value_end = data.index(b"\x00", position) + 1
+        elif value_type == vdf.BIN_WIDESTRING[0]:
+            value_end = position
+            while value_end + 1 < len(data) and data[value_end:value_end + 2] != b"\x00\x00":
+                value_end += 2
+            if value_end + 1 >= len(data):
+                raise ValueError("Unterminated binary VDF wide string")
+            value_end += 2
+        else:
+            raise ValueError(f"Unsupported binary VDF type: {value_type}")
+        expanded.extend(data[position:value_end])
+        position = value_end
+    return bytes(expanded)
+
+
+def _load_steam_app_metadata(
+    steam_home: Path,
+    appids: set[int],
+) -> dict[int, dict] | None:
+    """Load common metadata for installed apps from Steam appinfo.vdf."""
+    metadata = {}
+    appinfo_path = steam_home / "appcache" / "appinfo.vdf"
+    try:
+        with open(appinfo_path, "rb") as appinfo:
+            magic, _ = struct.unpack("<II", appinfo.read(8))
+            if magic not in (APPINFO_MAGIC_V40, APPINFO_MAGIC_V41):
+                raise ValueError(f"Unsupported Steam appinfo format: {magic:#x}")
+            strings = []
+            if magic == APPINFO_MAGIC_V41:
+                table_offset = struct.unpack("<q", appinfo.read(8))[0]
+                strings = _read_appinfo_string_table(appinfo, table_offset)
+                appinfo.seek(16)
+            while True:
+                appid = struct.unpack("<I", appinfo.read(4))[0]
+                if appid == 0:
+                    break
+                entry_size = struct.unpack("<I", appinfo.read(4))[0]
+                entry_end = appinfo.tell() + entry_size
+                if entry_size < APPINFO_ENTRY_METADATA_SIZE:
+                    raise ValueError(f"Invalid Steam appinfo entry size: {entry_size}")
+                appinfo.seek(APPINFO_ENTRY_METADATA_SIZE, 1)
+                if appid in appids:
+                    blob = appinfo.read(entry_end - appinfo.tell())
+                    if strings:
+                        blob = _expand_appinfo_keys(blob, strings)
+                    data = vdf.binary_loads(blob).get("appinfo", {})
+                    metadata[appid] = data.get("common", {})
+                appinfo.seek(entry_end)
+    except Exception as e:
+        logger.warning("Failed to load Steam app metadata from %s: %s", appinfo_path, e)
+        return None
+    return metadata
+
+
+def _is_windows_steam_game(common: dict) -> bool:
+    """Return whether Steam metadata describes a non-native Windows game."""
+    app_type = str(common.get("type", "")).lower()
+    operating_systems = {
+        value.strip().lower() for value in str(common.get("oslist", "")).split(",")
+    }
+    return app_type == "game" and "windows" in operating_systems and "linux" not in operating_systems
+
+
 def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
     """Return list of installed Steam games (name, appid, last_played, playtime_sec)."""
     games: list[tuple[str, int, int, int]] = []
@@ -366,7 +468,7 @@ def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
         logger.error("Steam home directory not found or does not exist")
         return games
 
-    play_data = get_playtime_data(steam_home)
+    installed_apps: list[tuple[dict, int]] = []
     for lib in get_steam_libs(steam_home):
         steamapps_dir = lib / "steamapps"
         if not steamapps_dir.exists():
@@ -378,12 +480,23 @@ def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
                 appid = int(app.get('appid', 0))
             except ValueError:
                 continue
-            name = app.get('name', f"Unknown ({appid})")
-            lname = name.lower()
-            if any(token in lname for token in ["proton", "steamworks", "steam linux runtime"]):
-                continue
-            last_played, playtime_min = play_data.get(appid, (0, 0))
-            games.append((name, appid, last_played, playtime_min * 60))
+            installed_apps.append((app, appid))
+
+    play_data = get_playtime_data(steam_home)
+    app_metadata = _load_steam_app_metadata(
+        steam_home,
+        {appid for _, appid in installed_apps},
+    )
+    for app, appid in installed_apps:
+        common = app_metadata.get(appid) if app_metadata is not None else None
+        if common is not None and not _is_windows_steam_game(common):
+            continue
+        name = app.get('name', f"Unknown ({appid})")
+        lname = name.lower()
+        if any(token in lname for token in ["proton", "steamworks", "steam linux runtime"]):
+            continue
+        last_played, playtime_min = play_data.get(appid, (0, 0))
+        games.append((name, appid, last_played, playtime_min * 60))
     return games
 
 

@@ -621,6 +621,8 @@ class MainWindow(
                 return
             QMessageBox.warning(self, _("Warning"), _("Installation already in progress."))
             return
+        if not self._check_alt_i586_dependencies_before_launch():
+            return
         self.installing = True
         self.install_stop_requested = False
         self.current_install_script = script_name

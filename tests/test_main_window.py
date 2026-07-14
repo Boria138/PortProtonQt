@@ -545,6 +545,16 @@ def test_autoinstall_script_thread_reference_clears_after_thread_finished() -> N
     assert window.autoInstallCustomDataThread is None
 
 
+def test_launch_autoinstall_checks_alt_i586_dependencies() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    window.installing = False
+    window._check_alt_i586_dependencies_before_launch = lambda: False
+
+    window.launch_autoinstall("/tmp/game.ppai")
+
+    assert window.installing is False
+
+
 def test_launch_dependency_percent_updates_button_before_status() -> None:
     window: Any = MainWindow.__new__(MainWindow)
     button = FakeButton()
