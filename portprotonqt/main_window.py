@@ -12,7 +12,7 @@ from queue import Empty, Queue
 from threading import Thread
 from typing import TYPE_CHECKING
 from portprotonqt.logger import get_logger
-from portprotonqt.icon_extractor import generate_thumbnail
+from portprotonqt.icon_extractor import generate_thumbnail, get_exe_icon_cache_path
 from portprotonqt.dialogs import FileExplorer, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
@@ -1217,14 +1217,8 @@ class MainWindow(
                 generated_img_icon or entry.get("Icon", "")
             )
             if not final_cover and game_exe and game_exe.lower().endswith(".exe") and os.path.exists(game_exe):
-                xdg_cache_home = os.getenv(
-                    "XDG_CACHE_HOME",
-                    os.path.join(os.path.expanduser("~"), ".cache"),
-                )
-                icon_cache_dir = os.path.join(xdg_cache_home, "PortProtonQt", "images", "exe_icons")
-                os.makedirs(icon_cache_dir, exist_ok=True)
-                safe_exe_name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(game_exe))
-                generated_cover_path = os.path.join(icon_cache_dir, f"{safe_exe_name}.png")
+                generated_cover_path = get_exe_icon_cache_path(game_exe)
+                os.makedirs(os.path.dirname(generated_cover_path), exist_ok=True)
                 if not os.path.exists(generated_cover_path):
                     if not generate_thumbnail(game_exe, generated_cover_path, size=128):
                         generated_cover_path = ""
@@ -1532,14 +1526,8 @@ class MainWindow(
             icon_path = self.theme_manager.get_icon(themed_launch_icon, as_path=True)
             themed_launch_cover = icon_path if isinstance(icon_path, str) else ""
         if not local_cover_path and os.path.isfile(exe_path) and exe_path.lower().endswith(".exe"):
-            xdg_cache_home = os.getenv(
-                "XDG_CACHE_HOME",
-                os.path.join(os.path.expanduser("~"), ".cache")
-            )
-            icon_cache_dir = os.path.join(xdg_cache_home, "PortProtonQt", "images", "exe_icons")
-            os.makedirs(icon_cache_dir, exist_ok=True)
-            safe_exe_name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(exe_path))
-            generated_cover_path = os.path.join(icon_cache_dir, f"{safe_exe_name}.png")
+            generated_cover_path = get_exe_icon_cache_path(exe_path)
+            os.makedirs(os.path.dirname(generated_cover_path), exist_ok=True)
             if not os.path.exists(generated_cover_path):
                 if not generate_thumbnail(exe_path, generated_cover_path, size=128):
                     generated_cover_path = ""

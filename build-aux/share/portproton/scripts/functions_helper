@@ -1216,6 +1216,10 @@ pw_init_runtime () {
         return 0
     fi
 
+    if [[ -n "${APPIMAGE:-}" ]] ; then
+        unset VK_DRIVER_FILES VK_ICD_FILENAMES VK_ADD_DRIVER_FILES
+    fi
+
     if grep -i "altlinux" "/etc/os-release" &>/dev/null ; then
         export LIBGL_DRIVERS_PATH="/usr/lib/X11/modules/dri:/usr/lib64/X11/modules/dri"
         if [[ "${LSPCI_VGA,,}" == *nvidia* ]] ; then

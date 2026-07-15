@@ -1,5 +1,7 @@
 """Unified icon extractor for NE and PE files."""
 
+import os
+import re
 import struct
 import io
 import pefile
@@ -11,6 +13,22 @@ logger = get_logger(__name__)
 RT_ICON = 3
 RT_GROUP_ICON = 14
 THUMBNAIL_SIZE = 128
+
+
+def get_exe_icon_cache_path(exe_path: str) -> str:
+    """Return the shared cache path for an executable icon."""
+    cache_home = os.getenv(
+        "XDG_CACHE_HOME",
+        os.path.join(os.path.expanduser("~"), ".cache"),
+    )
+    icon_name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(exe_path))
+    return os.path.join(
+        cache_home,
+        "PortProtonQt",
+        "images",
+        "exe_icons",
+        f"{icon_name}.png",
+    )
 
 
 def generate_thumbnail(inputfile: str, outfile: str, size: int = 128, force_resize: bool = True) -> bool:

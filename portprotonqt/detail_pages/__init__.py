@@ -52,7 +52,14 @@ from portprotonqt.logger import get_logger
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
-from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
+from portprotonqt.icon_extractor import get_exe_icon_cache_path
+from portprotonqt.steam_api import (
+    get_local_steam_cover,
+    get_steam_compat_tool,
+    get_steam_home,
+    get_steam_libs,
+    safe_vdf_load,
+)
 from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
@@ -127,19 +134,7 @@ class DetailPageManager:
             return "", ""
         if not exe_path.lower().endswith(".exe"):
             return "", ""
-        xdg_cache_home = os.getenv(
-            "XDG_CACHE_HOME",
-            os.path.join(os.path.expanduser("~"), ".cache"),
-        )
-        game_name = os.path.basename(game_data.get("name", ""))
-        icon_name = game_name or os.path.splitext(os.path.basename(exe_path))[0]
-        icon_path = os.path.join(
-            xdg_cache_home,
-            "PortProtonQt",
-            "images",
-            f"{icon_name}.png",
-        )
-        return exe_path, icon_path
+        return exe_path, get_exe_icon_cache_path(exe_path)
 
     def _get_favorite_icon_name(self, name: str) -> str:
         return "star_fav_full" if name in favorites_config.get_games() else "star_fav"
@@ -174,6 +169,9 @@ class DetailPageManager:
         buttons_layout: FlowLayout,
     ) -> dict:
         cover_frame, image_label = cover_widgets
+        cover_path = game_data.get("cover_path")
+        if str(game_data.get("game_source", "")).lower() == "steam":
+            cover_path = get_local_steam_cover(game_data.get("appid", "")) or cover_path
         return {
             "cover_frame": cover_frame,
             "image_label": image_label,
@@ -182,7 +180,7 @@ class DetailPageManager:
             "buttons_layout": buttons_layout,
             "name": game_data.get("name", ""),
             "exec_line": game_data.get("exec_line", ""),
-            "cover_path": game_data.get("cover_path"),
+            "cover_path": cover_path,
         }
 
     def _is_compact_detail_layout(self) -> bool:
@@ -716,11 +714,16 @@ class DetailPageManager:
             main_layout.addStretch()
 
         self.main_window.current_exec_line = page_data["exec_line"]
+        cover_path = (
+            None
+            if detail_page.property("fallbackExe")
+            else page_data["cover_path"]
+        )
         self._setup_detail_page_animation(
             detail_page,
             page_data["image_label"],
             detail_page,
-            page_data["cover_path"],
+            cover_path,
         )
 
     def _populate_compact_game_layout(

@@ -16,6 +16,7 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.icon_extractor import (
     IconExtractor,
     generate_thumbnail,
+    get_exe_icon_cache_path,
     RT_ICON,
     RT_GROUP_ICON,
     THUMBNAIL_SIZE,
@@ -47,6 +48,19 @@ class FakePixmap:
 
     def copy(self, *_args: object) -> "FakePixmap":
         return self
+
+
+def test_exe_icon_cache_path_uses_shared_directory(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+
+    icon_path = get_exe_icon_cache_path("/games/Game Name.exe")
+
+    assert icon_path == str(
+        tmp_path / "cache" / "PortProtonQt" / "images" / "exe_icons" / "Game_Name.exe.png"
+    )
 
 
 def _make_png_bytes(width: int = 16, height: int = 16) -> bytes:
@@ -519,7 +533,7 @@ def test_game_card_exe_fallback_uses_image_cache(
 
     assert fallback_exe == str(exe_path)
     assert fallback_path == str(
-        tmp_path / "cache" / "PortProtonQt" / "images" / "Game.png"
+        tmp_path / "cache" / "PortProtonQt" / "images" / "exe_icons" / "game.exe.png"
     )
 
 
