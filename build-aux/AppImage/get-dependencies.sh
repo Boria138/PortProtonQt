@@ -5,6 +5,7 @@ set -eu
 # Initialize variables
 LOCAL_MODE=false
 BRANCH="main"
+USE_BRANCH=false
 REPO_URL="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git"
 
 # Parse arguments
@@ -16,6 +17,7 @@ while [ $# -gt 0 ]; do
         --branch)
             if [ -n "${2:-}" ] && [ "${2#-}" = "$2" ]; then
                 BRANCH="$2"
+                USE_BRANCH=true
                 shift
             else
                 echo "Error: --branch requires an argument"
@@ -46,8 +48,8 @@ if [ "$LOCAL_MODE" = true ]; then
     echo "Using local PKGBUILD-git from repository..."
     PPQT_PKGBUILD=""
 else
-    echo "Using stable version of PortProtonQt from main branch..."
-    PPQT_PKGBUILD="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
+    echo "Using stable version of PortProtonQt from $BRANCH branch..."
+    PPQT_PKGBUILD="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/$BRANCH/build-aux/PKGBUILD"
 fi
 
 echo "Tweak makepkg..."
@@ -97,7 +99,9 @@ if [ "$LOCAL_MODE" = true ]; then
 else
     wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
 fi
-sed -i "s|source=(\"git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
+if [ "$USE_BRANCH" = true ]; then
+    sed -i "s|^source=.*|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
+fi
 makepkg -si --noconfirm
 
 echo "Installing debloated packages..."

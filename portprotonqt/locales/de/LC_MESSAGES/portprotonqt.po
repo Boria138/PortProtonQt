@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-07-11 07:06+0000\n"
+"PO-Revision-Date: 2026-07-14 13:07+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -819,7 +819,7 @@ msgid "MAIN + SIDES"
 msgstr "HAUPTSPIEL+DLC"
 
 msgid "COMPLETIONIST"
-msgstr "VOLLSTÄNDIG"
+msgstr "GESAMT"
 
 msgid "Open Folder"
 msgstr "Ordner öffnen"
@@ -962,7 +962,7 @@ msgid "Download"
 msgstr "Herunterladen"
 
 msgid "Clear All"
-msgstr "Ausgewähltes entfernen"
+msgstr "Auswahl aufheben"
 
 msgid "File Explorer"
 msgstr "Datei-Explorer"
@@ -1997,9 +1997,8 @@ msgstr "Ausgabe festlegen"
 msgid "Quick Launch"
 msgstr "Schnellstart"
 
-#, fuzzy
 msgid "Delete cards without executable"
-msgstr "Pfad zur ausführbaren Datei:"
+msgstr "Titelbilder ohne ausführbaren Dateien entfernen"
 
 msgid "Library Settings"
 msgstr "Bibliothekseinstellungen"
@@ -2034,13 +2033,13 @@ msgstr "Anzeigetyp von Titelbildern:"
 msgid "Refreshing…"
 msgstr "Aktualisieren…"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
 "will remove the .desktop files and custom data."
 msgstr ""
-"Soll das Spiel '{game_name}' wirklich gelöscht werden? Benutzerdaten und "
-".desktop-Datei werden gelöscht."
+"Sollen '{count}' Titelbidler ohne ausführbaren Dateien wirklich gelöscht "
+"werden? Dabei werden Benutzerdaten und .desktop-Dateien gelöscht."
 
 msgid "PortProton Settings"
 msgstr "PortProton-Einstellungen"
