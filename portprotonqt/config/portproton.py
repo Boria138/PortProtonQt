@@ -191,7 +191,11 @@ def get_portproton_start_command() -> list[str] | None:
 
     scripts_path = get_portproton_scripts_path()
     if scripts_path:
-        _portproton_start_command = [os.path.join(scripts_path, "start.sh")]
+        _portproton_start_command = [
+            "/usr/bin/env",
+            "bash",
+            os.path.join(scripts_path, "start.sh"),
+        ]
         return _portproton_start_command
 
     logger.warning("start.sh not found for PortProton")
@@ -210,7 +214,7 @@ def _get_current_launcher_command() -> list[str] | None:
 
     scripts_path = get_portproton_scripts_path()
     if scripts_path:
-        return [os.path.join(scripts_path, "start.sh")]
+        return ["/usr/bin/env", "bash", os.path.join(scripts_path, "start.sh")]
 
     if shutil.which("portprotonqt"):
         return ["portprotonqt", "--silent"]
@@ -230,6 +234,14 @@ def _extract_launcher_tail(parts: list[str]) -> list[str] | None:
         return tail
 
     if parts[0] == "flatpak" and len(parts) >= 3 and parts[1] == "run":
+        tail = parts[3:]
+        if tail[:1] == ["--silent"]:
+            tail = tail[1:]
+        return tail
+
+    if len(parts) >= 3 and parts[:2] == ["/usr/bin/env", "bash"]:
+        if os.path.basename(parts[2]) != "start.sh":
+            return None
         tail = parts[3:]
         if tail[:1] == ["--silent"]:
             tail = tail[1:]

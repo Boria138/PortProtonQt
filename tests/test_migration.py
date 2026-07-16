@@ -75,8 +75,11 @@ class TestGetCurrentLauncherCommand:
             lambda: str(tmp_path / "scripts"),
         )
         result = _get_current_launcher_command()
-        assert result is not None
-        assert result[0].endswith("start.sh")
+        assert result == [
+            "/usr/bin/env",
+            "bash",
+            str(tmp_path / "scripts" / "start.sh"),
+        ]
 
     def test_nothing_found(self, monkeypatch):
         monkeypatch.delenv("APPIMAGE", raising=False)

@@ -106,7 +106,6 @@ install_data(
 install_subdir(
   'build-aux/share/portproton/scripts',
   install_dir: datadir / 'portproton',
-  install_mode: 'rwxr-xr-x',
 )
 
 install_subdir(
@@ -122,7 +121,6 @@ install_subdir(
 install_subdir(
   'build-aux/share/portproton/scripts/portwine_db',
   install_dir: datadir / 'portproton' / 'scripts',
-  install_mode: 'rwxr-xr-x',
 )
 
 # Install udev rules

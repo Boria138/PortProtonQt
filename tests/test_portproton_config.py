@@ -4,6 +4,7 @@ from pathlib import Path
 
 from portprotonqt.config.portproton import (
     extract_exec_target_path,
+    get_portproton_start_command,
     _sanitize_icon_name,
     _extract_launcher_tail,
     LAUNCH_FILE_EXTENSIONS,
@@ -11,6 +12,24 @@ from portprotonqt.config.portproton import (
     DISC_IMAGE_EXTENSIONS,
     THEMED_LAUNCH_ICON_NAMES,
 )
+
+
+def test_start_command_uses_bash(monkeypatch, tmp_path):
+    scripts_path = tmp_path / "scripts"
+    monkeypatch.setattr(
+        "portprotonqt.config.portproton.get_portproton_scripts_path",
+        lambda: str(scripts_path),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.config.portproton._portproton_start_command",
+        None,
+    )
+
+    assert get_portproton_start_command() == [
+        "/usr/bin/env",
+        "bash",
+        str(scripts_path / "start.sh"),
+    ]
 
 
 class TestExtractExecTargetPath:
@@ -117,6 +136,13 @@ class TestExtractLauncherTail:
 
     def test_start_sh_silent(self):
         parts = ["start.sh", "--silent", "/tmp/game.exe"]
+        result = _extract_launcher_tail(parts)
+        assert result == ["/tmp/game.exe"]
+
+    def test_env_bash_start_sh_silent(self):
+        parts = [
+            "/usr/bin/env", "bash", "/path/start.sh", "--silent", "/tmp/game.exe",
+        ]
         result = _extract_launcher_tail(parts)
         assert result == ["/tmp/game.exe"]
 
