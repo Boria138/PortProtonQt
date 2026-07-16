@@ -1216,10 +1216,6 @@ pw_init_runtime () {
         return 0
     fi
 
-    if [[ -n "${APPIMAGE:-}" ]] ; then
-        unset VK_DRIVER_FILES VK_ICD_FILENAMES VK_ADD_DRIVER_FILES
-    fi
-
     if grep -i "altlinux" "/etc/os-release" &>/dev/null ; then
         export LIBGL_DRIVERS_PATH="/usr/lib/X11/modules/dri:/usr/lib64/X11/modules/dri"
         if [[ "${LSPCI_VGA,,}" == *nvidia* ]] ; then
@@ -1276,6 +1272,10 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
         --share-pid \
         ${PW_ADD_TO_ARGS_IN_RUNTIME} -- \
         env PATH=$PW_PATH "
+    fi
+
+    if [[ -n "${APPIMAGE:-}" ]] ; then
+        export pw_runtime="env -u VK_DRIVER_FILES -u VK_ICD_FILENAMES ${pw_runtime}"
     fi
 
     if [[ "$PW_USE_SYSTEM_VK_LAYERS" == "1" ]] ; then
