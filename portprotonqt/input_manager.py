@@ -4221,7 +4221,7 @@ class InputManager(QObject):
         if previous_value[0] != hat_value[0]:
             self.dpad_moved.emit(PAD_DPAD_X, hat_value[0], current_time)
         if previous_value[1] != hat_value[1]:
-            self.dpad_moved.emit(PAD_DPAD_Y, -hat_value[1], current_time)
+            self.dpad_moved.emit(PAD_DPAD_Y, hat_value[1], current_time)
 
     def _read_dpad_button_axis(self, gamepad: SDLGamepad, negative_button: int, positive_button: int) -> int:
         negative = gamepad.get_button(negative_button)
