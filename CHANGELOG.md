@@ -12,6 +12,7 @@
 ### Changed
 - Кэш EXE-иконок унифицирован для карточек и детальных страниц
 - Папки `custom_data` теперь используют имя exe и MD5 полного пути для предотвращения конфликтов одинаковых имён
+- Управление геймпадом переведено с `pygame` на SDL3, зависимость `pygame` удалена
 - Обновлён перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
