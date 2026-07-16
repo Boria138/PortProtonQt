@@ -10,6 +10,9 @@
 
 ### Changed
 - Кэш EXE-иконок унифицирован для карточек и детальных страниц
+- Обновлён перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
+- Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
+- Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 
 ## [1.3.0] - 2026-07-13
 
