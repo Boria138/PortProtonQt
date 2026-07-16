@@ -1,5 +1,6 @@
 """PortProton configuration and launch helpers."""
 import configparser
+import hashlib
 import os
 import re
 import shlex
@@ -502,6 +503,26 @@ def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
         if game_exe and os.path.abspath(game_exe) == target_exe:
             return desktop_entry
     return None
+
+
+def get_custom_data_dir_name(exe_path: str) -> str:
+    """Return a collision-safe custom data directory name for an executable."""
+    normalized_path = os.path.normpath(os.path.abspath(os.path.expanduser(exe_path)))
+    path_hash = hashlib.md5(
+        normalized_path.encode("utf-8"), usedforsecurity=False
+    ).hexdigest()
+    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+    return f"{exe_name}_{path_hash}"
+
+
+def resolve_custom_data_dir(custom_data_root: str, exe_path: str) -> str:
+    """Return hashed custom data directory, falling back to the legacy name."""
+    hashed_dir = os.path.join(custom_data_root, get_custom_data_dir_name(exe_path))
+    legacy_name = os.path.splitext(os.path.basename(exe_path))[0]
+    legacy_dir = os.path.join(custom_data_root, legacy_name)
+    if not os.path.isdir(hashed_dir) and os.path.isdir(legacy_dir):
+        return legacy_dir
+    return hashed_dir
 
 
 def create_desktop_file(

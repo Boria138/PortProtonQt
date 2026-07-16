@@ -171,7 +171,13 @@ class DetailPageManager:
         cover_frame, image_label = cover_widgets
         cover_path = game_data.get("cover_path")
         if str(game_data.get("game_source", "")).lower() == "steam":
-            cover_path = get_local_steam_cover(game_data.get("appid", "")) or cover_path
+            appid = game_data.get("appid", "")
+            xdg_data_home = os.getenv(
+                "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
+            )
+            custom_dir = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", str(appid))
+            if os.path.dirname(os.path.abspath(cover_path or "")) != custom_dir:
+                cover_path = get_local_steam_cover(appid) or cover_path
         return {
             "cover_frame": cover_frame,
             "image_label": image_label,
@@ -434,7 +440,18 @@ class DetailPageManager:
         play_button = self._create_play_button(exec_line, current_exe)
         buttons_layout.addWidget(play_button)
 
-        if self._has_game_shortcut(game_name):
+        if str(game_source).lower() == "steam" and appid:
+            edit_button = self._make_action_button(
+                _("Edit Shortcut"),
+                self.main_window.theme_manager.get_icon("edit", as_path=True),
+            )
+            edit_button.clicked.connect(
+                lambda: self.main_window.context_menu_manager.edit_game_shortcut(
+                    game_name, exec_line, cover_path, appid
+                )
+            )
+            buttons_layout.addWidget(edit_button)
+        elif self._has_game_shortcut(game_name):
             edit_button = self._make_action_button(
                 _("Edit Shortcut"),
                 self.main_window.theme_manager.get_icon("edit", as_path=True),
@@ -445,7 +462,7 @@ class DetailPageManager:
                 )
             )
             buttons_layout.addWidget(edit_button)
-        elif str(game_source).lower() == "steam" and appid:
+        if str(game_source).lower() == "steam" and appid:
             open_folder_button = self._make_action_button(
                 _("Open Folder"),
                 self.main_window.theme_manager.get_icon("search", as_path=True),

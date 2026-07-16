@@ -10,7 +10,9 @@ from portprotonqt.config import (
     extract_exec_target_path,
     favorites_config,
     favorites_folders_config,
+    get_custom_data_dir_name,
     parse_desktop_entry,
+    resolve_custom_data_dir,
 )
 from portprotonqt.steam_api import (
     add_to_steam,
@@ -511,6 +513,15 @@ class ContextMenuManager:
                     lambda: self.open_steam_game_folder(game_card.appid)
                 )
             )
+            edit_action = menu.addAction(self._get_safe_icon("edit"), _("Edit Shortcut"))
+            edit_action.triggered.connect(
+                lambda: self.edit_game_shortcut(
+                    game_card.name,
+                    game_card.exec_line,
+                    game_card.cover_path,
+                    game_card.appid,
+                )
+            )
 
         if game_card.game_source != "steam":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
@@ -852,7 +863,6 @@ class ContextMenuManager:
             return
         shortcut_paths = self._get_installed_shortcut_paths(game_name)
         exe_path = self._parse_exe_path(resolved_exec_line, game_name)
-        exe_name = os.path.splitext(os.path.basename(exe_path))[0] if exe_path else None
         if not self._remove_file(
             desktop_path,
             _("Failed to delete .desktop file: {error}"),
@@ -862,12 +872,13 @@ class ContextMenuManager:
             return
         self._remove_installed_shortcuts(game_name, shortcut_paths)
         self._remove_statistics_entry(exe_path, game_name)
-        if exe_name:
+        if exe_path:
             xdg_data_home = os.getenv(
                 "XDG_DATA_HOME",
                 os.path.join(os.path.expanduser("~"), ".local", "share")
             )
-            custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
+            custom_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
+            custom_folder = resolve_custom_data_dir(custom_root, exe_path)
             if os.path.exists(custom_folder):
                 try:
                     shutil.rmtree(custom_folder)
@@ -1083,7 +1094,57 @@ class ContextMenuManager:
             location=_("Menu")
         )
 
-    def edit_game_shortcut(self, game_name, exec_line, cover_path):
+    def _edit_steam_shortcut(self, game_name: str, appid: int | str, cover_path: str) -> None:
+        appid_str = str(appid).strip()
+        if not appid_str.isdigit():
+            logger.warning("Invalid Steam appid for shortcut editing: %s", appid)
+            return
+        dialog = AddGameDialog(parent=self.parent, theme=self.theme, edit_mode=True,
+                               game_name=game_name, cover_path=cover_path, steam_appid=appid_str)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        new_name = dialog.nameEdit.text().strip()
+        if not new_name:
+            return
+        selected_cover = dialog.coverEdit.text().strip()
+        if not os.path.isfile(selected_cover) and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path):
+            selected_cover = dialog.last_cover_path
+        xdg_data_home = os.getenv(
+            "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
+        )
+        game_dir = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", appid_str)
+        try:
+            os.makedirs(game_dir, exist_ok=True)
+            clean_name = new_name.replace("\r", " ").replace("\n", " ").strip()
+            with open(os.path.join(game_dir, "metadata.txt"), "w", encoding="utf-8") as metadata_file:
+                metadata_file.write(f"name={clean_name}\n")
+            if selected_cover and os.path.isfile(selected_cover):
+                extension = os.path.splitext(selected_cover)[1].lower()
+                if extension not in COVER_IMAGE_EXTENSIONS:
+                    return
+                target_cover = os.path.join(game_dir, f"cover{extension}")
+                if os.path.abspath(selected_cover) != os.path.abspath(target_cover):
+                    self._remove_old_cover_files(game_dir)
+                    shutil.copyfile(selected_cover, target_cover)
+                cover_path = target_cover
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"), _("Failed to save custom data: {error}").format(error=str(e))
+            )
+            return
+        for game in self.game_library_manager.games:
+            if str(game[3]) != appid_str or game[12] != "steam":
+                continue
+            updated_game = list(game)
+            updated_game[0] = new_name
+            updated_game[2] = cover_path
+            self.game_library_manager.replace_game_incremental(
+                game[0], game[5], tuple(updated_game)
+            )
+            QTimer.singleShot(0, self.game_library_manager.load_visible_images)
+            return
+
+    def edit_game_shortcut(self, game_name, exec_line, cover_path, appid=None):
         """
         Opens a dialog allowing the user to edit a game shortcut in edit mode to modify an existing .desktop file.
 
@@ -1092,6 +1153,9 @@ class ContextMenuManager:
             exec_line: The executable command line of the game.
             cover_path: The path to the game's cover image.
         """
+        if appid is not None:
+            self._edit_steam_shortcut(game_name, appid, cover_path)
+            return
         if not self._check_portproton():
             return
         exec_line = self._get_exec_line(game_name, exec_line)
@@ -1162,12 +1226,16 @@ class ContextMenuManager:
 
             # Use the downloaded file path if we have a URL and the file was downloaded, otherwise use the local file
             if os.path.isfile(new_cover_path) or (is_url and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path)):
-                exe_name = os.path.splitext(os.path.basename(new_exe_path))[0]
                 xdg_data_home = os.getenv(
                     "XDG_DATA_HOME",
                     os.path.join(os.path.expanduser("~"), ".local", "share")
                 )
-                custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
+                custom_folder = os.path.join(
+                    xdg_data_home,
+                    "PortProtonQt",
+                    "custom_data",
+                    get_custom_data_dir_name(new_exe_path),
+                )
                 os.makedirs(custom_folder, exist_ok=True)
 
                 # Use the actual cover file path (either from URL download or local file)

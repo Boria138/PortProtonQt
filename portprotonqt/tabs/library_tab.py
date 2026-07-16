@@ -23,6 +23,7 @@ from portprotonqt.config import (
     LAUNCH_FILE_EXTENSIONS,
     extract_exec_target_path,
     game_config,
+    get_custom_data_dir_name,
     parse_desktop_entry,
     ui_config,
 )
@@ -534,14 +535,13 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             if desktop_entry and desktop_path:
                 self._write_desktop_file(desktop_entry, desktop_path)
 
-                exe_name = os.path.splitext(os.path.basename(exe_path))[0]
                 xdg_data_home = os.getenv("XDG_DATA_HOME",
                     os.path.join(os.path.expanduser("~"), ".local", "share"))
                 custom_folder = os.path.join(
                     xdg_data_home,
                     "PortProtonQt",
                     "custom_data",
-                    exe_name
+                    get_custom_data_dir_name(exe_path),
                 )
 
                 # Handle user cover copy

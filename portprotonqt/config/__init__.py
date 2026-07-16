@@ -24,12 +24,14 @@ from portprotonqt.config.portproton import (
     create_desktop_file,
     extract_exec_target_path,
     find_game_by_exe,
+    get_custom_data_dir_name,
     get_portproton_location,
     get_portproton_scripts_path,
     get_portproton_start_command,
     migrate_legacy_shortcut,
     parse_desktop_entry,
     read_portdata_path_from_config,
+    resolve_custom_data_dir,
     save_portdata_path_to_config,
 )
 from portprotonqt.config.proxy import ProxyConfig
@@ -95,6 +97,8 @@ __all__ = [
     "parse_desktop_entry",
     "extract_exec_target_path",
     "find_game_by_exe",
+    "get_custom_data_dir_name",
+    "resolve_custom_data_dir",
     "create_desktop_file",
     "consume_download_counter_skip",
     "reset_main_config",
