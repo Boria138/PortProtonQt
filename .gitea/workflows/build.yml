@@ -2,6 +2,15 @@ name: Build AppImage, Arch, Fedora and Debian Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "hotfix"
+        type: choice
+        options:
+          - hotfix
+          - release
   push:
     tags:
       - 'v[0-9]*.[0-9]*'
@@ -12,6 +21,7 @@ env:
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
   GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+  RUN_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'release' }}
 
 jobs:
   build-appimage:
@@ -33,7 +43,11 @@ jobs:
         run: |
           cd build-aux/AppImage
           chmod +x get-dependencies.sh portprotonqt-appimage.sh
-          ./get-dependencies.sh
+          if [ "${{ env.RUN_MODE }}" = "hotfix" ]; then
+            ./get-dependencies.sh --branch "${{ github.ref_name }}"
+          else
+            ./get-dependencies.sh
+          fi
 
       - name: Build AppImage
         run: |
@@ -170,6 +184,7 @@ jobs:
 
   release:
     name: Create and Publish Release
+    if: github.event_name != 'workflow_dispatch' || inputs.mode == 'release'
     runs-on: ubuntu-latest
     steps:
       - uses: https://git.linux-gaming.ru/actions/checkout@v4
