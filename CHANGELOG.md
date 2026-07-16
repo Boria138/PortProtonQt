@@ -16,6 +16,9 @@
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 
+### Fixed
+- Исправлено состояние кнопки остановки при переключении детальной страницы на компактный вид
+
 ## [1.3.0] - 2026-07-13
 
 ### Added

@@ -142,6 +142,32 @@ def test_hltb_results_ignored_after_detail_page_replaced(monkeypatch):
     manager._on_hltb_results.assert_not_called()
 
 
+def test_compact_layout_rebuild_preserves_running_button() -> None:
+    manager = DetailPageManager.__new__(DetailPageManager)
+    old_page = MagicMock(spec=QWidget)
+    old_button = MagicMock()
+    new_page = MagicMock(spec=QWidget)
+    new_button = MagicMock()
+    old_page.isAncestorOf.return_value = True
+    manager.main_window = SimpleNamespace(
+        current_running_button=old_button,
+        _set_running_button_stop=MagicMock(),
+    )
+    manager._current_detail_source = ("game", {"name": "Game"})
+    manager._current_detail_page = old_page
+    manager._return_to_tab_index = 0
+    manager._remove_current_detail_page = MagicMock()
+    manager.openGameDetailPage = MagicMock(
+        side_effect=lambda _data: setattr(manager, "_current_detail_page", new_page)
+    )
+    manager._find_play_button = MagicMock(return_value=new_button)
+
+    manager._reopen_current_detail_page()
+
+    assert manager.main_window.current_running_button is new_button
+    manager.main_window._set_running_button_stop.assert_called_once_with()
+
+
 def _make_palette(colors):
     """Create mock palette with name() returning hex colors."""
     palette = []

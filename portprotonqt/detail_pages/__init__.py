@@ -691,12 +691,24 @@ class DetailPageManager:
 
         source_kind, source_data = source
         return_tab_index = getattr(self, "_return_to_tab_index", 0)
+        current_page = self._current_detail_page
+        running_button = self.main_window.current_running_button
+        replace_running_button = (
+            current_page is not None
+            and running_button is not None
+            and current_page.isAncestorOf(running_button)
+        )
         self._remove_current_detail_page()
         if source_kind == "autoinstall":
             self.openAutoInstallDetailPage(source_data)
         else:
             self.openGameDetailPage(source_data)
         self._return_to_tab_index = return_tab_index
+        if replace_running_button and self._current_detail_page is not None:
+            play_button = self._find_play_button(self._current_detail_page)
+            if play_button is not None:
+                self.main_window.current_running_button = play_button
+                self.main_window._set_running_button_stop()
 
     def _finalize_detail_page(
         self,
