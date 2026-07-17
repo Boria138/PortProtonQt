@@ -111,6 +111,7 @@ install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_d
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules
+%{_sysusersdir}/portprotonqt.conf
 %{_datadir}/polkit-1/rules.d/ru.linux_gaming.PortProtonQt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{_datadir}/mime/packages/ru.linux_gaming.PortProtonQt.xml
