@@ -1,5 +1,6 @@
 """PortProton configuration and launch helpers."""
 import configparser
+import hashlib
 import os
 import re
 import shlex
@@ -504,6 +505,26 @@ def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
     return None
 
 
+def get_custom_data_dir_name(exe_path: str) -> str:
+    """Return a collision-safe custom data directory name for an executable."""
+    normalized_path = os.path.normpath(os.path.abspath(os.path.expanduser(exe_path)))
+    path_hash = hashlib.md5(
+        normalized_path.encode("utf-8"), usedforsecurity=False
+    ).hexdigest()
+    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+    return f"{exe_name}_{path_hash}"
+
+
+def resolve_custom_data_dir(custom_data_root: str, exe_path: str) -> str:
+    """Return hashed custom data directory, falling back to the legacy name."""
+    hashed_dir = os.path.join(custom_data_root, get_custom_data_dir_name(exe_path))
+    legacy_name = os.path.splitext(os.path.basename(exe_path))[0]
+    legacy_dir = os.path.join(custom_data_root, legacy_name)
+    if not os.path.isdir(hashed_dir) and os.path.isdir(legacy_dir):
+        return legacy_dir
+    return hashed_dir
+
+
 def create_desktop_file(
     exe_path: str,
     game_name: str | None = None,
@@ -529,12 +550,17 @@ def create_desktop_file(
     appimage_path = os.getenv("APPIMAGE", "").strip()
     if flatpak_id:
         exec_str = f'flatpak run {flatpak_id} --silent "{exe_path}"'
+        log_exec = f'flatpak run {flatpak_id} --log "{exe_path}"'
     elif appimage_path and os.path.isfile(appimage_path):
         exec_str = shlex.join([appimage_path, "--silent", exe_path])
+        log_exec = shlex.join([appimage_path, "--log", exe_path])
     else:
         exec_str = f'portprotonqt --silent "{exe_path}"'
+        log_exec = f'portprotonqt --log "{exe_path}"'
 
     comment = _('Launch "{name}" with PortProton').format(name=game_name)
+    silent_name = _("Run in silent mode")
+    log_name = _("Run in logging mode")
     desktop_entry = (
         "[Desktop Entry]\n"
         f"Name={game_name}\n"
@@ -544,6 +570,15 @@ def create_desktop_file(
         "Type=Application\n"
         "Categories=Game;\n"
         "StartupNotify=true\n"
+        f"Icon={icon_path}\n"
+        "Actions=RunSilent;RunLog;\n"
+        "\n[Desktop Action RunSilent]\n"
+        f"Name={silent_name}\n"
+        f"Exec={exec_str}\n"
+        f"Icon={icon_path}\n"
+        "\n[Desktop Action RunLog]\n"
+        f"Name={log_name}\n"
+        f"Exec={log_exec}\n"
         f"Icon={icon_path}\n"
     )
     return desktop_entry, desktop_path, icon_path

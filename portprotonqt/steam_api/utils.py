@@ -451,13 +451,10 @@ def _load_steam_app_metadata(
     return metadata
 
 
-def _is_windows_steam_game(common: dict) -> bool:
-    """Return whether Steam metadata describes a non-native Windows game."""
+def _is_steam_game(common: dict) -> bool:
+    """Return whether Steam metadata describes a game."""
     app_type = str(common.get("type", "")).lower()
-    operating_systems = {
-        value.strip().lower() for value in str(common.get("oslist", "")).split(",")
-    }
-    return app_type == "game" and "windows" in operating_systems and "linux" not in operating_systems
+    return app_type == "game"
 
 
 def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
@@ -489,7 +486,7 @@ def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
     )
     for app, appid in installed_apps:
         common = app_metadata.get(appid) if app_metadata is not None else None
-        if common is not None and not _is_windows_steam_game(common):
+        if common is not None and not _is_steam_game(common):
             continue
         name = app.get('name', f"Unknown ({appid})")
         lname = name.lower()

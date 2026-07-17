@@ -1274,10 +1274,6 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
         env PATH=$PW_PATH "
     fi
 
-    if [[ -n "${APPIMAGE:-}" ]] ; then
-        export pw_runtime="env -u VK_DRIVER_FILES -u VK_ICD_FILENAMES ${pw_runtime}"
-    fi
-
     if [[ "$PW_USE_SYSTEM_VK_LAYERS" == "1" ]] ; then
         export PRESSURE_VESSEL_IMPORT_VULKAN_LAYERS=1
         unset PW_VK_LAYER_PATH

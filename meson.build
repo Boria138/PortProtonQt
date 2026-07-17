@@ -84,6 +84,12 @@ install_data(
   install_dir: datadir / 'applications',
 )
 
+install_data(
+  'build-aux/share/applications/ru.linux_gaming.PortProtonQt.log.desktop',
+  'build-aux/share/applications/ru.linux_gaming.PortProtonQt.silent.desktop',
+  install_dir: datadir / 'applications',
+)
+
 # Install MIME type
 install_data(
   'build-aux/share/mime/packages/ru.linux_gaming.PortProtonQt.xml',

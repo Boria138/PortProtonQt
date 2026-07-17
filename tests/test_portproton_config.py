@@ -182,17 +182,3 @@ def test_run_after_batch_is_created_next_to_exe() -> None:
     assert 'start "" /unix "${PW_RUN_AFTER_EXE}"' in helper
     assert 'LAUNCH_PARAMETERS="" proxy_launch_parameters="" \\' in helper
     assert 'pw_run "${PW_VD_TMP[@]}" "${run_after_bat}"' in helper
-
-
-def test_appimage_vulkan_override_is_cleared_at_runtime_boundary() -> None:
-    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
-        encoding="utf-8",
-    )
-    runtime_init = helper.index("pw_init_runtime ()")
-    runtime_env = "env -u VK_DRIVER_FILES -u VK_ICD_FILENAMES"
-    runtime_cleanup = helper.index(runtime_env, runtime_init)
-    runtime_ready = helper.index('print_info "RUNTIME is enabled"', runtime_cleanup)
-
-    assert runtime_init < runtime_cleanup < runtime_ready
-    assert "VK_ADD_DRIVER_FILES" not in runtime_env
-    assert "unset VK_DRIVER_FILES" not in helper

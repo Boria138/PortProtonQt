@@ -186,6 +186,9 @@ if key_value >= Qt.Key.Key_Escape.value: ...
 - Do not refactor unrelated code
 - Do not modify localization files (`portprotonqt/locales/`) unless explicitly requested
 - Do not extract single-use logic into a helper function without a clear need
+- **Before adding any helper, wrapper, class, or infrastructure, search for an existing method that already performs the operation and call it directly**
+- **NEVER add a task-local helper that only wraps an existing method or a single call; keep the call in the modified block unless extraction is required by the function limits**
+- If the user identifies overengineering, remove the unnecessary abstraction before continuing; do not layer another fix on top of it
 - Do not add comments for obvious code
 - **NEVER leave outdated comments after refactoring** (e.g., "without numpy" after numpy removal, "legacy" after rewrite)
 - **ALWAYS update or remove comments that reference removed dependencies, patterns, or context**

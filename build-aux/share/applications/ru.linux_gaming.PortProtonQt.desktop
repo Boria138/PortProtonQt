@@ -11,4 +11,4 @@ Terminal=false
 Icon=ru.linux_gaming.PortProtonQt
 StartupWMClass=ru.linux_gaming.PortProtonQt
 Categories=Game;Utility;
-MimeType=x-scheme-handler/portproton;x-scheme-handler/portprotonqt;application/x-portproton-prefix-backup;application/x-portproton-autoinstall;application/x-ms-dos-exec;application/x-ms-dos-batch;application/x-bat;application/x-msi;text/x-ms-regedit;application/x-executable;application/x-dosexec;application/x-iso9660-image;application/x-cd-image;application/x-raw-disk-image;application/x-mdf;application/x-mds-disk;application/x-nrg;
+MimeType=x-scheme-handler/portproton;x-scheme-handler/portprotonqt;application/x-portproton-prefix-backup;application/x-portproton-autoinstall;application/x-ms-dos-exec;application/x-ms-dos-executable;application/x-msdos-program;application/vnd.microsoft.portable-executable;application/x-ms-dos-batch;application/x-bat;application/x-msi;text/x-ms-regedit;application/x-executable;application/x-dosexec;application/x-iso9660-image;application/x-cd-image;application/x-raw-disk-image;application/x-mdf;application/x-mds-disk;application/x-nrg;

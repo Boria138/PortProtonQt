@@ -46,6 +46,7 @@ from portprotonqt.config import (
     get_portproton_start_command,
     get_portproton_scripts_path,
     find_game_by_exe,
+    resolve_custom_data_dir,
 )
 
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
@@ -305,6 +306,7 @@ class MainWindow(
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
         self.launch_exe = launch_exe  # Store launch_exe path
+        self._pending_log_exe: str | None = None
         self.appimageUpdateWorker: AppImageUpdateWorker | None = None
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
@@ -1018,11 +1020,12 @@ class MainWindow(
                     'name': name,
                     'game_source': 'steam'
                 }
+            name, custom_cover = self._get_custom_steam_data(appid, name)
             last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
             steam_games.append((
                 name,
                 info.get('description', ''),
-                info.get('cover', ''),
+                custom_cover or info.get('cover', ''),
                 appid,
                 info.get('controller_support', ''),
                 f"steam://rungameid/{appid}",
@@ -1044,6 +1047,28 @@ class MainWindow(
 
         for name, appid, last_played, playtime_seconds in installed_games:
             get_full_steam_game_info_async(appid, lambda info, n=name, a=appid, lp=last_played, pt=playtime_seconds: on_game_info(info, n, a, lp, pt), fallback_name=name)
+
+    @staticmethod
+    def _get_custom_steam_data(
+        appid: int | str, fallback_name: str
+    ) -> tuple[str, str]:
+        """Return custom Steam name and cover stored by AppID."""
+        xdg_data_home = os.getenv(
+            "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
+        )
+        game_dir = os.path.join(
+            xdg_data_home, "PortProtonQt", "custom_data", str(appid)
+        )
+        metadata_path = os.path.join(game_dir, "metadata.txt")
+        custom_name = fallback_name
+        if os.path.isfile(metadata_path):
+            translations = read_metadata_translations(metadata_path, get_metadata_language())
+            custom_name = translations.get("name", fallback_name).strip()
+        for extension in COVER_IMAGE_EXTENSIONS:
+            cover_path = os.path.join(game_dir, f"cover{extension}")
+            if os.path.isfile(cover_path):
+                return custom_name, cover_path
+        return custom_name, ""
 
     def _load_portproton_games_async(self, callback: Callable[[list[tuple]], None]):
         games = []
@@ -1142,7 +1167,7 @@ class MainWindow(
         economy_mode = ui_config.get_economy_mode()
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-            user_game_folder = os.path.join(user_custom_folder, exe_name)
+            user_game_folder = resolve_custom_data_dir(user_custom_folder, game_exe)
             themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(game_exe)[1].lower(), "")
             generated_img_icon = self._generate_missing_portproton_icon(
                 game_exe, entry.get("Icon", ""), desktop_name
@@ -1436,6 +1461,14 @@ class MainWindow(
             self.stackedWidget.currentIndex(),
         )
         self.detail_page_manager.openGameDetailPage(game_data)
+        pending_log_exe = self._pending_log_exe
+        detail_exe = extract_exec_target_path(game_data.get("exec_line", ""))
+        if pending_log_exe and detail_exe:
+            if os.path.abspath(detail_exe) == pending_log_exe:
+                self._pending_log_exe = None
+                log_button = self.detail_page_manager._debug_log_button
+                if log_button:
+                    self.detail_page_manager._start_debug_log(pending_log_exe, log_button)
         logger.debug(
             "Detail page opened at stacked index %d, current_detail=%s",
             self.stackedWidget.currentIndex(),
@@ -1486,7 +1519,7 @@ class MainWindow(
         }
         self.detail_page_manager.openAutoInstallDetailPage(game_data, return_tab_index=0)
 
-    def handle_launch_exe(self, exe_path: str) -> None:
+    def handle_launch_exe(self, exe_path: str, log_mode: bool = False) -> None:
         """Handle launching a supported file from CLI.
 
         If the game exists in the library, open its detail page.
@@ -1494,22 +1527,19 @@ class MainWindow(
 
         Args:
             exe_path: Full path to the launch file
+            log_mode: Start UI logging after opening the detail page
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
-        exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+        self._pending_log_exe = exe_path if log_mode else None
         economy_mode = ui_config.get_economy_mode()
 
         xdg_data_home = os.getenv(
             "XDG_DATA_HOME",
             os.path.join(os.path.expanduser("~"), ".local", "share")
         )
-        user_game_folder = os.path.join(
-            xdg_data_home,
-            "PortProtonQt",
-            "custom_data",
-            exe_name
-        )
+        custom_data_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
+        user_game_folder = resolve_custom_data_dir(custom_data_root, exe_path)
 
         local_cover_path = ""
         if os.path.isdir(user_game_folder):

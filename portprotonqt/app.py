@@ -303,14 +303,15 @@ def main():
         prefix_name, backup_dir = args.create_backup
         backup_request = (prefix_name, os.path.abspath(os.path.expanduser(backup_dir)))
         ipc_message = "backup:{}:{}".format(quote(prefix_name, safe=""), quote(backup_request[1], safe=""))
-    elif is_silent_launch and args.file_or_url and is_launch_file(args.file_or_url):
+    elif is_silent_launch and not args.log and args.file_or_url and is_launch_file(args.file_or_url):
         run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
         sys.exit(app.exec())
     elif is_restore_prefix_request(args):
         restore_prefix_path = normalize_launch_path(args.file_or_url)
         ipc_message = f"restore:{quote(restore_prefix_path, safe='')}"
     elif args.file_or_url and is_launch_file(args.file_or_url):
-        ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
+        launch_action = "log" if args.log else "open"
+        ipc_message = f"{launch_action}:{normalize_launch_path(args.file_or_url)}"
     elif args.file_or_url and is_autoinstall_file(args.file_or_url):
         autoinstall_path = normalize_launch_path(args.file_or_url)
         ipc_message = f"autoinstall:{quote(autoinstall_path, safe='')}"
@@ -470,7 +471,7 @@ def main():
     if exe_path:
         # Defer the call until after the window is shown
         def handle_launch_exe():
-            window.handle_launch_exe(exe_path)
+            window.handle_launch_exe(exe_path, log_mode=args.log)
         QTimer.singleShot(0, handle_launch_exe)
     elif autoinstall_path:
         def handle_autoinstall():
@@ -501,6 +502,7 @@ def main():
                     if (
                         msg.startswith("show")
                         or msg.startswith("open:")
+                        or msg.startswith("log:")
                         or msg.startswith("restore:")
                         or msg.startswith("backup:")
                         or msg.startswith("theme:")
@@ -525,11 +527,12 @@ def main():
                                 display_config.set_fullscreen(False)
                                 window.showNormal()
 
-                        if msg.startswith("open:"):
-                            launch_path = msg[5:].strip()
+                        if msg.startswith("open:") or msg.startswith("log:"):
+                            log_mode = msg.startswith("log:")
+                            launch_path = msg.split(":", 1)[1].strip()
                             if launch_path and is_launch_file(launch_path):
                                 logger.info("Opening launch file via IPC: %s", launch_path)
-                                window.handle_launch_exe(launch_path)
+                                window.handle_launch_exe(launch_path, log_mode=log_mode)
                             else:
                                 logger.warning("Invalid launch file via IPC: %s", launch_path)
                         elif msg.startswith("restore:"):

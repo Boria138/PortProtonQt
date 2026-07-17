@@ -128,7 +128,7 @@ class GameLaunchDialog(DraggableDialog):
 class AddGameDialog(DraggableDialog):
     """Dialog for adding or editing a game."""
 
-    def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
+    def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None, steam_appid=None):
         super().__init__(parent)
         from portprotonqt.context_menu_manager import CustomLineEdit
         self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
@@ -156,11 +156,9 @@ class AddGameDialog(DraggableDialog):
         name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         layout.addRow(name_label, self.nameEdit)
 
-        exe_label = QLabel(_("Path to Executable:"))
-        exe_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-
         self.exeEdit = CustomLineEdit(self, theme=self.theme)
         self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
+        self.exeEdit.setVisible(steam_appid is None)
         if exe_path:
             self.exeEdit.setText(exe_path)
 
@@ -168,12 +166,15 @@ class AddGameDialog(DraggableDialog):
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
         exeBrowseButton.setObjectName("exeBrowseButton")
+        exeBrowseButton.setVisible(steam_appid is None)
+        if steam_appid is None:
+            exe_label = QLabel(_("Path to Executable:"))
+            exe_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+            layout.addRow(exe_label, self.exeEdit)
 
-        layout.addRow(exe_label, self.exeEdit)
-
-        empty_label = QLabel("")
-        empty_label.setFixedWidth(exe_label.sizeHint().width())
-        layout.addRow(empty_label, exeBrowseButton)
+            empty_label = QLabel("")
+            empty_label.setFixedWidth(exe_label.sizeHint().width())
+            layout.addRow(empty_label, exeBrowseButton)
 
         cover_label = QLabel(_("Custom Cover:"))
         cover_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -190,7 +191,9 @@ class AddGameDialog(DraggableDialog):
         coverBrowseButton.setObjectName("coverBrowseButton")
 
         layout.addRow(cover_label, self.coverEdit)
-        layout.addRow(empty_label, coverBrowseButton)
+        cover_button_label = QLabel("")
+        cover_button_label.setFixedWidth(cover_label.sizeHint().width())
+        layout.addRow(cover_button_label, coverBrowseButton)
 
         self.add_to_steam_checkbox = QCheckBox()
         self.add_to_menu_checkbox = QCheckBox()
@@ -210,6 +213,7 @@ class AddGameDialog(DraggableDialog):
         self.add_to_steam_checkbox.setIconSize(QSize(20, 20))
         self.add_to_menu_checkbox.setIconSize(QSize(20, 20))
         self.add_to_desktop_checkbox.setIconSize(QSize(20, 20))
+        self.add_to_steam_checkbox.setVisible(steam_appid is None)
         options_layout = QHBoxLayout()
         options_layout.setSpacing(12)
         options_layout.addWidget(self.add_to_steam_checkbox)
@@ -218,9 +222,12 @@ class AddGameDialog(DraggableDialog):
         options_layout.addStretch()
         options_widget = QWidget(self)
         options_widget.setLayout(options_layout)
+        options_widget.setVisible(steam_appid is None)
         options_label = QLabel(_("Add shortcut to:"))
         options_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        layout.addRow(options_label, options_widget)
+        options_label.setVisible(steam_appid is None)
+        if steam_appid is None:
+            layout.addRow(options_label, options_widget)
 
         current_name = game_name.strip() if game_name else self.nameEdit.text().strip()
         self.add_to_steam_checkbox.setChecked(self._steam_shortcut_exists(current_name))

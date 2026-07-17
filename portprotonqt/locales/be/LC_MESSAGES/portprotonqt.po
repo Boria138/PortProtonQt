@@ -221,6 +221,10 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
+#, python-brace-format
+msgid "Failed to save custom data: {error}"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr ""
 
@@ -729,6 +733,12 @@ msgstr ""
 msgid "Launch \"{name}\" with PortProton"
 msgstr ""
 
+msgid "Run in silent mode"
+msgstr ""
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr ""
 
@@ -827,10 +837,10 @@ msgstr ""
 msgid "Name:"
 msgstr ""
 
-msgid "Path to Executable:"
+msgid "Browse…"
 msgstr ""
 
-msgid "Browse…"
+msgid "Path to Executable:"
 msgstr ""
 
 msgid "Custom Cover:"

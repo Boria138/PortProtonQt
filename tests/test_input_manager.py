@@ -4,16 +4,43 @@ import os
 from types import SimpleNamespace
 from typing import cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import QApplication, QFrame, QStackedWidget, QWidget
 from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
-from portprotonqt.input_manager import InputManager, MainWindowProtocol, PAD_DPAD_X
+from portprotonqt.gamepad_backend import (
+    SDL_GAMEPAD_BUTTON_DPAD_DOWN,
+    SDL_GAMEPAD_BUTTON_DPAD_UP,
+    SDLGamepad,
+)
+from portprotonqt.input_manager import InputManager, MainWindowProtocol, PAD_DPAD_X, PAD_DPAD_Y
 
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+def test_sdl_dpad_vertical_directions() -> None:
+    emitted: list[tuple[int, int, float]] = []
+    pressed_button = SDL_GAMEPAD_BUTTON_DPAD_UP
+    gamepad = cast(
+        SDLGamepad,
+        SimpleNamespace(get_button=lambda button: int(button == pressed_button)),
+    )
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    manager._hat_states = {}
+    manager.mouse_emulation_enabled = False
+    manager.emulation_active = False
+    manager.emulation_triggered = False
+    manager.dpad_moved.connect(lambda code, value, now: emitted.append((code, value, now)))
+
+    InputManager._poll_hat_events(manager, gamepad, 1.0)
+    pressed_button = SDL_GAMEPAD_BUTTON_DPAD_DOWN
+    InputManager._poll_hat_events(manager, gamepad, 2.0)
+
+    assert emitted == [(PAD_DPAD_Y, -1, 1.0), (PAD_DPAD_Y, 1, 2.0)]
 
 
 class DummyCard(QFrame):

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-11 11:54+0500\n"
+"POT-Creation-Date: 2026-07-17 08:46+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -215,6 +215,10 @@ msgid "Removed '{game_name}' from {location}"
 msgstr ""
 
 msgid "Desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to save custom data: {error}"
 msgstr ""
 
 msgid "Game name and executable path are required"
@@ -725,6 +729,12 @@ msgstr ""
 msgid "Launch \"{name}\" with PortProton"
 msgstr ""
 
+msgid "Run in silent mode"
+msgstr ""
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr ""
 
@@ -823,10 +833,10 @@ msgstr ""
 msgid "Name:"
 msgstr ""
 
-msgid "Path to Executable:"
+msgid "Browse…"
 msgstr ""
 
-msgid "Browse…"
+msgid "Path to Executable:"
 msgstr ""
 
 msgid "Custom Cover:"

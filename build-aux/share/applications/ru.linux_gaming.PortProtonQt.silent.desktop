@@ -1,0 +1,20 @@
+[Desktop Entry]
+Name=PortProtonQt (silent)
+Name[ru]=PortProtonQt (тихий режим)
+Name[es]=PortProtonQt (modo silencioso)
+Name[pt]=PortProtonQt (modo silencioso)
+Name[de]=PortProtonQt (stiller Modus)
+Exec=portprotonqt --silent %u
+Type=Application
+Comment=Launch Windows applications silently through PortProtonQt
+Comment[ru]=Тихий запуск Windows-приложений через PortProtonQt
+Comment[es]=Ejecuta aplicaciones de Windows silenciosamente mediante PortProtonQt
+Comment[pt]=Executa aplicativos do Windows silenciosamente pelo PortProtonQt
+Comment[de]=Startet Windows-Anwendungen lautlos über PortProtonQt
+Terminal=false
+Icon=ru.linux_gaming.PortProtonQt
+StartupWMClass=ru.linux_gaming.PortProtonQt
+Categories=Game;
+NoDisplay=true
+MimeType=application/x-ms-dos-executable;application/x-msdos-program;application/x-ms-dos-exec;application/x-executable;application/x-dosexec;application/vnd.microsoft.portable-executable;
+StartupNotify=true

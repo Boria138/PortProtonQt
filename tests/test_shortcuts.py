@@ -10,7 +10,11 @@ Covers:
 """
 import os
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import MagicMock
+
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 import portprotonqt.scripts_utils.shortcut_tools as shortcut_tools
 from portprotonqt.config.portproton import (
@@ -18,7 +22,16 @@ from portprotonqt.config.portproton import (
     create_desktop_file,
     parse_desktop_entry,
     extract_exec_target_path,
+    get_custom_data_dir_name,
 )
+
+
+def test_custom_data_hash_distinguishes_same_exe_names(tmp_path: Path) -> None:
+    first = get_custom_data_dir_name(str(tmp_path / "first" / "launcher.exe"))
+    second = get_custom_data_dir_name(str(tmp_path / "second" / "launcher.exe"))
+
+    assert first.startswith("launcher_")
+    assert first != second
 
 
 class _ShortcutResponse:
@@ -196,6 +209,18 @@ class TestCreateDesktopFile:
         assert "StartupNotify=true" in entry
         assert "Icon=" in entry
         assert "Exec=" in entry
+
+    def test_desktop_entry_has_launch_actions(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test Game")
+        assert result is not None
+        entry, _, _ = result
+        assert "Actions=RunSilent;RunLog;" in entry
+        assert "[Desktop Action Run]" not in entry
+        assert "[Desktop Action RunSilent]" in entry
+        assert "[Desktop Action RunLog]" in entry
+        assert f'Exec=portprotonqt --log "{exe}"' in entry
 
     def test_name_with_slash_preserved_in_icon(self, tmp_path: Path, monkeypatch: Any) -> None:
         _patch_location(monkeypatch, tmp_path)
@@ -533,6 +558,65 @@ class TestApplicationsDir:
         assert result == str(tmp_path / "data" / "applications")
 
 
+class TestInstallShortcutActions:
+    def test_add_to_menu_generates_launch_actions(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import portprotonqt.context_menu_manager as context_menu
+
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        exe_path = tmp_path / "Game.exe"
+        exe_path.touch()
+        (pp_dir / "Game.desktop").write_text("[Desktop Entry]\n", encoding="utf-8")
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton.get_portproton_location",
+            lambda: str(pp_dir),
+        )
+        manager = object.__new__(context_menu.ContextMenuManager)
+        manager.portproton_location = str(pp_dir)
+        manager.signals = context_menu.ContextMenuSignals()
+
+        manager.add_to_menu("Game", f"start.sh {exe_path}")
+
+        shortcut = tmp_path / "data" / "applications" / "Game.desktop"
+        content = shortcut.read_text(encoding="utf-8")
+        assert "Actions=RunSilent;RunLog;" in content
+        assert f'Exec=portprotonqt --log "{exe_path}"' in content
+
+    def test_add_to_desktop_generates_launch_actions(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import portprotonqt.context_menu_manager as context_menu
+
+        pp_dir = tmp_path / "PortProtonQt"
+        (pp_dir / "data" / "img").mkdir(parents=True)
+        exe_path = tmp_path / "Game.exe"
+        exe_path.touch()
+        (pp_dir / "Game.desktop").write_text("[Desktop Entry]\n", encoding="utf-8")
+        (pp_dir / "data" / "img" / "Game.png").touch()
+        desktop_dir = tmp_path / "Desktop"
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton.get_portproton_location",
+            lambda: str(pp_dir),
+        )
+        monkeypatch.setattr(
+            context_menu.QStandardPaths,
+            "writableLocation",
+            lambda _location: str(desktop_dir),
+        )
+        manager = object.__new__(context_menu.ContextMenuManager)
+        manager.portproton_location = str(pp_dir)
+        manager.signals = context_menu.ContextMenuSignals()
+
+        manager.add_to_desktop("Game", f"start.sh {exe_path}")
+
+        content = (desktop_dir / "Game.desktop").read_text(encoding="utf-8")
+        assert "Actions=RunSilent;RunLog;" in content
+        assert f'Exec=portprotonqt --log "{exe_path}"' in content
+
+
 # ── _get_steam_shortcut_path ─────────────────────────────────────────────────
 
 class TestGetSteamShortcutPath:
@@ -602,6 +686,97 @@ class TestGetSteamShortcutPath:
         result = cls._get_steam_shortcut_path(mgr, "Game\tName", str(tmp_path))
         assert "Game" in result
         assert "Name" in result
+
+
+class TestEditSteamShortcut:
+    def test_steam_dialog_has_no_executable_row(self, monkeypatch: Any) -> None:
+        from portprotonqt.dialogs.base import AddGameDialog
+
+        QApplication.instance() or QApplication([])
+        theme = SimpleNamespace(
+            ACTION_BUTTON_STYLE="",
+            ADDGAME_INPUT_STYLE="",
+            CHECKBOX_STYLE="",
+            MAIN_WINDOW_STYLE="",
+            MESSAGE_BOX_STYLE="",
+            PARAMS_TITLE_STYLE="",
+            PREVIEW_WIDGET_STYLE="",
+        )
+        monkeypatch.setattr(AddGameDialog, "init_keyboard", lambda _self: None)
+        monkeypatch.setattr(
+            "portprotonqt.dialogs.base.AutoSizeButton",
+            lambda text, **_kwargs: QPushButton(text),
+        )
+
+        dialog = AddGameDialog(
+            theme=theme,
+            edit_mode=True,
+            game_name="Game",
+            steam_appid="730",
+        )
+
+        labels = [label.text() for label in dialog.findChildren(QLabel)]
+        assert "Path to Executable:" not in labels
+        assert dialog.exeEdit.isHidden()
+        assert all(
+            label.isHidden()
+            for label in dialog.findChildren(QLabel)
+            if label.text() == "Add shortcut to:"
+        )
+        dialog.close()
+
+    def test_saves_name_and_cover_by_steam_id(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import portprotonqt.context_menu_manager as context_menu
+
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        source_cover = tmp_path / "selected.webp"
+        source_cover.write_bytes(b"cover")
+        created_with = {}
+        dialog = MagicMock()
+        dialog.nameEdit.text.return_value = "New Game"
+        dialog.coverEdit.text.return_value = str(source_cover)
+        dialog.last_cover_path = str(source_cover)
+        dialog.exec.return_value = context_menu.QDialog.DialogCode.Accepted
+
+        def make_dialog(**kwargs: Any) -> MagicMock:
+            created_with.update(kwargs)
+            return dialog
+
+        manager = context_menu.ContextMenuManager.__new__(
+            context_menu.ContextMenuManager
+        )
+        manager.parent = MagicMock()
+        manager.theme = None
+        manager.signals = MagicMock()
+        old_game = (
+            "Old Game", "", "/old.jpg", 730, "", "steam://rungameid/730",
+            "", "", "", "", 0, 0, "steam",
+        )
+        manager.game_library_manager = MagicMock()
+        manager.game_library_manager.games = [old_game]
+        monkeypatch.setattr(context_menu, "AddGameDialog", make_dialog)
+
+        context_menu.ContextMenuManager._edit_steam_shortcut(
+            manager, "Old Game", 730, "/cover.jpg"
+        )
+
+        assert created_with["steam_appid"] == "730"
+        game_dir = tmp_path / "PortProtonQt" / "custom_data" / "730"
+        assert (game_dir / "cover.webp").read_bytes() == b"cover"
+        assert (game_dir / "metadata.txt").read_text(encoding="utf-8") == (
+            "name=New Game\n"
+        )
+        replacement = manager.game_library_manager.replace_game_incremental
+        replacement.assert_called_once()
+        assert replacement.call_args.args[2][0] == "New Game"
+        assert replacement.call_args.args[2][2] == str(game_dir / "cover.webp")
+        from portprotonqt.main_window import MainWindow
+        assert MainWindow._get_custom_steam_data(730, "Old Game") == (
+            "New Game",
+            str(game_dir / "cover.webp"),
+        )
 
 
 # ── Delete installed shortcuts ───────────────────────────────────────────────

@@ -1,0 +1,20 @@
+[Desktop Entry]
+Name=PortProtonQt (log)
+Name[ru]=PortProtonQt (режим лога)
+Name[es]=PortProtonQt (modo de registro)
+Name[pt]=PortProtonQt (modo de registro)
+Name[de]=PortProtonQt (Protokollmodus)
+Exec=portprotonqt --log %u
+Type=Application
+Comment=Launch Windows applications with logging through PortProtonQt
+Comment[ru]=Запуск Windows-приложений с записью лога через PortProtonQt
+Comment[es]=Ejecuta aplicaciones de Windows con registro mediante PortProtonQt
+Comment[pt]=Executa aplicativos do Windows com registro pelo PortProtonQt
+Comment[de]=Startet Windows-Anwendungen mit Protokollierung über PortProtonQt
+Terminal=false
+Icon=ru.linux_gaming.PortProtonQt
+StartupWMClass=ru.linux_gaming.PortProtonQt
+Categories=Game;
+NoDisplay=true
+MimeType=application/x-ms-dos-executable;application/x-msdos-program;application/x-ms-dos-exec;application/x-executable;application/x-dosexec;application/vnd.microsoft.portable-executable;
+StartupNotify=true

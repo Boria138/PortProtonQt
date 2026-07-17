@@ -220,6 +220,10 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
+#, fuzzy, python-brace-format
+msgid "Failed to save custom data: {error}"
+msgstr "删除自定义数据失败：{error}"
+
 msgid "Game name and executable path are required"
 msgstr "游戏名称和可执行文件路径为必填项"
 
@@ -756,6 +760,13 @@ msgstr "无收藏"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "使用 PortProton 启动\"{name}\""
 
+#, fuzzy
+msgid "Run in silent mode"
+msgstr "Vulkan 呈现模式"
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr "调试日志模式已启动"
 
@@ -854,11 +865,11 @@ msgstr "正在启动 {0}"
 msgid "Name:"
 msgstr "名称："
 
-msgid "Path to Executable:"
-msgstr "可执行文件路径："
-
 msgid "Browse…"
 msgstr "浏览…"
+
+msgid "Path to Executable:"
+msgstr "可执行文件路径："
 
 msgid "Custom Cover:"
 msgstr "自定义封面："
