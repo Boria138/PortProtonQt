@@ -353,6 +353,39 @@ def test_open_local_autoinstall_card_uses_autoinstall_page(tmp_path: Path) -> No
     assert return_tab_index == 0
 
 
+def test_open_game_detail_starts_pending_log(tmp_path: Path) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.touch()
+    started = []
+
+    class FakeDetailPageManager:
+        _debug_log_button = object()
+
+        def openGameDetailPage(self, _game_data: dict) -> None:
+            return
+
+        def _start_debug_log(self, path: str, button: object) -> None:
+            started.append((path, button))
+
+    class FakeStackedWidget:
+        def currentIndex(self) -> int:
+            return 0
+
+        def currentWidget(self) -> None:
+            return None
+
+    window: Any = MainWindow.__new__(MainWindow)
+    window.detail_page_manager = FakeDetailPageManager()
+    window.stackedWidget = FakeStackedWidget()
+    window.currentDetailPage = None
+    window._pending_log_exe = str(exe_path)
+
+    window.openGameDetailPage({"name": "Game", "exec_line": str(exe_path)})
+
+    assert started == [(str(exe_path), window.detail_page_manager._debug_log_button)]
+    assert window._pending_log_exe is None
+
+
 def test_launch_exe_skips_library_load_for_ppai() -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window._loading_games = False

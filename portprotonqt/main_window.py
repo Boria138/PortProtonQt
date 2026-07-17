@@ -306,6 +306,7 @@ class MainWindow(
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
         self.launch_exe = launch_exe  # Store launch_exe path
+        self._pending_log_exe: str | None = None
         self.appimageUpdateWorker: AppImageUpdateWorker | None = None
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
@@ -1460,6 +1461,14 @@ class MainWindow(
             self.stackedWidget.currentIndex(),
         )
         self.detail_page_manager.openGameDetailPage(game_data)
+        pending_log_exe = self._pending_log_exe
+        detail_exe = extract_exec_target_path(game_data.get("exec_line", ""))
+        if pending_log_exe and detail_exe:
+            if os.path.abspath(detail_exe) == pending_log_exe:
+                self._pending_log_exe = None
+                log_button = self.detail_page_manager._debug_log_button
+                if log_button:
+                    self.detail_page_manager._start_debug_log(pending_log_exe, log_button)
         logger.debug(
             "Detail page opened at stacked index %d, current_detail=%s",
             self.stackedWidget.currentIndex(),
@@ -1510,7 +1519,7 @@ class MainWindow(
         }
         self.detail_page_manager.openAutoInstallDetailPage(game_data, return_tab_index=0)
 
-    def handle_launch_exe(self, exe_path: str) -> None:
+    def handle_launch_exe(self, exe_path: str, log_mode: bool = False) -> None:
         """Handle launching a supported file from CLI.
 
         If the game exists in the library, open its detail page.
@@ -1518,9 +1527,11 @@ class MainWindow(
 
         Args:
             exe_path: Full path to the launch file
+            log_mode: Start UI logging after opening the detail page
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
+        self._pending_log_exe = exe_path if log_mode else None
         economy_mode = ui_config.get_economy_mode()
 
         xdg_data_home = os.getenv(

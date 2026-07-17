@@ -7,6 +7,7 @@ from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QT
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config import (
+    create_desktop_file,
     extract_exec_target_path,
     favorites_config,
     favorites_folders_config,
@@ -912,7 +913,7 @@ class ContextMenuManager:
         self.game_library_manager.add_game_incremental(game_data)
 
     def add_to_menu(self, game_name, exec_line):
-        """Copy the .desktop file to the XDG applications directory."""
+        """Add the game desktop entry to the XDG applications directory."""
         if not self._check_portproton():
             return
         desktop_path = self._get_desktop_path(game_name)
@@ -922,11 +923,22 @@ class ContextMenuManager:
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
+        exec_line = self._get_exec_line(game_name, exec_line)
+        if not exec_line:
+            return
+        exe_path = self._parse_exe_path(exec_line, game_name)
+        if not exe_path:
+            return
+        shortcut = create_desktop_file(exe_path, game_name)
+        if not shortcut:
+            return
+        desktop_entry = shortcut[0]
         applications_dir = self._get_applications_dir()
         os.makedirs(applications_dir, exist_ok=True)
         dest_path = self._get_menu_shortcut_path(game_name)
         try:
-            shutil.copyfile(desktop_path, dest_path)
+            with open(dest_path, "w", encoding="utf-8") as f:
+                f.write(desktop_entry)
             os.chmod(dest_path, 0o755)
         except OSError as e:
             self.signals.show_warning_dialog.emit(
@@ -954,7 +966,7 @@ class ContextMenuManager:
 
     def add_to_desktop(self, game_name, exec_line):
         """
-        Copies the .desktop file to the user's Desktop folder.
+        Add the game desktop entry to the user's Desktop folder.
 
         Args:
             game_name: The display name of the game.
@@ -977,7 +989,11 @@ class ContextMenuManager:
         exe_path = self._parse_exe_path(exec_line, game_name)
         if not exe_path:
             return
-        icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
+        shortcut = create_desktop_file(exe_path, game_name)
+        if not shortcut:
+            return
+        desktop_entry = shortcut[0]
+        icon_path = shortcut[2]
         if not os.path.exists(icon_path):
             if not generate_thumbnail(exe_path, icon_path, size=128):
                 logger.error("Failed to generate thumbnail for game: %s", exe_path)
@@ -986,7 +1002,8 @@ class ContextMenuManager:
         os.makedirs(desktop_dir, exist_ok=True)
         dest_path = self._get_shortcut_path(game_name, desktop_dir)
         try:
-            shutil.copyfile(desktop_path, dest_path)
+            with open(dest_path, "w", encoding="utf-8") as f:
+                f.write(desktop_entry)
             os.chmod(dest_path, 0o755)
         except OSError as e:
             self.signals.show_warning_dialog.emit(

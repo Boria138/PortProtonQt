@@ -550,12 +550,17 @@ def create_desktop_file(
     appimage_path = os.getenv("APPIMAGE", "").strip()
     if flatpak_id:
         exec_str = f'flatpak run {flatpak_id} --silent "{exe_path}"'
+        log_exec = f'flatpak run {flatpak_id} --log "{exe_path}"'
     elif appimage_path and os.path.isfile(appimage_path):
         exec_str = shlex.join([appimage_path, "--silent", exe_path])
+        log_exec = shlex.join([appimage_path, "--log", exe_path])
     else:
         exec_str = f'portprotonqt --silent "{exe_path}"'
+        log_exec = f'portprotonqt --log "{exe_path}"'
 
     comment = _('Launch "{name}" with PortProton').format(name=game_name)
+    silent_name = _("Run in silent mode")
+    log_name = _("Run in logging mode")
     desktop_entry = (
         "[Desktop Entry]\n"
         f"Name={game_name}\n"
@@ -565,6 +570,15 @@ def create_desktop_file(
         "Type=Application\n"
         "Categories=Game;\n"
         "StartupNotify=true\n"
+        f"Icon={icon_path}\n"
+        "Actions=RunSilent;RunLog;\n"
+        "\n[Desktop Action RunSilent]\n"
+        f"Name={silent_name}\n"
+        f"Exec={exec_str}\n"
+        f"Icon={icon_path}\n"
+        "\n[Desktop Action RunLog]\n"
+        f"Name={log_name}\n"
+        f"Exec={log_exec}\n"
         f"Icon={icon_path}\n"
     )
     return desktop_entry, desktop_path, icon_path

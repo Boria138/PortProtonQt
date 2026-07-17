@@ -70,6 +70,11 @@ def parse_args():
         help="Launch supported Windows file in tray without showing the main window"
     )
     parser.add_argument(
+        "--log",
+        action="store_true",
+        help="Enable PortProton logging for the launched Windows file"
+    )
+    parser.add_argument(
         "--restore-prefix",
         action="store_true",
         help="Restore prefix from .ppack backup"

@@ -1,5 +1,6 @@
 """Tests for cli.py — URL parsing, path normalization, file detection, resolution parsing."""
 import os
+import sys
 from pathlib import Path
 
 from portprotonqt.cli import (
@@ -13,7 +14,23 @@ from portprotonqt.cli import (
     LAUNCH_FILE_EXTENSIONS,
     PP_EXTENSIONS,
     PREFIX_BACKUP_EXTENSION,
+    parse_args,
 )
+
+
+class TestParseArgs:
+    def test_log_silent_launch(self, monkeypatch):
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["portprotonqt", "--log", "--silent", "file:///tmp/game.exe"],
+        )
+
+        args = parse_args()
+
+        assert args.log is True
+        assert args.silent is True
+        assert args.file_or_url == "file:///tmp/game.exe"
 
 
 class TestNormalizeLaunchPath:

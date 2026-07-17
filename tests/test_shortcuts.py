@@ -210,6 +210,18 @@ class TestCreateDesktopFile:
         assert "Icon=" in entry
         assert "Exec=" in entry
 
+    def test_desktop_entry_has_launch_actions(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test Game")
+        assert result is not None
+        entry, _, _ = result
+        assert "Actions=RunSilent;RunLog;" in entry
+        assert "[Desktop Action Run]" not in entry
+        assert "[Desktop Action RunSilent]" in entry
+        assert "[Desktop Action RunLog]" in entry
+        assert f'Exec=portprotonqt --log "{exe}"' in entry
+
     def test_name_with_slash_preserved_in_icon(self, tmp_path: Path, monkeypatch: Any) -> None:
         _patch_location(monkeypatch, tmp_path)
         exe = _make_exe(tmp_path)
@@ -544,6 +556,65 @@ class TestApplicationsDir:
         result = ContextMenuManager._get_applications_dir()
 
         assert result == str(tmp_path / "data" / "applications")
+
+
+class TestInstallShortcutActions:
+    def test_add_to_menu_generates_launch_actions(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import portprotonqt.context_menu_manager as context_menu
+
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        exe_path = tmp_path / "Game.exe"
+        exe_path.touch()
+        (pp_dir / "Game.desktop").write_text("[Desktop Entry]\n", encoding="utf-8")
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton.get_portproton_location",
+            lambda: str(pp_dir),
+        )
+        manager = object.__new__(context_menu.ContextMenuManager)
+        manager.portproton_location = str(pp_dir)
+        manager.signals = context_menu.ContextMenuSignals()
+
+        manager.add_to_menu("Game", f"start.sh {exe_path}")
+
+        shortcut = tmp_path / "data" / "applications" / "Game.desktop"
+        content = shortcut.read_text(encoding="utf-8")
+        assert "Actions=RunSilent;RunLog;" in content
+        assert f'Exec=portprotonqt --log "{exe_path}"' in content
+
+    def test_add_to_desktop_generates_launch_actions(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        import portprotonqt.context_menu_manager as context_menu
+
+        pp_dir = tmp_path / "PortProtonQt"
+        (pp_dir / "data" / "img").mkdir(parents=True)
+        exe_path = tmp_path / "Game.exe"
+        exe_path.touch()
+        (pp_dir / "Game.desktop").write_text("[Desktop Entry]\n", encoding="utf-8")
+        (pp_dir / "data" / "img" / "Game.png").touch()
+        desktop_dir = tmp_path / "Desktop"
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton.get_portproton_location",
+            lambda: str(pp_dir),
+        )
+        monkeypatch.setattr(
+            context_menu.QStandardPaths,
+            "writableLocation",
+            lambda _location: str(desktop_dir),
+        )
+        manager = object.__new__(context_menu.ContextMenuManager)
+        manager.portproton_location = str(pp_dir)
+        manager.signals = context_menu.ContextMenuSignals()
+
+        manager.add_to_desktop("Game", f"start.sh {exe_path}")
+
+        content = (desktop_dir / "Game.desktop").read_text(encoding="utf-8")
+        assert "Actions=RunSilent;RunLog;" in content
+        assert f'Exec=portprotonqt --log "{exe_path}"' in content
 
 
 # ── _get_steam_shortcut_path ─────────────────────────────────────────────────
