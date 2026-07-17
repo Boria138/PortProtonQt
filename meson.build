@@ -145,3 +145,8 @@ install_data(
   'build-aux/share/polkit-1/rules.d/ru.linux_gaming.PortProtonQt.rules',
   install_dir: prefix / 'share' / 'polkit-1' / 'rules.d',
 )
+
+install_data(
+  'build-aux/lib/sysusers.d/portprotonqt.conf',
+  install_dir: prefix / 'lib' / 'sysusers.d',
+)

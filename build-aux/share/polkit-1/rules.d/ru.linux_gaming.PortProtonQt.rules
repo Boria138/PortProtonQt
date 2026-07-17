@@ -1,21 +1,15 @@
 polkit.addRule(function(action, subject) {
-	var cmd_line = polkit.spawn(["ps", "-o", "args=", "-p", String(subject.pid)]);
-    var ppid = polkit.spawn(["ps", "-o", "ppid=", "-p", String(subject.pid)]).trim();
-    var parent_cmd_line = "";
-    if (ppid) {
-        parent_cmd_line = polkit.spawn(["ps", "-o", "args=", "-p", ppid]);
+    if (!subject.local || !subject.active ||
+        !subject.isInGroup("portprotonqt")) {
+        return polkit.Result.NOT_HANDLED;
     }
-    var is_ppqt_call =
-        cmd_line.includes("ppqtos") ||
-        parent_cmd_line.includes("ppqtos");
 
-    if (  (
-    action.id === "org.freedesktop.NetworkManager.settings.modify.system" ||
-	action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
-	action.id == "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
-	action.id == "org.freedesktop.udisks2.filesystem-unmount-others" ) &&
-    is_ppqt_call)
-    {
-    return polkit.Result.YES;
+    if (action.id === "org.freedesktop.NetworkManager.settings.modify.system" ||
+        action.id === "org.freedesktop.udisks2.filesystem-mount-system" ||
+        action.id === "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
+        action.id === "org.freedesktop.udisks2.filesystem-unmount-others") {
+        return polkit.Result.YES;
     }
+
+    return polkit.Result.NOT_HANDLED;
 });

@@ -19,3 +19,6 @@ execute_after_dh_auto_install:
 		debian/tmp/usr/share/zsh/site-functions/_portprotonqt
 	install -Dpm 0644 completions/portprotonqt.fish \
 		debian/tmp/usr/share/fish/vendor_completions.d/portprotonqt.fish
+
+execute_after_dh_install:
+	dh_installsysusers
