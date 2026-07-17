@@ -230,6 +230,10 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 msgid "Desktop"
 msgstr "Desktop"
 
+#, fuzzy, python-brace-format
+msgid "Failed to save custom data: {error}"
+msgstr "Fehler beim Löschen der Benutzerdaten: {error}"
+
 msgid "Game name and executable path are required"
 msgstr "Spielname und Ausführungspfad werden benötigt"
 
@@ -799,6 +803,13 @@ msgstr "Keine Favoriten"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Ausführen \"{name}\" mit PortProton"
 
+#, fuzzy
+msgid "Run in silent mode"
+msgstr "Vulkan-Modus"
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr "Der Debug-Protokollmodus wurde gestartet"
 
@@ -898,11 +909,11 @@ msgstr "Start {0}"
 msgid "Name:"
 msgstr "Titel:"
 
-msgid "Path to Executable:"
-msgstr "Pfad zur ausführbaren Datei:"
-
 msgid "Browse…"
 msgstr "Ansicht…"
+
+msgid "Path to Executable:"
+msgstr "Pfad zur ausführbaren Datei:"
 
 msgid "Custom Cover:"
 msgstr "Eigenes Titelbild:"

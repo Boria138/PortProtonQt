@@ -230,6 +230,10 @@ msgstr "Se ha eliminado «{game_name}» de {location}"
 msgid "Desktop"
 msgstr "Escritorio"
 
+#, fuzzy, python-brace-format
+msgid "Failed to save custom data: {error}"
+msgstr "No se han podido eliminar los datos personalizados: {error}"
+
 msgid "Game name and executable path are required"
 msgstr ""
 "Es necesario indicar el nombre del juego y la ruta del archivo ejecutable"
@@ -816,6 +820,12 @@ msgstr "Sin favoritos"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Iniciar «{name}» con PortProton"
 
+msgid "Run in silent mode"
+msgstr ""
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr "Se ha iniciado el modo de registro de depuración"
 
@@ -914,11 +924,11 @@ msgstr "Comenzando {0}"
 msgid "Name:"
 msgstr "Nombre:"
 
-msgid "Path to Executable:"
-msgstr "Ruta al ejecutable:"
-
 msgid "Browse…"
 msgstr "Examinar…"
+
+msgid "Path to Executable:"
+msgstr "Ruta al ejecutable:"
 
 msgid "Custom Cover:"
 msgstr "Portada personalizada:"

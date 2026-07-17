@@ -229,6 +229,10 @@ msgstr "'{game_name}' удалён(а) из {location}"
 msgid "Desktop"
 msgstr "Рабочий стол"
 
+#, fuzzy, python-brace-format
+msgid "Failed to save custom data: {error}"
+msgstr "Не удалось удалить пользовательские данные: {error}"
+
 msgid "Game name and executable path are required"
 msgstr "Требуются название игры и путь к исполняемому файлу"
 
@@ -801,6 +805,13 @@ msgstr "Нет избранных"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Запустить \"{name}\" с помощью PortProton"
 
+#, fuzzy
+msgid "Run in silent mode"
+msgstr "Текущий режим Vulkan"
+
+msgid "Run in logging mode"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr "Запущен режим логирования"
 
@@ -899,11 +910,11 @@ msgstr "Запуск {0}"
 msgid "Name:"
 msgstr "Название:"
 
-msgid "Path to Executable:"
-msgstr "Путь к исполняемому файлу:"
-
 msgid "Browse…"
 msgstr "Обзор…"
+
+msgid "Path to Executable:"
+msgstr "Путь к исполняемому файлу:"
 
 msgid "Custom Cover:"
 msgstr "Пользовательская обложка:"
