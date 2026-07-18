@@ -6,6 +6,7 @@ set -eu
 LOCAL_MODE=false
 BRANCH="main"
 USE_BRANCH=false
+TAG=""
 REPO_URL="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git"
 
 # Parse arguments
@@ -21,6 +22,15 @@ while [ $# -gt 0 ]; do
                 shift
             else
                 echo "Error: --branch requires an argument"
+                exit 1
+            fi
+            ;;
+        --tag)
+            if [ -n "${2:-}" ] && [ "${2#-}" = "$2" ]; then
+                TAG="$2"
+                shift
+            else
+                echo "Error: --tag requires an argument"
                 exit 1
             fi
             ;;
@@ -47,6 +57,9 @@ EXTRA_PACKAGES="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImage
 if [ "$LOCAL_MODE" = true ]; then
     echo "Using local PKGBUILD-git from repository..."
     PPQT_PKGBUILD=""
+elif [ -n "$TAG" ]; then
+    echo "Using stable version of PortProtonQt from $TAG tag..."
+    PPQT_PKGBUILD="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/tag/$TAG/build-aux/PKGBUILD"
 else
     echo "Using stable version of PortProtonQt from $BRANCH branch..."
     PPQT_PKGBUILD="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/$BRANCH/build-aux/PKGBUILD"
@@ -101,6 +114,8 @@ else
 fi
 if [ "$USE_BRANCH" = true ]; then
     sed -i "s|^source=.*|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
+elif [ -n "$TAG" ]; then
+    sed -i "s|^source=.*|source=(\"git+${REPO_URL}#tag=$TAG\")|" PKGBUILD
 fi
 makepkg -si --noconfirm
 
