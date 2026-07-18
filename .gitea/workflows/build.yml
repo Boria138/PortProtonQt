@@ -45,6 +45,8 @@ jobs:
           chmod +x get-dependencies.sh portprotonqt-appimage.sh
           if [ "${{ env.RUN_MODE }}" = "hotfix" ]; then
             ./get-dependencies.sh --branch "${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            ./get-dependencies.sh --tag "${{ github.ref_name }}"
           else
             ./get-dependencies.sh
           fi
@@ -99,6 +101,9 @@ jobs:
           cd /__w/portproton-repo
           cp -r "$GITHUB_WORKSPACE" PortProtonQt
           cd /__w/portproton-repo/PortProtonQt/build-aux
+          if [ "${{ env.RUN_MODE }}" = "hotfix" ]; then
+            sed -i "s|^source=.*|source=(\"git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git#branch=${{ github.ref_name }}\")|" PKGBUILD
+          fi
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
 
@@ -140,6 +145,9 @@ jobs:
       - name: Copy fedora.spec
         run: |
           cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          if [ "${{ env.RUN_MODE }}" = "hotfix" ]; then
+            sed -i "s|git checkout v%{pypi_version}|git checkout ${{ github.ref_name }}|" /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          fi
           chown -R rpmbuild:users /home/rpmbuild
 
       - name: Build RPM
