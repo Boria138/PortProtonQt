@@ -4,7 +4,7 @@ import os
 from types import SimpleNamespace
 from typing import cast
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtWidgets import QApplication, QFrame, QStackedWidget, QWidget
 from pytest import MonkeyPatch
 
@@ -19,6 +19,20 @@ from portprotonqt.input_manager import InputManager, MainWindowProtocol, PAD_DPA
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+def test_qt_event_to_input_key_supports_cyrillic() -> None:
+    event = cast(
+        QEvent,
+        SimpleNamespace(
+            nativeScanCode=lambda: 0,
+            text=lambda: "Я",
+            key=lambda: 0,
+        ),
+    )
+    manager = InputManager.__new__(InputManager)
+
+    assert manager._qt_event_to_input_key(event) == ord("я")
 
 
 def test_sdl_dpad_vertical_directions() -> None:

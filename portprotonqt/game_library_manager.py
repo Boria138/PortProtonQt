@@ -710,7 +710,6 @@ class GameLibraryManager:
             build_search_items(
                 games,
                 lambda game: game[0],
-                lambda game: game[1],
             )
         )
 

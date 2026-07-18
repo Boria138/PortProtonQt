@@ -3561,8 +3561,9 @@ class InputManager(QObject):
         text_method = getattr(event, "text", None)
         text = text_method() if callable(text_method) else ""
         text = text if isinstance(text, str) else ""
-        if text and text.isascii() and text.isprintable():
-            return ord(text.lower())
+        normalized_text = text.lower()
+        if len(normalized_text) == 1 and normalized_text.isprintable():
+            return ord(normalized_text)
         key_method = getattr(event, "key", None)
         key_value = key_method() if callable(key_method) else 0
         key = key_value if isinstance(key_value, int) else 0

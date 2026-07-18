@@ -333,7 +333,6 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
             build_search_items(
                 self.allAutoInstallCards,
                 lambda card: card.name,
-                lambda card: card.description,
             )
         )
 
