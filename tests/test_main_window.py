@@ -256,7 +256,7 @@ def test_autoinstall_search_keeps_expanded_for_active_virtual_keyboard(monkeypat
     assert animation.collapsed is False
 
 
-def test_autoinstall_search_matches_library_index_fields() -> None:
+def test_autoinstall_search_uses_card_names() -> None:
     class Window(AutoInstallMixin):
         pass
 
@@ -280,7 +280,7 @@ def test_autoinstall_search_matches_library_index_fields() -> None:
     target_card = FakeCard("VK Play", "Launcher for the VK Play game library.")
     other_card = FakeCard("Another Game", "Different installer.")
     window.allAutoInstallCards = [target_card, other_card]
-    window.autoInstallSearchLineEdit = FakeSearchEdit("launcher")
+    window.autoInstallSearchLineEdit = FakeSearchEdit("vk")
     window.autoInstallContainerLayout = SimpleNamespace(invalidate=lambda: None)
     window.autoInstallContainer = SimpleNamespace(updateGeometry=lambda: None)
     window.autoInstallScrollArea = SimpleNamespace(updateGeometry=lambda: None)

@@ -18,17 +18,12 @@ MIN_WORD_SEARCH_LENGTH = 3
 def build_search_items(
     entries: list[Any],
     name_getter: Callable[[Any], Any],
-    description_getter: Callable[[Any], Any],
 ) -> list[tuple[str, Any]]:
     items: list[tuple[str, Any]] = []
     for entry in entries:
         raw_name = name_getter(entry)
-        raw_description = description_getter(entry)
         name = str(raw_name).lower() if raw_name else ""
-        description = str(raw_description).lower() if raw_description else ""
         items.append((name, entry))
-        if description:
-            items.append((description, entry))
         for word in name.split():
             if len(word) >= MIN_WORD_SEARCH_LENGTH:
                 items.append((word, entry))
@@ -41,6 +36,10 @@ def search_index(
     limit: int = SEARCH_RESULT_LIMIT,
     min_score: float = SEARCH_MIN_SCORE,
 ) -> list[Any]:
+    if len(search_text) < MIN_WORD_SEARCH_LENGTH:
+        prefix_results = optimizer.prefix_search(search_text)
+        return _unique_search_results([payload for _match_text, payload in prefix_results])
+
     exact_result = optimizer.exact_search(search_text)
     if exact_result:
         return [exact_result]

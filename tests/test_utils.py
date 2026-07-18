@@ -3,6 +3,9 @@ import struct
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
+from portprotonqt.search_utils import SearchOptimizer, build_search_items, search_index
 from portprotonqt.steam_api.utils import (
     APPINFO_ENTRY_METADATA_SIZE,
     APPINFO_MAGIC_V41,
@@ -31,6 +34,82 @@ from portprotonqt.steam_api.cache import (
     build_ppdb_index,
     search_ppdb_entry,
 )
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_name"),
+    [
+        ("Ter", "Terraria"),
+        ("TERR", "Terraria"),
+        ("террария", "Террария"),
+        ("Wi", "The Witcher 3: Wild Hunt"),
+        ("witch", "The Witcher 3: Wild Hunt"),
+        ("ведьмак", "Ведьмак 3: Дикая Охота"),
+        ("Deep", "Deep Rock Galactic"),
+        ("rock", "Deep Rock Galactic"),
+        ("галактические", "Галактические шахтёры"),
+        ("Cyber", "Cyberpunk 2077"),
+        ("киберпанк", "Киберпанк 2077"),
+        ("Red", "Red Dead Redemption 2"),
+        ("dead", "Red Dead Redemption 2"),
+        ("Dota", "Dota 2"),
+        ("Portal", "Portal 2"),
+        ("портал", "Портал 2"),
+        ("Half", "Half-Life 2"),
+        ("life", "Half-Life 2"),
+    ],
+)
+def test_search_index_finds_game_names(
+    query: str,
+    expected_name: str,
+) -> None:
+    games = [
+        ("Кириллица", "Тестовая игра"),
+        ("Terraria", ""),
+        ("Террария", ""),
+        ("The Witcher 3: Wild Hunt", ""),
+        ("Ведьмак 3: Дикая Охота", ""),
+        ("Deep Rock Galactic", ""),
+        ("Галактические шахтёры", ""),
+        ("Cyberpunk 2077", ""),
+        ("Киберпанк 2077", ""),
+        ("Red Dead Redemption 2", "История банды Датча ван дер Линде"),
+        ("Dota 2", ""),
+        ("Portal 2", ""),
+        ("Портал 2", ""),
+        ("Half-Life 2", "Приключения Гордона Фримена"),
+    ]
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items(games, lambda item: item[0]))
+
+    result_names = [game[0] for game in search_index(optimizer, query)]
+
+    assert result_names == [expected_name]
+
+
+def test_search_index_searches_single_character_in_names() -> None:
+    games = [("Кириллица", ""), ("Terraria", "Копайте и сражайтесь")]
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items(games, lambda item: item[0]))
+
+    assert search_index(optimizer, "к") == [games[0]]
+
+
+@pytest.mark.parametrize("query", ["к", "я", "x", "z"])
+def test_search_index_does_not_fuzzy_match_single_character(query: str) -> None:
+    game = ("Terraria", "Копайте и сражайтесь в мире Террарии")
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items([game], lambda item: item[0]))
+
+    assert search_index(optimizer, query) == []
+
+
+def test_search_index_ignores_descriptions() -> None:
+    game = ("Terraria", "Копайте и сражайтесь в мире Террарии")
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items([game], lambda item: item[0]))
+
+    assert search_index(optimizer, "копайте") == []
 
 
 def _write_appinfo(path: Path, apps: list[tuple[int, str, str]]) -> None:
