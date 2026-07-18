@@ -5,7 +5,7 @@ GITHUB_REPO="Boria138/PortProtonQt"
 GITEA_REPO="Linux-Gaming/PortProtonQt"
 GITEA_URL="https://git.linux-gaming.ru"
 
-jq_total='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$") | not) | .download_count] | add // 0'
+jq_total='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat") | not) | .download_count] | add // 0'
 
 echo "=== PortProtonQt Download Stats ==="
 echo
@@ -18,7 +18,7 @@ echo "Releases: $GH_RELEASES"
 echo "Total downloads: $GH_COUNT"
 echo
 echo "Per release:"
-echo "$GH_RAW" | jq -r '.[] | "\n  \(.tag_name) (\(.published_at)):" as $header | $header, (.assets[] | select(.name | test("\\.(zsync|sha256)$") | not) | "    \(.name): \(.download_count)")'
+echo "$GH_RAW" | jq -r '.[] | "\n  \(.tag_name) (\(.published_at)):" as $header | $header, (.assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat") | not) | "    \(.name): \(.download_count)")'
 echo
 
 echo "--- Gitea (${GITEA_REPO}) ---"
@@ -29,7 +29,7 @@ echo "Releases: $GIT_RELEASES"
 echo "Total downloads: $GIT_COUNT"
 echo
 echo "Per release:"
-echo "$GIT_RAW" | jq -r '.[] | "\n  \(.tag_name) (\(.created_at)):" as $header | $header, (.assets[] | select(.name | test("\\.(zsync|sha256)$") | not) | "    \(.name): \(.download_count)")'
+echo "$GIT_RAW" | jq -r '.[] | "\n  \(.tag_name) (\(.created_at)):" as $header | $header, (.assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat") | not) | "    \(.name): \(.download_count)")'
 echo
 
 TOTAL=$((GH_COUNT + GIT_COUNT))
@@ -39,7 +39,7 @@ echo "Gitea total:   $GIT_COUNT"
 echo "Grand total:   $TOTAL"
 echo
 echo "--- Top downloads (by file) ---"
-jq_filter_top='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$") | not)] | group_by(.name) | map({name: .[0].name, total: (map(.download_count) | add)}) | sort_by(-.total) | .[:15] | .[] | "  \(.total)\t\(.name)"'
+jq_filter_top='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat") | not)] | group_by(.name) | map({name: .[0].name, total: (map(.download_count) | add)}) | sort_by(-.total) | .[:15] | .[] | "  \(.total)\t\(.name)"'
 echo "GitHub:"
 echo "$GH_RAW" | jq -r "$jq_filter_top"
 echo
@@ -47,7 +47,7 @@ echo "Gitea:"
 echo "$GIT_RAW" | jq -r "$jq_filter_top"
 echo
 echo "--- Top downloads (by type) ---"
-jq_type='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$") | not)] | map({type: (.name | split(".") | last | if test("^AppImage$") then "AppImage" elif test("^deb$") then "deb" elif test("^rpm$") then "rpm" elif test("^zst$") then "pkg.tar.zst" else "other" end), downloads: .download_count}) | group_by(.type) | map({type: .[0].type, total: (map(.downloads) | add)}) | sort_by(-.total) | .[] | "  \(.type): \(.total)"'
+jq_type='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat") | not)] | map({type: (.name | split(".") | last | if test("^AppImage$") then "AppImage" elif test("^deb$") then "deb" elif test("^rpm$") then "rpm" elif test("^zst$") then "pkg.tar.zst" else "other" end), downloads: .download_count}) | group_by(.type) | map({type: .[0].type, total: (map(.downloads) | add)}) | sort_by(-.total) | .[] | "  \(.type): \(.total)"'
 echo "GitHub:"
 echo "$GH_RAW" | jq -r "$jq_type"
 echo
