@@ -446,6 +446,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "enable_theme_store")
         self._save_value("enable_theme_store", enabled, "bool")
 
+    def get_sounds_enabled(self) -> bool:
+        """Get UI sounds enabled setting."""
+        return self._get_bool("sounds_enabled", True)
+
+    def set_sounds_enabled(self, enabled: bool):
+        """Set UI sounds enabled setting."""
+        validate_bool(enabled, "sounds_enabled")
+        self._save_value("sounds_enabled", enabled, "bool")
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""

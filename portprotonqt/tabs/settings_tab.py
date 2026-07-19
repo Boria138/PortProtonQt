@@ -295,6 +295,21 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        self.soundsEnabledCheckBox = QCheckBox()
+        self.soundsEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.soundsEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.soundsEnabledTitle = QLabel(_("Enable UI Sounds"))
+        self.soundsEnabledTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.soundsEnabledTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.soundsEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.soundsEnabledCheckBox.setChecked(ui_config.get_sounds_enabled())
+        sounds_enabled_layout = QHBoxLayout()
+        sounds_enabled_layout.setContentsMargins(0, 0, 0, 0)
+        sounds_enabled_layout.addWidget(self.soundsEnabledCheckBox)
+        sounds_enabled_layout.addWidget(self.soundsEnabledTitle)
+        sounds_enabled_layout.addStretch()
+        uiForm.addRow(sounds_enabled_layout)
+
         disable_runtime_download_layout = None
         if not os.getenv("FLATPAK_ID"):
             self.disableRuntimeDownloadCheckBox = QCheckBox()
@@ -840,6 +855,12 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         # Save the hide auto-install tab setting to config
         ui_config.set_hide_autoinstall_tab(hide_autoinstall)
+
+        sounds_enabled = self.soundsEnabledCheckBox.isChecked()
+        ui_config.set_sounds_enabled(sounds_enabled)
+
+        from portprotonqt.sound_manager import SoundManager
+        SoundManager().reload_config()
 
     def _apply_gamepad_type_setting(self) -> None:
         """Apply configured gamepad type to current input manager."""

@@ -72,6 +72,7 @@ def create_back_button(
     back_button = AutoSizeButton(_("Back"), icon=theme_manager.get_icon("back", as_path=True))
     back_button.setFixedWidth(100)
     back_button.setStyleSheet(theme.ADDGAME_BACK_BUTTON_STYLE)
+    back_button.setProperty("sound_event", "back")
     back_button.clicked.connect(on_click)
     parent_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft)
     return back_button

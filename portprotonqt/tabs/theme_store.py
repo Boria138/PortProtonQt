@@ -197,6 +197,7 @@ class ThemeStoreMixin:
         header = QHBoxLayout()
         self.themeStoreBackButton = AutoSizeButton(_("Back"))
         self.themeStoreBackButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.themeStoreBackButton.setProperty("sound_event", "back")
         self.themeStoreBackButton.clicked.connect(self._show_theme_store_list)
         header.addWidget(self.themeStoreBackButton)
         header.addStretch(1)

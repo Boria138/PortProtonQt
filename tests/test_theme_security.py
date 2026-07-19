@@ -9,6 +9,7 @@ from portprotonqt.theme_security import (
     check_theme_safety,
     is_safe_font_file,
     is_safe_image_file,
+    is_safe_sound_file,
 )
 
 THEMES_DIR = Path(__file__).resolve().parent.parent / "portprotonqt" / "themes"
@@ -394,6 +395,34 @@ class TestFontSafety:
         f = tmp_path / "test.ttf"
         f.write_bytes(b"\x00\x01\x00\x00" + b"\x00" * 100)
         assert is_safe_font_file(str(f))
+
+
+class TestSoundSafety:
+    @pytest.mark.parametrize(
+        ("extension", "header"),
+        [
+            (".ogg", b"OggS"),
+            (".oga", b"OggS"),
+            (".opus", b"OggS"),
+            (".wav", b"RIFF\x00\x00\x00\x00WAVE"),
+            (".mp3", b"ID3"),
+            (".flac", b"fLaC"),
+            (".m4a", b"\x00\x00\x00\x10ftyp"),
+            (".aac", b"\xff\xf1"),
+            (".webm", b"\x1a\x45\xdf\xa3"),
+        ],
+    )
+    def test_supported_signatures(
+        self, tmp_path: Path, extension: str, header: bytes,
+    ) -> None:
+        sound = tmp_path / f"sound{extension}"
+        sound.write_bytes(header + b"\x00" * 32)
+        assert is_safe_sound_file(str(sound))
+
+    def test_rejects_disguised_sound(self, tmp_path: Path) -> None:
+        sound = tmp_path / "sound.ogg"
+        sound.write_bytes(b"not audio")
+        assert not is_safe_sound_file(str(sound))
 
 
 # === Image safety ===

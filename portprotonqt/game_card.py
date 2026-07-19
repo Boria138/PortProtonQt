@@ -15,6 +15,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer, QSize
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect,
@@ -958,6 +959,15 @@ class GameCard(QFrame):
         super().leaveEvent(event)
 
     def focusInEvent(self, event):
+        if (
+            QApplication.activeWindow() is not None
+            and event.reason() not in (
+                Qt.FocusReason.ActiveWindowFocusReason,
+                Qt.FocusReason.MouseFocusReason,
+            )
+        ):
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
         self.animations.handle_focus_in_event()
         super().focusInEvent(event)
 

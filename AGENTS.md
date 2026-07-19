@@ -388,6 +388,7 @@ tests/
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
 ├── test_debug_env_utils.py  # Debug environment helpers, runtime variables
 ├── test_input_manager.py    # Gamepad input navigation and focus regressions
+├── test_sound_manager.py    # UI sound playback, widget events, gamepad connection, theme sound files
 ├── test_main_window.py      # Main window data processing and callback regressions
 ├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
 ├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
@@ -945,6 +946,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-06-18
+**Last updated:** 2026-07-20
 **Version:** 1.2
 **Status:** Release

@@ -55,6 +55,7 @@ from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.disc_image_utils import DiscImageManager
+from portprotonqt.sound_manager import SoundManager
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin
@@ -410,6 +411,7 @@ class MainWindow(
         self.leftNavButton = NavLabel()
         self.leftNavButton.setFixedSize(32, 32)
         self.leftNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.leftNavButton.setProperty("sound_event", False)
         self.leftNavButton.clicked.connect(lambda: self.switchVisibleTab(-1))
         navLayout.addWidget(self.leftNavButton)
 
@@ -426,6 +428,7 @@ class MainWindow(
         for i, tabName in enumerate(tabs):
             btn = NavLabel(tabName)
             btn.setCheckable(True)
+            btn.setProperty("sound_event", False)
             btn.clicked.connect(lambda index=i: self.switchTab(index))
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
             navLayout.addWidget(btn)
@@ -437,6 +440,7 @@ class MainWindow(
         self.rightNavButton = NavLabel()
         self.rightNavButton.setFixedSize(32, 32)
         self.rightNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rightNavButton.setProperty("sound_event", False)
         self.rightNavButton.clicked.connect(lambda: self.switchVisibleTab(1))
         navLayout.addWidget(self.rightNavButton)
 
@@ -1307,6 +1311,7 @@ class MainWindow(
 
     def switchTab(self, index):
         """Set active tab by index."""
+        SoundManager().play("tab_switch")
         # Check if the requested tab index is valid, exists, and is visible
         if (hasattr(self, 'tabButtons') and
             index in self.tabButtons and
@@ -1317,7 +1322,7 @@ class MainWindow(
                 btn.setChecked(i == index)
             self.stackedWidget.setCurrentIndex(index)
             if index == self.auto_install_tab_index:
-                self._start_autoinstall_load()
+                QTimer.singleShot(0, self._start_autoinstall_load)
         else:
             # If trying to switch to a non-existent or hidden tab (like auto-install when it's hidden),
             # find the first visible tab to switch to
@@ -1455,6 +1460,7 @@ class MainWindow(
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open game detail page."""
+        SoundManager().play("open")
         logger.debug(
             "Opening detail page for %s from stacked index %d",
             game_data.get("name", ""),
@@ -2333,6 +2339,7 @@ class MainWindow(
                     errors="replace",
                     bufsize=1,
                 )
+                SoundManager().play("game_launch")
                 self.game_processes.append(process)
                 self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
@@ -2439,6 +2446,7 @@ class MainWindow(
 
     def goBackDetailPage(self, page):
         """Bridge method to detail page manager."""
+        SoundManager().play("back")
         result = self.detail_page_manager.goBackDetailPage(page)
         # The detail page manager will handle the navigation properly
         return result
