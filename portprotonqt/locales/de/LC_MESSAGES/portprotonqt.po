@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-07-14 13:07+0000\n"
+"PO-Revision-Date: 2026-07-19 05:07+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -230,9 +230,9 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 msgid "Desktop"
 msgstr "Desktop"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to save custom data: {error}"
-msgstr "Fehler beim Löschen der Benutzerdaten: {error}"
+msgstr "Fehler beim Speichern der Benutzerdaten: {error}"
 
 msgid "Game name and executable path are required"
 msgstr "Spielname und Ausführungspfad werden benötigt"
@@ -803,12 +803,11 @@ msgstr "Keine Favoriten"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Ausführen \"{name}\" mit PortProton"
 
-#, fuzzy
 msgid "Run in silent mode"
-msgstr "Vulkan-Modus"
+msgstr "Ohne Protokollierung ausführen"
 
 msgid "Run in logging mode"
-msgstr ""
+msgstr "Mit Protokollierung ausführen"
 
 msgid "Debug log mode was launched"
 msgstr "Der Debug-Protokollmodus wurde gestartet"
