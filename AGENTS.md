@@ -440,6 +440,7 @@ pre-commit run pytest
 | `classic/styles.py` | Missing styles after theme rewrite (NAV, COMBOBOX, TAB, etc.) | 519edd1 |
 | `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
 | `detail_pages` | DETAIL_PAGE_GRADIENT stops override, wave background modes | — |
+| `detail_pages` | Edit/Add shortcut buttons shown together for non-Steam games | 7e38d9a |
 
 ---
 

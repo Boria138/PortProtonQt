@@ -471,7 +471,7 @@ class DetailPageManager:
                 lambda: self._open_steam_game_folder(str(appid))
             )
             buttons_layout.addWidget(open_folder_button)
-        else:
+        elif not self._has_game_shortcut(game_name):
             add_button = self._make_action_button(
                 _("Add a shortcut"),
                 self.main_window.theme_manager.get_icon("addgame", as_path=True),
