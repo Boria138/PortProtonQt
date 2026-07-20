@@ -44,7 +44,9 @@ fi
 	/usr/bin/vk_gpu_info \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
+	/usr/lib/libQt6Multimedia.so* \
 	/usr/lib/libQt6Network.so* \
+	/usr/lib/qt6/plugins/multimedia/libffmpegmediaplugin.so \
 	/usr/lib/qt6/plugins/imageformats/libqwebp.so
 
 # Turn AppDir into AppImage

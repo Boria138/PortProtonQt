@@ -6,7 +6,7 @@ arch=('any')
 url="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt"
 license=('GPL-3.0')
 depends=('python-requests' 'python-babel' 'python-evdev' 'python-orjson'
-    'python-psutil' 'python-tqdm' 'python-vdf' 'python-libarchive-c' 'pyside6' 'python-rapidfuzz' 'python-pefile' 'python-pillow' 'perl-image-exiftool' 'python-websocket-client' 'cabextract' 'unzip' 'curl' 'file' 'findutils' 'gawk' 'grep' 'tar' 'xz' 'zstd' 'gzip' 'unrar' 'qt6-svg' 'qt6-imageformats' 'pciutils' 'mesa-utils' 'vulkan-icd-loader' 'procps-ng' 'psmisc' '7zip' 'python-dbus-fast'  'sdl3')
+    'python-psutil' 'python-tqdm' 'python-vdf' 'python-libarchive-c' 'pyside6' 'python-rapidfuzz' 'python-pefile' 'python-pillow' 'perl-image-exiftool' 'python-websocket-client' 'cabextract' 'unzip' 'curl' 'file' 'findutils' 'gawk' 'grep' 'tar' 'xz' 'zstd' 'gzip' 'unrar' 'qt6-svg' 'qt6-imageformats' 'qt6-multimedia' 'pciutils' 'mesa-utils' 'vulkan-icd-loader' 'procps-ng' 'psmisc' '7zip' 'python-dbus-fast'  'sdl3')
 makedepends=('meson' 'ninja' 'vulkan-headers' 'gettext')
 conflicts=("portprotonqt-steam-compat")
 provides=('portprotonqt-steam-compat')
