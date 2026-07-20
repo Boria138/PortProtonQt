@@ -1,4 +1,4 @@
-"""Tests for detail page utilities: gradient stops, wave background."""
+"""Tests for detail page utilities: gradient stops, wave background, shortcut buttons."""
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -367,3 +367,78 @@ class TestRemoveWaveBackground:
         _wave_states[page] = {"timer": None, "original_paint": original}
         _remove_wave_background(page)
         assert page.paintEvent == original
+
+
+# === Shortcut button exclusivity (regression: 7e38d9a) ===
+
+
+def _make_manager_with_shortcut_mock(has_shortcut: bool, monkeypatch=None) -> DetailPageManager:
+    manager = DetailPageManager.__new__(DetailPageManager)
+    manager.main_window = MagicMock()
+    manager.main_window.theme = MagicMock()
+    manager._has_game_shortcut = MagicMock(return_value=has_shortcut)
+    mock_button = MagicMock()
+    mock_button.clicked = MagicMock()
+    mock_button.clicked.connect = MagicMock()
+    manager._make_action_button = MagicMock(return_value=mock_button)
+    manager._create_play_button = MagicMock(return_value=MagicMock())
+    manager._get_current_exe = MagicMock(return_value=None)
+    if monkeypatch is not None:
+        from portprotonqt.custom_widgets import FlowLayout
+        monkeypatch.setattr(FlowLayout, "addWidget", lambda self, w: None)
+        monkeypatch.setattr(FlowLayout, "count", lambda self: 0)
+    return manager
+
+
+def _get_added_buttons(manager) -> list[str]:
+    """Collect button texts added via _make_action_button."""
+    texts = []
+    for call in manager._make_action_button.call_args_list:
+        texts.append(call.args[0])
+    return texts
+
+
+def test_non_steam_with_shortcut_shows_edit_not_add(monkeypatch) -> None:
+    manager = _make_manager_with_shortcut_mock(has_shortcut=True, monkeypatch=monkeypatch)
+    manager._create_game_buttons_layout({
+        "game_source": "portproton",
+        "exec_line": "/games/test.exe",
+        "name": "Test Game",
+    })
+
+    button_texts = _get_added_buttons(manager)
+    edit_count = sum(1 for t in button_texts if "Edit" in t or "Редактир" in t)
+    add_count = sum(1 for t in button_texts if "Add" in t or "Добавить" in t)
+    assert edit_count == 1
+    assert add_count == 0
+
+
+def test_non_steam_without_shortcut_shows_add_not_edit(monkeypatch) -> None:
+    manager = _make_manager_with_shortcut_mock(has_shortcut=False, monkeypatch=monkeypatch)
+    manager._create_game_buttons_layout({
+        "game_source": "portproton",
+        "exec_line": "/games/test.exe",
+        "name": "Test Game",
+    })
+
+    button_texts = _get_added_buttons(manager)
+    edit_count = sum(1 for t in button_texts if "Edit" in t or "Редактир" in t)
+    add_count = sum(1 for t in button_texts if "Add" in t or "Добавить" in t)
+    assert edit_count == 0
+    assert add_count == 1
+
+
+def test_steam_with_appid_shows_edit_not_add(monkeypatch) -> None:
+    manager = _make_manager_with_shortcut_mock(has_shortcut=False, monkeypatch=monkeypatch)
+    manager._create_game_buttons_layout({
+        "game_source": "steam",
+        "exec_line": "steam://rungameid/12345",
+        "appid": 12345,
+        "name": "Steam Game",
+    })
+
+    button_texts = _get_added_buttons(manager)
+    edit_count = sum(1 for t in button_texts if "Edit" in t or "Редактир" in t)
+    add_count = sum(1 for t in button_texts if "Add" in t or "Добавить" in t)
+    assert edit_count == 1
+    assert add_count == 0
