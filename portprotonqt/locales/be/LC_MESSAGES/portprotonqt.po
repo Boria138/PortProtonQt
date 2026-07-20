@@ -1993,6 +1993,9 @@ msgstr ""
 msgid "Hide Auto-Install Tab"
 msgstr ""
 
+msgid "Enable UI Sounds"
+msgstr ""
+
 msgid "Disable runtime download"
 msgstr ""
 

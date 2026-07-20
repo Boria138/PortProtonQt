@@ -2090,6 +2090,10 @@ msgstr "Minimiert im Tray starten"
 msgid "Hide Auto-Install Tab"
 msgstr "Tab „Automatische Installation“ ausblenden"
 
+#, fuzzy
+msgid "Enable UI Sounds"
+msgstr "Tabellenspalten"
+
 msgid "Disable runtime download"
 msgstr "Runtime-Download deaktivieren"
 

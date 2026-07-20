@@ -2028,6 +2028,10 @@ msgstr "启动时最小化到托盘"
 msgid "Hide Auto-Install Tab"
 msgstr "隐藏自动安装标签页"
 
+#, fuzzy
+msgid "Enable UI Sounds"
+msgstr "表格列"
+
 msgid "Disable runtime download"
 msgstr "禁用运行时下载"
 
