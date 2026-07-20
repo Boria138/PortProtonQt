@@ -4,6 +4,8 @@ usr/lib/python3/dist-packages/portprotonqt/
 usr/lib/sysusers.d/portprotonqt.conf
 usr/lib/udev/rules.d/60-portprotonqt.rules
 usr/share/applications/ru.linux_gaming.PortProtonQt.desktop
+usr/share/applications/ru.linux_gaming.PortProtonQt.log.desktop
+usr/share/applications/ru.linux_gaming.PortProtonQt.silent.desktop
 usr/share/bash-completion/completions/portprotonqt
 usr/share/fish/vendor_completions.d/portprotonqt.fish
 usr/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
