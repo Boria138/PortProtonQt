@@ -12,9 +12,6 @@ logger = get_logger(__name__)
 MAX_THEME_PY_FILE_SIZE = 512 * 1024
 MAX_AST_NODES = 20000
 MAX_SOUND_FILE_SIZE = 20 * 1024 * 1024
-SUPPORTED_SOUND_EXTENSIONS = (
-    ".ogg", ".oga", ".wav", ".mp3", ".flac", ".opus", ".m4a", ".aac", ".webm",
-)
 
 
 class ThemeSecurityChecker:
@@ -572,7 +569,7 @@ def check_theme_directory_safety(theme_dir: str, allow_absolute_imports: bool = 
             elif filename.endswith((".ttf", ".otf")):
                 if not is_safe_font_file(file_path):
                     return False
-            elif filename.lower().endswith(SUPPORTED_SOUND_EXTENSIONS):
+            elif filename.lower().endswith(".wav"):
                 if not is_safe_sound_file(file_path):
                     return False
 
@@ -617,7 +614,7 @@ def is_safe_font_file(file_path: str) -> bool:
 def is_safe_sound_file(file_path: str) -> bool:
     """Check a theme sound extension, size, and file signature."""
     _, ext = os.path.splitext(file_path.lower())
-    if ext not in SUPPORTED_SOUND_EXTENSIONS:
+    if ext != ".wav":
         logger.error("Unsafe sound file extension for %s: %s", file_path, ext)
         return False
     try:
@@ -632,22 +629,8 @@ def is_safe_sound_file(file_path: str) -> bool:
         return False
 
     is_valid = False
-    if ext in (".ogg", ".oga", ".opus"):
-        is_valid = header.startswith(b"OggS")
-    elif ext == ".wav":
+    if ext == ".wav":
         is_valid = header.startswith(b"RIFF") and header[8:12] == b"WAVE"
-    elif ext == ".flac":
-        is_valid = header.startswith(b"fLaC")
-    elif ext == ".mp3":
-        is_valid = header.startswith(b"ID3") or (
-            len(header) > 1 and header[0] == 0xff and header[1] & 0xe0 == 0xe0
-        )
-    elif ext == ".m4a":
-        is_valid = header[4:8] == b"ftyp"
-    elif ext == ".aac":
-        is_valid = len(header) > 1 and header[0] == 0xff and header[1] & 0xf0 == 0xf0
-    elif ext == ".webm":
-        is_valid = header.startswith(b"\x1a\x45\xdf\xa3")
     if not is_valid:
         logger.error("Sound file %s has invalid signature", file_path)
     return is_valid

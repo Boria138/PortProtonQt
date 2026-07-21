@@ -49,15 +49,16 @@ def test_sound_manager_reuses_slot_for_same_event() -> None:
     assert manager._slot_index == 1
 
 
-def test_sound_slot_stops_at_end_of_media() -> None:
-    end_of_media = object()
+def test_sound_slot_restarts_loaded_effect() -> None:
     slot: Any = object.__new__(_SoundSlot)
-    slot._player = Mock()
-    slot._player.MediaStatus.EndOfMedia = end_of_media
+    slot._effect = Mock()
+    slot._effect.isPlaying.return_value = False
+    slot._loaded_event = "navigate"
 
-    slot._handle_media_status(end_of_media)
+    slot.play("navigate", Mock())
 
-    slot._player.stop.assert_called_once()
+    slot._effect.stop.assert_called_once()
+    slot._effect.play.assert_called_once()
 
 
 def test_sound_manager_skips_unsafe_sound_variant(tmp_path: Path) -> None:
