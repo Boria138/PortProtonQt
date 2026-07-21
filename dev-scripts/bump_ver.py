@@ -141,14 +141,23 @@ def bump_workflow(path: Path, old: str, new: str) -> bool:
 
 def bump_changelog(path: Path, old: str, new: str) -> bool:
     """
-    Update [Unreleased] to [new] - YYYY-MM-DD in CHANGELOG.md
+    Create a new [Unreleased] section and release the current one
     """
     if not path.exists():
         return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^##\s*\[Unreleased\]$")
     current_date = date.today().strftime('%Y-%m-%d')
-    new_text, count = pattern.subn(f"## [{new}] - {current_date}", text)
+    release_header = (
+        "## [Unreleased]\n\n"
+        "### Added\n\n"
+        "### Changed\n\n"
+        "### Fixed\n\n"
+        "### Contributors\n\n"
+        "---\n\n"
+        f"## [{new}] - {current_date}"
+    )
+    new_text, count = pattern.subn(release_header, text)
     if count:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
