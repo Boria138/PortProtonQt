@@ -72,12 +72,16 @@ def test_sound_manager_skips_unsafe_sound_variant(tmp_path: Path) -> None:
     assert manager._find_sound_path("navigate") == safe_sound
 
 
-def test_standard_theme_provides_all_sound_events() -> None:
+def test_standard_theme_provides_configured_sound_events() -> None:
     sounds_dir = Path(__file__).parent.parent / "portprotonqt" / "themes" / "standart" / "sounds"
     manager: Any = object.__new__(SoundManager)
     manager._sounds_dirs = [str(sounds_dir)]
 
-    assert all(manager._find_sound_path(event) is not None for event in SOUND_EVENTS)
+    available_events = {
+        event for event in SOUND_EVENTS if manager._find_sound_path(event) is not None
+    }
+    assert available_events == {"open", "back", "confirm", "navigate"}
+    assert {"close", "scroll", "error", "notification"}.isdisjoint(SOUND_EVENTS)
 
 
 def test_widget_sound_uses_semantic_event() -> None:

@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 FFMPEG_LOG_RULES = "qt.multimedia.ffmpeg=false\nqt.multimedia.ffmpeg.*=false"
 
 SOUND_EVENTS = frozenset({
-    "navigate", "click", "confirm", "back", "toggle", "open", "close",
-    "error", "notification", "keyboard_key", "scroll", "tab_switch",
+    "navigate", "click", "confirm", "back", "toggle", "open",
+    "keyboard_key", "tab_switch",
     "game_launch", "gamepad_connect",
 })
 
