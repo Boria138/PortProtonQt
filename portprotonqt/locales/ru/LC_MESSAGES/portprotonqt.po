@@ -2088,6 +2088,10 @@ msgstr "Запускать свёрнутым"
 msgid "Hide Auto-Install Tab"
 msgstr "Скрыть вкладку \"Автоустановка\""
 
+#, fuzzy
+msgid "Enable UI Sounds"
+msgstr "Кол-во колонок"
+
 msgid "Disable runtime download"
 msgstr "Отключить скачивание контейнера"
 

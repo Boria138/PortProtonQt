@@ -7,9 +7,11 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from pytest import MonkeyPatch
+from PySide6.QtCore import Qt
 
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
+from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.main_window import MainWindow
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
@@ -588,6 +590,26 @@ def test_launch_autoinstall_checks_alt_i586_dependencies() -> None:
     assert window.installing is False
 
 
+def test_initial_library_card_focus_does_not_use_navigation_reason() -> None:
+    focus_reasons: list[Qt.FocusReason] = []
+    card = SimpleNamespace(
+        isVisible=lambda: True,
+        isEnabled=lambda: True,
+        setFocus=lambda reason: focus_reasons.append(reason),
+    )
+    manager: Any = GameLibraryManager.__new__(GameLibraryManager)
+    manager.main_window = SimpleNamespace(
+        stackedWidget=SimpleNamespace(currentIndex=lambda: 0),
+    )
+    manager.gamesListWidget = SimpleNamespace(findChildren=lambda _type: [card])
+    manager.gamesScrollArea = None
+    manager._focus_first_card_after_update = True
+
+    manager._focus_first_visible_card()
+
+    assert focus_reasons == [Qt.FocusReason.ActiveWindowFocusReason]
+
+
 def test_launch_dependency_percent_updates_button_before_status() -> None:
     window: Any = MainWindow.__new__(MainWindow)
     button = FakeButton()
@@ -614,6 +636,7 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     exe_path.write_text("", encoding="utf-8")
     process = object()
     popen_kwargs: dict[str, object] = {}
+    launch_events: list[str] = []
     window: Any = MainWindow.__new__(MainWindow)
     window.start_sh = ["portproton"]
     window.game_processes = []
@@ -623,10 +646,15 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     window.games = []
 
     def fake_popen(_command: list[str], **kwargs: object) -> object:
+        launch_events.append("popen")
         popen_kwargs.update(kwargs)
         return process
 
     monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", fake_popen)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.SoundManager",
+        lambda: SimpleNamespace(play=launch_events.append),
+    )
     monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
     monkeypatch.setattr("portprotonqt.main_window.save_last_launch", lambda *_args: None)
     monkeypatch.setattr(window, "_check_alt_i586_dependencies_before_launch", lambda: True)
@@ -640,6 +668,7 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     assert popen_kwargs["text"] is True
     assert popen_kwargs["errors"] == "replace"
     assert window.input_manager.suspended
+    assert launch_events == ["popen", "game_launch"]
 
 
 def test_process_portproton_desktop_calls_callback_without_asset_download(

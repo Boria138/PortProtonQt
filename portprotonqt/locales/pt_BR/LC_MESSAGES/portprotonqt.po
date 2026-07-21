@@ -2089,6 +2089,10 @@ msgstr "Iniciar na bandeja"
 msgid "Hide Auto-Install Tab"
 msgstr "Ocultar Aba de Instalação Automática"
 
+#, fuzzy
+msgid "Enable UI Sounds"
+msgstr "Colunas da tabela"
+
 msgid "Disable runtime download"
 msgstr "Desativar download de runtime"
 

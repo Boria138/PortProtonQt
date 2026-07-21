@@ -309,6 +309,7 @@ class VirtualKeyboard(QFrame):
 
         backspace = QPushButton('⌫')
         backspace.setFixedSize(fixed_w, fixed_h)
+        backspace.setProperty("sound_event", False)
         backspace.pressed.connect(self.on_backspace_pressed)
         backspace.released.connect(self.stop_backspace_repeat)
         # Add gamepad icon for Backspace (X/Triangle)
@@ -422,6 +423,8 @@ class VirtualKeyboard(QFrame):
         """Move focus up across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
             self.focusNextKey("up")
             self.last_focus_time = current_time
 
@@ -429,6 +432,8 @@ class VirtualKeyboard(QFrame):
         """Move focus down across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
             self.focusNextKey("down")
             self.last_focus_time = current_time
 
@@ -436,6 +441,8 @@ class VirtualKeyboard(QFrame):
         """Move focus left across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
             self.focusNextKey("left")
             self.last_focus_time = current_time
 
@@ -443,6 +450,8 @@ class VirtualKeyboard(QFrame):
         """Move focus right across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
             self.focusNextKey("right")
             self.last_focus_time = current_time
 
@@ -463,6 +472,8 @@ class VirtualKeyboard(QFrame):
         return position[:2]  # row, col
 
     def on_button_click(self, key):
+        from portprotonqt.sound_manager import SoundManager
+        SoundManager().play("keyboard_key")
         if key in ['TAB', 'CAPS', '⬆']:
             if key == 'TAB':
                 self.on_tab_click()
@@ -530,6 +541,8 @@ class VirtualKeyboard(QFrame):
                 text = self.current_input_widget.text()
 
                 if cursor_pos > 0:
+                    from portprotonqt.sound_manager import SoundManager
+                    SoundManager().play("keyboard_key")
                     new_text = text[:cursor_pos - 1] + text[cursor_pos:]
                     self.current_input_widget.setText(new_text)
                     self.current_input_widget.setCursorPosition(cursor_pos - 1)

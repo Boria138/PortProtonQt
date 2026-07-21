@@ -540,7 +540,7 @@ class GameLibraryManager:
         for card in self.gamesListWidget.findChildren(GameCard):
             if card.isVisible() and card.isEnabled():
                 self._focus_first_card_after_update = False
-                card.setFocus(Qt.FocusReason.OtherFocusReason)
+                card.setFocus(Qt.FocusReason.ActiveWindowFocusReason)
                 if self.gamesScrollArea is not None:
                     self.gamesScrollArea.ensureWidgetVisible(card, 50, 50)
                 return

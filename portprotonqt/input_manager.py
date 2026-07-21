@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
 from PySide6.QtGui import QKeySequence
 from portprotonqt.logger import get_logger
+from portprotonqt.sound_manager import SoundManager
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
@@ -912,11 +913,13 @@ class InputManager(QObject):
         if current_action not in actions:
             target_index = 0 if direction_down else len(actions) - 1
             menu.setActiveAction(actions[target_index])
+            SoundManager().play("navigate")
             return
         current_index = actions.index(current_action)
         step = 1 if direction_down else -1
         next_index = (current_index + step) % len(actions)
         menu.setActiveAction(actions[next_index])
+        SoundManager().play("navigate")
 
     # TABLE NAVIGATION METHODS
     def handle_table_navigation(self, table: QTableWidget, code: int, value: int):
@@ -2779,12 +2782,16 @@ class InputManager(QObject):
                 system_action = getattr(self._parent, "handleSystemTableGamepadAction", None)
                 if callable(system_action):
                     if button_code in BUTTONS['confirm'] and system_action(focused, "confirm"):
+                        SoundManager().play("confirm")
                         return
                     if button_code in BUTTONS['back'] and system_action(focused, "back"):
+                        SoundManager().play("back")
                         return
                     if button_code in BUTTONS['prev_dir'] and system_action(focused, "prev_dir"):
+                        SoundManager().play("click")
                         return
                     if button_code in BUTTONS['add_game'] and system_action(focused, "add_game"):
+                        SoundManager().play("click")
                         return
 
             system_quick_action = getattr(self._parent, "handleSystemGamepadAction", None)
@@ -2793,12 +2800,16 @@ class InputManager(QObject):
                 and button_code in BUTTONS['add_game']
                 and system_quick_action("add_game")
             ):
+                SoundManager().play("open")
                 return
 
             # Standard navigation
             if button_code in BUTTONS['confirm']:
+                if not isinstance(focused, GameCard):
+                    SoundManager().play_widget_sound(focused)
                 self._parent.activateFocusedWidget()
             elif button_code in BUTTONS['back']:
+                SoundManager().play("back")
                 if self._is_theme_store_visible():
                     store_stack = getattr(self._parent, "themeStoreStack", None)
                     detail_page = getattr(self._parent, "themeStoreDetailPage", None)
@@ -2810,6 +2821,7 @@ class InputManager(QObject):
                 self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
             elif button_code in BUTTONS['add_game']:
                 if self._parent.stackedWidget.currentIndex() == 0:
+                    SoundManager().play("open")
                     self._parent.openAddGameDialog()
             elif button_code in BUTTONS['prev_tab']:
                 idx = self._parent.stackedWidget.currentIndex()
@@ -3148,6 +3160,7 @@ class InputManager(QObject):
         if not hasattr(self._parent, 'gamesListWidget') or self._parent.gamesListWidget is None:
             logger.error("gamesListWidget not available yet, skipping D-pad navigation")
             return
+
         try:
 
             app = QApplication.instance()
@@ -3156,6 +3169,8 @@ class InputManager(QObject):
             popup = QApplication.activePopupWidget()
             if not app or not active:
                 return
+            if not isinstance(focused, GameCard):
+                SoundManager().play("navigate")
 
             # Handle QMessageBox navigation with D-pad (for multiple buttons)
             if isinstance(active, QMessageBox) and not isinstance(focused, QTableWidget):
@@ -3508,6 +3523,17 @@ class InputManager(QObject):
         if not app:
             return super().eventFilter(obj, event)
 
+        if event.type() == QEvent.Type.Show:
+            if isinstance(obj, QMenu):
+                SoundManager().play("open")
+            elif isinstance(obj, QWidget) and obj.windowType() == Qt.WindowType.Popup:
+                parent = obj.parent()
+                while isinstance(parent, QObject):
+                    if isinstance(parent, QComboBox):
+                        SoundManager().play("open")
+                        break
+                    parent = parent.parent()
+
         if event.type() == QEvent.Type.Wheel:
             combo = obj if isinstance(obj, QComboBox) else None
             parent = obj.parent() if isinstance(obj, QObject) else None
@@ -3546,6 +3572,12 @@ class InputManager(QObject):
             if button == Qt.MouseButton.ExtraButton1:
                 self._handle_back_mouse_button()
                 return True
+
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            button_method = getattr(event, "button", None)
+            button = button_method() if callable(button_method) else None
+            if button == Qt.MouseButton.LeftButton:
+                SoundManager().play_widget_sound(obj)
 
         # Ensure obj is a QObject
         if not isinstance(obj, QObject):
@@ -3613,6 +3645,7 @@ class InputManager(QObject):
         if isinstance(focused, QLineEdit):
             return
         if isinstance(active_win, QDialog):
+            SoundManager().play("back")
             active_win.reject()
             return
         self._parent.goBackDetailPage(self._parent.currentDetailPage)
@@ -3999,7 +4032,9 @@ class InputManager(QObject):
         self.gamepad_check_timer = QTimer(self)
         self.gamepad_check_timer.setSingleShot(True)
         self.gamepad_check_timer.timeout.connect(self.check_gamepad)
+        self._initial_gamepad_check = True
         self.check_gamepad()
+        self._initial_gamepad_check = False
         if not self.gamepad_thread or not self.gamepad_thread.is_alive():
             self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
             self.gamepad_thread.start()
@@ -4045,6 +4080,8 @@ class InputManager(QObject):
                 self._last_gamepad_check_time = 0.0
                 self.gamepad_type = self._get_effective_gamepad_type(new_gamepad)
                 self._refresh_gamepad_ui()
+                if not self._initial_gamepad_check:
+                    SoundManager().play("gamepad_connect")
 
                 if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(True)
@@ -4365,13 +4402,16 @@ class InputManager(QObject):
         if popup:
             if isinstance(popup, QMessageBox):
                 self._handle_qmessagebox_button(popup, button_code)
+                SoundManager().play("click")
                 return True
             elif isinstance(popup, QMenu):
                 if button_code in BUTTONS['confirm']:
+                    SoundManager().play("click")
                     if popup.activeAction():
                         popup.activeAction().trigger()
                     popup.close()
                 elif button_code in BUTTONS['back']:
+                    SoundManager().play("back")
                     popup.close()
                 return True
 

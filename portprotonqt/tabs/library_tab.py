@@ -154,6 +154,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.addGameButton.setProperty("sound_event", "open")
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         buttons_layout.addWidget(self.addGameButton)
         buttons_layout.addStretch()

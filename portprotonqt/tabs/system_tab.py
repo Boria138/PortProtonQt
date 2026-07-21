@@ -33,6 +33,7 @@ from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
+from portprotonqt.sound_manager import SoundManager
 from portprotonqt.preloader import Preloader
 from portprotonqt.system_manager import (
     AudioManagerWorker,
@@ -263,6 +264,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             button.setCheckable(True)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.setProperty("sound_event", False)
             button.clicked.connect(lambda _checked=False, section_index=index: self.switchSystemSection(section_index))
             self.systemSectionButtons.append(button)
             section_switcher_layout.addWidget(button)
@@ -334,7 +336,10 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             return False
         if index < len(self.systemSectionButtons) and not self.systemSectionButtons[index].isVisible():
             return False
+        previous_index = self.systemSectionStack.currentIndex()
         self.systemSectionStack.setCurrentIndex(index)
+        if previous_index != index:
+            SoundManager().play("tab_switch")
         for button_index, button in enumerate(self.systemSectionButtons):
             button.setChecked(button_index == index)
         self._focusCurrentSystemSection(index)

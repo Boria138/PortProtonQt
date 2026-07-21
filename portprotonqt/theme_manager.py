@@ -411,6 +411,19 @@ def build_icon_cache(theme_name):
     _icon_dirs_cache[theme_name] = image_map
     return image_map
 
+def _resolve_sound_dirs(theme_name: str) -> list[str]:
+    """Return ordered list of sound directories from theme inheritance chain."""
+    dirs = []
+    for resource_theme_name in _get_theme_resource_chain(theme_name):
+        theme_folder = _find_theme_folder(resource_theme_name)
+        if not theme_folder:
+            continue
+        sounds_dir = os.path.join(theme_folder, "sounds")
+        if os.path.isdir(sounds_dir):
+            dirs.append(sounds_dir)
+    return dirs
+
+
 def load_theme_fonts(theme_name):
     """
     Load all fonts from selected theme if not already loaded.
@@ -804,6 +817,10 @@ class ThemeManager:
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
         ui_config.set_theme(theme_name)
+
+        from portprotonqt.sound_manager import SoundManager
+        SoundManager().set_sounds_dirs(_resolve_sound_dirs(theme_name))
+
         logger.info(f"Theme '{theme_name}' successfully applied")
         return theme_module
 

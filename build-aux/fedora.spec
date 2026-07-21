@@ -42,6 +42,7 @@ Requires:       perl-Image-ExifTool
 Requires:       SDL3
 Requires:       qt6-qtsvg
 Requires:       qt6-qtimageformats
+Requires:       qt6-qtmultimedia
 Requires:       cabextract
 Requires:       gzip
 Requires:       unzip

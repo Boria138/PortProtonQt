@@ -26,6 +26,7 @@
   - [Recoloring SVG Icons](#recoloring-svg-icons)
   - [AutoSizeButton State Recoloring](#autosizebutton-state-recoloring)
   - [Non-Inherited Icon Colors](#non-inherited-icon-colors)
+- [Sound Effects](#sound-effects-optional)
 
 ---
 
@@ -78,6 +79,7 @@ my_custom_theme/
 ├── metainfo.ini
 ├── fonts/
 ├── images/
+├── sounds/
 └── styles/
     ├── __init__.py  # This empty file makes the directory a Python package
     ├── constants.py
@@ -142,7 +144,7 @@ THEME_INHERITS = "classic"
 
 If `THEME_INHERITS` is not defined, the theme inherits styles from `standart`.
 
-Fonts, icons, and images also follow the inheritance chain — the first match found walking from child to `standart` wins. If your theme has a `fonts/` directory, it takes priority over the parent's. If it doesn't, the parent's fonts are loaded. Screenshots are the exception — they are loaded only from the current theme, not inherited.
+Fonts, icons, images, and sounds also follow the inheritance chain — the first match found walking from child to `standart` wins. If your theme has a `fonts/` directory, it takes priority over the parent's. Missing sound events fall back individually to the parent theme. Screenshots are the exception — they are loaded only from the current theme, not inherited.
 
 ### How Inheritance Works
 
@@ -740,5 +742,34 @@ When no `ICON_COLORS` entry matches an `AutoSizeButton` state, the button falls 
 ### Non-Inherited Icon Colors
 
 `ICON_COLORS` is not inherited from parent themes. If a child theme needs SVG recoloring, define its own `ICON_COLORS` dictionary in that theme.
+
+---
+
+## Sound Effects (optional)
+
+Place UI sound effects in the theme's `sounds/` directory. File names must match an event name; do not add numeric suffixes such as `_001`:
+
+| Event | Used for |
+|---|---|
+| `navigate` | Moving focus between UI items |
+| `click` | Pressing buttons and clickable labels |
+| `confirm` | Confirming an action |
+| `back` | Returning or closing with the Back action |
+| `toggle` | Changing a checkbox or toggle |
+| `open` | Opening pages, dialogs, and menus |
+| `close` | Closing UI elements |
+| `error` | Error feedback |
+| `notification` | Notifications |
+| `keyboard_key` | Virtual keyboard input |
+| `scroll` | Scrolling feedback |
+| `tab_switch` | Switching application tabs |
+| `game_launch` | Successful game process launch |
+| `gamepad_connect` | Connecting a gamepad |
+
+For example, use `sounds/navigate.ogg` or `sounds/navigate.wav`. Supported extensions, in lookup order, are `.ogg`, `.oga`, `.wav`, `.mp3`, `.flac`, `.opus`, `.m4a`, `.aac`, and `.webm`. Availability of a codec at playback time depends on the Qt Multimedia backend installed on the system.
+
+Sounds are inherited per event. A child theme can override only `navigate` and continue using every other sound from its parent. When more than one supported extension exists for the same event in one theme, the first extension in the list above is used.
+
+Theme validation checks the extension, file size, and format signature before a sound is loaded. Sound files larger than 20 MiB, symlinks, files outside the theme directory, and files whose content does not match their extension are rejected. Include the license and attribution required by every sound asset distributed with a theme.
 
 ---
