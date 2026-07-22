@@ -54,6 +54,12 @@ echo
 echo "Gitea:"
 echo "$GIT_RAW" | jq -r "$jq_type"
 
+if [[ "${CI:-}" != "true" ]]; then
+    echo
+    echo "Local run: README update and commit skipped"
+    exit 0
+fi
+
 sed -i "s|-[0-9]*-green?style=flat-square|-$TOTAL-green?style=flat-square|g" README.md README.ru.md
 echo
 echo "Badge updated: $TOTAL"

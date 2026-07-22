@@ -49,15 +49,16 @@ def test_sound_manager_reuses_slot_for_same_event() -> None:
     assert manager._slot_index == 1
 
 
-def test_sound_slot_stops_at_end_of_media() -> None:
-    end_of_media = object()
+def test_sound_slot_restarts_loaded_effect() -> None:
     slot: Any = object.__new__(_SoundSlot)
-    slot._player = Mock()
-    slot._player.MediaStatus.EndOfMedia = end_of_media
+    slot._effect = Mock()
+    slot._effect.isPlaying.return_value = False
+    slot._loaded_event = "navigate"
 
-    slot._handle_media_status(end_of_media)
+    slot.play("navigate", Mock())
 
-    slot._player.stop.assert_called_once()
+    slot._effect.stop.assert_called_once()
+    slot._effect.play.assert_called_once()
 
 
 def test_sound_manager_skips_unsafe_sound_variant(tmp_path: Path) -> None:
@@ -72,12 +73,16 @@ def test_sound_manager_skips_unsafe_sound_variant(tmp_path: Path) -> None:
     assert manager._find_sound_path("navigate") == safe_sound
 
 
-def test_standard_theme_provides_all_sound_events() -> None:
+def test_standard_theme_provides_configured_sound_events() -> None:
     sounds_dir = Path(__file__).parent.parent / "portprotonqt" / "themes" / "standart" / "sounds"
     manager: Any = object.__new__(SoundManager)
     manager._sounds_dirs = [str(sounds_dir)]
 
-    assert all(manager._find_sound_path(event) is not None for event in SOUND_EVENTS)
+    available_events = {
+        event for event in SOUND_EVENTS if manager._find_sound_path(event) is not None
+    }
+    assert available_events == {"open", "back", "confirm", "navigate"}
+    assert {"close", "scroll", "error", "notification"}.isdisjoint(SOUND_EVENTS)
 
 
 def test_widget_sound_uses_semantic_event() -> None:

@@ -68,8 +68,6 @@ PortProtonQt uses code and dependencies from the following projects:
 - [iat](https://sourceforge.net/projects/iat.berlios) — library for converting mdf and nrg to iso, GPLv3 license.
 - [pyte](https://github.com/selectel/pyte) — ANSI escape code parser, [LGPLv3](https://github.com/selectel/pyte?tab=LGPL-3.0-1-ov-file) license.
 - [gjs-osk](https://github.com/Vishram1123/gjs-osk) — base for virtual keyboard layout data, GPLv3 license.
-- [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) — UI feedback sound effects, [CC0](https://creativecommons.org/publicdomain/zero/1.0/) license.
-- [Modern Minimal UI Sounds](https://github.com/cadecomposer/modern-minimal-ui-sounds) — gamepad connection sound, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) license.
 
 See the [LICENSE](LICENSE) file for the full text of the licenses.
 

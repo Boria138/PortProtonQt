@@ -1,54 +1,56 @@
 """Sound manager for UI feedback sounds, integrated with the theme system."""
+import sys
 from pathlib import Path
 
-from PySide6.QtCore import QLoggingCategory, QUrl
+from PySide6.QtCore import QUrl, qInstallMessageHandler
 
 from portprotonqt.config import ui_config
 from portprotonqt.logger import get_logger
-from portprotonqt.theme_security import SUPPORTED_SOUND_EXTENSIONS, is_safe_sound_file
+from portprotonqt.theme_security import is_safe_sound_file
 
 logger = get_logger(__name__)
-FFMPEG_LOG_RULES = "qt.multimedia.ffmpeg=false\nqt.multimedia.ffmpeg.*=false"
-
 SOUND_EVENTS = frozenset({
-    "navigate", "click", "confirm", "back", "toggle", "open", "close",
-    "error", "notification", "keyboard_key", "scroll", "tab_switch",
+    "navigate", "click", "confirm", "back", "toggle", "open",
+    "keyboard_key", "tab_switch",
     "game_launch", "gamepad_connect",
 })
+MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
+
+
+def _multimedia_message_handler(message_type: object, context: object, message: str) -> None:
+    if message.startswith(MISSING_MEDIA_BACKEND_WARNING):
+        return
+    print(message, file=sys.stderr)
 
 
 class _SoundSlot:
     """A single player slot that pre-loads a sound file."""
 
     def __init__(self) -> None:
-        from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
-
-        self._audio = QAudioOutput()
-        self._player = QMediaPlayer()
-        self._player.setAudioOutput(self._audio)
-        self._player.setLoops(QMediaPlayer.Loops.Once)
-        self._player.mediaStatusChanged.connect(self._handle_media_status)
+        previous_handler = qInstallMessageHandler(_multimedia_message_handler)
+        try:
+            from PySide6.QtMultimedia import QSoundEffect
+            self._effect = QSoundEffect()
+        finally:
+            qInstallMessageHandler(previous_handler)
+        self._effect.setLoopCount(1)
         self._loaded_event: str | None = None
-
-    def _handle_media_status(self, status: object) -> None:
-        if status == self._player.MediaStatus.EndOfMedia:
-            self._player.stop()
 
     def play(self, event: str, url: QUrl) -> None:
         if (
             self._loaded_event == event
-            and self._player.playbackState() == self._player.PlaybackState.PlayingState
+            and self._effect.isPlaying()
         ):
             return
         if self._loaded_event != event:
-            self._player.setSource(url)
+            self._effect.setSource(url)
             self._loaded_event = event
-        self._player.stop()
-        self._player.setPosition(0)
-        self._player.play()
+        self._effect.stop()
+        self._effect.play()
 
     def reset(self) -> None:
-        self._player.setSource(QUrl())
+        self._effect.stop()
+        self._effect.setSource(QUrl())
         self._loaded_event = None
 
 
@@ -67,7 +69,6 @@ class SoundManager:
         if self._initialized:
             return
         self._initialized = True
-        QLoggingCategory.setFilterRules(FFMPEG_LOG_RULES)
         self._enabled = ui_config.get_sounds_enabled()
         self._sounds_dirs: list[str] = []
         try:
@@ -92,10 +93,9 @@ class SoundManager:
         if event not in SOUND_EVENTS:
             return None
         for sounds_dir in self._sounds_dirs:
-            for extension in SUPPORTED_SOUND_EXTENSIONS:
-                path = Path(sounds_dir) / f"{event}{extension}"
-                if path.is_file() and is_safe_sound_file(str(path)):
-                    return path
+            path = Path(sounds_dir) / f"{event}.wav"
+            if path.is_file() and is_safe_sound_file(str(path)):
+                return path
         return None
 
     def _get_url(self, event: str) -> QUrl | None:

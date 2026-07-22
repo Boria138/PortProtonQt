@@ -376,6 +376,22 @@ class TestDirectorySafety:
         (d / "styles.py").write_text("color = \"red\"\n")
         assert check_theme_directory_safety(str(d))
 
+    def test_valid_wav_in_theme_dir(self, tmp_path: Path) -> None:
+        sounds = tmp_path / "theme" / "sounds"
+        sounds.mkdir(parents=True)
+        (sounds / "navigate.wav").write_bytes(
+            b"RIFF\x00\x00\x00\x00WAVE" + b"\x00" * 32
+        )
+
+        assert check_theme_directory_safety(str(tmp_path / "theme"))
+
+    def test_invalid_wav_in_theme_dir_is_rejected(self, tmp_path: Path) -> None:
+        sounds = tmp_path / "theme" / "sounds"
+        sounds.mkdir(parents=True)
+        (sounds / "navigate.wav").write_bytes(b"not audio")
+
+        assert not check_theme_directory_safety(str(tmp_path / "theme"))
+
 
 # === Font safety ===
 
@@ -398,30 +414,19 @@ class TestFontSafety:
 
 
 class TestSoundSafety:
-    @pytest.mark.parametrize(
-        ("extension", "header"),
-        [
-            (".ogg", b"OggS"),
-            (".oga", b"OggS"),
-            (".opus", b"OggS"),
-            (".wav", b"RIFF\x00\x00\x00\x00WAVE"),
-            (".mp3", b"ID3"),
-            (".flac", b"fLaC"),
-            (".m4a", b"\x00\x00\x00\x10ftyp"),
-            (".aac", b"\xff\xf1"),
-            (".webm", b"\x1a\x45\xdf\xa3"),
-        ],
-    )
-    def test_supported_signatures(
-        self, tmp_path: Path, extension: str, header: bytes,
-    ) -> None:
-        sound = tmp_path / f"sound{extension}"
-        sound.write_bytes(header + b"\x00" * 32)
+    def test_supported_wav_signature(self, tmp_path: Path) -> None:
+        sound = tmp_path / "sound.wav"
+        sound.write_bytes(b"RIFF\x00\x00\x00\x00WAVE" + b"\x00" * 32)
         assert is_safe_sound_file(str(sound))
 
     def test_rejects_disguised_sound(self, tmp_path: Path) -> None:
-        sound = tmp_path / "sound.ogg"
+        sound = tmp_path / "sound.wav"
         sound.write_bytes(b"not audio")
+        assert not is_safe_sound_file(str(sound))
+
+    def test_rejects_non_wav_extension(self, tmp_path: Path) -> None:
+        sound = tmp_path / "sound.ogg"
+        sound.write_bytes(b"OggS" + b"\x00" * 32)
         assert not is_safe_sound_file(str(sound))
 
 

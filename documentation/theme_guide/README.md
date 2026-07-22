@@ -757,18 +757,14 @@ Place UI sound effects in the theme's `sounds/` directory. File names must match
 | `back` | Returning or closing with the Back action |
 | `toggle` | Changing a checkbox or toggle |
 | `open` | Opening pages, dialogs, and menus |
-| `close` | Closing UI elements |
-| `error` | Error feedback |
-| `notification` | Notifications |
 | `keyboard_key` | Virtual keyboard input |
-| `scroll` | Scrolling feedback |
 | `tab_switch` | Switching application tabs |
 | `game_launch` | Successful game process launch |
 | `gamepad_connect` | Connecting a gamepad |
 
-For example, use `sounds/navigate.ogg` or `sounds/navigate.wav`. Supported extensions, in lookup order, are `.ogg`, `.oga`, `.wav`, `.mp3`, `.flac`, `.opus`, `.m4a`, `.aac`, and `.webm`. Availability of a codec at playback time depends on the Qt Multimedia backend installed on the system.
+Use uncompressed PCM WAV files, for example `sounds/navigate.wav`. Other audio formats are not supported.
 
-Sounds are inherited per event. A child theme can override only `navigate` and continue using every other sound from its parent. When more than one supported extension exists for the same event in one theme, the first extension in the list above is used.
+Sounds are inherited per event. A child theme can override only `navigate`; missing events are resolved through its parent chain up to `standart`.
 
 Theme validation checks the extension, file size, and format signature before a sound is loaded. Sound files larger than 20 MiB, symlinks, files outside the theme directory, and files whose content does not match their extension are rejected. Include the license and attribution required by every sound asset distributed with a theme.
 

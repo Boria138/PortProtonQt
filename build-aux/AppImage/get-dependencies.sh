@@ -83,23 +83,6 @@ echo "---------------------------------------------------------------"
 pacman-key --init
 pacman -S --noconfirm archlinux-keyring
 
-# Chaotic-AUR keys
-pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-pacman-key --lsign-key 3056513887B78AEB
-
-pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
-pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-
-# Enable the multilib repository
-cat << EOM >> /etc/pacman.conf
-[multilib]
-Include = /etc/pacman.d/mirrorlist
-
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-SigLevel = Never
-EOM
-
 # Disable locale noextract
 sed -i -E 's@[[:space:]]*usr/share/locale/\*@@g; s@[[:space:]]+@ @g; s@[[:space:]]+$@@' /etc/pacman.conf
 

@@ -14,6 +14,7 @@ export UPINFO="gitea-releases-zsync|git.linux-gaming.ru|Linux-Gaming|PortProtonQ
 export DEPLOY_OPENGL=1
 export DEPLOY_SDL=1
 export DEPLOY_PYTHON=1
+export MAIN_BIN=portprotonqt
 export OPTIMIZE_LAUNCH=1
 
 # Adjust comp settings to bypass oom-killer
@@ -37,6 +38,10 @@ elif [ -d /usr/share/portproton ]; then
 fi
 
 
+# QSoundEffect only needs PCM WAV and PulseAudio. Remove the optional native
+# PipeWire path and FFmpeg media backend before quick-sharun scans Qt plugins.
+pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
+
 # Deploy dependencies
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
@@ -46,8 +51,51 @@ fi
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Multimedia.so* \
 	/usr/lib/libQt6Network.so* \
-	/usr/lib/qt6/plugins/multimedia/libffmpegmediaplugin.so \
 	/usr/lib/qt6/plugins/imageformats/libqwebp.so
+
+# The native PipeWire path rejects some IEC958 device formats. Qt's PulseAudio
+# path works with both PulseAudio and pipewire-pulse on the host.
+echo 'QT_AUDIO_BACKEND=pulseaudio' >> ./AppDir/.env
+
+# DEPLOY_PYTHON copies the distro's complete Python installation. Remove
+# build/development content and PySide bindings not imported by PortProtonQt.
+PYTHON_DIR=$(find ./AppDir/lib -maxdepth 1 -type d -name 'python3.*' -print -quit)
+PYTHON_SITE=$PYTHON_DIR/site-packages
+PYSIDE_DIR=$PYTHON_SITE/PySide6
+
+rm -rf \
+	"$PYTHON_DIR"/ensurepip \
+	"$PYTHON_DIR"/idlelib \
+	"$PYTHON_DIR"/pydoc_data \
+	"$PYTHON_DIR"/tkinter \
+	"$PYTHON_DIR"/turtledemo \
+	"$PYTHON_DIR"/venv \
+	"$PYTHON_SITE"/Cython \
+	"$PYTHON_SITE"/cython.py \
+	"$PYTHON_SITE"/mesonbuild \
+	"$PYTHON_SITE"/pygments \
+	"$PYTHON_SITE"/pyximport \
+	"$PYTHON_SITE"/setuptools \
+	"$PYTHON_SITE"/vapoursynth \
+	"$PYTHON_SITE"/wheel \
+	"$PYTHON_SITE"/cython-*.dist-info \
+	"$PYTHON_SITE"/meson-*.dist-info \
+	"$PYTHON_SITE"/pygments-*.dist-info \
+	"$PYTHON_SITE"/setuptools-*.dist-info \
+	"$PYTHON_SITE"/vapoursynth-*.dist-info \
+	"$PYTHON_SITE"/wheel-*.dist-info
+
+find "$PYTHON_DIR" -depth -type d \( -name test -o -name tests \) \
+	-exec rm -rf {} +
+find "$PYTHON_SITE" -type f -name '*.pyi' -delete
+
+for module in "$PYSIDE_DIR"/Qt*.so; do
+	case "${module##*/}" in
+		QtCore.*|QtGui.*|QtMultimedia.*|QtNetwork.*|QtSvg.*|QtWidgets.*) continue ;;
+	esac
+	rm -f "$module"
+done
+rm -rf "$PYSIDE_DIR"/QtAsyncio
 
 # Turn AppDir into AppImage
 ./quick-sharun --make-appimage
