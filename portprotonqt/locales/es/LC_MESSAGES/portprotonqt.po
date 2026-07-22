@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-07-11 07:06+0000\n"
+"PO-Revision-Date: 2026-07-21 20:07+0000\n"
 "Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -230,9 +230,9 @@ msgstr "Se ha eliminado «{game_name}» de {location}"
 msgid "Desktop"
 msgstr "Escritorio"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to save custom data: {error}"
-msgstr "No se han podido eliminar los datos personalizados: {error}"
+msgstr "No se han podido guardar los datos personalizados: {error}"
 
 msgid "Game name and executable path are required"
 msgstr ""
@@ -821,10 +821,10 @@ msgid "Launch \"{name}\" with PortProton"
 msgstr "Iniciar «{name}» con PortProton"
 
 msgid "Run in silent mode"
-msgstr ""
+msgstr "Ejecutar sin registrar"
 
 msgid "Run in logging mode"
-msgstr ""
+msgstr "Ejecutar con registro"
 
 msgid "Debug log mode was launched"
 msgstr "Se ha iniciado el modo de registro de depuración"
@@ -1035,39 +1035,39 @@ msgid "Selected WINE/Proton:"
 msgstr "Vino/Proton seleccionado:"
 
 msgid "No WINE/Proton selected"
-msgstr ""
+msgstr "No se ha seleccionado VINO/Protón"
 
 msgid "Downloading: "
-msgstr ""
+msgstr "Descargando: "
 
 msgid "Download Selected"
-msgstr ""
+msgstr "Descargar seleccionados"
 
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
-msgstr ""
+msgstr "Error al cargar WINE/Proton: {error}"
 
 msgid "Version WINE/Proton"
-msgstr ""
+msgstr "Versión de WINE/Proton"
 
 msgid "Size"
-msgstr ""
+msgstr "Tamaño"
 
 msgid "Unknown"
-msgstr ""
+msgstr "Desconocido"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
-msgstr ""
+msgstr "{display_name} (instalado)"
 
 msgid "No Wine/Proton versions installed"
-msgstr ""
+msgstr "No hay versiones de Wine/Proton instaladas"
 
 msgid "Installed"
-msgstr ""
+msgstr "Instalado"
 
 msgid "Select to remove this WINE/Proton"
-msgstr ""
+msgstr "Seleccione para eliminar WINE/Proton"
 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
