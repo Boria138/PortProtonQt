@@ -188,6 +188,7 @@ class GOGAPI:
                     logger.warning("Failed to load GOG metadata for %s: %s", app_id, error)
                     game = cached.get(app_id, {})
                 if game:
+                    game.setdefault("steam_appid", "")
                     games.append(game)
                 if progress_callback:
                     progress_callback(completed, len(entries))
@@ -379,6 +380,13 @@ class GOGAPI:
         game = data.get("game", {})
         if not game.get("visible_in_library", True):
             return {}
+        steam_release = next(
+            (
+                release for release in game.get("releases", [])
+                if release.get("platform_id") == "steam"
+            ),
+            {},
+        )
         description = self._localized_value(data.get("summary"))
         language = get_metadata_language().lower()
         try:
@@ -418,6 +426,7 @@ class GOGAPI:
             ).strip(),
             "description": description,
             "cover": self._format_image(game.get("vertical_cover") or game.get("logo") or game.get("background")),
+            "steam_appid": str(steam_release.get("external_id", "")),
         }
 
     @staticmethod

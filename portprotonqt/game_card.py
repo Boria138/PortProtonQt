@@ -220,7 +220,7 @@ class GameCard(QFrame):
         self, name, description, cover_path, appid, controller_support, exec_line,
         last_launch, formatted_playtime, protondb_tier, anticheat_status,
         last_launch_ts, playtime_seconds, game_source, anticheat_slug="",
-        ppdb_id="", ppdb_rating="", *, select_callback, theme=None,
+        ppdb_id="", ppdb_rating="", protondb_appid="", *, select_callback, theme=None,
         card_width=250, parent=None, context_menu_manager=None
     ):
         super().__init__(parent)
@@ -237,6 +237,7 @@ class GameCard(QFrame):
         self.anticheat_slug = anticheat_slug or ""
         self.ppdb_id = ppdb_id or ""
         self.ppdb_rating = ppdb_rating or ""
+        self.protondb_appid = protondb_appid or appid
         self.game_source = game_source
         self.autoinstall_exe_name = ""
         self.last_launch_ts = last_launch_ts
@@ -879,7 +880,7 @@ class GameCard(QFrame):
             QDesktopServices.openUrl(QUrl(f"https://linux-gaming.ru/game/{self.ppdb_id}"))
 
     def open_protondb_report(self):
-        url = QUrl(f"https://www.protondb.com/app/{self.appid}")
+        url = QUrl(f"https://www.protondb.com/app/{self.protondb_appid}")
         QDesktopServices.openUrl(url)
 
     def open_weanticheatyet_page(self):
@@ -1020,6 +1021,7 @@ class GameCard(QFrame):
                 "anticheat_slug": self.anticheat_slug,
                 "ppdb_id": self.ppdb_id,
                 "ppdb_rating": self.ppdb_rating,
+                "protondb_appid": self.protondb_appid,
                 "autoinstall_exe_name": getattr(self, "autoinstall_exe_name", ""),
             }
             self.select_callback(game_data)

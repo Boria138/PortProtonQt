@@ -60,7 +60,7 @@ from portprotonqt.sound_manager import SoundManager
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin
-from portprotonqt.tabs.gog_tab import MainWindowGOGTabMixin
+from portprotonqt.tabs.gog_tab import GOGLibraryWorker, MainWindowGOGTabMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.theme_tab import MainWindowThemeTabMixin
@@ -1025,31 +1025,74 @@ class MainWindow(
     def _load_gog_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
         api = getattr(self, "gog_api", None) or GOGAPI()
         installed = api.load_installed()
+        library = [game for game in api.load_library() if game.get("app_id")]
+        if self._upgrade_legacy_gog_library(api, library, callback):
+            return
         games = []
-        for game in api.load_library():
+        if not library:
+            callback(games)
+            return
+        processed_count = 0
+
+        def on_game_info(game: dict, steam_info: dict) -> None:
+            nonlocal processed_count
             app_id = str(game.get("app_id", ""))
-            if not app_id:
-                continue
             action = "launch" if api.is_game_installed(app_id, installed) else "install"
             games.append((
                 str(game.get("title", app_id)),
-                str(game.get("description", "")),
-                str(game.get("cover", "")),
+                str(game.get("description", "")), str(game.get("cover", "")),
                 app_id,
-                "",
+                steam_info.get("controller_support", ""),
                 f"gog://{action}/{app_id}",
-                _("Never"),
-                format_playtime(0),
-                "",
-                "",
-                0,
-                0,
+                _("Never"), format_playtime(0),
+                steam_info.get("protondb_tier", ""),
+                steam_info.get("anticheat_status", ""),
+                0, 0,
                 "gog",
-                "",
-                "",
-                "",
+                steam_info.get("anticheat_slug", ""),
+                steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
+                steam_info.get("appid", ""),
             ))
-        callback(games)
+            processed_count += 1
+            if processed_count == len(library):
+                callback(games)
+
+        for game in library:
+            app_id = str(game.get("app_id", ""))
+            steam_appid = str(game.get("steam_appid", ""))
+            if steam_appid:
+                get_full_steam_game_info_async(
+                    int(steam_appid),
+                    lambda info, current_game=game: on_game_info(current_game, info),
+                    fallback_name=str(game.get("title", app_id)),
+                )
+                continue
+            get_steam_game_info_async(
+                str(game.get("title", app_id)),
+                f"gog://launch/{app_id}",
+                lambda info, current_game=game: on_game_info(current_game, info),
+            )
+
+    def _upgrade_legacy_gog_library(
+        self, api: GOGAPI, library: list[dict], callback: Callable[[list], None]
+    ) -> bool:
+        auth_path = getattr(api, "auth_path", None)
+        needs_upgrade = any("steam_appid" not in game for game in library)
+        if (
+            not needs_upgrade
+            or getattr(self, "_gog_metadata_upgrade_attempted", False)
+            or auth_path is None
+            or not auth_path.is_file()
+        ):
+            return False
+        self._gog_metadata_upgrade_attempted = True
+        worker = GOGLibraryWorker(api)
+        worker.loaded.connect(lambda _games: self._load_gog_games_async(callback))
+        worker.failed.connect(lambda _error: self._load_gog_games_async(callback))
+        worker.finished.connect(lambda: setattr(self, "gog_metadata_worker", None))
+        self.gog_metadata_worker = worker
+        worker.start()
+        return True
 
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []

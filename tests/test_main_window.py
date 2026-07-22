@@ -834,6 +834,107 @@ def test_process_portproton_desktop_calls_callback_without_asset_download(
     assert not custom_data_path.exists()
 
 
+def test_load_gog_games_includes_compatibility_metadata(monkeypatch: MonkeyPatch) -> None:
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.gog_api = SimpleNamespace(
+        load_installed=lambda: {},
+        load_library=lambda: [
+            {"app_id": "gog-1", "title": "Game", "steam_appid": "123"}
+        ],
+        is_game_installed=lambda _app_id, _installed: True,
+    )
+    steam_info = {
+        "appid": 123,
+        "controller_support": "full",
+        "protondb_tier": "gold",
+        "anticheat_status": "Supported",
+        "anticheat_slug": "game",
+        "ppdb_id": "456",
+        "ppdb_rating": "good",
+    }
+    get_steam_info = MagicMock(
+        side_effect=lambda _appid, callback, fallback_name: callback(steam_info)
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_full_steam_game_info_async", get_steam_info
+    )
+    results = []
+
+    MainWindow._load_gog_games_async(window, results.append)
+
+    assert len(results) == 1
+    game = results[0][0]
+    assert game[3] == "gog-1"
+    assert game[4] == "full"
+    assert game[8:10] == ("gold", "Supported")
+    assert game[13:17] == ("game", "456", "good", 123)
+    assert get_steam_info.call_args.args[0] == 123
+    assert get_steam_info.call_args.kwargs == {"fallback_name": "Game"}
+
+
+def test_legacy_gog_library_refreshes_metadata(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window._load_gog_games_async = MagicMock()
+    auth_path = tmp_path / "auth.json"
+    auth_path.write_text("{}", encoding="utf-8")
+    worker = SimpleNamespace(
+        loaded=MagicMock(), failed=MagicMock(), finished=MagicMock(), start=MagicMock()
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.GOGLibraryWorker", lambda _api: worker
+    )
+    callback = MagicMock()
+
+    started = MainWindow._upgrade_legacy_gog_library(
+        window, SimpleNamespace(auth_path=auth_path), [{"app_id": "1"}], callback
+    )
+
+    assert started is True
+    worker.start.assert_called_once_with()
+    worker.loaded.connect.call_args.args[0]([])
+    test_window._load_gog_games_async.assert_called_once_with(callback)
+
+
+def test_gog_metadata_search_ignores_uri_components(monkeypatch: MonkeyPatch) -> None:
+    from portprotonqt.steam_api import get_steam_game_info_async
+
+    searched_candidates = []
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api.ui_config.get_economy_mode", lambda: False
+    )
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api.get_steam_apps_and_index_async",
+        lambda callback: callback(([{"appid": 1}], {"game": [{"appid": 1}]})),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api.search_app",
+        lambda candidate, _index: searched_candidates.append(candidate),
+    )
+    fetch_sgdb_cover = MagicMock()
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api.fetch_sgdb_cover_async", fetch_sgdb_cover
+    )
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api.get_weanticheatyet_info_async",
+        lambda _name, callback: callback({}),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.api._add_ppdb_info",
+        lambda result, _name, callback: callback(result),
+    )
+    results = []
+
+    get_steam_game_info_async("Unknown GOG Game", "gog://launch/123", results.append)
+
+    assert searched_candidates == ["Unknown GOG Game"]
+    assert len(results) == 1
+    fetch_sgdb_cover.assert_not_called()
+
+
 def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path) -> None:
     custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
     (custom_data_path / "praest").mkdir(parents=True)

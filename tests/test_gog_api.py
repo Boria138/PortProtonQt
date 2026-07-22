@@ -143,7 +143,11 @@ def test_get_game_loads_localized_product_description(
 ) -> None:
     gamesdb_response = Mock()
     gamesdb_response.json.return_value = {
-        "game": {"title": {"*": "Game"}, "visible_in_library": True},
+        "game": {
+            "title": {"*": "Game"},
+            "visible_in_library": True,
+            "releases": [{"platform_id": "steam", "external_id": "358180"}],
+        },
         "summary": {"*": "English description"},
     }
     product_response = Mock()
@@ -159,6 +163,7 @@ def test_get_game_loads_localized_product_description(
     )
 
     assert game["description"] == expected
+    assert game["steam_appid"] == "358180"
     assert request.call_args_list[1].kwargs["params"]["locale"] == "fr-FR"
 
 

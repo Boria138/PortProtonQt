@@ -265,7 +265,8 @@ class DetailPageManager:
 
     def _create_protondb_badge(self, parent: QWidget, game_data: dict) -> dict | None:
         badge, visible = create_protondb_badge(
-            parent, game_data.get("protondb_tier", ""), game_data.get("appid", ""),
+            parent, game_data.get("protondb_tier", ""),
+            game_data.get("protondb_appid", game_data.get("appid", "")),
             self.main_window
         )
         return {"label": badge, "visible": True} if badge and visible else None
@@ -1236,6 +1237,7 @@ class DetailPageManager:
             "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
             "ppdb_id": game_tuple[14] if len(game_tuple) > 14 else "",
             "ppdb_rating": game_tuple[15] if len(game_tuple) > 15 else "",
+            "protondb_appid": game_tuple[16] if len(game_tuple) > 16 else game_tuple[3],
         }
 
     def _finalize_autoinstall_page(
