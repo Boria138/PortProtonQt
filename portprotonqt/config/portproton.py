@@ -528,10 +528,12 @@ def resolve_custom_data_dir(custom_data_root: str, exe_path: str) -> str:
 def create_desktop_file(
     exe_path: str,
     game_name: str | None = None,
+    icon_source: str | None = None,
 ) -> tuple[str, str, str] | None:
     """Create desktop entry content, destination path and icon path for a game."""
     portproton_path = get_portproton_location()
-    if not os.path.isfile(exe_path):
+    is_gog_uri = re.fullmatch(r"gog://launch/\d+", exe_path) is not None
+    if not is_gog_uri and not os.path.isfile(exe_path):
         logger.error("Executable not found: %s", exe_path)
         return None
     if not portproton_path:
@@ -542,9 +544,14 @@ def create_desktop_file(
         game_name = os.path.splitext(os.path.basename(exe_path))[0]
     base_path = os.path.join(portproton_path, "data")
     icon_name = _sanitize_icon_name(game_name)
-    icon_path = os.path.join(base_path, "img", f"{icon_name}.png")
+    has_icon_source = bool(icon_source and os.path.isfile(icon_source))
+    icon_path = (
+        "applications-games" if is_gog_uri and not has_icon_source
+        else os.path.join(base_path, "img", f"{icon_name}.png")
+    )
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
-    os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+    if icon_path != "applications-games":
+        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
     flatpak_id = os.getenv("FLATPAK_ID")
     appimage_path = os.getenv("APPIMAGE", "").strip()

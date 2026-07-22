@@ -262,6 +262,7 @@ class GameCard(QFrame):
         self.missing_executable_path = self._get_missing_executable_path()
 
         self.steam_visible = (str(game_source).lower() == "steam" and not self.economy_mode)
+        self.gog_visible = (str(game_source).lower() == "gog" and not self.economy_mode)
         self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
@@ -302,7 +303,10 @@ class GameCard(QFrame):
         self.coverLabel = QLabel()
         self.coverLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
-        if self.missing_executable_path:
+        if self.missing_executable_path or (
+            str(self.game_source).lower() == "gog"
+            and self.exec_line.startswith("gog://install/")
+        ):
             self.coverOpacity = QGraphicsOpacityEffect(self.coverLabel)
             self.coverOpacity.setOpacity(self.theme.missing_exe_cover_opacity)
             self.coverLabel.setGraphicsEffect(self.coverOpacity)
@@ -342,6 +346,16 @@ class GameCard(QFrame):
         self.steamLabel.setVisible(self.steam_visible)
         if self.economy_mode:
             self.steamLabel.setVisible(False)
+
+        gog_icon = self.theme_manager.get_icon("badge_gog", as_path=True)
+        self.gogLabel = SourceCorner(
+            icon=gog_icon,
+            config=corner_config,
+            parent=self.coverWidget,
+        )
+        self.gogLabel.setVisible(self.gog_visible)
+        if self.economy_mode:
+            self.gogLabel.setVisible(False)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = SourceCorner(
@@ -436,6 +450,7 @@ class GameCard(QFrame):
             width,
             height,
             self.on_cover_loaded,
+            app_name=str(self.appid or ""),
             fallback_exe=fallback_exe,
             fallback_icon_path=fallback_icon_path,
         )
@@ -568,6 +583,7 @@ class GameCard(QFrame):
         ribbon_size = max(ribbon_size, int(ribbon_cfg.get("min_size", 54) * self._scale))
         source_ribbons = [
             (self.steam_visible, self.steamLabel),
+            (self.gog_visible, self.gogLabel),
             (self.portproton_visible, self.portprotonLabel),
         ]
 
@@ -589,6 +605,7 @@ class GameCard(QFrame):
             self.ppdbLabel.raise_()
             self.protondbLabel.raise_()
             self.portprotonLabel.raise_()
+            self.gogLabel.raise_()
             self.steamLabel.raise_()
         except RuntimeError:
             pass
@@ -715,6 +732,7 @@ class GameCard(QFrame):
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = (str(self.game_source).lower() == "steam" and not self.economy_mode)
+        self.gog_visible = (str(self.game_source).lower() == "gog" and not self.economy_mode)
         self.portproton_visible = (str(self.game_source).lower() == "portproton" and not self.economy_mode)
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
         protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
@@ -724,6 +742,7 @@ class GameCard(QFrame):
 
         try:
             self.steamLabel.setVisible(self.steam_visible and not hidden_badges)
+            self.gogLabel.setVisible(self.gog_visible and not hidden_badges)
             self.portprotonLabel.setVisible(self.portproton_visible and not hidden_badges)
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)

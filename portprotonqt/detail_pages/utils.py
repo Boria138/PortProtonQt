@@ -64,6 +64,7 @@ def setup_image_loading(
             cover_width,
             cover_height,
             lambda pixmap: relay.pixmap_ready.emit(pixmap),
+            app_name=str(detail_page.property("coverCacheKey") or ""),
             fallback_exe=fallback_exe,
             fallback_icon_path=fallback_icon_path,
         )

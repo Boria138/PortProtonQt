@@ -36,6 +36,22 @@ def test_detail_page_exe_fallback_uses_image_cache(
     )
 
 
+def test_gog_size_result_ignores_deleted_labels(monkeypatch: MonkeyPatch) -> None:
+    label = MagicMock()
+    monkeypatch.setattr("portprotonqt.detail_pages.isValid", lambda _label: True)
+
+    DetailPageManager._set_gog_size_values(
+        [lambda: None, lambda: None], (100, 200)
+    )
+    DetailPageManager._set_gog_size_values(
+        [lambda: label, lambda: label], (1024 ** 2, 1024 ** 3)
+    )
+
+    assert [call.args[0] for call in label.setText.call_args_list] == [
+        "1.0 MiB", "1.0 GiB",
+    ]
+
+
 def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) -> None:
     detail_page = MagicMock()
     detail_page.property.side_effect = {

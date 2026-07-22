@@ -46,6 +46,55 @@ PROGRESS_BAR_STYLE = f"""
     }}
 """
 
+DOWNLOADS_SUMMARY_STYLE = f"""
+    QFrame#downloadsSummary {{
+        background: {color_surface_elevated};
+        border: {border_thin} {color_border_faint};
+        border-radius: {border_radius_small};
+    }}
+"""
+
+DOWNLOADS_ACTIVE_STYLE = f"""
+    QFrame#downloadsActiveCard {{
+        background: {color_surface_elevated};
+        border: {border_thin} {color_border_faint};
+        border-radius: {border_radius_large};
+    }}
+"""
+
+DOWNLOADS_SECTION_STYLE = f"""
+    QFrame#downloadsSection {{
+        background: {color_surface_elevated};
+        border: {border_thin} {color_border_faint};
+        border-radius: {border_radius_small};
+    }}
+"""
+
+DOWNLOADS_TABLE_STYLE = f"""
+    QTableWidget {{
+        background: {color_surface_elevated};
+        alternate-background-color: {color_surface};
+        border: {border_none};
+        color: {color_text};
+        gridline-color: {color_border_faint};
+        font-family: '{font_family}';
+        font-size: {font_size_value};
+    }}
+    QHeaderView::section {{
+        background: {color_surface};
+        color: {color_text};
+        border: {border_none};
+        padding: 8px;
+        font-family: '{font_family}';
+        font-size: {font_size_value};
+        font-weight: 600;
+    }}
+    QTableWidget::item {{
+        border-bottom: {border_thin} {color_border_faint};
+        padding: 8px;
+    }}
+"""
+
 # STATUS BAR STYLE
 STATUS_BAR_STYLE = f"""
     QStatusBar {{

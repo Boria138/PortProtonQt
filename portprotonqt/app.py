@@ -290,6 +290,7 @@ def main():
     restore_prefix_path = None
     autoinstall_path = None
     theme_store_id = None
+    gog_launch_uri = None
     resolution_from_args = None
     if args.resolution:
         resolution_from_args = parse_resolution(args.resolution)
@@ -315,6 +316,11 @@ def main():
     elif args.file_or_url and is_autoinstall_file(args.file_or_url):
         autoinstall_path = normalize_launch_path(args.file_or_url)
         ipc_message = f"autoinstall:{quote(autoinstall_path, safe='')}"
+    elif args.file_or_url and args.file_or_url.startswith("gog://launch/"):
+        app_id = args.file_or_url.removeprefix("gog://launch/")
+        if app_id.isdigit():
+            gog_launch_uri = args.file_or_url
+            ipc_message = f"gog:{app_id}"
     elif args.file_or_url:
         theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
         if theme_store_id is not None:
@@ -381,7 +387,7 @@ def main():
             logger.warning("Failed to persist PORT_DATA_PATH in PortProtonQt config")
 
     # Check if we have a portproton:// URL or launch file to handle
-    if args.file_or_url and not restore_prefix_path:
+    if args.file_or_url and not restore_prefix_path and not gog_launch_uri:
         if is_portproton_url(args.file_or_url):
             # Parse the portproton:// URL to get the full download URL
             download_url = parse_portproton_url(args.file_or_url)
@@ -485,6 +491,10 @@ def main():
         def handle_restore_prefix():
             window._perform_restore(restore_prefix_path)
         QTimer.singleShot(0, handle_restore_prefix)
+    elif gog_launch_uri:
+        def handle_gog_launch():
+            window.toggleGame(gog_launch_uri)
+        QTimer.singleShot(0, handle_gog_launch)
 
     # --- Handle incoming connections ---
     def handle_new_connection():
@@ -507,6 +517,7 @@ def main():
                         or msg.startswith("backup:")
                         or msg.startswith("theme:")
                         or msg.startswith("autoinstall:")
+                        or msg.startswith("gog:")
                     ):
                         # Ensure the window is visible and not minimized
                         window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
@@ -542,6 +553,12 @@ def main():
                                 window._perform_restore(backup_path)
                             else:
                                 logger.warning("Invalid prefix backup via IPC: %s", backup_path)
+                        elif msg.startswith("gog:"):
+                            app_id = msg[4:].strip()
+                            if app_id.isdigit():
+                                window.toggleGame(f"gog://launch/{app_id}")
+                            else:
+                                logger.warning("Invalid GOG app id via IPC: %s", app_id)
                         elif msg.startswith("backup:"):
                             parts = msg.split(":", 2)
                             if len(parts) == 3:
@@ -593,6 +610,7 @@ def main():
         and restore_prefix_path is None
         and autoinstall_path is None
         and theme_store_id is None
+        and gog_launch_uri is None
     )
     if launch_minimized:
         logger.info("Launching in tray")

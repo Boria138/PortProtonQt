@@ -1,7 +1,10 @@
 """Detail pages for PortProtonQt."""
 
 import os
+import weakref
 from collections.abc import Callable
+
+from shiboken6 import isValid
 from PySide6.QtWidgets import (
     QWidget,
     QLabel,
@@ -13,7 +16,7 @@ from PySide6.QtWidgets import (
     QBoxLayout,
     QSizePolicy,
 )
-from PySide6.QtCore import Qt, QUrl, QTimer
+from PySide6.QtCore import Qt, QUrl, QTimer, QProcess, QProcessEnvironment
 from PySide6.QtGui import QDesktopServices
 
 from portprotonqt.detail_pages.widgets import (
@@ -80,11 +83,15 @@ class DetailPageManager:
         self._autoinstall_status_controls = None
         self._current_detail_source: tuple[str, dict] | None = None
         self._resize_rebuild_pending = False
+        self._gog_size_requests: dict[
+            str, tuple[QProcess, list[list[Callable[[], QLabel | None]]]]
+        ] = {}
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
         self._current_detail_source = ("game", dict(game_data))
         detail_page = QWidget()
+        detail_page.setProperty("coverCacheKey", str(game_data.get("appid", "")))
         fallback_exe, fallback_icon_path = self._get_exe_icon_fallback(game_data)
         detail_page.setProperty("fallbackExe", fallback_exe)
         detail_page.setProperty("fallbackIconPath", fallback_icon_path)
@@ -301,11 +308,96 @@ class DetailPageManager:
             )
             game_info_layout.addLayout(first_row)
 
+        self._setup_gog_size_data(game_data, game_info_layout)
+
         hltb_layout = QHBoxLayout()
         hltb_layout.setSpacing(10)
         self._setup_hltb_data(game_data.get("name", ""), hltb_layout, game_info_layout)
 
         return game_info_layout
+
+    def _setup_gog_size_data(
+        self, game_data: dict, game_info_layout: QVBoxLayout
+    ) -> None:
+        exec_line = str(game_data.get("exec_line", ""))
+        if str(game_data.get("game_source", "")).lower() != "gog":
+            return
+        if not exec_line.startswith("gog://install/"):
+            return
+        row = QHBoxLayout()
+        values = []
+        for title_text in (_("Download"), _("Size")):
+            title = QLabel(title_text.upper())
+            title.setStyleSheet(self.main_window.theme.LAST_LAUNCH_TITLE_STYLE)
+            value = QLabel("—")
+            value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
+            row.addWidget(title)
+            row.addWidget(value)
+            row.addSpacing(30)
+            values.append(weakref.ref(value))
+        game_info_layout.addLayout(row)
+        app_id = exec_line.rsplit("/", 1)[-1]
+        cached = self.main_window.gog_api.get_cached_download_sizes(app_id)
+        if cached is not None:
+            self._set_gog_size_values(values, cached)
+            return
+        request = self._gog_size_requests.get(app_id)
+        if request is not None:
+            request[1].append(values)
+            return
+        try:
+            command = self.main_window.gog_api.build_command(
+                ["info", app_id, "--platform", "windows", "--skip-dlcs"]
+            )
+        except FileNotFoundError as error:
+            logger.warning("Failed to get GOG download size: %s", error)
+            return
+        process = QProcess(self.main_window)
+        process.setProgram(command[0])
+        process.setArguments(command[1:])
+        environment = QProcessEnvironment.systemEnvironment()
+        environment.insert("GOGDL_CONFIG_PATH", str(self.main_window.gog_api.config_dir))
+        process.setProcessEnvironment(environment)
+        self._gog_size_requests[app_id] = (process, [values])
+        process.finished.connect(
+            lambda code, _status: self._finish_gog_size_request(app_id, code)
+        )
+        process.start()
+
+    def _finish_gog_size_request(self, app_id: str, code: int) -> None:
+        request = self._gog_size_requests.pop(app_id, None)
+        if request is None:
+            return
+        process, value_groups = request
+        if code != 0:
+            logger.warning("gogdl info exited with code %s", code)
+            process.deleteLater()
+            return
+        try:
+            sizes = self.main_window.gog_api.parse_download_sizes(
+                bytes(process.readAllStandardOutput())
+            )
+        except (ValueError, TypeError) as error:
+            logger.warning("Failed to parse GOG download size: %s", error)
+            process.deleteLater()
+            return
+        self.main_window.gog_api.save_download_sizes(app_id, sizes)
+        for value_refs in value_groups:
+            self._set_gog_size_values(value_refs, sizes)
+        process.deleteLater()
+
+    @staticmethod
+    def _set_gog_size_values(
+        value_refs: list[Callable[[], QLabel | None]], sizes: tuple[int, int]
+    ) -> None:
+        for value_ref, size in zip(value_refs, sizes, strict=True):
+            label = value_ref()
+            if label is None or not isValid(label):
+                continue
+            divisor, unit = (
+                (1024 ** 3, "GiB") if size >= 1024 ** 3 else (1024 ** 2, "MiB")
+            )
+            label.setText(f"{size / divisor:.1f} {unit}")
 
     def _create_playtime_row(self, last_launch: str, formatted_playtime: str) -> QHBoxLayout:
         """Create first row with last launch and playtime."""
@@ -438,6 +530,11 @@ class DetailPageManager:
 
         current_exe = self._get_current_exe(exec_line)
         play_button = self._create_play_button(exec_line, current_exe)
+        if str(game_source).lower() == "gog" and exec_line.startswith("gog://install/"):
+            play_button.setText(_("Install"))
+            play_button.setIcon(
+                self.main_window.theme_manager.get_icon("update", as_path=True)
+            )
         buttons_layout.addWidget(play_button)
 
         if str(game_source).lower() == "steam" and appid:
@@ -471,7 +568,10 @@ class DetailPageManager:
                 lambda: self._open_steam_game_folder(str(appid))
             )
             buttons_layout.addWidget(open_folder_button)
-        elif not self._has_game_shortcut(game_name):
+        elif (
+            str(game_source).lower() != "gog"
+            and not self._has_game_shortcut(game_name)
+        ):
             add_button = self._make_action_button(
                 _("Add a shortcut"),
                 self.main_window.theme_manager.get_icon("addgame", as_path=True),
@@ -486,6 +586,40 @@ class DetailPageManager:
         # Show settings button for PortProton games or Steam games using PortProtonQt
         if str(game_source).lower() == "portproton":
             self._add_portproton_buttons(buttons_layout, exec_line)
+        elif (
+            str(game_source).lower() == "gog"
+            and appid
+            and exec_line.startswith("gog://launch/")
+        ):
+            gog_exe = self.main_window.gog_api.get_launch_target(str(appid))
+            if not gog_exe:
+                return buttons_layout
+            self.main_window.gog_api.ensure_launch_parameters(str(appid))
+            settings_button = self._make_action_button(
+                _("Settings"),
+                self.main_window.theme_manager.get_icon("settings", as_path=True),
+            )
+            settings_button.clicked.connect(
+                lambda: self.main_window.open_exe_settings(
+                    gog_exe, game_source="gog",
+                )
+            )
+            buttons_layout.addWidget(settings_button)
+            log_button = self._make_action_button(
+                _("Create Log"),
+                self.main_window.theme_manager.get_icon("edit", as_path=True),
+            )
+            log_button.clicked.connect(lambda: self.toggleDebugLog(gog_exe, log_button))
+            buttons_layout.addWidget(log_button)
+            self._debug_log_button = log_button
+            folder_button = self._make_action_button(
+                _("Open Folder"),
+                self.main_window.theme_manager.get_icon("search", as_path=True),
+            )
+            folder_button.clicked.connect(
+                lambda: self._open_executable_folder(gog_exe)
+            )
+            buttons_layout.addWidget(folder_button)
         elif str(game_source).lower() == "steam" and appid:
             try:
                 compat_tool = get_steam_compat_tool(int(appid))
@@ -590,9 +724,13 @@ class DetailPageManager:
     def _open_portproton_game_folder(self, exec_line: str) -> None:
         """Open folder containing the PortProton game executable."""
         file_to_check = self._get_file_from_exec(exec_line)
-        if not file_to_check or not os.path.exists(file_to_check):
+        self._open_executable_folder(file_to_check)
+
+    def _open_executable_folder(self, exe_path: str | None) -> None:
+        """Open the folder containing an executable."""
+        if not exe_path or not os.path.exists(exe_path):
             return
-        folder_path = os.path.dirname(os.path.abspath(file_to_check))
+        folder_path = os.path.dirname(os.path.abspath(exe_path))
         QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
     def _has_game_shortcut(self, game_name: str) -> bool:

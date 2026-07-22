@@ -277,8 +277,8 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
         controls_layout.addWidget(self.gamesSortCombo)
 
-        self.filter_keys = ["all", "steam", "portproton", "favorites"]
-        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites")]
+        self.filter_keys = ["all", "steam", "gog", "portproton", "favorites"]
+        self.filter_labels = [_("All"), "Steam", "GOG", "PortProton", _("Favorites")]
         self.gamesDisplayCombo = self._create_library_combo(self.filter_labels, _("Display Filter:"))
         self._set_combo_current_key(
             self.gamesDisplayCombo,
@@ -384,7 +384,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
     def _get_games_without_exe(self) -> list[tuple]:
         missing_games = []
         for game in self.game_library_manager.games:
-            if len(game) <= 12 or game[12] == "steam":
+            if len(game) <= 12 or game[12] != "portproton":
                 continue
             exec_line = game[5] if len(game) > 5 else ""
             exe_path = extract_exec_target_path(exec_line) if exec_line else None
