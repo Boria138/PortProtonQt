@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-07-14 13:07+0000\n"
+"PO-Revision-Date: 2026-07-22 12:06+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
@@ -220,9 +220,9 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to save custom data: {error}"
-msgstr "删除自定义数据失败：{error}"
+msgstr "保存自定义数据失败：{error}"
 
 msgid "Game name and executable path are required"
 msgstr "游戏名称和可执行文件路径为必填项"
@@ -760,12 +760,11 @@ msgstr "无收藏"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "使用 PortProton 启动\"{name}\""
 
-#, fuzzy
 msgid "Run in silent mode"
-msgstr "Vulkan 呈现模式"
+msgstr "静默模式运行"
 
 msgid "Run in logging mode"
-msgstr ""
+msgstr "日志模式运行"
 
 msgid "Debug log mode was launched"
 msgstr "调试日志模式已启动"
@@ -2028,9 +2027,8 @@ msgstr "启动时最小化到托盘"
 msgid "Hide Auto-Install Tab"
 msgstr "隐藏自动安装标签页"
 
-#, fuzzy
 msgid "Enable UI Sounds"
-msgstr "表格列"
+msgstr "启用界面音效"
 
 msgid "Disable runtime download"
 msgstr "禁用运行时下载"
