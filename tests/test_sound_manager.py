@@ -1,10 +1,11 @@
 """Tests for UI sound playback and input integration."""
 
+import sys
 import types
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
@@ -13,11 +14,57 @@ from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
 import portprotonqt.main_window as main_window
+import portprotonqt.sound_manager as sound_manager
 import portprotonqt.tabs.system_tab as system_tab
 from portprotonqt.input_manager import InputManager
 from portprotonqt.main_window import MainWindow
 from portprotonqt.sound_manager import SOUND_EVENTS, SoundManager, _SoundSlot
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
+
+
+def test_sound_slot_uses_audio_only_multimedia(monkeypatch: MonkeyPatch) -> None:
+    effect = Mock()
+    core_application = SimpleNamespace(
+        libraryPaths=Mock(return_value=["plugins"]),
+        setLibraryPaths=Mock(),
+    )
+    multimedia = SimpleNamespace(QSoundEffect=Mock(return_value=effect))
+    monkeypatch.setattr(sound_manager, "QCoreApplication", core_application)
+    monkeypatch.setitem(sys.modules, "PySide6.QtMultimedia", multimedia)
+
+    slot = _SoundSlot()
+
+    assert slot._effect is effect
+    assert core_application.setLibraryPaths.call_args_list == [
+        call([]),
+        call(["plugins"]),
+    ]
+
+
+def test_sound_manager_survives_multimedia_initialization_failure(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    manager: Any = object.__new__(SoundManager)
+    manager._initialized = False
+    monkeypatch.setattr(sound_manager, "_SoundSlot", Mock(side_effect=RuntimeError("failed")))
+
+    manager.__init__()
+
+    assert manager._slots == []
+
+
+def test_sound_manager_survives_playback_failure() -> None:
+    slot = Mock(_loaded_event="navigate")
+    slot.play.side_effect = RuntimeError("failed")
+    manager: Any = object.__new__(SoundManager)
+    manager._enabled = True
+    manager._slots = [slot]
+    manager._slot_index = 0
+    manager._get_url = lambda _event: Mock()
+
+    manager.play("navigate")
+
+    slot.play.assert_called_once()
 
 
 def test_sound_manager_resets_slots_when_sound_dirs_change() -> None:

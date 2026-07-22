@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QUrl, qInstallMessageHandler
+from PySide6.QtCore import QCoreApplication, QUrl, qInstallMessageHandler
 
 from portprotonqt.config import ui_config
 from portprotonqt.logger import get_logger
@@ -27,12 +27,15 @@ class _SoundSlot:
     """A single player slot that pre-loads a sound file."""
 
     def __init__(self) -> None:
+        library_paths = QCoreApplication.libraryPaths()
+        QCoreApplication.setLibraryPaths([])
         previous_handler = qInstallMessageHandler(_multimedia_message_handler)
         try:
             from PySide6.QtMultimedia import QSoundEffect
             self._effect = QSoundEffect()
         finally:
             qInstallMessageHandler(previous_handler)
+            QCoreApplication.setLibraryPaths(library_paths)
         self._effect.setLoopCount(1)
         self._loaded_event: str | None = None
 
@@ -73,7 +76,7 @@ class SoundManager:
         self._sounds_dirs: list[str] = []
         try:
             self._slots = [_SoundSlot() for _ in range(4)]
-        except ImportError as e:
+        except Exception as e:
             logger.warning("UI sounds are unavailable: %s", e)
             self._slots = []
         self._slot_index = 0
@@ -114,13 +117,16 @@ class SoundManager:
         url = self._get_url(event)
         if url is None or not self._slots:
             return
-        for slot in self._slots:
-            if slot._loaded_event == event:
-                slot.play(event, url)
-                return
-        slot = self._slots[self._slot_index]
-        self._slot_index = (self._slot_index + 1) % len(self._slots)
-        slot.play(event, url)
+        try:
+            for slot in self._slots:
+                if slot._loaded_event == event:
+                    slot.play(event, url)
+                    return
+            slot = self._slots[self._slot_index]
+            self._slot_index = (self._slot_index + 1) % len(self._slots)
+            slot.play(event, url)
+        except Exception as e:
+            logger.warning("Failed to play UI sound %s: %s", event, e)
 
     def play_widget_sound(self, widget: object) -> None:
         from PySide6.QtWidgets import QCheckBox, QComboBox, QPushButton
