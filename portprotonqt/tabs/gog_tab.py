@@ -288,9 +288,15 @@ class MainWindowGOGTabMixin:
                 logger.error("Failed to reset incomplete GOG download: %s", error)
                 self.gogAccountStatus.setText(str(error))
                 return
+        support_path = (
+            self.gog_api.config_dir / "heroic_gogdl" / "gog-support" / app_id
+        )
         try:
             command = self.gog_api.build_command(
-                ["download", app_id, "--path", str(install_path), "--platform", "windows"]
+                [
+                    "download", app_id, "--path", str(install_path),
+                    "--support", str(support_path), "--platform", "windows",
+                ]
             )
         except FileNotFoundError as error:
             self.gogAccountStatus.setText(str(error))
@@ -306,9 +312,15 @@ class MainWindowGOGTabMixin:
         if install_path is None:
             self.gogAccountStatus.setText(_("GOG installation not found"))
             return
+        support_path = (
+            self.gog_api.config_dir / "heroic_gogdl" / "gog-support" / app_id
+        )
         try:
             command = self.gog_api.build_command(
-                ["repair", app_id, "--path", str(install_path), "--platform", "windows"]
+                [
+                    "repair", app_id, "--path", str(install_path),
+                    "--support", str(support_path), "--platform", "windows",
+                ]
             )
         except FileNotFoundError as error:
             self.gogAccountStatus.setText(str(error))

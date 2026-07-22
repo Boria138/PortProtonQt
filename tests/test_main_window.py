@@ -190,6 +190,7 @@ def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:
     install_path = tmp_path / "Game"
     started: list[tuple] = []
     api = SimpleNamespace(
+        config_dir=tmp_path / "gogdl",
         get_installed_path=lambda _app_id: install_path,
         build_command=lambda arguments: ["gogdl", *arguments],
     )
@@ -204,6 +205,37 @@ def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:
 
     assert started[0][2] == [
         "gogdl", "repair", "123", "--path", str(install_path),
+        "--support", str(tmp_path / "gogdl/heroic_gogdl/gog-support/123"),
+        "--platform", "windows",
+    ]
+
+
+def test_install_gog_game_uses_support_path(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    selected_path = tmp_path / "Games"
+    started: list[tuple] = []
+    explorer = MagicMock()
+    explorer.file_signal.file_selected.connect.side_effect = (
+        lambda callback: callback(str(selected_path))
+    )
+    monkeypatch.setattr(gog_tab_module, "FileExplorer", lambda *_args, **_kwargs: explorer)
+    api = SimpleNamespace(
+        config_dir=tmp_path / "gogdl",
+        get_install_path=lambda _app_id, _title: selected_path,
+        is_game_installed=lambda _app_id: False,
+        build_command=lambda arguments: ["gogdl", *arguments],
+    )
+    window = SimpleNamespace(
+        gog_process=None, gog_download_queue=[], theme=object(), gog_api=api,
+        _start_gog_download=lambda *arguments: started.append(arguments),
+    )
+
+    GOGMixin._install_gog_game(window, {"app_id": "123", "title": "Game"})
+
+    assert started[0][2] == [
+        "gogdl", "download", "123", "--path", str(selected_path),
+        "--support", str(tmp_path / "gogdl/heroic_gogdl/gog-support/123"),
         "--platform", "windows",
     ]
 

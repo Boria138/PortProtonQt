@@ -304,7 +304,9 @@ class GOGAPI:
             current = ppdb_path.read_text(encoding="utf-8") if ppdb_path.exists() else ""
             base_value = arguments.replace('"', "").replace("\\", "/")
             normalized = base_value
-            support_dir = install_path / "gog-support" / app_id / "app"
+            support_dir = (
+                self.config_dir / "heroic_gogdl" / "gog-support" / app_id / "app"
+            )
             if support_dir.is_dir():
                 for support_file in support_dir.rglob("*"):
                     if not support_file.is_file():

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -58,6 +59,34 @@ def test_get_launch_target_reads_primary_task(tmp_path: Path) -> None:
 
     api.ensure_launch_parameters("123")
     assert 'export LAUNCH_PARAMETERS="-conf ../game.conf"' in Path(
+        f"{executable}.ppdb"
+    ).read_text()
+
+
+def test_launch_parameters_use_external_gog_support(tmp_path: Path) -> None:
+    api = GOGAPI()
+    api.config_dir = tmp_path / "gogdl"
+    api.installed_path = tmp_path / "installed.json"
+    game_dir = tmp_path / "game"
+    executable = game_dir / "DOSBOX/DOSBox.exe"
+    executable.parent.mkdir(parents=True)
+    executable.touch()
+    support_file = (
+        api.config_dir / "heroic_gogdl/gog-support/123/app/game.conf"
+    )
+    support_file.parent.mkdir(parents=True)
+    support_file.touch()
+    api.installed_path.write_bytes(orjson.dumps({"123": {"install_path": str(game_dir)}}))
+    info = {"playTasks": [{
+        "type": "FileTask", "path": "DOSBOX\\DOSBox.exe",
+        "arguments": '-conf "..\\game.conf"', "isPrimary": True,
+    }]}
+    (game_dir / "goggame-123.info").write_bytes(orjson.dumps(info))
+
+    api.ensure_launch_parameters("123")
+
+    relative_path = os.path.relpath(support_file, executable.parent).replace(os.sep, "/")
+    assert f'export LAUNCH_PARAMETERS="-conf {relative_path}"' in Path(
         f"{executable}.ppdb"
     ).read_text()
 
