@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-18 18:46+0000\n"
-"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-07-22 12:06+0000\n"
+"Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
 "Language: ru\n"
@@ -229,9 +229,9 @@ msgstr "'{game_name}' удалён(а) из {location}"
 msgid "Desktop"
 msgstr "Рабочий стол"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to save custom data: {error}"
-msgstr "Не удалось удалить пользовательские данные: {error}"
+msgstr "Не удалось сохранить пользовательские данные: {error}"
 
 msgid "Game name and executable path are required"
 msgstr "Требуются название игры и путь к исполняемому файлу"
@@ -724,7 +724,7 @@ msgstr "Локаль"
 
 msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
 msgstr ""
-"Принудительно установить определённую локаль для приложения. Исправляет "
+"Принудительное использование определённой локали для приложения. Исправляет "
 "проблемы с кодировкой в устаревшем ПО"
 
 msgid "Window Mode"
@@ -805,12 +805,11 @@ msgstr "Нет избранных"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Запустить \"{name}\" с помощью PortProton"
 
-#, fuzzy
 msgid "Run in silent mode"
-msgstr "Текущий режим Vulkan"
+msgstr "Запустить в тихом режиме"
 
 msgid "Run in logging mode"
-msgstr ""
+msgstr "Запустить с ведением журнала"
 
 msgid "Debug log mode was launched"
 msgstr "Запущен режим логирования"
@@ -1140,7 +1139,7 @@ msgstr ", Расчетное время: {}с"
 
 #, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
-msgstr ", Скорость: {:.1f}МБ/с"
+msgstr ", Скорость: {:.1f} МБ/с"
 
 msgid "Extracting: {name}{speed}{eta}"
 msgstr "Распаковка: {name}{speed}{eta}"
@@ -1608,7 +1607,7 @@ msgid "Dynamic frametime Y-axis"
 msgstr "Динамическая ордината времени кадра"
 
 msgid "Short engine names"
-msgstr "Короткое имя графического API"
+msgstr "Краткие названия движков"
 
 msgid "Engine version (OpenGL/Vulkan)"
 msgstr "Версия графического API (OpenGL/Vulkan)"
@@ -1791,7 +1790,7 @@ msgid "Force trilinear filtering"
 msgstr "Включить трилинейную фильтрацию"
 
 msgid "Automatic log uploads"
-msgstr "Автоматическая загрузка лога в flightlessmango.com"
+msgstr "Автоматическая отправка журналов"
 
 msgid "MangoHud version"
 msgstr "Версия MangoHud"
@@ -2088,9 +2087,8 @@ msgstr "Запускать свёрнутым"
 msgid "Hide Auto-Install Tab"
 msgstr "Скрыть вкладку \"Автоустановка\""
 
-#, fuzzy
 msgid "Enable UI Sounds"
-msgstr "Кол-во колонок"
+msgstr "Включить звуки интерфейса"
 
 msgid "Disable runtime download"
 msgstr "Отключить скачивание контейнера"
