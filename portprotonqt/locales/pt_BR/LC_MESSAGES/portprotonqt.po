@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-07-14 13:07+0000\n"
+"PO-Revision-Date: 2026-07-22 12:06+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -230,9 +230,9 @@ msgstr "'{game_name}' removido de {location}"
 msgid "Desktop"
 msgstr "Área de Trabalho"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to save custom data: {error}"
-msgstr "Falha ao excluir os dados personalizados: {error}"
+msgstr "Falha ao salvar os dados personalizados: {error}"
 
 msgid "Game name and executable path are required"
 msgstr "O nome do jogo e o caminho do executável são obrigatórios"
@@ -805,12 +805,11 @@ msgstr "Nenhum favorito"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Iniciar \"{name}\" com o PortProton"
 
-#, fuzzy
 msgid "Run in silent mode"
-msgstr "Modo de apresentação Vulkan"
+msgstr "Executar em modo silencioso"
 
 msgid "Run in logging mode"
-msgstr ""
+msgstr "Executar em modo de log"
 
 msgid "Debug log mode was launched"
 msgstr "O modo de log de depuração foi iniciado"
@@ -2089,9 +2088,8 @@ msgstr "Iniciar na bandeja"
 msgid "Hide Auto-Install Tab"
 msgstr "Ocultar Aba de Instalação Automática"
 
-#, fuzzy
 msgid "Enable UI Sounds"
-msgstr "Colunas da tabela"
+msgstr "Ativar sons da interface"
 
 msgid "Disable runtime download"
 msgstr "Desativar download de runtime"
