@@ -433,7 +433,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.autoDownloadPPDBCheckBox = QCheckBox()
         self.autoDownloadPPDBCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoDownloadPPDBCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoDownloadPPDBTitle = QLabel(_("Auto download PPDB from") + " ppdb.linux-gaming.ru")
+        self.autoDownloadPPDBTitle = QLabel(_("Auto download PPDB from") + " linux-gaming.ru")
         self.autoDownloadPPDBTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.autoDownloadPPDBTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.autoDownloadPPDBTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -497,7 +497,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.enableThemeStoreCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.enableThemeStoreTitle = QLabel(
             _("Enable Theme Store from %(source)s (%(warning)s)") % {
-                "source": "ppdb.linux-gaming.ru",
+                "source": "linux-gaming.ru",
                 "warning": _("third-party themes may be unsafe"),
             }
         )

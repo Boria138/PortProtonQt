@@ -876,7 +876,7 @@ class GameCard(QFrame):
 
     def open_ppdb_page(self):
         if self.ppdb_id:
-            QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{self.ppdb_id}"))
+            QDesktopServices.openUrl(QUrl(f"https://linux-gaming.ru/game/{self.ppdb_id}"))
 
     def open_protondb_report(self):
         url = QUrl(f"https://www.protondb.com/app/{self.appid}")

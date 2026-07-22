@@ -105,7 +105,7 @@ class TestFindExtPPDB:
         ppdb = Path(f"{exe}.ppdb")
         assert ppdb.read_bytes() == b"PW_USE_DXVK=1\n"
         assert session.requests[0] == (
-            "https://ppdb.linux-gaming.ru/api/lookup/exe/Game%20File.exe",
+            "https://linux-gaming.ru/api/lookup/exe/Game%20File.exe",
             10,
         )
         assert session.requests[1] == ("https://example.org/game.ppdb", 30)

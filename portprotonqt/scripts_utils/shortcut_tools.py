@@ -48,7 +48,7 @@ def find_ext_ppdb(exe_path: str) -> bool:
         return True
 
     exe_filename = os.path.basename(exe_path)
-    api_url = "https://ppdb.linux-gaming.ru/api/lookup/exe/"
+    api_url = "https://linux-gaming.ru/api/lookup/exe/"
     api_url += urllib.parse.quote(exe_filename)
     session = get_requests_session()
 

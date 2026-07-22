@@ -366,7 +366,7 @@ def create_portproton_badge(
         badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
     _apply_badge_view_mode(badge, main_window.theme)
     badge.clicked.connect(
-        lambda: QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{ppdb_id}"))
+        lambda: QDesktopServices.openUrl(QUrl(f"https://linux-gaming.ru/game/{ppdb_id}"))
     )
     return badge
 

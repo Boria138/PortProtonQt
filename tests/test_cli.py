@@ -139,9 +139,9 @@ class TestIsAutoinstallFile:
 
 class TestParsePortprotonUrl:
     def test_https_url(self):
-        url = "portproton://https//ppdb.linux-gaming.ru/api/games/130127/ppdb/download"
+        url = "portproton://https//linux-gaming.ru/api/games/130127/ppdb/download"
         result = parse_portproton_url(url)
-        assert result == "https://ppdb.linux-gaming.ru/api/games/130127/ppdb/download"
+        assert result == "https://linux-gaming.ru/api/games/130127/ppdb/download"
 
     def test_http_url(self):
         url = "portproton://http//example.com/download"

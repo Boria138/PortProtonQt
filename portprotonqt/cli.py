@@ -433,7 +433,7 @@ def is_autoinstall_file(path: str) -> bool:
 def parse_portproton_url(url: str) -> str | None:
     """Parse a portproton:// URL to extract the full download URL.
 
-    Expected format: portproton://https//ppdb.linux-gaming.ru/api/games/130127/ppdb/download
+    Expected format: portproton://https//linux-gaming.ru/api/games/130127/ppdb/download
 
     Args:
         url: The portproton:// URL to parse
