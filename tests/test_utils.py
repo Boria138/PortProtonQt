@@ -6,6 +6,7 @@ from unittest.mock import patch
 from portprotonqt.steam_api.utils import (
     APPINFO_ENTRY_METADATA_SIZE,
     APPINFO_MAGIC_V41,
+    STEAM_ID64_INDIVIDUAL_BASE,
     normalize_name,
     is_valid_candidate,
     filter_candidates,
@@ -16,6 +17,7 @@ from portprotonqt.steam_api.utils import (
     get_steam_launch_commands,
     get_steam_compatibilitytools_dir,
     get_steam_compat_tool,
+    get_last_steam_user,
     get_local_steam_cover,
     get_steam_installed_games,
     _iter_existing_steam_data_dirs,
@@ -303,6 +305,63 @@ class TestConvertSteamId:
 
     def test_zero(self):
         assert convert_steam_id(0) == 0
+
+
+def test_get_last_steam_user_falls_back_to_autologin(tmp_path: Path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "AccountName" "x"\n'
+        '        "AutoLogin" "1"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003723}
+
+
+def test_get_last_steam_user_ignores_allow_autologin(tmp_path: Path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "AllowAutoLogin" "1"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) is None
+
+
+def test_get_last_steam_user_falls_back_to_only_userdata(tmp_path: Path):
+    account_id = 51737995
+    localconfig = (
+        tmp_path / "userdata" / str(account_id) / "config/localconfig.vdf"
+    )
+    localconfig.parent.mkdir(parents=True)
+    localconfig.write_text('"UserLocalConfigStore"\n{\n}\n', encoding="utf-8")
+
+    assert get_last_steam_user(tmp_path) == {
+        "SteamID": STEAM_ID64_INDIVIDUAL_BASE + account_id
+    }
+
+
+def test_get_last_steam_user_rejects_multiple_userdata(tmp_path: Path):
+    for account_id in (51737995, 51737996):
+        localconfig = (
+            tmp_path / "userdata" / str(account_id) / "config/localconfig.vdf"
+        )
+        localconfig.parent.mkdir(parents=True)
+        localconfig.touch()
+
+    assert get_last_steam_user(tmp_path) is None
 
 
 class TestDecodeText:
