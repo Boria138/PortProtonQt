@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from portprotonqt.appimage_integration import AppImageIntegrationWorker
 from portprotonqt.cli import (
     add_steam_compat_tool,
     is_steam_compat_tool_installed,
@@ -447,6 +448,10 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesCheckBox)
             auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesTitle)
             auto_appimage_updates_layout.addStretch()
+            self.integrateAppImageButton = AutoSizeButton(_("Integrate AppImage"))
+            self.integrateAppImageButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            self.integrateAppImageButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.integrateAppImageButton.clicked.connect(self.integrateAppImage)
 
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -479,6 +484,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         downloadForm.addRow(auto_download_ppdb_layout)
         if auto_appimage_updates_layout is not None:
             downloadForm.addRow(auto_appimage_updates_layout)
+            downloadForm.addRow(self.integrateAppImageButton)
 
         self.enableThemeStoreCheckBox = QCheckBox()
         self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -663,6 +669,36 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()
+
+    def integrateAppImage(self) -> None:
+        """Install the running AppImage in the user application menu."""
+        self.integrateAppImageButton.setEnabled(False)
+        self.appImageIntegrationWorker = AppImageIntegrationWorker(self)
+        self.appImageIntegrationWorker.completed.connect(
+            self._onAppImageIntegrationCompleted
+        )
+        self.appImageIntegrationWorker.finished.connect(
+            self.appImageIntegrationWorker.deleteLater
+        )
+        self.appImageIntegrationWorker.finished.connect(
+            lambda: setattr(self, "appImageIntegrationWorker", None)
+        )
+        self.appImageIntegrationWorker.start()
+
+    def _onAppImageIntegrationCompleted(self, success: bool, message: str) -> None:
+        self.integrateAppImageButton.setEnabled(True)
+        if success:
+            QMessageBox.information(
+                self,
+                _("Success"),
+                _("AppImage integrated at: {path}").format(path=message),
+            )
+            return
+        QMessageBox.warning(
+            self,
+            _("Error"),
+            _("Failed to integrate AppImage: {error}").format(error=message),
+        )
 
     def applySettingsDelayed(self):
         ui_config.get_time_detail_level()

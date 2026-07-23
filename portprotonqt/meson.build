@@ -2,6 +2,7 @@
 install_data(
   ['__init__.py',
    'app.py',
+   'appimage_integration.py',
    'appimage_updater.py',
    'cli.py',
    'context_menu_manager.py',
