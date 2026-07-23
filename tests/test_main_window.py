@@ -175,7 +175,6 @@ def test_gog_account_state_detects_saved_auth(
     window = SimpleNamespace(
         gog_api=SimpleNamespace(auth_path=auth_path),
         gogAccountStatus=Control(),
-        gogRefreshButton=Control(),
         gogLoginButton=Control(),
     )
     monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
@@ -183,7 +182,24 @@ def test_gog_account_state_detects_saved_auth(
     GOGMixin._update_gog_account_state(cast(Any, window))
 
     assert window.gogAccountStatus.text == "GOG account connected"
-    assert window.gogRefreshButton.enabled is True
+
+
+def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -> None:
+    calls = []
+    window = SimpleNamespace(
+        gogAccountStatus=SimpleNamespace(setText=lambda text: calls.append(text)),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
+        _refresh_gog_library=lambda: calls.append("refresh"),
+    )
+    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+
+    GOGMixin._on_gog_authenticated(cast(Any, window), True, "")
+
+    assert calls == [
+        "GOG account connected",
+        ("load", {"force_load": True}),
+        "refresh",
+    ]
 
 
 def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:

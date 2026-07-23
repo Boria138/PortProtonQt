@@ -19,6 +19,7 @@ def test_extract_auth_code() -> None:
     url = "https://embed.gog.com/on_login_success?origin=client&code=test%20code"
 
     assert GOGAPI.extract_auth_code(url) == "test code"
+    assert GOGAPI.extract_auth_code("https://example.com/?code=test") == ""
 
 
 def test_load_installed_uses_isolated_data_dir(tmp_path: Path) -> None:

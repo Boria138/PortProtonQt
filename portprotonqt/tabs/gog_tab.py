@@ -10,6 +10,7 @@ from PySide6.QtCore import QProcess, QProcessEnvironment, QThread, QTimer, QUrl,
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QFrame,
     QHeaderView,
     QHBoxLayout,
@@ -31,6 +32,7 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 GOG_CANCEL_KILL_TIMEOUT_MS = 3000
+GOG_LOGIN_TIMEOUT_MS = 300000
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
@@ -199,22 +201,52 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self._update_download_table_height(self.downloadCompletedTable)
 
     def _start_gog_login(self) -> None:
-        QDesktopServices.openUrl(QUrl(GOG_LOGIN_URL))
-        self.gogLoginUrlEdit.setFocus()
-
-    def _submit_gog_login_url(self) -> None:
-        code = self.gog_api.extract_auth_code(self.gogLoginUrlEdit.text().strip())
-        if not code:
-            self.gogAccountStatus.setText(_("The GOG login URL does not contain a code"))
-            return
         if getattr(self, "gog_auth_worker", None) is not None:
             return
+        clipboard = QApplication.clipboard()
+        if not getattr(self, "gog_auth_clipboard_connected", False):
+            clipboard.dataChanged.connect(self._check_gog_login_clipboard)
+            self.gog_auth_clipboard_connected = True
+        self.gog_auth_timer = QTimer(self)
+        self.gog_auth_timer.setSingleShot(True)
+        self.gog_auth_timer.timeout.connect(self._cancel_gog_login)
+        self.gog_auth_timer.start(GOG_LOGIN_TIMEOUT_MS)
+        self.gogLoginButton.setEnabled(False)
+        self.gogLoginButton.setText(_("Copy the final GOG login URL"))
+        if not QDesktopServices.openUrl(QUrl(GOG_LOGIN_URL)):
+            self._stop_gog_login_clipboard()
+            self.gogLoginButton.setEnabled(True)
+            self.gogLoginButton.setText(_("Open login page"))
+
+    def _check_gog_login_clipboard(self) -> None:
+        code = self.gog_api.extract_auth_code(QApplication.clipboard().text().strip())
+        if not code:
+            return
+        self._stop_gog_login_clipboard()
+        self.gogAccountStatus.setText(_("Refreshing GOG library…"))
         worker = GOGAuthWorker(self.gog_api, code)
         worker.authenticated.connect(self._on_gog_authenticated)
         worker.finished.connect(self._on_gog_auth_worker_finished)
         self.gog_auth_worker = worker
-        self.gogSubmitLoginButton.setEnabled(False)
         worker.start()
+
+    def _stop_gog_login_clipboard(self) -> None:
+        timer = getattr(self, "gog_auth_timer", None)
+        if timer is not None:
+            timer.stop()
+            timer.deleteLater()
+            self.gog_auth_timer = None
+        if not getattr(self, "gog_auth_clipboard_connected", False):
+            return
+        QApplication.clipboard().dataChanged.disconnect(
+            self._check_gog_login_clipboard
+        )
+        self.gog_auth_clipboard_connected = False
+
+    def _cancel_gog_login(self) -> None:
+        self._stop_gog_login_clipboard()
+        self.gogLoginButton.setEnabled(True)
+        self._update_gog_account_state()
 
     def _on_gog_authenticated(self, authenticated: bool, error: str) -> None:
         if not authenticated:
@@ -222,10 +254,12 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             self.gogAccountStatus.setText(_("GOG login failed: {0}").format(message))
             return
         self.gogAccountStatus.setText(_("GOG account connected"))
+        self.loadGames(force_load=True)
         self._refresh_gog_library()
 
     def _on_gog_auth_worker_finished(self) -> None:
-        self.gogSubmitLoginButton.setEnabled(True)
+        self.gogLoginButton.setEnabled(True)
+        self.gogLoginButton.setText(_("Open login page"))
         self.gog_auth_worker = None
 
     def _update_gog_account_state(self) -> None:
@@ -235,13 +269,12 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             if connected else _("GOG account not connected")
         )
         self.gogAccountStatus.setText(status)
-        self.gogRefreshButton.setEnabled(connected)
         self.gogLoginButton.setEnabled(True)
+        self.gogLoginButton.setText(_("Open login page"))
 
     def _refresh_gog_library(self) -> None:
         if getattr(self, "gog_library_worker", None) is not None:
             return
-        self.gogRefreshButton.setEnabled(False)
         self.gogAccountStatus.setText(_("Refreshing GOG library…"))
         worker = GOGLibraryWorker(self.gog_api)
         worker.loaded.connect(self._on_gog_library_loaded)
@@ -265,7 +298,6 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
 
     def _on_gog_library_worker_finished(self) -> None:
         self.gog_library_worker = None
-        self.gogRefreshButton.setEnabled(True)
 
     def _install_gog_game(self, game: dict) -> None:
         if self.gog_process is not None:

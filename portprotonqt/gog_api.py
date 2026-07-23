@@ -466,7 +466,10 @@ class GOGAPI:
     @staticmethod
     def extract_auth_code(url: str) -> str:
         """Extract the OAuth code from GOG's redirect URL."""
-        values = parse_qs(urlparse(url).query)
+        parsed = urlparse(url)
+        if parsed.netloc != "embed.gog.com" or parsed.path != "/on_login_success":
+            return ""
+        values = parse_qs(parsed.query)
         return values.get("code", [""])[0]
 
     @staticmethod
