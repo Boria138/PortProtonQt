@@ -19,6 +19,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, remove_empty_custom_data_dirs
+from portprotonqt.gog_api import GOGAPI
 from portprotonqt.debug_utils import get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager
@@ -59,6 +60,7 @@ from portprotonqt.sound_manager import SoundManager
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin
+from portprotonqt.tabs.gog_tab import GOGLibraryWorker, MainWindowGOGTabMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.theme_tab import MainWindowThemeTabMixin
@@ -134,6 +136,7 @@ class MainWindow(
     MainWindowControlHintsMixin,
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
+    MainWindowGOGTabMixin,
     MainWindowSettingsTabMixin,
     MainWindowSystemTabMixin,
     MainWindowThemeTabMixin,
@@ -358,6 +361,7 @@ class MainWindow(
         # Start watching dist and prefixes directories if they exist
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
         self.downloader = Downloader(max_workers=4)
+        self.gog_api = GOGAPI()
         self.portproton_api = PortProtonAPI(self.downloader)
         self.autoInstallCustomDataThread = None
 
@@ -423,7 +427,8 @@ class MainWindow(
             _("Wine Settings"),
             _("PPQT Settings"),
             _("System"),
-            _("Themes")
+            _("Themes"),
+            _("Downloads")
         ]
         for i, tabName in enumerate(tabs):
             btn = NavLabel(tabName)
@@ -489,6 +494,7 @@ class MainWindow(
             if hidden_system_page:
                 hidden_system_page.setVisible(False)
         self.createThemeTab()
+        self.createGOGDownloadsTab()
 
         self.controlHintsWidget = self.createControlHintsWidget()
         self.controlHintsWidget.setStyleSheet(self.theme.HINT_BAR_STYLE)
@@ -931,21 +937,23 @@ class MainWindow(
         def start_loading():
             if display_filter == "steam":
                 self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
+            elif display_filter == "gog":
+                self._load_gog_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "portproton":
                 self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "favorites":
-                def on_all_games_favorites(portproton_games, steam_games):
-                    games = [game for game in portproton_games + steam_games if game[0] in favorites]
+                def on_all_games_favorites(portproton_games, steam_games, gog_games):
+                    games = [game for game in portproton_games + steam_games + gog_games if game[0] in favorites]
                     self.games_loaded.emit(games)
 
                 # Load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': []}
-                completed = {'portproton': False, 'steam': False}
+                results = {'portproton': [], 'steam': [], 'gog': []}
+                completed = {'portproton': False, 'steam': False, 'gog': False}
 
                 def check_completion():
                     if all(completed.values()):
                         QApplication.processEvents()  # Keep UI responsive
-                        on_all_games_favorites(results['portproton'], results['steam'])
+                        on_all_games_favorites(results['portproton'], results['steam'], results['gog'])
 
                 def portproton_callback(games):
                     results['portproton'] = games
@@ -959,17 +967,23 @@ class MainWindow(
                     QApplication.processEvents()  # Keep UI responsive
                     check_completion()
 
+                def gog_callback(games):
+                    results['gog'] = games
+                    completed['gog'] = True
+                    check_completion()
+
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
+                self._load_gog_games_async(gog_callback)
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': []}
-                completed = {'portproton': False, 'steam': False}
+                results = {'portproton': [], 'steam': [], 'gog': []}
+                completed = {'portproton': False, 'steam': False, 'gog': False}
 
                 def on_all_games():
                     seen = set()
                     games = []
-                    for game in results['portproton'] + results['steam']:
+                    for game in results['portproton'] + results['steam'] + results['gog']:
                         # Unique key: name + exec_line
                         key = (game[0], game[5])
                         if key not in seen:
@@ -995,12 +1009,90 @@ class MainWindow(
                     QApplication.processEvents()  # Keep UI responsive
                     check_completion()
 
+                def gog_callback(games):
+                    results['gog'] = games
+                    completed['gog'] = True
+                    check_completion()
+
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
+                self._load_gog_games_async(gog_callback)
 
         # Run loading immediately to show status without delay
         start_loading()
+
+    def _load_gog_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
+        api = getattr(self, "gog_api", None) or GOGAPI()
+        installed = api.load_installed()
+        library = [game for game in api.load_library() if game.get("app_id")]
+        if self._upgrade_legacy_gog_library(api, library, callback):
+            return
+        games = []
+        if not library:
+            callback(games)
+            return
+        processed_count = 0
+
+        def on_game_info(game: dict, steam_info: dict) -> None:
+            nonlocal processed_count
+            app_id = str(game.get("app_id", ""))
+            action = "launch" if api.is_game_installed(app_id, installed) else "install"
+            games.append((
+                str(game.get("title", app_id)),
+                str(game.get("description", "")), str(game.get("cover", "")),
+                app_id,
+                steam_info.get("controller_support", ""),
+                f"gog://{action}/{app_id}",
+                _("Never"), format_playtime(0),
+                steam_info.get("protondb_tier", ""),
+                steam_info.get("anticheat_status", ""),
+                0, 0,
+                "gog",
+                steam_info.get("anticheat_slug", ""),
+                steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
+                steam_info.get("appid", ""),
+            ))
+            processed_count += 1
+            if processed_count == len(library):
+                callback(games)
+
+        for game in library:
+            app_id = str(game.get("app_id", ""))
+            steam_appid = str(game.get("steam_appid", ""))
+            if steam_appid:
+                get_full_steam_game_info_async(
+                    int(steam_appid),
+                    lambda info, current_game=game: on_game_info(current_game, info),
+                    fallback_name=str(game.get("title", app_id)),
+                )
+                continue
+            get_steam_game_info_async(
+                str(game.get("title", app_id)),
+                f"gog://launch/{app_id}",
+                lambda info, current_game=game: on_game_info(current_game, info),
+            )
+
+    def _upgrade_legacy_gog_library(
+        self, api: GOGAPI, library: list[dict], callback: Callable[[list], None]
+    ) -> bool:
+        auth_path = getattr(api, "auth_path", None)
+        needs_upgrade = any("steam_appid" not in game for game in library)
+        if (
+            not needs_upgrade
+            or getattr(self, "_gog_metadata_upgrade_attempted", False)
+            or auth_path is None
+            or not auth_path.is_file()
+        ):
+            return False
+        self._gog_metadata_upgrade_attempted = True
+        worker = GOGLibraryWorker(api)
+        worker.loaded.connect(lambda _games: self._load_gog_games_async(callback))
+        worker.failed.connect(lambda _error: self._load_gog_games_async(callback))
+        worker.finished.connect(lambda: setattr(self, "gog_metadata_worker", None))
+        self.gog_metadata_worker = worker
+        worker.start()
+        return True
 
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []
@@ -1461,6 +1553,15 @@ class MainWindow(
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open game detail page."""
         SoundManager().play("open")
+        exec_line = str(game_data.get("exec_line", ""))
+        if str(game_data.get("game_source", "")).lower() == "gog":
+            app_id = str(game_data.get("appid", ""))
+            if (
+                exec_line.startswith("gog://install/")
+                and self.gog_api.is_game_installed(app_id)
+            ):
+                game_data = dict(game_data)
+                game_data["exec_line"] = f"gog://launch/{app_id}"
         logger.debug(
             "Opening detail page for %s from stacked index %d",
             game_data.get("name", ""),
@@ -2259,10 +2360,70 @@ class MainWindow(
         if not QDesktopServices.openUrl(QUrl(exec_line)):
             logger.warning("Failed to open Steam URI: %s", exec_line)
 
+    def _handle_gog_game(self, exec_line: str, button=None) -> None:
+        action, app_id = exec_line.removeprefix("gog://").split("/", 1)
+        if action == "install" and self.gog_api.is_game_installed(app_id):
+            action = "launch"
+        if action == "launch":
+            self._launch_gog_game(app_id, button)
+            return
+        game = next(
+            (item for item in self.gog_api.load_library()
+             if str(item.get("app_id", "")) == app_id),
+            None,
+        )
+        if game:
+            self._install_gog_game(game)
+
+    def _launch_gog_game(self, app_id: str, button=None) -> None:
+        self.gog_api.ensure_launch_parameters(app_id)
+        discovered_path = self.gog_api.get_installed_path(app_id)
+        install_path = str(discovered_path) if discovered_path else ""
+        if not install_path or not self.start_sh:
+            QMessageBox.warning(self, _("Error"), _("GOG game or PortProton is unavailable"))
+            return
+        target = os.path.basename(self.gog_api.get_launch_target(app_id) or app_id)
+        if self.game_processes and self.target_exe == target:
+            self.stop_running_game(button)
+            return
+        if self.game_processes:
+            QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
+            return
+        try:
+            command = self.gog_api.build_command([
+                "launch", install_path, app_id, "--platform", "windows",
+                "--wine", self.start_sh[0],
+            ])
+            process = subprocess.Popen(
+                command, env=self.gog_api.get_environment(), shell=False,
+                preexec_fn=os.setsid, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True, errors="replace",
+            )
+        except (OSError, ValueError) as error:
+            logger.error("Failed to launch GOG game %s: %s", app_id, error)
+            QMessageBox.warning(self, _("Error"), str(error))
+            return
+        SoundManager().play("game_launch")
+        self.game_processes.append(process)
+        self.target_exe = target
+        self.current_running_button = button
+        self._start_launch_output_reader(process)
+        self.input_manager.suspend_gamepad_polling()
+        self.checkProcessTimer = QTimer(self)
+        self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+        self.checkProcessTimer.start(500)
+        if button is not None:
+            button.setText(_("Stop"))
+            button.setIcon(self.theme_manager.get_icon("stop", as_path=True))
+
     def toggleGame(self, exec_line, button=None, game_name=None):
         # Handle Steam games
         if exec_line.startswith("steam://"):
             self._launch_steam_game(exec_line)
+            return
+
+        if exec_line.startswith("gog://"):
+            self._handle_gog_game(exec_line, button)
             return
 
         # Handle PortProton games

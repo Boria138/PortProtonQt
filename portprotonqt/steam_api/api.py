@@ -601,6 +601,7 @@ def get_steam_game_info_async(
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 
     is_autoinstall = exec_line.startswith("autoinstall:")
+    is_gog_uri = exec_line.startswith("gog://")
 
     if game_exe.lower().endswith(('.bat', '.cmd')):
         if os.path.exists(game_exe):
@@ -622,7 +623,9 @@ def get_steam_game_info_async(
         else:
             logger.error("Command file not found: %s", game_exe)
 
-    if not game_exe.lower().endswith('.exe'):
+    if is_gog_uri:
+        meta_data = {}
+    elif not game_exe.lower().endswith('.exe'):
         logger.error("Invalid executable path: %s. Expected .exe", game_exe)
         meta_data = {}
     else:
@@ -644,14 +647,16 @@ def get_steam_game_info_async(
         candidates.append(file_description)
     if desktop_name:
         candidates.append(desktop_name)
-    if exe_name:
+    if exe_name and not is_gog_uri:
         candidates.append(exe_name)
-    if folder_name:
+    if folder_name and not is_gog_uri:
         candidates.append(folder_name)
     candidates = filter_candidates(candidates)
     candidates = remove_duplicates(candidates)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
-    has_custom_data = is_autoinstall or _has_custom_data_for_exe(exe_name)
+    has_custom_data = (
+        is_autoinstall or is_gog_uri or _has_custom_data_for_exe(exe_name)
+    )
 
     def on_steam_apps_and_index(
         data_and_index: tuple[list | None, dict | None]

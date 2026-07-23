@@ -132,7 +132,7 @@ def test_autoinstall_script_caches_cover_for_target_exe(
     game_data = {
         "name": "Cover Game",
         "description": "Description",
-        "cover_path": "https://ppdb.linux-gaming.ru/covers/game_43.webp",
+        "cover_path": "https://linux-gaming.ru/covers/game_43.webp",
     }
     script_path = tmp_path / "game_43_test.ppai"
     script_path.write_text(
@@ -204,8 +204,8 @@ def test_autoinstall_refresh_clears_cached_ppdb_images(tmp_config_dir: Path) -> 
         (
             "Game", "", "", "", "", "autoinstall:https://example/game_43.ppai",
             "Never", "0h 0m", "", "", 0, 0, "autoinstall", "game_43",
-            "https://ppdb.linux-gaming.ru/covers/game_43_icon_abc.webp",
-            "https://ppdb.linux-gaming.ru/covers/game_43_library_abc.webp",
+            "https://linux-gaming.ru/covers/game_43_icon_abc.webp",
+            "https://linux-gaming.ru/covers/game_43_library_abc.webp",
         )
     ]
 

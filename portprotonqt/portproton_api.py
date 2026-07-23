@@ -30,7 +30,7 @@ from portprotonqt.image_utils import (
 )
 
 logger = get_logger(__name__)
-AUTOINSTALL_API_URL = "https://ppdb.linux-gaming.ru/api/games/autoinstall"
+AUTOINSTALL_API_URL = "https://linux-gaming.ru/api/games/autoinstall"
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 HEAD_CACHE_DURATION = 24 * 60 * 60
 HEAD_CACHE_NAME = "head_cache"
@@ -560,7 +560,7 @@ class PortProtonAPI:
     def get_ppdb_url(self, game_name: str, exe_name: str) -> str:
         """Get the PPDB URL for a given game.
 
-        Makes an API call to ppdb.linux-gaming.ru to look up the game by exe name.
+        Makes an API call to linux-gaming.ru to look up the game by exe name.
         If the returned name matches the game name, returns the direct URL.
         Otherwise returns a search URL to avoid false positives (e.g., launcher.exe matches many games).
 
@@ -571,7 +571,7 @@ class PortProtonAPI:
         Returns:
             Full URL to the PPDB page or search page
         """
-        base_url = "https://ppdb.linux-gaming.ru"
+        base_url = "https://linux-gaming.ru"
 
         # Ensure exe_name has .exe extension
         if not exe_name.lower().endswith(".exe"):

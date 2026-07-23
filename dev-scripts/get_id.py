@@ -18,7 +18,7 @@ DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
 
 # Конфигурация API
 STEAM_BASE_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/?"
-PPDB_RATINGS_URL = "https://ppdb.linux-gaming.ru/api/games/ratings?fields=id,name,overall_rating&has_reports=true"
+PPDB_RATINGS_URL = "https://linux-gaming.ru/api/games/ratings?fields=id,name,overall_rating&has_reports=true"
 CATEGORY_STEAM = "games"
 
 # Отключаем предупреждения об SSL в дебаг-режиме

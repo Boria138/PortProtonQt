@@ -105,7 +105,7 @@ class TestFindExtPPDB:
         ppdb = Path(f"{exe}.ppdb")
         assert ppdb.read_bytes() == b"PW_USE_DXVK=1\n"
         assert session.requests[0] == (
-            "https://ppdb.linux-gaming.ru/api/lookup/exe/Game%20File.exe",
+            "https://linux-gaming.ru/api/lookup/exe/Game%20File.exe",
             10,
         )
         assert session.requests[1] == ("https://example.org/game.ppdb", 30)
@@ -187,6 +187,35 @@ class TestCreateDesktopFile:
         _patch_location(monkeypatch, tmp_path)
         result = create_desktop_file("/nonexistent/game.exe")
         assert result is None
+
+    def test_gog_launch_uri_uses_common_desktop_entry(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        _patch_location(monkeypatch, tmp_path)
+
+        result = create_desktop_file(
+            "gog://launch/123", game_name="GOG Game"
+        )
+
+        assert result is not None
+        entry, _, icon_path = result
+        assert 'Exec=portprotonqt --silent "gog://launch/123"' in entry
+        assert icon_path == "applications-games"
+
+    def test_gog_launch_uri_uses_executable_icon(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+
+        result = create_desktop_file(
+            "gog://launch/123", game_name="GOG Game", icon_source=exe
+        )
+
+        assert result is not None
+        entry, _, icon_path = result
+        assert icon_path.endswith("data/img/GOG_Game.png")
+        assert f"Icon={icon_path}" in entry
 
     def test_no_portproton_returns_none(self, monkeypatch: Any) -> None:
         monkeypatch.setattr(

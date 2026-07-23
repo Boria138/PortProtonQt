@@ -459,7 +459,7 @@ class ContextMenuManager:
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
         # For non-Steam games, check if exe exists
-        if game_card.game_source != "steam":
+        if game_card.game_source == "portproton":
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
             exe_path = self._parse_exe_path(exec_line, game_card.name) if exec_line else None
             if not exe_path:
@@ -470,13 +470,18 @@ class ContextMenuManager:
                 return
 
         # Normal menu for games with valid exe or from Steam
-        is_running = self._is_game_running(game_card)
-        action_text = _("Stop Game") if is_running else _("Launch Game")
-        action_icon = "stop" if is_running else "play"
-        launch_action = menu.addAction(self._get_safe_icon(action_icon), action_text)
-        launch_action.triggered.connect(
-            lambda: self._launch_game(game_card)
+        is_uninstalled_gog = (
+            game_card.game_source == "gog"
+            and game_card.exec_line.startswith("gog://install/")
         )
+        is_running = self._is_game_running(game_card)
+        if not is_uninstalled_gog:
+            action_text = _("Stop Game") if is_running else _("Launch Game")
+            action_icon = "stop" if is_running else "play"
+            launch_action = menu.addAction(self._get_safe_icon(action_icon), action_text)
+            launch_action.triggered.connect(
+                lambda: self._launch_game(game_card)
+            )
 
         favorites = favorites_config.get_games()
         is_favorite = game_card.name in favorites
@@ -484,6 +489,60 @@ class ContextMenuManager:
         text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
         favorite_action = menu.addAction(self._get_safe_icon(icon_name), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
+
+        if game_card.game_source == "gog":
+            game = {
+                "app_id": str(game_card.appid),
+                "title": game_card.name,
+                "cover": game_card.cover_path,
+            }
+            if game_card.exec_line.startswith("gog://launch/"):
+                repair_action = menu.addAction(
+                    self._get_safe_icon("update"), _("Repair")
+                )
+                repair_action.triggered.connect(
+                    lambda: self.parent._repair_gog_game(game)
+                )
+                desktop_dir = QStandardPaths.writableLocation(
+                    QStandardPaths.StandardLocation.DesktopLocation
+                )
+                desktop_path = self._get_shortcut_path(
+                    game_card.name, desktop_dir
+                )
+                desktop_exists = os.path.exists(desktop_path)
+                desktop_action = menu.addAction(
+                    self._get_safe_icon("delete" if desktop_exists else "desktop"),
+                    _("Remove from Desktop") if desktop_exists else _("Add to Desktop"),
+                )
+                desktop_action.triggered.connect(
+                    lambda: self.remove_from_desktop(game_card.name)
+                    if desktop_exists
+                    else self.add_to_desktop(game_card.name, game_card.exec_line)
+                )
+                menu_path = self._get_menu_shortcut_path(game_card.name)
+                menu_exists = os.path.exists(menu_path)
+                menu_action = menu.addAction(
+                    self._get_safe_icon("delete" if menu_exists else "menu"),
+                    _("Remove from Menu") if menu_exists else _("Add to Menu"),
+                )
+                menu_action.triggered.connect(
+                    lambda: self.remove_from_menu(game_card.name)
+                    if menu_exists
+                    else self.add_to_menu(game_card.name, game_card.exec_line)
+                )
+                delete_action = menu.addAction(
+                    self._get_safe_icon("delete"), _("Delete")
+                )
+                delete_action.triggered.connect(
+                    lambda: self.parent._delete_gog_game(game)
+                )
+            else:
+                import_action = menu.addAction(
+                    self._get_safe_icon("folder"), _("Import")
+                )
+                import_action.triggered.connect(
+                    lambda: self.parent._import_gog_game(game)
+                )
 
         if game_card.game_source == "steam":
             desktop_dir = QStandardPaths.writableLocation(
@@ -524,7 +583,7 @@ class ContextMenuManager:
                 )
             )
 
-        if game_card.game_source != "steam":
+        if game_card.game_source == "portproton":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
             desktop_path = self._get_shortcut_path(game_card.name, desktop_dir)
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
@@ -916,23 +975,33 @@ class ContextMenuManager:
         """Add the game desktop entry to the XDG applications directory."""
         if not self._check_portproton():
             return
+        is_gog_uri = str(exec_line).startswith("gog://launch/")
         desktop_path = self._get_desktop_path(game_name)
-        if not os.path.exists(desktop_path):
+        if not is_gog_uri and not os.path.exists(desktop_path):
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
-        exec_line = self._get_exec_line(game_name, exec_line)
-        if not exec_line:
-            return
-        exe_path = self._parse_exe_path(exec_line, game_name)
-        if not exe_path:
-            return
-        shortcut = create_desktop_file(exe_path, game_name)
+        if not is_gog_uri:
+            exec_line = self._get_exec_line(game_name, exec_line)
+            if not exec_line:
+                return
+            exec_line = self._parse_exe_path(exec_line, game_name)
+            if not exec_line:
+                return
+        icon_source = None
+        if is_gog_uri:
+            app_id = str(exec_line).rsplit("/", 1)[-1]
+            icon_source = self.parent.gog_api.get_launch_target(app_id)
+        shortcut = create_desktop_file(exec_line, game_name, icon_source)
         if not shortcut:
             return
         desktop_entry = shortcut[0]
+        icon_path = shortcut[2]
+        if icon_source and not os.path.exists(icon_path):
+            if not generate_thumbnail(icon_source, icon_path, size=128):
+                logger.error("Failed to generate thumbnail for game: %s", icon_source)
         applications_dir = self._get_applications_dir()
         os.makedirs(applications_dir, exist_ok=True)
         dest_path = self._get_menu_shortcut_path(game_name)
@@ -975,28 +1044,35 @@ class ContextMenuManager:
 
         if not self._check_portproton():
             return
+        is_gog_uri = str(exec_line).startswith("gog://launch/")
         desktop_path = self._get_desktop_path(game_name)
-        if not os.path.exists(desktop_path):
+        if not is_gog_uri and not os.path.exists(desktop_path):
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
         # Ensure icon exists
-        exec_line = self._get_exec_line(game_name, exec_line)
-        if not exec_line:
-            return
-        exe_path = self._parse_exe_path(exec_line, game_name)
-        if not exe_path:
-            return
-        shortcut = create_desktop_file(exe_path, game_name)
+        if not is_gog_uri:
+            exec_line = self._get_exec_line(game_name, exec_line)
+            if not exec_line:
+                return
+            exec_line = self._parse_exe_path(exec_line, game_name)
+            if not exec_line:
+                return
+        icon_source = None
+        if is_gog_uri:
+            app_id = str(exec_line).rsplit("/", 1)[-1]
+            icon_source = self.parent.gog_api.get_launch_target(app_id)
+        shortcut = create_desktop_file(exec_line, game_name, icon_source)
         if not shortcut:
             return
         desktop_entry = shortcut[0]
         icon_path = shortcut[2]
-        if not os.path.exists(icon_path):
-            if not generate_thumbnail(exe_path, icon_path, size=128):
-                logger.error("Failed to generate thumbnail for game: %s", exe_path)
+        thumbnail_source = icon_source or exec_line
+        if icon_path != "applications-games" and not os.path.exists(icon_path):
+            if not generate_thumbnail(thumbnail_source, icon_path, size=128):
+                logger.error("Failed to generate thumbnail for game: %s", thumbnail_source)
 
         desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         os.makedirs(desktop_dir, exist_ok=True)
@@ -1073,6 +1149,20 @@ class ContextMenuManager:
                 )
 
         fetch_client_icon_async(appid_str, write_shortcut)
+
+    def remove_gog_shortcuts(self, game_name: str) -> None:
+        """Remove desktop and application menu shortcuts for a GOG game."""
+        desktop_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DesktopLocation
+        )
+        for target_dir in (desktop_dir, self._get_applications_dir()):
+            shortcut_path = self._get_shortcut_path(game_name, target_dir)
+            try:
+                os.remove(shortcut_path)
+            except FileNotFoundError:
+                continue
+            except OSError as error:
+                logger.warning("Failed to remove GOG shortcut %s: %s", shortcut_path, error)
 
     def add_steam_to_desktop(self, game_name: str, appid: int | str) -> None:
         """Create a desktop shortcut for an installed Steam game."""

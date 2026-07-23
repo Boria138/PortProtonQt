@@ -119,6 +119,32 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(genFrame)
 
+        gogFrame, gogForm = create_section(_("GOG Account"), self.theme)
+        gogForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(gogFrame)
+        self.gogAccountStatus = QLabel()
+        self.gogAccountStatus.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.gogLoginUrlEdit = CustomLineEdit(theme=self.theme)
+        self.gogLoginUrlEdit.setPlaceholderText(_("Paste the final GOG login URL"))
+        self.gogLoginUrlEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
+        self.gogLoginButton = AutoSizeButton(_("Open login page"))
+        self.gogLoginButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.gogLoginButton.clicked.connect(self._start_gog_login)
+        self.gogSubmitLoginButton = AutoSizeButton(_("Confirm URL"))
+        self.gogSubmitLoginButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.gogSubmitLoginButton.clicked.connect(self._submit_gog_login_url)
+        self.gogRefreshButton = AutoSizeButton(_("Refresh library"))
+        self.gogRefreshButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.gogRefreshButton.clicked.connect(self._refresh_gog_library)
+        gog_buttons = QHBoxLayout()
+        gog_buttons.addWidget(self.gogLoginButton)
+        gog_buttons.addWidget(self.gogSubmitLoginButton)
+        gog_buttons.addWidget(self.gogRefreshButton)
+        gog_buttons.addStretch()
+        gogForm.addRow(self.gogAccountStatus, gog_buttons)
+        gogForm.addRow(self.gogLoginUrlEdit)
+        self._update_gog_account_state()
+
         self.timeDetailCombo = CustomComboBox(theme=self.theme)
         self.timeDetailCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -407,7 +433,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.autoDownloadPPDBCheckBox = QCheckBox()
         self.autoDownloadPPDBCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoDownloadPPDBCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoDownloadPPDBTitle = QLabel(_("Auto download PPDB from") + " ppdb.linux-gaming.ru")
+        self.autoDownloadPPDBTitle = QLabel(_("Auto download PPDB from") + " linux-gaming.ru")
         self.autoDownloadPPDBTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.autoDownloadPPDBTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.autoDownloadPPDBTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -471,7 +497,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.enableThemeStoreCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.enableThemeStoreTitle = QLabel(
             _("Enable Theme Store from %(source)s (%(warning)s)") % {
-                "source": "ppdb.linux-gaming.ru",
+                "source": "linux-gaming.ru",
                 "warning": _("third-party themes may be unsafe"),
             }
         )

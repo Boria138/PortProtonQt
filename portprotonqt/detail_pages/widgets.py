@@ -139,10 +139,10 @@ def _add_source_corner(
 ) -> None:
     """Add source corner badge to cover frame."""
     source = game_source.lower()
-    if source not in ("steam", "portproton") or theme_manager is None:
+    if source not in ("steam", "gog", "portproton") or theme_manager is None:
         return
 
-    icon_name = "badge_steam" if source == "steam" else "badge_portproton"
+    icon_name = f"badge_{source}"
     icon = theme_manager.get_icon(icon_name, as_path=True)
     if not icon:
         return
@@ -366,7 +366,7 @@ def create_portproton_badge(
         badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
     _apply_badge_view_mode(badge, main_window.theme)
     badge.clicked.connect(
-        lambda: QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{ppdb_id}"))
+        lambda: QDesktopServices.openUrl(QUrl(f"https://linux-gaming.ru/game/{ppdb_id}"))
     )
     return badge
 

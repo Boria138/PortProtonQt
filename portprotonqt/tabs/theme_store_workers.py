@@ -14,7 +14,7 @@ from portprotonqt.downloader import get_requests_session
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
-THEME_STORE_API_URL = "https://ppdb.linux-gaming.ru/api/ppqt/themes"
+THEME_STORE_API_URL = "https://linux-gaming.ru/api/ppqt/themes"
 THEME_STORE_TIMEOUT = 20
 THEME_STORE_DOWNLOAD_TIMEOUT = 60
 THEME_STORE_IMAGE_WORKERS = 8
@@ -50,7 +50,7 @@ def _theme_store_variant_urls(theme_data: dict, variant: str) -> list[str]:
 def _theme_store_absolute_url(url: str) -> str:
     if url.startswith("http"):
         return url
-    return f"https://ppdb.linux-gaming.ru/{url.lstrip('/')}"
+    return f"https://linux-gaming.ru/{url.lstrip('/')}"
 
 
 def _safe_theme_entry_name(name: str) -> bool:
