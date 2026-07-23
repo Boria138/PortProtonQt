@@ -64,7 +64,7 @@ class WineLoadingThread(QThread):
 
     def run(self):
         try:
-            json_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
+            json_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
 
             with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as tmp:
                 temp_path = tmp.name
