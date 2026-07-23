@@ -2389,6 +2389,10 @@ class MainWindow(
         if self.game_processes:
             QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
+        needs_setup = getattr(self.gog_api, "needs_support_setup", lambda _app_id: False)
+        if needs_setup(app_id):
+            self._start_gog_support_setup(app_id, button)
+            return
         try:
             command = self.gog_api.build_command([
                 "launch", install_path, app_id, "--platform", "windows",

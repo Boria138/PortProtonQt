@@ -26,6 +26,8 @@ GOG_LOGIN_URL = (
 GOGDL_RELEASE_URL = "https://api.github.com/repos/Heroic-Games-Launcher/heroic-gogdl/releases/latest"
 GOGDL_AUTH_TIMEOUT = 60
 GOG_METADATA_WORKERS = 4
+GOG_SETUP_MARKER_VERSION = 1
+GOG_SETUP_TIMEOUT = 600
 GOG_PRODUCT_LOCALES = {
     "bg": "bg-BG", "cs": "cs-CZ", "da": "da-DK", "de": "de-DE",
     "el": "el-GR", "en": "en-US", "es": "es-ES", "fi": "fi-FI",
@@ -303,19 +305,7 @@ class GOGAPI:
         try:
             current = ppdb_path.read_text(encoding="utf-8") if ppdb_path.exists() else ""
             base_value = arguments.replace('"', "").replace("\\", "/")
-            normalized = base_value
-            support_dir = (
-                self.config_dir / "heroic_gogdl" / "gog-support" / app_id / "app"
-            )
-            if support_dir.is_dir():
-                for support_file in support_dir.rglob("*"):
-                    if not support_file.is_file():
-                        continue
-                    relative_path = os.path.relpath(support_file, Path(target).parent)
-                    normalized = normalized.replace(
-                        f"../{support_file.name}", relative_path.replace(os.sep, "/")
-                    )
-            safe_value = normalized.replace("$", "\\$").replace("`", "\\`")
+            safe_value = base_value.replace("$", "\\$").replace("`", "\\`")
             launch_line = f'export LAUNCH_PARAMETERS="{safe_value}"'
             lines = current.splitlines()
             existing = next(
@@ -325,7 +315,7 @@ class GOGAPI:
             if existing:
                 value = existing.removeprefix('export LAUNCH_PARAMETERS="').removesuffix('"')
                 comparable = re.sub(r"\\+", "/", value.replace('\\"', "").replace('"', ""))
-                if comparable not in (base_value, normalized):
+                if comparable != base_value:
                     return
                 lines[lines.index(existing)] = launch_line
                 ppdb_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -337,6 +327,145 @@ class GOGAPI:
             )
         except OSError as error:
             logger.warning("Failed to add GOG launch parameters to %s: %s", ppdb_path, error)
+
+    def install_support(
+        self, app_id: str, start_command: list[str],
+        process_callback: Callable[[subprocess.Popen], None] | None = None,
+    ) -> None:
+        """Install GOG support instructions through the common ISI redist."""
+        manifest = self._load_json(
+            self.config_dir / "heroic_gogdl" / "manifests" / app_id, {}
+        )
+        install_path = self.get_installed_path(app_id)
+        if not isinstance(manifest, dict) or not manifest.get("scriptInterpreter"):
+            return
+        if install_path is None:
+            return
+        setup_marker = install_path / (
+            f".gogsetup-v{GOG_SETUP_MARKER_VERSION}-{app_id}"
+        )
+        if setup_marker.is_file():
+            return
+        redist_path = self.data_dir / "redist" / "gog"
+        interpreter = redist_path / "__redist" / "ISI" / "scriptinterpreter.exe"
+        if not interpreter.is_file():
+            result = subprocess.run(
+                self.build_command([
+                    "redist", "--ids", "ISI", "--path", str(redist_path),
+                ]),
+                env=self.get_environment(), capture_output=True, check=False,
+                timeout=GOG_SETUP_TIMEOUT,
+            )
+            if result.returncode != 0:
+                error = result.stderr.decode(errors="replace").strip()
+                raise OSError(error or "Failed to download GOG ISI redist")
+        if not interpreter.is_file():
+            raise FileNotFoundError(f"GOG script interpreter not found: {interpreter}")
+        support_path = self.config_dir / "heroic_gogdl" / "gog-support" / app_id
+        setup_path = self.data_dir / "setup" / app_id
+        setup_path.parent.mkdir(parents=True, exist_ok=True)
+        if setup_path.is_symlink() and setup_path.resolve() != install_path.resolve():
+            setup_path.unlink()
+        if not setup_path.exists():
+            setup_path.symlink_to(install_path, target_is_directory=True)
+        if not setup_path.is_symlink():
+            raise OSError(f"GOG setup path is not a symbolic link: {setup_path}")
+        arguments = self._get_support_arguments(
+            app_id, manifest, setup_path, support_path
+        )
+        target = self.get_launch_target(app_id)
+        if not target:
+            raise FileNotFoundError(f"GOG launch target not found: {app_id}")
+        launch_parameters = " ".join(arguments).replace("$", "\\$").replace("`", "\\`")
+        self._write_support_ppdb(interpreter, target, launch_parameters)
+        self._run_support_process(
+            [*start_command, str(interpreter)], install_path, process_callback
+        )
+        setup_marker.touch()
+
+    @staticmethod
+    def _run_support_process(
+        command: list[str], install_path: Path,
+        process_callback: Callable[[subprocess.Popen], None] | None,
+    ) -> None:
+        """Run GOG setup and expose its process for UI cancellation."""
+        process = subprocess.Popen(
+            command, cwd=install_path, start_new_session=True,
+        )
+        if process_callback:
+            process_callback(process)
+        try:
+            return_code = process.wait(timeout=GOG_SETUP_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            raise
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, command)
+
+    @staticmethod
+    def _write_support_ppdb(
+        interpreter: Path, target: str, launch_parameters: str,
+    ) -> None:
+        """Inherit game settings while replacing support launch commands."""
+        target_ppdb = Path(f"{target}.ppdb")
+        ppdb_lines = (
+            target_ppdb.read_text(encoding="utf-8").splitlines()
+            if target_ppdb.is_file() else []
+        )
+        replaced_keys = (
+            "export LAUNCH_PARAMETERS=", "export PW_RUN_AFTER_EXE=",
+            "export FILE_SHA256SUM=",
+        )
+        inherited = [
+            line for line in ppdb_lines
+            if not line.startswith(replaced_keys)
+        ]
+        inherited.extend([
+            f'export LAUNCH_PARAMETERS="{launch_parameters}"',
+        ])
+        Path(f"{interpreter}.ppdb").write_text(
+            "\n".join(inherited) + "\n",
+            encoding="utf-8",
+        )
+
+    def needs_support_setup(self, app_id: str) -> bool:
+        """Return whether GOG setup instructions still need to run."""
+        install_path = self.get_installed_path(app_id)
+        if install_path is None:
+            return False
+        manifest = self._load_json(
+            self.config_dir / "heroic_gogdl" / "manifests" / app_id, {}
+        )
+        marker = install_path / f".gogsetup-v{GOG_SETUP_MARKER_VERSION}-{app_id}"
+        return bool(
+            isinstance(manifest, dict)
+            and manifest.get("scriptInterpreter")
+            and not marker.is_file()
+        )
+
+    @staticmethod
+    def _get_support_arguments(
+        app_id: str, manifest: dict, install_path: Path, support_path: Path
+    ) -> list[str]:
+        product = next(
+            (
+                item for item in manifest.get("products", [])
+                if str(item.get("productId", "")) == app_id
+            ),
+            {},
+        )
+        product_id = str(product.get("productId", app_id))
+        wine_install_path = "Z:" + str(install_path).replace("/", "\\")
+        wine_support_path = "Z:" + str(support_path).replace("/", "\\")
+        return [
+            "/VERYSILENT", f"/DIR={wine_install_path}", "/Language=English",
+            "/LANG=English", f"/ProductId={product_id}", "/galaxyclient",
+            f"/buildId={manifest.get('buildId', '')}",
+            f"/versionName={manifest.get('versionName', '')}",
+            "/lang-code=en-US", f"/supportDir={wine_support_path}",
+            "/nodesktopshorctut", "/nodesktopshortcut",
+        ]
 
     def _get_primary_task(self, app_id: str) -> tuple[dict | None, Path | None]:
         """Return the primary GOG launch task and installation path."""

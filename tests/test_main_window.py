@@ -202,6 +202,20 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
     ]
 
 
+def test_gog_support_removes_finished_process_before_launching_game() -> None:
+    process = SimpleNamespace(poll=lambda: 0)
+    launches = []
+    window = SimpleNamespace(
+        game_processes=[process],
+        _launch_gog_game=lambda *args: launches.append(args),
+    )
+
+    GOGMixin._launch_after_gog_support(cast(Any, window), "123", "button")
+
+    assert window.game_processes == []
+    assert launches == [("123", "button")]
+
+
 def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:
     install_path = tmp_path / "Game"
     started: list[tuple] = []
