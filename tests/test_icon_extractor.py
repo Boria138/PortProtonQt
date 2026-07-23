@@ -545,6 +545,7 @@ def test_game_card_uses_exe_fallback_without_valid_cover(
     broken_cover.write_bytes(b"broken")
     calls: list[dict[str, str]] = []
     card: Any = SimpleNamespace(
+        appid="game",
         list_layout=False,
         base_card_width=100,
         on_cover_loaded=lambda _pixmap: None,
@@ -560,8 +561,16 @@ def test_game_card_uses_exe_fallback_without_valid_cover(
     GameCard._load_cover_image(card, str(broken_cover))
 
     assert calls == [
-        {"fallback_exe": "/games/game.exe", "fallback_icon_path": "/cache/images/Game.png"},
-        {"fallback_exe": "/games/game.exe", "fallback_icon_path": "/cache/images/Game.png"},
+        {
+            "app_name": "game",
+            "fallback_exe": "/games/game.exe",
+            "fallback_icon_path": "/cache/images/Game.png",
+        },
+        {
+            "app_name": "game",
+            "fallback_exe": "/games/game.exe",
+            "fallback_icon_path": "/cache/images/Game.png",
+        },
     ]
 
 

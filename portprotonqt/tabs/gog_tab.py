@@ -1,10 +1,10 @@
 """Shared download manager with GOG download support."""
 
-import os
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QProcess, QProcessEnvironment, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
@@ -31,6 +31,13 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 GOG_CANCEL_KILL_TIMEOUT_MS = 3000
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QMainWindow
+
+    _MainWindowTypingBase = QMainWindow
+else:
+    _MainWindowTypingBase = object
 
 
 class GOGLibraryWorker(QThread):
@@ -71,8 +78,11 @@ class GOGAuthWorker(QThread):
             self.authenticated.emit(False, str(error))
 
 
-class MainWindowGOGTabMixin:
+class MainWindowGOGTabMixin(_MainWindowTypingBase):
     """Add account actions and the shared downloads page."""
+
+    if TYPE_CHECKING:
+        def __getattr__(self, name: str) -> Any: ...
 
     def createGOGDownloadsTab(self) -> None:
         self.gog_process = None
@@ -147,6 +157,7 @@ class MainWindowGOGTabMixin:
         self.downloadActiveCard.setVisible(False)
 
     def _create_download_table(self, heading: str, layout: QVBoxLayout) -> QTableWidget:
+        label = None
         if heading:
             label = QLabel(heading)
             label.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
@@ -167,7 +178,7 @@ class MainWindowGOGTabMixin:
         table.verticalHeader().setVisible(False)
         self._update_download_table_height(table)
         layout.addWidget(table)
-        if heading:
+        if label is not None:
             self.downloadTableHeadings[table] = label
             label.setVisible(False)
         table.setVisible(False)
@@ -485,7 +496,9 @@ class MainWindowGOGTabMixin:
     def _read_gog_download_output(self) -> None:
         if self.gog_process is None:
             return
-        output = bytes(self.gog_process.readAllStandardOutput()).decode(errors="replace")
+        output = bytes(
+            self.gog_process.readAllStandardOutput().data()
+        ).decode(errors="replace")
         self.gog_download_output = (self.gog_download_output + output)[-4096:]
         percentages = re.findall(
             r"Progress:\s+(\d{1,3}(?:\.\d+)?)", self.gog_download_output

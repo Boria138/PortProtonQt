@@ -721,7 +721,7 @@ class TestEditSteamShortcut:
     def test_steam_dialog_has_no_executable_row(self, monkeypatch: Any) -> None:
         from portprotonqt.dialogs.base import AddGameDialog
 
-        QApplication.instance() or QApplication([])
+        _application = QApplication.instance() or QApplication([])
         theme = SimpleNamespace(
             ACTION_BUTTON_STYLE="",
             ADDGAME_INPUT_STYLE="",

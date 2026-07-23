@@ -180,7 +180,7 @@ def test_gog_account_state_detects_saved_auth(
     )
     monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
 
-    GOGMixin._update_gog_account_state(window)
+    GOGMixin._update_gog_account_state(cast(Any, window))
 
     assert window.gogAccountStatus.text == "GOG account connected"
     assert window.gogRefreshButton.enabled is True
@@ -201,7 +201,7 @@ def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:
         _start_gog_download=lambda *arguments: started.append(arguments),
     )
 
-    GOGMixin._repair_gog_game(window, {"app_id": "123", "title": "Game"})
+    GOGMixin._repair_gog_game(cast(Any, window), {"app_id": "123", "title": "Game"})
 
     assert started[0][2] == [
         "gogdl", "repair", "123", "--path", str(install_path),
@@ -231,7 +231,7 @@ def test_install_gog_game_uses_support_path(
         _start_gog_download=lambda *arguments: started.append(arguments),
     )
 
-    GOGMixin._install_gog_game(window, {"app_id": "123", "title": "Game"})
+    GOGMixin._install_gog_game(cast(Any, window), {"app_id": "123", "title": "Game"})
 
     assert started[0][2] == [
         "gogdl", "download", "123", "--path", str(selected_path),
@@ -250,11 +250,13 @@ def test_cancel_gog_download_terminates_then_kills(monkeypatch: MonkeyPatch) -> 
         gog_process=process,
         downloadCancelButton=SimpleNamespace(setEnabled=MagicMock()),
         downloadActiveDetails=SimpleNamespace(setText=MagicMock()),
-        _kill_gog_process=lambda active: GOGMixin._kill_gog_process(window, active),
+        _kill_gog_process=lambda active: GOGMixin._kill_gog_process(
+            cast(Any, window), active
+        ),
     )
     monkeypatch.setattr(gog_tab_module.QTimer, "singleShot", lambda _delay, callback: callback())
 
-    GOGMixin._cancel_gog_download(window)
+    GOGMixin._cancel_gog_download(cast(Any, window))
 
     process.terminate.assert_called_once()
     process.kill.assert_called_once()
@@ -296,7 +298,7 @@ def test_import_gog_game_saves_selected_installation(
     )
     monkeypatch.setattr(gog_tab_module, "FileExplorer", Explorer)
 
-    GOGMixin._import_gog_game(window, {"app_id": "123", "title": "Game"})
+    GOGMixin._import_gog_game(cast(Any, window), {"app_id": "123", "title": "Game"})
 
     assert saved == [("123", {"install_path": str(game_path), "title": "Game"})]
 
@@ -922,7 +924,8 @@ def test_legacy_gog_library_refreshes_metadata(
     callback = MagicMock()
 
     started = MainWindow._upgrade_legacy_gog_library(
-        window, SimpleNamespace(auth_path=auth_path), [{"app_id": "1"}], callback
+        window, cast(Any, SimpleNamespace(auth_path=auth_path)),
+        [{"app_id": "1"}], callback
     )
 
     assert started is True

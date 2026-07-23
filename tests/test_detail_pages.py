@@ -74,6 +74,7 @@ def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) 
 
     assert load_pixmap.call_args.args[:3] == ("", 300, 450)
     assert load_pixmap.call_args.kwargs == {
+        "app_name": "",
         "fallback_exe": "/games/game.exe",
         "fallback_icon_path": "/cache/images/Game.png",
     }
