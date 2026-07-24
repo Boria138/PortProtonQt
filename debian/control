@@ -20,6 +20,7 @@ Depends:
  7zip,
  cabextract,
  curl,
+ desktop-file-utils,
  file,
  gawk,
  libimage-exiftool-perl,

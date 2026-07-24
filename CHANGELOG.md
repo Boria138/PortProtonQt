@@ -23,6 +23,7 @@
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 - Возвращено отображение нативных Linux-игр в библиотеке Steam без отображения саундтреков
+- После создания или удаления ярлыков меню обновляется база desktop-файлов
 
 ### Fixed
 - Исправлен ввод кириллицы при поиске игр

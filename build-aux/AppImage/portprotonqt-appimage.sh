@@ -41,6 +41,7 @@ pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
+	/usr/bin/update-desktop-database \
 	/usr/bin/vk_gpu_info \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
