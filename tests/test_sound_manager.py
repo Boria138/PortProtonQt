@@ -145,8 +145,12 @@ def test_standard_theme_provides_configured_sound_events() -> None:
     available_events = {
         event for event in SOUND_EVENTS if manager._find_sound_path(event) is not None
     }
-    assert available_events == {"open", "back", "confirm", "navigate"}
-    assert {"close", "scroll", "error", "notification"}.isdisjoint(SOUND_EVENTS)
+    assert available_events == {
+        "back", "click", "gamepad_connect", "navigate", "open", "tab_switch", "toggle",
+    }
+    assert {
+        "close", "confirm", "error", "keyboard_key", "notification", "scroll",
+    }.isdisjoint(SOUND_EVENTS)
 
 
 def test_widget_sound_uses_semantic_event() -> None:
@@ -169,14 +173,14 @@ def test_widget_sound_can_disable_automatic_feedback() -> None:
     manager.play.assert_not_called()
 
 
-def test_combo_box_uses_open_sound() -> None:
+def test_combo_box_uses_toggle_sound() -> None:
     app = QApplication.instance() or QApplication([])
     manager: Any = object.__new__(SoundManager)
     manager.play = Mock()
 
     manager.play_widget_sound(QComboBox())
 
-    manager.play.assert_called_once_with("open")
+    manager.play.assert_called_once_with("toggle")
     assert app is not None
 
 
@@ -256,7 +260,7 @@ def test_menu_show_plays_open_sound(monkeypatch: MonkeyPatch) -> None:
     assert app is not None
 
 
-def test_combo_popup_show_plays_open_sound(monkeypatch: MonkeyPatch) -> None:
+def test_combo_popup_show_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
     app = QApplication.instance() or QApplication([])
     played_events: list[str] = []
     manager = InputManager.__new__(InputManager)
@@ -267,7 +271,7 @@ def test_combo_popup_show_plays_open_sound(monkeypatch: MonkeyPatch) -> None:
 
     manager.eventFilter(popup, QEvent(QEvent.Type.Show))
 
-    assert played_events == ["open"]
+    assert played_events == ["toggle"]
     assert app is not None
 
 

@@ -12,8 +12,7 @@ from portprotonqt.theme_security import is_safe_sound_file
 
 logger = get_logger(__name__)
 SOUND_EVENTS = frozenset({
-    "navigate", "click", "confirm", "back", "toggle", "open",
-    "keyboard_key", "tab_switch",
+    "navigate", "click", "back", "toggle", "open", "tab_switch",
     "game_launch", "gamepad_connect",
 })
 MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
@@ -169,7 +168,7 @@ class SoundManager:
         elif isinstance(widget, QCheckBox):
             self.play("toggle")
         elif isinstance(widget, QComboBox):
-            self.play("open")
+            self.play("toggle")
         elif isinstance(widget, (ClickableLabel, NavLabel)):
             self.play("click")
 
