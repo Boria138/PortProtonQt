@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-07-22 12:06+0000\n"
+"PO-Revision-Date: 2026-07-24 20:10+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -43,6 +43,12 @@ msgstr "Ошибка"
 
 msgid "Failed to update AppImage."
 msgstr "Не удалось обновить AppImage."
+
+msgid "Run in logging mode"
+msgstr "Запустить с ведением журнала"
+
+msgid "Run in silent mode"
+msgstr "Запустить в тихом режиме"
 
 msgid "PortProton directory not found"
 msgstr "Не найден каталог PortProton"
@@ -148,6 +154,9 @@ msgstr "Удалить из PortProton"
 msgid "Launch Game"
 msgstr "Запустить игру"
 
+msgid "Repair"
+msgstr "Исправить"
+
 msgid "Remove from Desktop"
 msgstr "Удалить с рабочего стола"
 
@@ -159,6 +168,12 @@ msgstr "Удалить из меню"
 
 msgid "Add to Menu"
 msgstr "Добавить в меню"
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Import"
+msgstr "Импорт"
 
 msgid "Open Game Folder"
 msgstr "Открыть папку с игрой"
@@ -313,9 +328,6 @@ msgstr "Копировать"
 msgid "Paste"
 msgstr "Вставить"
 
-msgid "Delete"
-msgstr "Удалить"
-
 msgid "Select All"
 msgstr "Выбрать всё"
 
@@ -357,6 +369,9 @@ msgstr "Система"
 
 msgid "Themes"
 msgstr "Темы"
+
+msgid "Downloads"
+msgstr "Загрузки"
 
 msgid "Warning"
 msgstr "Предупреждение"
@@ -428,21 +443,24 @@ msgstr "Установить зависимости"
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "Отсутствуют 32-битные зависимости. Установить их сейчас?"
 
-msgid "Invalid command format (empty exec line)"
-msgstr "Неправильный формат команды (пустая строка exec)"
-
-msgid "Invalid command format (native)"
-msgstr "Неверный формат команды (натив"
-
-#, python-brace-format
-msgid "Failed to launch game: {0}"
-msgstr "Не удалось запустить игру: {0}"
+msgid "Game not found."
+msgstr "Игра не найдена."
 
 msgid "PortProton start script not found"
 msgstr "Скрипт запуска PortProton не найден"
 
 msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
+
+msgid "Invalid command format (empty exec line)"
+msgstr "Неправильный формат команды (пустая строка exec)"
+
+msgid "Invalid command format (native)"
+msgstr "Неверный формат команды (нативный)"
+
+#, python-brace-format
+msgid "Failed to launch game: {0}"
+msgstr "Не удалось запустить игру: {0}"
 
 msgid "Choose Folder"
 msgstr "Выбрать папку"
@@ -805,17 +823,17 @@ msgstr "Нет избранных"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Запустить \"{name}\" с помощью PortProton"
 
-msgid "Run in silent mode"
-msgstr "Запустить в тихом режиме"
-
-msgid "Run in logging mode"
-msgstr "Запустить с ведением журнала"
-
 msgid "Debug log mode was launched"
 msgstr "Запущен режим логирования"
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr "Для диагностики проблемы скопируйте ВЕСЬ журнал на сайт:"
+
+msgid "Download"
+msgstr "Скачать"
+
+msgid "Size"
+msgstr "Размер"
 
 msgid "LAST LAUNCH"
 msgstr "ПОСЛЕДНИЙ ЗАПУСК"
@@ -832,6 +850,9 @@ msgstr "СЮЖЕТ + ПОБОЧКИ"
 msgid "COMPLETIONIST"
 msgstr "100%"
 
+msgid "Install"
+msgstr "Установить"
+
 msgid "Open Folder"
 msgstr "Открыть папку"
 
@@ -844,17 +865,11 @@ msgstr "Настройки"
 msgid "Create Log"
 msgstr "Создать лог"
 
-msgid "Install"
-msgstr "Установить"
-
 msgid "Open Card"
 msgstr "Открыть карточку"
 
 msgid "Reinstall"
 msgstr "Переустановить"
-
-msgid "Game not found."
-msgstr "Игра не найдена."
 
 msgid "Stop Log"
 msgstr "Остановить лог"
@@ -969,9 +984,6 @@ msgstr "Сохранить"
 msgid "Search"
 msgstr "Поиск"
 
-msgid "Download"
-msgstr "Скачать"
-
 msgid "Clear All"
 msgstr "Очистить выбранное"
 
@@ -1035,9 +1047,6 @@ msgstr "Ошибка загрузки WINE/Proton: {error}"
 msgid "Version WINE/Proton"
 msgstr "Версия WINE/Proton"
 
-msgid "Size"
-msgstr "Размер"
-
 msgid "Unknown"
 msgstr "Неизвестен"
 
@@ -1082,7 +1091,7 @@ msgstr ""
 "Общий размер на загрузку: {}\n"
 
 msgid "Downloading in Progress"
-msgstr "Скачивание в процессе"
+msgstr "Загрузка"
 
 msgid "Cannot clear selection while extraction is in progress."
 msgstr "Невозможно очистить выделение во время распаковки."
@@ -1155,7 +1164,7 @@ msgid "Operation Cancelled"
 msgstr "Операция отменена"
 
 msgid "Download or extraction has been cancelled."
-msgstr "Скачивание или распаковка успешно отменена."
+msgstr "Скачивание или распаковка отменены."
 
 msgid "System WINE"
 msgstr "Системный WINE"
@@ -1441,7 +1450,7 @@ msgid "Custom"
 msgstr "Пользовательский"
 
 msgid "Save custom"
-msgstr "Сохранить пользовательские настройки"
+msgstr "Сохранить"
 
 msgid "Clear"
 msgstr "Очистить"
@@ -2001,6 +2010,108 @@ msgstr "Размонтировать"
 msgid "Set output"
 msgstr "Выбрать выход"
 
+msgid "Queued"
+msgstr "В очереди"
+
+msgid "Completed"
+msgstr "Завершено"
+
+msgid "Clear List"
+msgstr "Очистить список"
+
+msgid "Now Downloading"
+msgstr "Сейчас загружается"
+
+msgid "Waiting…"
+msgstr "Ожидание…"
+
+msgid "Disk: "
+msgstr "Диск: "
+
+msgid "Game Title"
+msgstr "Название игры"
+
+msgid "Started at"
+msgstr "Начато"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Store"
+msgstr "Магазин"
+
+msgid "Copy the final GOG login URL"
+msgstr "Скопируйте итоговый URL для входа в GOG"
+
+msgid "Open login page"
+msgstr "Открыть страницу входа"
+
+msgid "Refreshing…"
+msgstr "Обновление…"
+
+msgid "Unknown error"
+msgstr "Неизвестная ошибка"
+
+msgid "GOG login failed: {0}"
+msgstr "Ошибка входа в GOG: {0}"
+
+msgid "GOG account connected"
+msgstr "Аккаунт GOG подключён"
+
+msgid "GOG account not connected"
+msgstr "Аккаунт GOG не подключён"
+
+#, python-brace-format
+msgid "Refreshing GOG library… {0}/{1}"
+msgstr "Обновление библиотеки GOG… {0}/{1}"
+
+msgid "GOG library updated"
+msgstr "Библиотека GOG обновлена"
+
+msgid "Failed to refresh GOG library: {0}"
+msgstr "Не удалось обновить библиотеку GOG: {0}"
+
+msgid "Select installation folder"
+msgstr "Выберите папку установки"
+
+msgid "Another GOG operation is already running"
+msgstr "Другая операция GOG уже выполняется"
+
+msgid "GOG installation not found"
+msgstr "Установка GOG не найдена"
+
+msgid "Select GOG game folder"
+msgstr "Выберите папку игры GOG"
+
+msgid "Selected folder is not this GOG game"
+msgstr "Выбранная папка не является этой игрой GOG"
+
+#, python-brace-format
+msgid "Delete '{0}' and all files in its installation folder?"
+msgstr "Удалить «{0}» и все файлы в папке установки?"
+
+msgid "Starting"
+msgstr "Запуск"
+
+msgid "Download: {0} MiB/s"
+msgstr "Загрузка: {0} МБ/с"
+
+#, python-brace-format
+msgid "Disk: {0} MiB/s"
+msgstr "Диск: {0} МБ/с"
+
+msgid "ETA: {0}"
+msgstr "Осталось: {0}"
+
+msgid "Failed"
+msgstr "Ошибка"
+
+msgid "Repaired"
+msgstr "Исправлено"
+
+msgid "Download process failed"
+msgstr "Ошибка процесса загрузки"
+
 msgid "Quick Launch"
 msgstr "Быстрый запуск"
 
@@ -2037,9 +2148,6 @@ msgstr "Скрытый"
 msgid "Badge View Type:"
 msgstr "Тип отображения бейджей:"
 
-msgid "Refreshing…"
-msgstr "Обновление…"
-
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
@@ -2050,6 +2158,9 @@ msgstr ""
 
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
+
+msgid "GOG Account"
+msgstr "Аккаунт GOG"
 
 msgid "Brief"
 msgstr "Упрощённый"
@@ -2110,6 +2221,9 @@ msgstr "Автоматическая загрузка PPDB с"
 
 msgid "Auto update AppImage"
 msgstr "Автоматическое обновление AppImage"
+
+msgid "Integrate AppImage"
+msgstr "Интегрировать AppImage"
 
 msgid "Force system DPI for Wine"
 msgstr "Принудительно установить системный DPI для Wine"
@@ -2179,6 +2293,13 @@ msgstr "Подтверждение очистки кэша"
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
 
+#, python-brace-format
+msgid "AppImage integrated at: {path}"
+msgstr "AppImage интегрирован в: {path}"
+
+msgid "Failed to integrate AppImage: {error}"
+msgstr "Не удалось интегрировать AppImage: {error}"
+
 msgid "Failed to update xdg-autostart entry."
 msgstr "Не удалось обновить запись xdg-autostart."
 
@@ -2215,9 +2336,6 @@ msgstr "Поделиться"
 
 msgid "Profile"
 msgstr "Профиль"
-
-msgid "Type"
-msgstr "Тип"
 
 msgid "Add"
 msgstr "Добавить"

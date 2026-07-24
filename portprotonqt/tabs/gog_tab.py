@@ -183,8 +183,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadActiveDetails.setStyleSheet(self.theme.CONTENT_STYLE)
         info.addWidget(self.downloadActiveDetails)
         metrics = QHBoxLayout()
-        self.downloadSpeedLabel = QLabel(_("Download: —"))
-        self.diskSpeedLabel = QLabel(_("Disk: —"))
+        self.downloadSpeedLabel = QLabel(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel = QLabel(_("Disk: ") + "\u2014")
         metrics.addWidget(self.downloadSpeedLabel)
         metrics.addWidget(self.diskSpeedLabel)
         metrics.addStretch()
@@ -264,7 +264,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         if not code:
             return
         self._stop_gog_login_clipboard()
-        self.gogAccountStatus.setText(_("Refreshing GOG library…"))
+        self.gogAccountStatus.setText(_("Refreshing…"))
         worker = GOGAuthWorker(self.gog_api, code)
         worker.authenticated.connect(self._on_gog_authenticated)
         worker.finished.connect(self._on_gog_auth_worker_finished)
@@ -316,7 +316,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
     def _refresh_gog_library(self) -> None:
         if getattr(self, "gog_library_worker", None) is not None:
             return
-        self.gogAccountStatus.setText(_("Refreshing GOG library…"))
+        self.gogAccountStatus.setText(_("Refreshing…"))
         worker = GOGLibraryWorker(self.gog_api)
         worker.loaded.connect(self._on_gog_library_loaded)
         worker.failed.connect(self._on_gog_library_failed)
@@ -431,7 +431,6 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             app_id, {"install_path": str(game_path), "title": str(game["title"])}
         )
         self.gog_api.ensure_launch_parameters(app_id)
-        self.gogAccountStatus.setText(_("GOG game imported"))
         self.loadGames(force_load=True)
 
     def _delete_gog_game(self, game: dict) -> None:
@@ -471,7 +470,6 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             logger.warning("Failed to delete GOG manifest %s: %s", app_id, error)
         self.gog_api.remove_installed_game(app_id)
         self.context_menu_manager.remove_gog_shortcuts(str(game["title"]))
-        self.gogAccountStatus.setText(_("GOG game deleted"))
         self.loadGames(force_load=True)
 
     def _start_gog_download(
@@ -645,8 +643,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             logger.error("GOG download failed for %s: %s", app_id, error)
         self.gog_process = None
         self.downloadOverallProgress.setValue(0)
-        self.downloadSpeedLabel.setText(_("Download: —"))
-        self.diskSpeedLabel.setText(_("Disk: —"))
+        self.downloadSpeedLabel.setText(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel.setText(_("Disk: ") + "\u2014")
         if self.gog_download_queue:
             next_game = self.gog_download_queue.pop(0)
             self.downloadQueuedTable.removeRow(0)

@@ -2379,8 +2379,11 @@ class MainWindow(
         self.gog_api.ensure_launch_parameters(app_id)
         discovered_path = self.gog_api.get_installed_path(app_id)
         install_path = str(discovered_path) if discovered_path else ""
-        if not install_path or not self.start_sh:
-            QMessageBox.warning(self, _("Error"), _("GOG game or PortProton is unavailable"))
+        if not install_path:
+            QMessageBox.warning(self, _("Error"), _("Game not found."))
+            return
+        if not self.start_sh:
+            QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
             return
         target = os.path.basename(self.gog_api.get_launch_target(app_id) or app_id)
         if self.game_processes and self.target_exe == target:
