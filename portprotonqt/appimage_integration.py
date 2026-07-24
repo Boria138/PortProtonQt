@@ -70,18 +70,21 @@ def _rewrite_main_desktop(content: str, appimage: Path, icon: Path) -> str:
 
 def _mode_desktop(mode: str, appimage: Path, icon: Path) -> str:
     action = _("Run in logging mode") if mode == "log" else _("Run in silent mode")
-    exec_line = shlex.join([str(appimage), f"--{mode}", "%f"])
+    exec_line = shlex.join([str(appimage), f"--{mode}", "%u"])
     return (
         "[Desktop Entry]\n"
         f"Name=PortProtonQt — {action}\n"
         f"Exec={exec_line}\n"
         f"TryExec={appimage}\n"
         "Type=Application\n"
+        f"Comment={action}\n"
         "Terminal=false\n"
         f"Icon={icon}\n"
-        "NoDisplay=true\n"
+        f"StartupWMClass={APP_ID}\n"
         "Categories=Game;\n"
+        "NoDisplay=true\n"
         f"MimeType={WINDOWS_MIME_TYPES}\n"
+        "StartupNotify=true\n"
     )
 
 
@@ -100,6 +103,22 @@ def _install_desktop_files(
     for mode in INTEGRATION_MODES:
         path = applications_dir / f"{APP_ID}.{mode}.desktop"
         path.write_text(_mode_desktop(mode, appimage, icon), encoding="utf-8")
+
+
+def _set_default_mime_handlers() -> None:
+    desktop_id = f"{APP_ID}.desktop"
+    for mime_type in WINDOWS_MIME_TYPES.rstrip(";").split(";"):
+        try:
+            subprocess.run(
+                ["xdg-mime", "default", desktop_id, mime_type],
+                check=True,
+                timeout=DESKTOP_DATABASE_TIMEOUT,
+            )
+        except FileNotFoundError as error:
+            logger.warning("Failed to set default MIME handler: %s", error)
+            return
+        except subprocess.SubprocessError as error:
+            logger.warning("Failed to set default handler for %s: %s", mime_type, error)
 
 
 def _get_appimage_metadata(appdir: Path) -> tuple[Path, Path]:
@@ -149,6 +168,7 @@ def integrate_appimage() -> Path:
     _copy_appimage(source, destination)
     shutil.copy2(resolved_icon, icon)
     _install_desktop_files(desktop_source, applications_dir, destination, icon)
+    _set_default_mime_handlers()
     try:
         subprocess.run(
             ["update-desktop-database", str(applications_dir)],

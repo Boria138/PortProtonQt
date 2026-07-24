@@ -61,9 +61,24 @@ def test_integrate_appimage_installs_handlers(
             applications / f"{appimage_integration.APP_ID}.{mode}.desktop"
         ).read_text()
         assert f"--{mode}" in entry
-        assert "%f" in entry
+        assert "%u" in entry
         assert "NoDisplay=true" in entry
-    assert commands == [["update-desktop-database", str(applications)]]
+        assert "Name=PortProtonQt — " in entry
+        assert "Comment=" in entry
+        assert "StartupWMClass=ru.linux_gaming.PortProtonQt" in entry
+        assert "StartupNotify=true" in entry
+    mime_commands = [
+        [
+            "xdg-mime",
+            "default",
+            f"{appimage_integration.APP_ID}.desktop",
+            mime_type,
+        ]
+        for mime_type in appimage_integration.WINDOWS_MIME_TYPES.rstrip(";").split(";")
+    ]
+    assert commands == mime_commands + [
+        ["update-desktop-database", str(applications)]
+    ]
 
 
 def test_integrate_appimage_requires_metadata(

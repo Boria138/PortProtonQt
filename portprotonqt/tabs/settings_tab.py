@@ -484,7 +484,6 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         downloadForm.addRow(auto_download_ppdb_layout)
         if auto_appimage_updates_layout is not None:
             downloadForm.addRow(auto_appimage_updates_layout)
-            downloadForm.addRow(self.integrateAppImageButton)
 
         self.enableThemeStoreCheckBox = QCheckBox()
         self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -609,6 +608,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
         buttonsLayout.addWidget(self.migrateShortcutsButton)
+
+        if os.getenv("APPIMAGE"):
+            buttonsLayout.addWidget(self.integrateAppImageButton)
 
         self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
