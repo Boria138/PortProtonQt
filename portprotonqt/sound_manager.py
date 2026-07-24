@@ -18,6 +18,12 @@ SOUND_EVENTS = frozenset({
 })
 MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
 
+# Force Qt Multimedia FFmpeg backend to use PulseAudio instead of PipeWire.
+# PipeWire thread-loop initialisation deadlocks with the Python GIL:
+#   QSoundEffect() → pw_thread_loop_lock() holds GIL
+#   PipeWire QAudioContext callback → PyGILState_Ensure() waits for GIL
+os.environ.setdefault("QT_AUDIO_BACKEND", "pulseaudio")
+
 
 def _audio_service_available() -> bool:
     runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
@@ -48,15 +54,12 @@ class _SoundSlot:
     """A single player slot that pre-loads a sound file."""
 
     def __init__(self) -> None:
-        library_paths = QCoreApplication.libraryPaths()
-        QCoreApplication.setLibraryPaths([])
         previous_handler = qInstallMessageHandler(_multimedia_message_handler)
         try:
             from PySide6.QtMultimedia import QSoundEffect
             self._effect = QSoundEffect()
         finally:
             qInstallMessageHandler(previous_handler)
-            QCoreApplication.setLibraryPaths(library_paths)
         self._effect.setLoopCount(1)
         self._loaded_event: str | None = None
 

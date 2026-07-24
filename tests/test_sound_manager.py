@@ -5,7 +5,7 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
@@ -22,23 +22,14 @@ from portprotonqt.sound_manager import SOUND_EVENTS, SoundManager, _SoundSlot
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 
 
-def test_sound_slot_uses_audio_only_multimedia(monkeypatch: MonkeyPatch) -> None:
+def test_sound_slot_initializes_multimedia(monkeypatch: MonkeyPatch) -> None:
     effect = Mock()
-    core_application = SimpleNamespace(
-        libraryPaths=Mock(return_value=["plugins"]),
-        setLibraryPaths=Mock(),
-    )
     multimedia = SimpleNamespace(QSoundEffect=Mock(return_value=effect))
-    monkeypatch.setattr(sound_manager, "QCoreApplication", core_application)
     monkeypatch.setitem(sys.modules, "PySide6.QtMultimedia", multimedia)
 
     slot = _SoundSlot()
 
     assert slot._effect is effect
-    assert core_application.setLibraryPaths.call_args_list == [
-        call([]),
-        call(["plugins"]),
-    ]
 
 
 def test_sound_manager_survives_multimedia_initialization_failure(

@@ -48,10 +48,6 @@ pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
 	/usr/lib/libQt6Network.so* \
 	/usr/lib/qt6/plugins/imageformats/libqwebp.so
 
-# The native PipeWire path rejects some IEC958 device formats. Qt's PulseAudio
-# path works with both PulseAudio and pipewire-pulse on the host.
-echo 'QT_AUDIO_BACKEND=pulseaudio' >> ./AppDir/.env
-
 # DEPLOY_PYTHON copies the distro's complete Python installation. Remove
 # build/development content and PySide bindings not imported by PortProtonQt.
 PYTHON_DIR=$(find ./AppDir/lib -maxdepth 1 -type d -name 'python3.*' -print -quit)
