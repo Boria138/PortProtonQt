@@ -971,6 +971,8 @@ class GameCard(QFrame):
         self.animations.paint_border(QPainter(self))
 
     def enterEvent(self, event):
+        from portprotonqt.sound_manager import SoundManager
+        SoundManager().play("navigate")
         self.animations.handle_enter_event()
         super().enterEvent(event)
 

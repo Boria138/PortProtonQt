@@ -1507,7 +1507,7 @@ class DetailPageManager:
         if card is None or not card.isVisible():
             return
         self._clear_current_card_state(card)
-        card.setFocus(Qt.FocusReason.OtherFocusReason)
+        card.setFocus(Qt.FocusReason.ActiveWindowFocusReason)
         self.main_window.current_focused_card = card
         card.update()
 
@@ -1532,7 +1532,7 @@ class DetailPageManager:
         if not cards:
             return
         cards.sort(key=lambda card: (card.pos().y(), card.pos().x()))
-        cards[0].setFocus(Qt.FocusReason.OtherFocusReason)
+        cards[0].setFocus(Qt.FocusReason.ActiveWindowFocusReason)
         scroll_area = container.parentWidget()
         while scroll_area and not isinstance(scroll_area, QScrollArea):
             scroll_area = scroll_area.parentWidget()
