@@ -23,6 +23,7 @@ STEAM_DATA_DIRS = (
 APPINFO_MAGIC_V40 = 0x07564428
 APPINFO_MAGIC_V41 = 0x07564429
 APPINFO_ENTRY_METADATA_SIZE = 60
+STEAM_ID64_INDIVIDUAL_BASE = 76561197960265728
 
 
 def safe_vdf_load(path: str | Path) -> dict:
@@ -254,18 +255,39 @@ def get_last_steam_user(steam_home: Path) -> dict | None:
     """Return data for last Steam user from loginusers.vdf."""
     loginusers_path = steam_home / "config/loginusers.vdf"
     data = safe_vdf_load(loginusers_path)
-    if not data:
-        return None
-    users = data.get('users', {})
+    users = data.get('users', {}) if data else {}
+    selected_user_id = None
     for user_id, user_info in users.items():
         if user_info.get('MostRecent') == '1':
-            try:
-                return {'SteamID': int(user_id)}
-            except ValueError:
-                logger.error(f"Invalid SteamID format: {user_id}")
-                return None
-    logger.info("No user found with MostRecent=1")
-    return None
+            selected_user_id = user_id
+            break
+        if selected_user_id is None and user_info.get('AutoLogin') == '1':
+            selected_user_id = user_id
+    if selected_user_id is None:
+        userdata_dir = steam_home / "userdata"
+        try:
+            candidates = [
+                entry for entry in userdata_dir.iterdir()
+                if entry.name.isdigit()
+                and entry.name != '0'
+                and not entry.is_symlink()
+                and entry.is_dir()
+                and (entry / "config/localconfig.vdf").is_file()
+            ]
+        except OSError as e:
+            logger.info("Could not inspect Steam userdata: %s", e)
+            return None
+        if len(candidates) != 1:
+            logger.info("No unambiguous Steam userdata profile found")
+            return None
+        selected_user_id = str(
+            STEAM_ID64_INDIVIDUAL_BASE + int(candidates[0].name)
+        )
+    try:
+        return {'SteamID': int(selected_user_id)}
+    except ValueError:
+        logger.error(f"Invalid SteamID format: {selected_user_id}")
+        return None
 
 
 def convert_steam_id(steam_id: int) -> int:

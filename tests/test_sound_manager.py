@@ -46,11 +46,37 @@ def test_sound_manager_survives_multimedia_initialization_failure(
 ) -> None:
     manager: Any = object.__new__(SoundManager)
     manager._initialized = False
+    monkeypatch.setattr(sound_manager, "_audio_service_available", lambda: True)
+    monkeypatch.setattr(
+        sound_manager.QCoreApplication,
+        "instance",
+        lambda: object(),
+    )
     monkeypatch.setattr(sound_manager, "_SoundSlot", Mock(side_effect=RuntimeError("failed")))
 
     manager.__init__()
 
     assert manager._slots == []
+
+
+def test_sound_manager_skips_unavailable_audio_service(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    manager: Any = object.__new__(SoundManager)
+    manager._initialized = False
+    sound_slot = Mock()
+    monkeypatch.setattr(sound_manager, "_audio_service_available", lambda: False)
+    monkeypatch.setattr(
+        sound_manager.QCoreApplication,
+        "instance",
+        lambda: object(),
+    )
+    monkeypatch.setattr(sound_manager, "_SoundSlot", sound_slot)
+
+    manager.__init__()
+
+    assert manager._slots == []
+    sound_slot.assert_not_called()
 
 
 def test_sound_manager_survives_playback_failure() -> None:

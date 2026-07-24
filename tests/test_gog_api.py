@@ -1,5 +1,5 @@
-import os
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import orjson
@@ -19,6 +19,7 @@ def test_extract_auth_code() -> None:
     url = "https://embed.gog.com/on_login_success?origin=client&code=test%20code"
 
     assert GOGAPI.extract_auth_code(url) == "test code"
+    assert GOGAPI.extract_auth_code("https://example.com/?code=test") == ""
 
 
 def test_load_installed_uses_isolated_data_dir(tmp_path: Path) -> None:
@@ -63,7 +64,7 @@ def test_get_launch_target_reads_primary_task(tmp_path: Path) -> None:
     ).read_text()
 
 
-def test_launch_parameters_use_external_gog_support(tmp_path: Path) -> None:
+def test_launch_parameters_keep_gog_relative_paths(tmp_path: Path) -> None:
     api = GOGAPI()
     api.config_dir = tmp_path / "gogdl"
     api.installed_path = tmp_path / "installed.json"
@@ -71,11 +72,6 @@ def test_launch_parameters_use_external_gog_support(tmp_path: Path) -> None:
     executable = game_dir / "DOSBOX/DOSBox.exe"
     executable.parent.mkdir(parents=True)
     executable.touch()
-    support_file = (
-        api.config_dir / "heroic_gogdl/gog-support/123/app/game.conf"
-    )
-    support_file.parent.mkdir(parents=True)
-    support_file.touch()
     api.installed_path.write_bytes(orjson.dumps({"123": {"install_path": str(game_dir)}}))
     info = {"playTasks": [{
         "type": "FileTask", "path": "DOSBOX\\DOSBox.exe",
@@ -85,10 +81,77 @@ def test_launch_parameters_use_external_gog_support(tmp_path: Path) -> None:
 
     api.ensure_launch_parameters("123")
 
-    relative_path = os.path.relpath(support_file, executable.parent).replace(os.sep, "/")
-    assert f'export LAUNCH_PARAMETERS="-conf {relative_path}"' in Path(
+    assert 'export LAUNCH_PARAMETERS="-conf ../game.conf"' in Path(
         f"{executable}.ppdb"
     ).read_text()
+
+
+def test_install_support_reuses_and_runs_isi(
+    tmp_path: Path, monkeypatch
+) -> None:
+    api = GOGAPI()
+    api.data_dir = tmp_path / "gog"
+    api.config_dir = api.data_dir / "gogdl"
+    api.installed_path = api.data_dir / "installed.json"
+    game_dir = tmp_path / "game"
+    game_dir.mkdir()
+    executable = game_dir / "DOSBOX/DOSBox.exe"
+    executable.parent.mkdir()
+    executable.touch()
+    Path(f"{executable}.ppdb").write_text(
+        'export PW_USE_FSYNC="1"\n'
+        'export LAUNCH_PARAMETERS="-old"\n'
+        'export FILE_SHA256SUM="old"\n',
+        encoding="utf-8",
+    )
+    (game_dir / "goggame-123.info").write_bytes(orjson.dumps({
+        "playTasks": [{
+            "type": "FileTask",
+            "path": "DOSBOX\\DOSBox.exe",
+            "arguments": '-conf "..\\game.conf"',
+            "isPrimary": True,
+        }],
+    }))
+    api.save_installed_game("123", {"install_path": str(game_dir)})
+    manifest_path = api.config_dir / "heroic_gogdl/manifests/123"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_bytes(orjson.dumps({
+        "scriptInterpreter": True,
+        "products": [{"productId": "123"}],
+        "buildId": "build",
+        "versionName": "version",
+    }))
+    interpreter = api.data_dir / "redist/gog/__redist/ISI/scriptinterpreter.exe"
+    interpreter.parent.mkdir(parents=True)
+    interpreter.touch()
+    calls = []
+    process = SimpleNamespace(wait=lambda **_kwargs: 0)
+
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        return SimpleNamespace(returncode=0, stderr=b"")
+
+    monkeypatch.setattr(api, "build_command", lambda arguments: ["gogdl", *arguments])
+    monkeypatch.setattr("portprotonqt.gog_api.subprocess.run", run)
+    monkeypatch.setattr(
+        "portprotonqt.gog_api.subprocess.Popen",
+        lambda command, **kwargs: calls.append((command, kwargs)) or process,
+    )
+    launched = []
+    api.install_support("123", ["start.sh"], launched.append)
+
+    assert calls[0][0] == ["start.sh", str(interpreter)]
+    ppdb = Path(f"{interpreter}.ppdb").read_text()
+    setup_path = api.data_dir / "setup/123"
+    assert f"/DIR=Z:{str(setup_path).replace('/', chr(92))}" in ppdb
+    assert setup_path.resolve() == game_dir
+    assert "PW_PREFIX_NAME" not in ppdb
+    assert 'export PW_USE_FSYNC="1"' in ppdb
+    assert 'export LAUNCH_PARAMETERS="-old"' not in ppdb
+    assert "FILE_SHA256SUM" not in ppdb
+    assert "PW_RUN_AFTER_EXE" not in ppdb
+    assert calls[0][1]["start_new_session"] is True
+    assert launched == [process]
 
 
 def test_is_game_installed_requires_gogdl_metadata(tmp_path: Path) -> None:

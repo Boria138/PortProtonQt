@@ -1,4 +1,6 @@
 """Sound manager for UI feedback sounds, integrated with the theme system."""
+import os
+import socket
 import sys
 from pathlib import Path
 
@@ -15,6 +17,25 @@ SOUND_EVENTS = frozenset({
     "game_launch", "gamepad_connect",
 })
 MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
+
+
+def _audio_service_available() -> bool:
+    runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime_dir:
+        return False
+    socket_paths = (
+        Path(runtime_dir) / "pipewire-0",
+        Path(runtime_dir) / "pulse" / "native",
+    )
+    for socket_path in socket_paths:
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as audio_socket:
+                audio_socket.settimeout(0.05)
+                audio_socket.connect(str(socket_path))
+            return True
+        except OSError:
+            continue
+    return False
 
 
 def _multimedia_message_handler(message_type: object, context: object, message: str) -> None:
@@ -75,6 +96,8 @@ class SoundManager:
         self._enabled = ui_config.get_sounds_enabled()
         self._sounds_dirs: list[str] = []
         try:
+            if QCoreApplication.instance() is None or not _audio_service_available():
+                raise RuntimeError("audio service is unavailable")
             self._slots = [_SoundSlot() for _ in range(4)]
         except Exception as e:
             logger.warning("UI sounds are unavailable: %s", e)

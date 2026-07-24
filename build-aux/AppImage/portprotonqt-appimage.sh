@@ -31,12 +31,7 @@ cp /usr/lib/udev/rules.d/60-portprotonqt.rules ./AppDir/etc/udev/rules.d
 # Add PortProton scripts
 # Copy manual because im to lazzy for wait ./quick-sharun strace 208 .ppdb
 mkdir -p ./AppDir/share
-if [ -d /usr/local/share/portproton ]; then
-       cp -r /usr/local/share/portproton ./AppDir/share
-elif [ -d /usr/share/portproton ]; then
-       cp -r /usr/share/portproton ./AppDir/share
-fi
-
+cp -r /usr/share/portproton ./AppDir/share
 
 # QSoundEffect only needs PCM WAV and PulseAudio. Remove the optional native
 # PipeWire path and FFmpeg media backend before quick-sharun scans Qt plugins.

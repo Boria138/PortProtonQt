@@ -1,6 +1,7 @@
 """Proton Manager dialog for PortProtonQt."""
 
 import os
+import platform
 import shutil
 import tempfile
 import urllib.parse
@@ -283,6 +284,15 @@ class ProtonManager(DraggableDialog):
         return True
 
     def filter_entries_by_cpu_level(self, entries, source_name):
+        is_arm = platform.machine().lower().startswith(('arm', 'aarch64'))
+        if not is_arm:
+            entries = [
+                entry for entry in entries
+                if 'aarch64' not in entry.get('name', '').lower()
+                and '-arm' not in entry.get('name', '').lower()
+                and 'aarch64' not in entry.get('url', '').lower()
+                and '-arm' not in entry.get('url', '').lower()
+            ]
         if source_name.lower() != 'proton_cachyos':
             return entries
         if self.cpu_level >= 4:

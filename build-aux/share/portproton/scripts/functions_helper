@@ -4213,7 +4213,7 @@ gui_proton_downloader () {
         return 0
     fi
 
-    METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
+    METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
     METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
     if [[ -z "$METADATA" ]] ; then
         fatal "failed to fetch metadata"

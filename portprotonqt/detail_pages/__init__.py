@@ -2,7 +2,7 @@
 
 import os
 import weakref
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from shiboken6 import isValid
 from PySide6.QtWidgets import (
@@ -376,7 +376,7 @@ class DetailPageManager:
             return
         try:
             sizes = self.main_window.gog_api.parse_download_sizes(
-                bytes(process.readAllStandardOutput())
+                bytes(process.readAllStandardOutput().data())
             )
         except (ValueError, TypeError) as error:
             logger.warning("Failed to parse GOG download size: %s", error)
@@ -1220,7 +1220,7 @@ class DetailPageManager:
         self.main_window.currentDetailPage = None
         self._current_detail_page = None
 
-    def _game_tuple_to_data(self, game_tuple: tuple) -> dict:
+    def _game_tuple_to_data(self, game_tuple: Sequence[object]) -> dict:
         return {
             "name": game_tuple[0],
             "description": game_tuple[1],
