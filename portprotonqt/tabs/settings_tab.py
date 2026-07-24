@@ -671,6 +671,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()
+            self.gog_api.clear_library_cache()
 
     def integrateAppImage(self) -> None:
         """Install the running AppImage in the user application menu."""

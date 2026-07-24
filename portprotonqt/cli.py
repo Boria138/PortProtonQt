@@ -327,8 +327,10 @@ def remove_steam_compat_tool() -> bool:
 def clear_cache() -> bool:
     """Clear PortProtonQt cache."""
     from portprotonqt.config import cache_config
+    from portprotonqt.gog_api import GOGAPI
 
     cache_config.clear_cache()
+    GOGAPI().clear_library_cache()
     print("PortProtonQt cache cleared")
     return True
 

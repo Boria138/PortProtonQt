@@ -779,9 +779,11 @@ class ContextMenuManager:
     def _update_desktop_database(self) -> None:
         """Update the desktop entry database asynchronously."""
         applications_dir = self._get_applications_dir()
-        if not QProcess.startDetached(
+        result = QProcess.startDetached(
             "update-desktop-database", [applications_dir]
-        ):
+        )
+        started = result[0] if isinstance(result, tuple) else result
+        if not started:
             logger.warning(
                 "Failed to start desktop database update for %s",
                 applications_dir,
@@ -1175,23 +1177,8 @@ class ContextMenuManager:
 
     def remove_gog_shortcuts(self, game_name: str) -> None:
         """Remove desktop and application menu shortcuts for a GOG game."""
-        desktop_dir = QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.DesktopLocation
-        )
-        menu_shortcut_removed = False
-        applications_dir = self._get_applications_dir()
-        for target_dir in (desktop_dir, applications_dir):
-            shortcut_path = self._get_shortcut_path(game_name, target_dir)
-            try:
-                os.remove(shortcut_path)
-                if target_dir == applications_dir:
-                    menu_shortcut_removed = True
-            except FileNotFoundError:
-                continue
-            except OSError as error:
-                logger.warning("Failed to remove GOG shortcut %s: %s", shortcut_path, error)
-        if menu_shortcut_removed:
-            self._update_desktop_database()
+        shortcut_paths = self._get_installed_shortcut_paths(game_name)
+        self._remove_installed_shortcuts(game_name, shortcut_paths)
 
     def add_steam_to_desktop(self, game_name: str, appid: int | str) -> None:
         """Create a desktop shortcut for an installed Steam game."""

@@ -140,6 +140,17 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadCompletedTable = self._create_download_table("", layout)
         layout.addStretch()
         self.stackedWidget.addWidget(page)
+        self._update_downloads_tab_visibility()
+
+    def _update_downloads_tab_visibility(self) -> None:
+        has_downloads = (
+            not self.downloadActiveCard.isHidden()
+            or self.downloadQueuedTable.rowCount() > 0
+            or self.downloadCompletedTable.rowCount() > 0
+        )
+        self.tabButtons[6].setVisible(has_downloads)
+        if not has_downloads and self.stackedWidget.currentIndex() == 6:
+            self.switchTab(0)
 
     def _create_active_download_card(self, layout: QVBoxLayout) -> None:
         self.downloadActiveHeading = QLabel(_("Now Downloading"))
@@ -228,6 +239,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
     def _clear_completed_downloads(self) -> None:
         self.downloadCompletedTable.setRowCount(0)
         self._update_download_table_height(self.downloadCompletedTable)
+        self._update_downloads_tab_visibility()
 
     def _start_gog_login(self) -> None:
         if getattr(self, "gog_auth_worker", None) is not None:
@@ -440,6 +452,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         message_box.setDefaultButton(QMessageBox.StandardButton.No)
+        message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         if message_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -474,6 +488,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         )
         self.downloadActiveHeading.setVisible(True)
         self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
         process = QProcess(self)
         process.setProgram(command[0])
         process.setArguments(command[1:])
@@ -525,6 +540,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         else:
             details_label.setText(action)
         self._update_download_table_height(table)
+        self._update_downloads_tab_visibility()
         return row, details_label
 
     def _create_download_game_cell(self, game: dict) -> tuple[QWidget, QLabel]:
@@ -649,6 +665,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadActiveCover.clear()
         self.downloadActiveHeading.setVisible(True)
         self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
         self.downloadCancelButton.setEnabled(False)
         self.downloadOverallProgress.setValue(0)
         worker = GOGSupportWorker(self.gog_api, app_id, start_command)
