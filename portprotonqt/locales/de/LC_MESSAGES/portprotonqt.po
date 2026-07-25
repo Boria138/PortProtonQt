@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-07-21 20:07+0000\n"
+"PO-Revision-Date: 2026-07-25 17:07+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -153,9 +153,8 @@ msgstr "Von PortProton löschen"
 msgid "Launch Game"
 msgstr "Spiel starten"
 
-#, fuzzy
 msgid "Repair"
-msgstr "Gekoppelt"
+msgstr "Reparieren"
 
 msgid "Remove from Desktop"
 msgstr "Vom Desktop entfernen"
@@ -173,7 +172,7 @@ msgid "Delete"
 msgstr "Löschen"
 
 msgid "Import"
-msgstr ""
+msgstr "Import"
 
 msgid "Open Game Folder"
 msgstr "Spielordner öffnen"
@@ -372,9 +371,8 @@ msgstr "System"
 msgid "Themes"
 msgstr "Themen"
 
-#, fuzzy
 msgid "Downloads"
-msgstr "Herunterladen"
+msgstr "Downloads"
 
 msgid "Warning"
 msgstr "Warnung"
@@ -2015,44 +2013,35 @@ msgstr "Entbinden"
 msgid "Set output"
 msgstr "Ausgabe festlegen"
 
-#, fuzzy
 msgid "Queued"
-msgstr "Benutzt"
+msgstr "In der Warteschlange"
 
-#, fuzzy
 msgid "Completed"
-msgstr "Aktualisierung abgeschlossen"
+msgstr "Fertig"
 
-#, fuzzy
 msgid "Clear List"
-msgstr "Auswahl aufheben"
+msgstr "Liste leeren"
 
-#, fuzzy
 msgid "Now Downloading"
-msgstr "Herunterladen"
+msgstr "Wird jetzt heruntergeladen"
 
-#, fuzzy
 msgid "Waiting…"
-msgstr "Warnung"
+msgstr "Warten…"
 
-#, fuzzy
 msgid "Disk: "
-msgstr "Link:"
+msgstr "Datenträger: "
 
-#, fuzzy
 msgid "Game Title"
-msgstr "Spielfensterdbreite"
+msgstr "Spieltitel"
 
-#, fuzzy
 msgid "Started at"
-msgstr "Zustand"
+msgstr "Begonnen"
 
 msgid "Type"
 msgstr "Typ"
 
-#, fuzzy
 msgid "Store"
-msgstr "Datenträger"
+msgstr "Store"
 
 msgid "Copy the link to clipboard"
 msgstr ""
@@ -2063,83 +2052,76 @@ msgstr ""
 msgid "Refreshing…"
 msgstr "Aktualisieren…"
 
-#, fuzzy
 msgid "Unknown error"
-msgstr "Unbekanntes Spiel"
+msgstr "Unbekannter Fehler"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "GOG login failed: {0}"
-msgstr "Datei: {0}"
+msgstr "GOG-Anmeldung fehlgeschlagen: {0}"
 
-#, fuzzy
 msgid "GOG account connected"
-msgstr "Verbunden"
+msgstr "GOG-Konto verknüpft"
 
 #, fuzzy
 msgid "Log out"
 msgstr "Abmelden"
 
 msgid "Open login page"
-msgstr ""
+msgstr "Anmeldeseite öffnen"
 
 msgid "GOG account not connected"
-msgstr ""
+msgstr "GOG-Konto nicht verbunden"
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
-msgstr ""
+msgstr "GOG-Bibliothek wird aktualisiert… {0}/{1}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to refresh GOG library: {0}"
-msgstr "Spiel konnte nicht gestartet werden: {0}"
+msgstr "Aktualisierung der GOG-Bibliothek fehlgeschlagen: {0}"
 
 msgid "Select installation folder"
-msgstr ""
+msgstr "Installationsordner auswählen"
 
 msgid "Another GOG operation is already running"
-msgstr ""
+msgstr "Eine andere GOG-Aktion läuft bereits"
 
 msgid "GOG installation not found"
-msgstr ""
+msgstr "GOG-Installation nicht gefunden"
 
-#, fuzzy
 msgid "Select GOG game folder"
-msgstr "Ordner löschen"
+msgstr "GOG-Spielordner auswählen"
 
 msgid "Selected folder is not this GOG game"
-msgstr ""
+msgstr "Der ausgewählte Ordner ist nicht dieses GOG-Spiel"
 
 #, python-brace-format
 msgid "Delete '{0}' and all files in its installation folder?"
-msgstr ""
+msgstr "'{0}' und alle Dateien im Installationsordner löschen?"
 
-#, fuzzy
 msgid "Starting"
-msgstr "Parameter"
+msgstr "Starten"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Download: {0} MiB/s"
-msgstr "Herunterladen… {0}%"
+msgstr "Download: {0} MiB/s"
 
 #, python-brace-format
 msgid "Disk: {0} MiB/s"
-msgstr ""
+msgstr "Datenträger: {0} MiB/s"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "ETA: {0}"
-msgstr ", voraussichtliche Dauer: {}s"
+msgstr "Voraussichtliche Dauer: {0}"
 
-#, fuzzy
 msgid "Failed"
-msgstr "Detailliert"
+msgstr "Fehlgeschlagen"
 
-#, fuzzy
 msgid "Repaired"
-msgstr "Gekoppelt"
+msgstr "Repariert"
 
-#, fuzzy
 msgid "Download process failed"
-msgstr "Download läuft"
+msgstr "Download-Vorgang ist fehlgeschlagen"
 
 msgid "Quick Launch"
 msgstr "Schnellstart"
@@ -2252,9 +2234,8 @@ msgstr "Automatischer Download von PPDB von"
 msgid "Auto update AppImage"
 msgstr "AppImage automatisch aktualisieren"
 
-#, fuzzy
 msgid "Integrate AppImage"
-msgstr "AppImage automatisch aktualisieren"
+msgstr "AppImage integrieren"
 
 msgid "Force system DPI for Wine"
 msgstr "System-DPI für Wine erzwingen"
@@ -2328,11 +2309,11 @@ msgstr ""
 
 #, python-brace-format
 msgid "AppImage integrated at: {path}"
-msgstr ""
+msgstr "AppImage integriert unter: {path}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to integrate AppImage: {error}"
-msgstr "Datei konnte nicht umbenannt werden: {error}"
+msgstr "Integration des AppImage fehlgeschlagen: {error}"
 
 msgid "Failed to update xdg-autostart entry."
 msgstr "Der xdg-autostart-Eintrag konnte nicht aktualisiert werden."
