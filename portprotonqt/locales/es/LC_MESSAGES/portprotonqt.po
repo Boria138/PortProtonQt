@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-07-21 20:07+0000\n"
+"PO-Revision-Date: 2026-07-25 17:07+0000\n"
 "Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -156,7 +156,7 @@ msgid "Launch Game"
 msgstr "Iniciar juego"
 
 msgid "Repair"
-msgstr ""
+msgstr "Reparar"
 
 msgid "Remove from Desktop"
 msgstr "Eliminar del escritorio"
@@ -174,7 +174,7 @@ msgid "Delete"
 msgstr "Borrar"
 
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
 msgid "Open Game Folder"
 msgstr "Abrir la carpeta del juego"
@@ -372,9 +372,8 @@ msgstr "Sistema"
 msgid "Themes"
 msgstr "Temas"
 
-#, fuzzy
 msgid "Downloads"
-msgstr "Descargar"
+msgstr "Descargas"
 
 msgid "Warning"
 msgstr "Alerta"
@@ -1081,47 +1080,52 @@ msgstr "Seleccione para eliminar WINE/Proton"
 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
-msgstr ""
+msgstr "Seleccionado {} WINE/Proton:\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to delete: {}\n"
 msgstr ""
+"\n"
+"Tamaño total a eliminar: {}\n"
 
 msgid "Delete Selected"
-msgstr ""
+msgstr "Eliminar selección"
 
 #, python-brace-format
 msgid "Selected {} assets:\n"
-msgstr ""
+msgstr "Activos seleccionados {}:\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to download: {}\n"
 msgstr ""
+"\n"
+"Tamaño total de la descarga: {}\n"
 
 msgid "Downloading in Progress"
-msgstr ""
+msgstr "Descarga en curso"
 
 msgid "Cannot clear selection while extraction is in progress."
-msgstr ""
+msgstr "No se puede borrar la selección mientras la extracción está en curso."
 
 msgid "No Selection"
-msgstr ""
+msgstr "Sin selección"
 
 msgid "Please select at least one WINE/Proton to download."
-msgstr ""
+msgstr "Selecciona al menos un WINE/Proton para descargar."
 
 msgid "Please wait for current downloading to complete."
-msgstr ""
+msgstr "Por favor, espere a que finalice la descarga actual."
 
 msgid "Please select at least one WINE/Proton to delete."
 msgstr ""
+"Por favor, selecciona al menos un elemento de WINE/Proton para eliminarlo."
 
 msgid "Confirm Clear"
-msgstr ""
+msgstr "Confirmar el borrado"
 
 #, python-brace-format
 msgid ""
@@ -2010,41 +2014,34 @@ msgid "Set output"
 msgstr ""
 
 msgid "Queued"
-msgstr ""
+msgstr "En cola"
 
-#, fuzzy
 msgid "Completed"
-msgstr "Actualización completada"
+msgstr "Completado"
 
-#, fuzzy
 msgid "Clear List"
-msgstr "Limpiar todo"
+msgstr "Borrar lista"
 
-#, fuzzy
 msgid "Now Downloading"
 msgstr "Descargando"
 
-#, fuzzy
 msgid "Waiting…"
-msgstr "Alerta"
+msgstr "Esperando…"
 
 msgid "Disk: "
-msgstr ""
+msgstr "Disco: "
 
-#, fuzzy
 msgid "Game Title"
-msgstr "Renombrar el archivo"
+msgstr "Título del juego"
 
-#, fuzzy
 msgid "Started at"
-msgstr "Iniciar"
+msgstr "Comenzó en"
 
 msgid "Type"
-msgstr ""
+msgstr "Tipo"
 
-#, fuzzy
 msgid "Store"
-msgstr "Detener"
+msgstr "Tienda"
 
 msgid "Copy the link to clipboard"
 msgstr ""
@@ -2070,7 +2067,7 @@ msgid "Log out"
 msgstr ""
 
 msgid "Open login page"
-msgstr ""
+msgstr "Abrir página de inicio de sesión"
 
 msgid "GOG account not connected"
 msgstr ""
