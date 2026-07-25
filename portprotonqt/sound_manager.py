@@ -12,11 +12,16 @@ from portprotonqt.theme_security import is_safe_sound_file
 
 logger = get_logger(__name__)
 SOUND_EVENTS = frozenset({
-    "navigate", "click", "confirm", "back", "toggle", "open",
-    "keyboard_key", "tab_switch",
+    "navigate", "click", "back", "toggle", "open", "tab_switch",
     "game_launch", "gamepad_connect",
 })
 MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
+
+# Force Qt Multimedia FFmpeg backend to use PulseAudio instead of PipeWire.
+# PipeWire thread-loop initialisation deadlocks with the Python GIL:
+#   QSoundEffect() → pw_thread_loop_lock() holds GIL
+#   PipeWire QAudioContext callback → PyGILState_Ensure() waits for GIL
+os.environ.setdefault("QT_AUDIO_BACKEND", "pulseaudio")
 
 
 def _audio_service_available() -> bool:
@@ -48,15 +53,12 @@ class _SoundSlot:
     """A single player slot that pre-loads a sound file."""
 
     def __init__(self) -> None:
-        library_paths = QCoreApplication.libraryPaths()
-        QCoreApplication.setLibraryPaths([])
         previous_handler = qInstallMessageHandler(_multimedia_message_handler)
         try:
             from PySide6.QtMultimedia import QSoundEffect
             self._effect = QSoundEffect()
         finally:
             qInstallMessageHandler(previous_handler)
-            QCoreApplication.setLibraryPaths(library_paths)
         self._effect.setLoopCount(1)
         self._loaded_event: str | None = None
 
@@ -166,7 +168,7 @@ class SoundManager:
         elif isinstance(widget, QCheckBox):
             self.play("toggle")
         elif isinstance(widget, QComboBox):
-            self.play("open")
+            self.play("toggle")
         elif isinstance(widget, (ClickableLabel, NavLabel)):
             self.play("click")
 

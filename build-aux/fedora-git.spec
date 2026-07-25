@@ -65,6 +65,7 @@ Requires:       procps-ng
 Requires:       psmisc
 Requires:       7zip
 Requires:       python3-dbus-fast
+Requires:       desktop-file-utils
 
 # System Tab
 Recommends:     NetworkManager

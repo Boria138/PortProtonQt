@@ -752,12 +752,10 @@ Place UI sound effects in the theme's `sounds/` directory. File names must match
 | Event | Used for |
 |---|---|
 | `navigate` | Moving focus between UI items |
-| `click` | Pressing buttons and clickable labels |
-| `confirm` | Confirming an action |
+| `click` | Pressing buttons, clickable labels, and confirming actions |
 | `back` | Returning or closing with the Back action |
-| `toggle` | Changing a checkbox or toggle |
+| `toggle` | Changing a checkbox or opening a combo box |
 | `open` | Opening pages, dialogs, and menus |
-| `keyboard_key` | Virtual keyboard input |
 | `tab_switch` | Switching application tabs |
 | `game_launch` | Successful game process launch |
 | `gamepad_connect` | Connecting a gamepad |

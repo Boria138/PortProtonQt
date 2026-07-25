@@ -201,6 +201,13 @@ class GOGAPI:
         data = self._load_json(self.library_path, [])
         return data if isinstance(data, list) else []
 
+    def clear_library_cache(self) -> None:
+        """Remove cached GOG covers and descriptions."""
+        try:
+            self.library_path.unlink(missing_ok=True)
+        except OSError as error:
+            logger.warning("Failed to clear GOG library cache: %s", error)
+
     def load_installed(self) -> dict[str, dict]:
         """Load installed GOG game records."""
         data = self._load_json(self.installed_path, {})

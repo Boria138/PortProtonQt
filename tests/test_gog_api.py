@@ -40,6 +40,18 @@ def test_remove_installed_game_keeps_other_records(tmp_path: Path) -> None:
     assert api.load_installed() == {"456": {}}
 
 
+def test_clear_library_cache_removes_gog_metadata(tmp_path: Path) -> None:
+    api = GOGAPI()
+    api.library_path = tmp_path / "library.json"
+    api.library_path.write_bytes(orjson.dumps([
+        {"app_id": "123", "cover": "cover.webp", "description": "Description"}
+    ]))
+
+    api.clear_library_cache()
+
+    assert not api.library_path.exists()
+
+
 def test_get_launch_target_reads_primary_task(tmp_path: Path) -> None:
     api = GOGAPI()
     api.installed_path = tmp_path / "installed.json"

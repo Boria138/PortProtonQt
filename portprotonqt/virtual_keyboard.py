@@ -472,8 +472,6 @@ class VirtualKeyboard(QFrame):
         return position[:2]  # row, col
 
     def on_button_click(self, key):
-        from portprotonqt.sound_manager import SoundManager
-        SoundManager().play("keyboard_key")
         if key in ['TAB', 'CAPS', '⬆']:
             if key == 'TAB':
                 self.on_tab_click()
@@ -541,8 +539,6 @@ class VirtualKeyboard(QFrame):
                 text = self.current_input_widget.text()
 
                 if cursor_pos > 0:
-                    from portprotonqt.sound_manager import SoundManager
-                    SoundManager().play("keyboard_key")
                     new_text = text[:cursor_pos - 1] + text[cursor_pos:]
                     self.current_input_widget.setText(new_text)
                     self.current_input_widget.setCursorPosition(cursor_pos - 1)

@@ -42,6 +42,12 @@ msgstr ""
 msgid "Failed to update AppImage."
 msgstr ""
 
+msgid "Run in logging mode"
+msgstr ""
+
+msgid "Run in silent mode"
+msgstr ""
+
 msgid "PortProton directory not found"
 msgstr ""
 
@@ -142,6 +148,9 @@ msgstr ""
 msgid "Launch Game"
 msgstr ""
 
+msgid "Repair"
+msgstr ""
+
 msgid "Remove from Desktop"
 msgstr ""
 
@@ -152,6 +161,12 @@ msgid "Remove from Menu"
 msgstr ""
 
 msgid "Add to Menu"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Import"
 msgstr ""
 
 msgid "Open Game Folder"
@@ -301,9 +316,6 @@ msgstr ""
 msgid "Paste"
 msgstr ""
 
-msgid "Delete"
-msgstr ""
-
 msgid "Select All"
 msgstr ""
 
@@ -344,6 +356,9 @@ msgid "System"
 msgstr ""
 
 msgid "Themes"
+msgstr ""
+
+msgid "Downloads"
 msgstr ""
 
 msgid "Warning"
@@ -419,6 +434,15 @@ msgstr ""
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr ""
 
+msgid "Game not found."
+msgstr ""
+
+msgid "PortProton start script not found"
+msgstr ""
+
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
 msgid "Invalid command format (empty exec line)"
 msgstr ""
 
@@ -427,12 +451,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
-msgstr ""
-
-msgid "PortProton start script not found"
-msgstr ""
-
-msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Choose Folder"
@@ -733,16 +751,16 @@ msgstr ""
 msgid "Launch \"{name}\" with PortProton"
 msgstr ""
 
-msgid "Run in silent mode"
-msgstr ""
-
-msgid "Run in logging mode"
-msgstr ""
-
 msgid "Debug log mode was launched"
 msgstr ""
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Size"
 msgstr ""
 
 msgid "LAST LAUNCH"
@@ -760,6 +778,9 @@ msgstr ""
 msgid "COMPLETIONIST"
 msgstr ""
 
+msgid "Install"
+msgstr ""
+
 msgid "Open Folder"
 msgstr ""
 
@@ -772,16 +793,10 @@ msgstr ""
 msgid "Create Log"
 msgstr ""
 
-msgid "Install"
-msgstr ""
-
 msgid "Open Card"
 msgstr ""
 
 msgid "Reinstall"
-msgstr ""
-
-msgid "Game not found."
 msgstr ""
 
 msgid "Stop Log"
@@ -897,9 +912,6 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-msgid "Download"
-msgstr ""
-
 msgid "Clear All"
 msgstr ""
 
@@ -961,9 +973,6 @@ msgid "Error loading WINE/Proton: {error}"
 msgstr ""
 
 msgid "Version WINE/Proton"
-msgstr ""
-
-msgid "Size"
 msgstr ""
 
 msgid "Unknown"
@@ -1909,6 +1918,112 @@ msgstr ""
 msgid "Set output"
 msgstr ""
 
+msgid "Queued"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Clear List"
+msgstr ""
+
+msgid "Now Downloading"
+msgstr ""
+
+msgid "Waiting…"
+msgstr ""
+
+msgid "Disk: "
+msgstr ""
+
+msgid "Game Title"
+msgstr ""
+
+msgid "Started at"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Store"
+msgstr ""
+
+msgid "Copy the final GOG login URL"
+msgstr ""
+
+msgid "Open login page"
+msgstr ""
+
+msgid "Refreshing…"
+msgstr ""
+
+msgid "Unknown error"
+msgstr ""
+
+#, python-brace-format
+msgid "GOG login failed: {0}"
+msgstr ""
+
+msgid "GOG account connected"
+msgstr ""
+
+msgid "GOG account not connected"
+msgstr ""
+
+#, python-brace-format
+msgid "Refreshing GOG library… {0}/{1}"
+msgstr ""
+
+msgid "GOG library updated"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to refresh GOG library: {0}"
+msgstr ""
+
+msgid "Select installation folder"
+msgstr ""
+
+msgid "Another GOG operation is already running"
+msgstr ""
+
+msgid "GOG installation not found"
+msgstr ""
+
+msgid "Select GOG game folder"
+msgstr ""
+
+msgid "Selected folder is not this GOG game"
+msgstr ""
+
+#, python-brace-format
+msgid "Delete '{0}' and all files in its installation folder?"
+msgstr ""
+
+msgid "Starting"
+msgstr ""
+
+#, python-brace-format
+msgid "Download: {0} MiB/s"
+msgstr ""
+
+#, python-brace-format
+msgid "Disk: {0} MiB/s"
+msgstr ""
+
+#, python-brace-format
+msgid "ETA: {0}"
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+msgid "Repaired"
+msgstr ""
+
+msgid "Download process failed"
+msgstr ""
+
 msgid "Quick Launch"
 msgstr ""
 
@@ -1945,9 +2060,6 @@ msgstr ""
 msgid "Badge View Type:"
 msgstr ""
 
-msgid "Refreshing…"
-msgstr ""
-
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
@@ -1955,6 +2067,9 @@ msgid ""
 msgstr ""
 
 msgid "PortProton Settings"
+msgstr ""
+
+msgid "GOG Account"
 msgstr ""
 
 msgid "Brief"
@@ -2015,6 +2130,9 @@ msgid "Auto download PPDB from"
 msgstr ""
 
 msgid "Auto update AppImage"
+msgstr ""
+
+msgid "Integrate AppImage"
 msgstr ""
 
 msgid "Force system DPI for Wine"
@@ -2083,6 +2201,14 @@ msgstr ""
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
 
+#, python-brace-format
+msgid "AppImage integrated at: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to integrate AppImage: {error}"
+msgstr ""
+
 msgid "Failed to update xdg-autostart entry."
 msgstr ""
 
@@ -2118,9 +2244,6 @@ msgid "Share"
 msgstr ""
 
 msgid "Profile"
-msgstr ""
-
-msgid "Type"
 msgstr ""
 
 msgid "Add"

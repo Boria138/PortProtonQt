@@ -333,6 +333,38 @@ def test_import_gog_game_saves_selected_installation(
     assert saved == [("123", {"install_path": str(game_path), "title": "Game"})]
 
 
+def test_downloads_tab_is_hidden_without_downloads() -> None:
+    tab_button = SimpleNamespace(setVisible=MagicMock())
+    window = SimpleNamespace(
+        downloadActiveCard=SimpleNamespace(isHidden=lambda: True),
+        downloadQueuedTable=SimpleNamespace(rowCount=lambda: 0),
+        downloadCompletedTable=SimpleNamespace(rowCount=lambda: 0),
+        tabButtons={6: tab_button},
+        stackedWidget=SimpleNamespace(currentIndex=lambda: 0),
+        switchTab=MagicMock(),
+    )
+
+    GOGMixin._update_downloads_tab_visibility(cast(Any, window))
+
+    tab_button.setVisible.assert_called_once_with(False)
+
+
+def test_downloads_tab_is_visible_with_completed_download() -> None:
+    tab_button = SimpleNamespace(setVisible=MagicMock())
+    window = SimpleNamespace(
+        downloadActiveCard=SimpleNamespace(isHidden=lambda: True),
+        downloadQueuedTable=SimpleNamespace(rowCount=lambda: 0),
+        downloadCompletedTable=SimpleNamespace(rowCount=lambda: 1),
+        tabButtons={6: tab_button},
+        stackedWidget=SimpleNamespace(currentIndex=lambda: 0),
+        switchTab=MagicMock(),
+    )
+
+    GOGMixin._update_downloads_tab_visibility(cast(Any, window))
+
+    tab_button.setVisible.assert_called_once_with(True)
+
+
 def test_library_controls_animation_ignores_game_card_scale_duration() -> None:
     theme = SimpleNamespace(GAME_CARD_ANIMATION={"scale_anim_duration": 10})
 

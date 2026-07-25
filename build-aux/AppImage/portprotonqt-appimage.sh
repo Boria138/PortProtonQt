@@ -41,16 +41,13 @@ pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
+	/usr/bin/update-desktop-database \
 	/usr/bin/vk_gpu_info \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Multimedia.so* \
 	/usr/lib/libQt6Network.so* \
 	/usr/lib/qt6/plugins/imageformats/libqwebp.so
-
-# The native PipeWire path rejects some IEC958 device formats. Qt's PulseAudio
-# path works with both PulseAudio and pipewire-pulse on the host.
-echo 'QT_AUDIO_BACKEND=pulseaudio' >> ./AppDir/.env
 
 # DEPLOY_PYTHON copies the distro's complete Python installation. Remove
 # build/development content and PySide bindings not imported by PortProtonQt.

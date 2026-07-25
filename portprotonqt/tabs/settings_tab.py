@@ -484,7 +484,6 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         downloadForm.addRow(auto_download_ppdb_layout)
         if auto_appimage_updates_layout is not None:
             downloadForm.addRow(auto_appimage_updates_layout)
-            downloadForm.addRow(self.integrateAppImageButton)
 
         self.enableThemeStoreCheckBox = QCheckBox()
         self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -610,6 +609,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
         buttonsLayout.addWidget(self.migrateShortcutsButton)
 
+        if os.getenv("APPIMAGE"):
+            buttonsLayout.addWidget(self.integrateAppImageButton)
+
         self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -669,6 +671,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()
+            self.gog_api.clear_library_cache()
 
     def integrateAppImage(self) -> None:
         """Install the running AppImage in the user application menu."""

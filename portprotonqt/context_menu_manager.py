@@ -3,7 +3,7 @@ import glob
 import shutil
 import tempfile
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer, QSize
+from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer, QSize, QProcess
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config import (
@@ -776,6 +776,19 @@ class ContextMenuManager:
         )
         return os.path.join(data_home, "applications")
 
+    def _update_desktop_database(self) -> None:
+        """Update the desktop entry database asynchronously."""
+        applications_dir = self._get_applications_dir()
+        result = QProcess.startDetached(
+            "update-desktop-database", [applications_dir]
+        )
+        started = result[0] if isinstance(result, tuple) else result
+        if not started:
+            logger.warning(
+                "Failed to start desktop database update for %s",
+                applications_dir,
+            )
+
     def _get_menu_shortcut_path(self, game_name: str) -> str:
         """Return PortProton shortcut path in the applications directory."""
         return self._get_shortcut_path(game_name, self._get_applications_dir())
@@ -864,14 +877,20 @@ class ContextMenuManager:
     def _remove_installed_shortcuts(self, game_name: str, shortcut_paths: list[str]) -> None:
         """Remove existing menu and desktop shortcuts."""
         removed_paths = set()
+        menu_shortcut_removed = False
+        applications_dir = os.path.normpath(self._get_applications_dir())
         for shortcut_path in shortcut_paths:
             if shortcut_path in removed_paths or not os.path.exists(shortcut_path):
                 continue
             removed_paths.add(shortcut_path)
             try:
                 os.remove(shortcut_path)
+                if os.path.dirname(os.path.normpath(shortcut_path)) == applications_dir:
+                    menu_shortcut_removed = True
             except OSError as e:
                 logger.warning("Failed to remove shortcut for '%s': %s", game_name, e)
+        if menu_shortcut_removed:
+            self._update_desktop_database()
 
     def _remove_statistics_entry(self, exe_path, game_name):
         """Remove statistics entry for exact executable path."""
@@ -1009,6 +1028,7 @@ class ContextMenuManager:
             with open(dest_path, "w", encoding="utf-8") as f:
                 f.write(desktop_entry)
             os.chmod(dest_path, 0o755)
+            self._update_desktop_database()
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -1025,13 +1045,14 @@ class ContextMenuManager:
             game_name: The display name of the game.
         """
         menu_path = self._get_menu_shortcut_path(game_name)
-        self._remove_file(
+        if self._remove_file(
             menu_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
             _("Removed '{game_name}' from {location}"),
             game_name,
             location=_("Menu")
-        )
+        ):
+            self._update_desktop_database()
 
     def add_to_desktop(self, game_name, exec_line):
         """
@@ -1140,6 +1161,10 @@ class ContextMenuManager:
                 with open(dest_path, "w", encoding="utf-8") as f:
                     f.write(desktop_entry)
                 os.chmod(dest_path, 0o755)
+                if os.path.normpath(target_dir) == os.path.normpath(
+                    self._get_applications_dir()
+                ):
+                    self._update_desktop_database()
             except OSError as e:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
@@ -1152,17 +1177,8 @@ class ContextMenuManager:
 
     def remove_gog_shortcuts(self, game_name: str) -> None:
         """Remove desktop and application menu shortcuts for a GOG game."""
-        desktop_dir = QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.DesktopLocation
-        )
-        for target_dir in (desktop_dir, self._get_applications_dir()):
-            shortcut_path = self._get_shortcut_path(game_name, target_dir)
-            try:
-                os.remove(shortcut_path)
-            except FileNotFoundError:
-                continue
-            except OSError as error:
-                logger.warning("Failed to remove GOG shortcut %s: %s", shortcut_path, error)
+        shortcut_paths = self._get_installed_shortcut_paths(game_name)
+        self._remove_installed_shortcuts(game_name, shortcut_paths)
 
     def add_steam_to_desktop(self, game_name: str, appid: int | str) -> None:
         """Create a desktop shortcut for an installed Steam game."""
@@ -1193,13 +1209,14 @@ class ContextMenuManager:
     def remove_steam_from_menu(self, game_name: str) -> None:
         """Remove a Steam game application menu shortcut."""
         menu_path = self._get_steam_menu_shortcut_path(game_name)
-        self._remove_file(
+        if self._remove_file(
             menu_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
             _("Removed '{game_name}' from {location}"),
             game_name,
             location=_("Menu")
-        )
+        ):
+            self._update_desktop_database()
 
     def _edit_steam_shortcut(self, game_name: str, appid: int | str, cover_path: str) -> None:
         appid_str = str(appid).strip()

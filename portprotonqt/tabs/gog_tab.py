@@ -140,6 +140,17 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadCompletedTable = self._create_download_table("", layout)
         layout.addStretch()
         self.stackedWidget.addWidget(page)
+        self._update_downloads_tab_visibility()
+
+    def _update_downloads_tab_visibility(self) -> None:
+        has_downloads = (
+            not self.downloadActiveCard.isHidden()
+            or self.downloadQueuedTable.rowCount() > 0
+            or self.downloadCompletedTable.rowCount() > 0
+        )
+        self.tabButtons[6].setVisible(has_downloads)
+        if not has_downloads and self.stackedWidget.currentIndex() == 6:
+            self.switchTab(0)
 
     def _create_active_download_card(self, layout: QVBoxLayout) -> None:
         self.downloadActiveHeading = QLabel(_("Now Downloading"))
@@ -172,8 +183,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadActiveDetails.setStyleSheet(self.theme.CONTENT_STYLE)
         info.addWidget(self.downloadActiveDetails)
         metrics = QHBoxLayout()
-        self.downloadSpeedLabel = QLabel(_("Download: —"))
-        self.diskSpeedLabel = QLabel(_("Disk: —"))
+        self.downloadSpeedLabel = QLabel(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel = QLabel(_("Disk: ") + "\u2014")
         metrics.addWidget(self.downloadSpeedLabel)
         metrics.addWidget(self.diskSpeedLabel)
         metrics.addStretch()
@@ -228,6 +239,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
     def _clear_completed_downloads(self) -> None:
         self.downloadCompletedTable.setRowCount(0)
         self._update_download_table_height(self.downloadCompletedTable)
+        self._update_downloads_tab_visibility()
 
     def _start_gog_login(self) -> None:
         if getattr(self, "gog_auth_worker", None) is not None:
@@ -252,7 +264,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         if not code:
             return
         self._stop_gog_login_clipboard()
-        self.gogAccountStatus.setText(_("Refreshing GOG library…"))
+        self.gogAccountStatus.setText(_("Refreshing…"))
         worker = GOGAuthWorker(self.gog_api, code)
         worker.authenticated.connect(self._on_gog_authenticated)
         worker.finished.connect(self._on_gog_auth_worker_finished)
@@ -304,7 +316,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
     def _refresh_gog_library(self) -> None:
         if getattr(self, "gog_library_worker", None) is not None:
             return
-        self.gogAccountStatus.setText(_("Refreshing GOG library…"))
+        self.gogAccountStatus.setText(_("Refreshing…"))
         worker = GOGLibraryWorker(self.gog_api)
         worker.loaded.connect(self._on_gog_library_loaded)
         worker.failed.connect(self._on_gog_library_failed)
@@ -419,7 +431,6 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             app_id, {"install_path": str(game_path), "title": str(game["title"])}
         )
         self.gog_api.ensure_launch_parameters(app_id)
-        self.gogAccountStatus.setText(_("GOG game imported"))
         self.loadGames(force_load=True)
 
     def _delete_gog_game(self, game: dict) -> None:
@@ -440,6 +451,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         message_box.setDefaultButton(QMessageBox.StandardButton.No)
+        message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         if message_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -457,7 +470,6 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             logger.warning("Failed to delete GOG manifest %s: %s", app_id, error)
         self.gog_api.remove_installed_game(app_id)
         self.context_menu_manager.remove_gog_shortcuts(str(game["title"]))
-        self.gogAccountStatus.setText(_("GOG game deleted"))
         self.loadGames(force_load=True)
 
     def _start_gog_download(
@@ -474,6 +486,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         )
         self.downloadActiveHeading.setVisible(True)
         self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
         process = QProcess(self)
         process.setProgram(command[0])
         process.setArguments(command[1:])
@@ -525,6 +538,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         else:
             details_label.setText(action)
         self._update_download_table_height(table)
+        self._update_downloads_tab_visibility()
         return row, details_label
 
     def _create_download_game_cell(self, game: dict) -> tuple[QWidget, QLabel]:
@@ -629,8 +643,8 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             logger.error("GOG download failed for %s: %s", app_id, error)
         self.gog_process = None
         self.downloadOverallProgress.setValue(0)
-        self.downloadSpeedLabel.setText(_("Download: —"))
-        self.diskSpeedLabel.setText(_("Disk: —"))
+        self.downloadSpeedLabel.setText(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel.setText(_("Disk: ") + "\u2014")
         if self.gog_download_queue:
             next_game = self.gog_download_queue.pop(0)
             self.downloadQueuedTable.removeRow(0)
@@ -649,6 +663,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.downloadActiveCover.clear()
         self.downloadActiveHeading.setVisible(True)
         self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
         self.downloadCancelButton.setEnabled(False)
         self.downloadOverallProgress.setValue(0)
         worker = GOGSupportWorker(self.gog_api, app_id, start_command)

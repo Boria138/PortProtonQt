@@ -2782,7 +2782,7 @@ class InputManager(QObject):
                 system_action = getattr(self._parent, "handleSystemTableGamepadAction", None)
                 if callable(system_action):
                     if button_code in BUTTONS['confirm'] and system_action(focused, "confirm"):
-                        SoundManager().play("confirm")
+                        SoundManager().play("click")
                         return
                     if button_code in BUTTONS['back'] and system_action(focused, "back"):
                         SoundManager().play("back")
@@ -3530,7 +3530,7 @@ class InputManager(QObject):
                 parent = obj.parent()
                 while isinstance(parent, QObject):
                     if isinstance(parent, QComboBox):
-                        SoundManager().play("open")
+                        SoundManager().play("toggle")
                         break
                     parent = parent.parent()
 

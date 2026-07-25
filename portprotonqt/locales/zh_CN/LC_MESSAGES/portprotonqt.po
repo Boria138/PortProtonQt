@@ -41,6 +41,12 @@ msgstr "错误"
 msgid "Failed to update AppImage."
 msgstr "AppImage 更新失败。"
 
+msgid "Run in logging mode"
+msgstr "日志模式运行"
+
+msgid "Run in silent mode"
+msgstr "静默模式运行"
+
 msgid "PortProton directory not found"
 msgstr "未找到 PortProton 目录"
 
@@ -141,6 +147,10 @@ msgstr "从 PortProton 中删除"
 msgid "Launch Game"
 msgstr "启动游戏"
 
+#, fuzzy
+msgid "Repair"
+msgstr "已配对"
+
 msgid "Remove from Desktop"
 msgstr "从桌面移除"
 
@@ -152,6 +162,12 @@ msgstr "从菜单移除"
 
 msgid "Add to Menu"
 msgstr "添加到菜单"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Import"
+msgstr ""
 
 msgid "Open Game Folder"
 msgstr "打开游戏文件夹"
@@ -300,9 +316,6 @@ msgstr "复制"
 msgid "Paste"
 msgstr "粘贴"
 
-msgid "Delete"
-msgstr "删除"
-
 msgid "Select All"
 msgstr "全选"
 
@@ -344,6 +357,10 @@ msgstr "系统"
 
 msgid "Themes"
 msgstr "主题"
+
+#, fuzzy
+msgid "Downloads"
+msgstr "下载"
 
 msgid "Warning"
 msgstr "警告"
@@ -415,6 +432,15 @@ msgstr "安装依赖"
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "缺少 32 位依赖项。现在安装吗?"
 
+msgid "Game not found."
+msgstr "未找到游戏。"
+
+msgid "PortProton start script not found"
+msgstr "未找到 PortProton 启动脚本"
+
+msgid "Cannot launch game while another game is running"
+msgstr "另一游戏正在运行时无法启动游戏"
+
 msgid "Invalid command format (empty exec line)"
 msgstr "命令格式无效（exec 行为空）"
 
@@ -424,12 +450,6 @@ msgstr "命令格式无效（原生）"
 #, python-brace-format
 msgid "Failed to launch game: {0}"
 msgstr "启动游戏失败：{0}"
-
-msgid "PortProton start script not found"
-msgstr "未找到 PortProton 启动脚本"
-
-msgid "Cannot launch game while another game is running"
-msgstr "另一游戏正在运行时无法启动游戏"
 
 msgid "Choose Folder"
 msgstr "选择文件夹"
@@ -760,17 +780,17 @@ msgstr "无收藏"
 msgid "Launch \"{name}\" with PortProton"
 msgstr "使用 PortProton 启动\"{name}\""
 
-msgid "Run in silent mode"
-msgstr "静默模式运行"
-
-msgid "Run in logging mode"
-msgstr "日志模式运行"
-
 msgid "Debug log mode was launched"
 msgstr "调试日志模式已启动"
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr "要诊断问题，请将完整日志复制到网站："
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Size"
+msgstr "大小"
 
 msgid "LAST LAUNCH"
 msgstr "上次启动"
@@ -787,6 +807,9 @@ msgstr "主线 + 支线"
 msgid "COMPLETIONIST"
 msgstr "完美主义者"
 
+msgid "Install"
+msgstr "安装"
+
 msgid "Open Folder"
 msgstr "打开文件夹"
 
@@ -799,17 +822,11 @@ msgstr "设置"
 msgid "Create Log"
 msgstr "创建日志"
 
-msgid "Install"
-msgstr "安装"
-
 msgid "Open Card"
 msgstr "打开卡片"
 
 msgid "Reinstall"
 msgstr "重新安装"
-
-msgid "Game not found."
-msgstr "未找到游戏。"
 
 msgid "Stop Log"
 msgstr "停止日志"
@@ -924,9 +941,6 @@ msgstr "保存"
 msgid "Search"
 msgstr "搜索"
 
-msgid "Download"
-msgstr "下载"
-
 msgid "Clear All"
 msgstr "全部清除"
 
@@ -989,9 +1003,6 @@ msgstr "加载 WINE/Proton 时出错：{error}"
 
 msgid "Version WINE/Proton"
 msgstr "WINE/Proton 版本"
-
-msgid "Size"
-msgstr "大小"
 
 msgid "Unknown"
 msgstr "未知"
@@ -1941,6 +1952,128 @@ msgstr "卸载"
 msgid "Set output"
 msgstr "设置输出"
 
+#, fuzzy
+msgid "Queued"
+msgstr "已使用"
+
+#, fuzzy
+msgid "Completed"
+msgstr "更新完成"
+
+#, fuzzy
+msgid "Clear List"
+msgstr "全部清除"
+
+#, fuzzy
+msgid "Now Downloading"
+msgstr "正在下载"
+
+#, fuzzy
+msgid "Waiting…"
+msgstr "警告"
+
+#, fuzzy
+msgid "Disk: "
+msgstr "链接："
+
+#, fuzzy
+msgid "Game Title"
+msgstr "游戏宽度"
+
+#, fuzzy
+msgid "Started at"
+msgstr "状态"
+
+msgid "Type"
+msgstr "类型"
+
+#, fuzzy
+msgid "Store"
+msgstr "存储"
+
+msgid "Copy the final GOG login URL"
+msgstr ""
+
+msgid "Open login page"
+msgstr ""
+
+msgid "Refreshing…"
+msgstr "正在刷新…"
+
+#, fuzzy
+msgid "Unknown error"
+msgstr "未知游戏"
+
+#, fuzzy, python-brace-format
+msgid "GOG login failed: {0}"
+msgstr "文件：{0}"
+
+#, fuzzy
+msgid "GOG account connected"
+msgstr "已连接"
+
+msgid "GOG account not connected"
+msgstr ""
+
+#, python-brace-format
+msgid "Refreshing GOG library… {0}/{1}"
+msgstr ""
+
+msgid "GOG library updated"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to refresh GOG library: {0}"
+msgstr "启动游戏失败：{0}"
+
+msgid "Select installation folder"
+msgstr ""
+
+msgid "Another GOG operation is already running"
+msgstr ""
+
+msgid "GOG installation not found"
+msgstr ""
+
+#, fuzzy
+msgid "Select GOG game folder"
+msgstr "删除文件夹"
+
+msgid "Selected folder is not this GOG game"
+msgstr ""
+
+#, python-brace-format
+msgid "Delete '{0}' and all files in its installation folder?"
+msgstr ""
+
+#, fuzzy
+msgid "Starting"
+msgstr "设置项"
+
+#, fuzzy, python-brace-format
+msgid "Download: {0} MiB/s"
+msgstr "正在下载… {0}%"
+
+#, python-brace-format
+msgid "Disk: {0} MiB/s"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "ETA: {0}"
+msgstr "，预计剩余时间：{}秒"
+
+#, fuzzy
+msgid "Failed"
+msgstr "详细"
+
+#, fuzzy
+msgid "Repaired"
+msgstr "已配对"
+
+#, fuzzy
+msgid "Download process failed"
+msgstr "下载进行中"
+
 msgid "Quick Launch"
 msgstr "快速启动"
 
@@ -1977,9 +2110,6 @@ msgstr "隐藏"
 msgid "Badge View Type:"
 msgstr "徽章视图类型："
 
-msgid "Refreshing…"
-msgstr "正在刷新…"
-
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
@@ -1990,6 +2120,9 @@ msgstr ""
 
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
+
+msgid "GOG Account"
+msgstr ""
 
 msgid "Brief"
 msgstr "简要"
@@ -2049,6 +2182,10 @@ msgid "Auto download PPDB from"
 msgstr "自动从以下位置下载 PPDB"
 
 msgid "Auto update AppImage"
+msgstr "自动更新 AppImage"
+
+#, fuzzy
+msgid "Integrate AppImage"
 msgstr "自动更新 AppImage"
 
 msgid "Force system DPI for Wine"
@@ -2117,6 +2254,14 @@ msgstr "确认清除缓存"
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr "确定要清除缓存吗？此操作无法撤销。"
 
+#, python-brace-format
+msgid "AppImage integrated at: {path}"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to integrate AppImage: {error}"
+msgstr "重命名文件失败：{error}"
+
 msgid "Failed to update xdg-autostart entry."
 msgstr "更新 xdg-autostart 条目失败。"
 
@@ -2153,9 +2298,6 @@ msgstr "分享"
 
 msgid "Profile"
 msgstr "配置文件"
-
-msgid "Type"
-msgstr "类型"
 
 msgid "Add"
 msgstr "添加"
