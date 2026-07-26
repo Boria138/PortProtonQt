@@ -391,6 +391,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
 
     def _on_gog_library_failed(self, message: str) -> None:
         self.gogAccountStatus.setText(_("Failed to refresh GOG library: {0}").format(message))
+        self.loadGames(force_load=True)
 
     def _on_gog_library_worker_finished(self) -> None:
         self.gog_library_worker = None

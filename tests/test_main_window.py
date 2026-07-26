@@ -266,6 +266,46 @@ def test_gog_library_refresh_restores_account_status() -> None:
     assert calls == ["account", ("load", {"force_load": True})]
 
 
+def test_library_refresh_updates_connected_gog_library(tmp_path: Path) -> None:
+    auth_path = tmp_path / "auth.json"
+    auth_path.touch()
+    calls = []
+    refresh_button = MagicMock()
+    refresh_button.setEnabled.side_effect = lambda enabled: calls.append(enabled)
+    window = SimpleNamespace(
+        _refresh_in_progress=False,
+        searchEdit=SimpleNamespace(clear=lambda: calls.append("clear")),
+        refreshButton=refresh_button,
+        _gamepad_tooltip_map={},
+        game_library_manager=None,
+        gog_api=SimpleNamespace(auth_path=auth_path),
+        gog_library_worker=None,
+        _refresh_gog_library=lambda: calls.append("gog"),
+    )
+
+    LibraryMixin.refreshGames(cast(Any, window))
+
+    assert calls == ["clear", False, "gog"]
+
+
+def test_gog_library_refresh_failure_reloads_cached_games(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    calls = []
+    window = SimpleNamespace(
+        gogAccountStatus=SimpleNamespace(setText=lambda text: calls.append(text)),
+        loadGames=lambda **kwargs: calls.append(kwargs),
+    )
+    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+
+    GOGMixin._on_gog_library_failed(cast(Any, window), "network error")
+
+    assert calls == [
+        "Failed to refresh GOG library: network error",
+        {"force_load": True},
+    ]
+
+
 def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -> None:
     calls = []
     window = SimpleNamespace(
