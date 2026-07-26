@@ -82,6 +82,23 @@ class GOGAuthWorker(QThread):
             self.authenticated.emit(False, str(error))
 
 
+class GOGAccountWorker(QThread):
+    """Load the GOG account name outside the UI thread."""
+
+    loaded = Signal(str)
+
+    def __init__(self, api: GOGAPI) -> None:
+        super().__init__()
+        self.api = api
+
+    def run(self) -> None:
+        try:
+            self.loaded.emit(self.api.refresh_account_name())
+        except Exception:
+            logger.exception("Failed to refresh GOG account name")
+            self.loaded.emit("")
+
+
 class GOGSupportWorker(QThread):
     """Install GOG support instructions outside the UI thread."""
 
@@ -253,11 +270,21 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.gog_auth_timer.timeout.connect(self._cancel_gog_login)
         self.gog_auth_timer.start(GOG_LOGIN_TIMEOUT_MS)
         self.gogLoginButton.setEnabled(False)
-        self.gogLoginButton.setText(_("Copy the final GOG login URL"))
+        self.gogAccountStatus.setText(_("Copy the link to clipboard"))
         if not QDesktopServices.openUrl(QUrl(GOG_LOGIN_URL)):
             self._stop_gog_login_clipboard()
             self.gogLoginButton.setEnabled(True)
-            self.gogLoginButton.setText(_("Open login page"))
+            self._update_gog_account_state()
+
+    def _handle_gog_account_action(self) -> None:
+        if not self.gog_api.auth_path.is_file():
+            self._start_gog_login()
+            return
+        if not self.gog_api.logout():
+            self.gogAccountStatus.setText(_("Failed to log out of GOG account"))
+            return
+        self._update_gog_account_state()
+        self.loadGames(force_load=True)
 
     def _check_gog_login_clipboard(self) -> None:
         code = self.gog_api.extract_auth_code(QApplication.clipboard().text().strip())
@@ -294,24 +321,52 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             message = error or _("Unknown error")
             self.gogAccountStatus.setText(_("GOG login failed: {0}").format(message))
             return
-        self.gogAccountStatus.setText(_("GOG account connected"))
+        account_name = self.gog_api.get_account_name()
+        self.gogAccountStatus.setText(
+            account_name or _("GOG account connected")
+        )
         self.loadGames(force_load=True)
         self._refresh_gog_library()
 
     def _on_gog_auth_worker_finished(self) -> None:
         self.gogLoginButton.setEnabled(True)
-        self.gogLoginButton.setText(_("Open login page"))
+        button_text = (
+            _("Log out")
+            if self.gog_api.auth_path.is_file() else _("Open login page")
+        )
+        self.gogLoginButton.setText(button_text)
         self.gog_auth_worker = None
 
     def _update_gog_account_state(self) -> None:
         connected = self.gog_api.auth_path.is_file()
+        account_name = self.gog_api.get_account_name() if connected else ""
         status = (
-            _("GOG account connected")
+            account_name or _("GOG account connected")
             if connected else _("GOG account not connected")
         )
         self.gogAccountStatus.setText(status)
         self.gogLoginButton.setEnabled(True)
-        self.gogLoginButton.setText(_("Open login page"))
+        self.gogLoginButton.setText(
+            _("Log out") if connected else _("Open login page")
+        )
+        if connected and not account_name:
+            self._refresh_gog_account_name()
+
+    def _refresh_gog_account_name(self) -> None:
+        if getattr(self, "gog_account_worker", None) is not None:
+            return
+        worker = GOGAccountWorker(self.gog_api)
+        worker.loaded.connect(self._on_gog_account_name_loaded)
+        worker.finished.connect(self._on_gog_account_worker_finished)
+        self.gog_account_worker = worker
+        worker.start()
+
+    def _on_gog_account_name_loaded(self, account_name: str) -> None:
+        if account_name:
+            self.gogAccountStatus.setText(account_name)
+
+    def _on_gog_account_worker_finished(self) -> None:
+        self.gog_account_worker = None
 
     def _refresh_gog_library(self) -> None:
         if getattr(self, "gog_library_worker", None) is not None:
@@ -331,7 +386,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         )
 
     def _on_gog_library_loaded(self, _games: list) -> None:
-        self.gogAccountStatus.setText(_("GOG library updated"))
+        self._update_gog_account_state()
         self.loadGames(force_load=True)
 
     def _on_gog_library_failed(self, message: str) -> None:

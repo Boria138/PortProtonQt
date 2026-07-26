@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.game_library_manager import GameLibraryManager
+from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
@@ -173,7 +174,10 @@ def test_gog_account_state_detects_saved_auth(
     auth_path = tmp_path / "auth.json"
     auth_path.write_text("{}")
     window = SimpleNamespace(
-        gog_api=SimpleNamespace(auth_path=auth_path),
+        gog_api=SimpleNamespace(
+            auth_path=auth_path,
+            get_account_name=lambda: "gog-user",
+        ),
         gogAccountStatus=Control(),
         gogLoginButton=Control(),
     )
@@ -181,12 +185,91 @@ def test_gog_account_state_detects_saved_auth(
 
     GOGMixin._update_gog_account_state(cast(Any, window))
 
-    assert window.gogAccountStatus.text == "GOG account connected"
+    assert window.gogAccountStatus.text == "gog-user"
+    assert window.gogLoginButton.text == "Log out"
+
+
+def test_gog_account_action_logs_out_and_reloads_library(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    auth_path = tmp_path / "auth.json"
+    auth_path.write_text("{}")
+    calls = []
+
+    def logout() -> bool:
+        calls.append("logout")
+        auth_path.unlink()
+        return True
+
+    window = SimpleNamespace(
+        gog_api=SimpleNamespace(
+            auth_path=auth_path,
+            get_account_name=lambda: "",
+            logout=logout,
+        ),
+        gogAccountStatus=SimpleNamespace(setText=lambda text: calls.append(text)),
+        gogLoginButton=SimpleNamespace(
+            setEnabled=lambda enabled: calls.append(("enabled", enabled)),
+            setText=lambda text: calls.append(("button", text)),
+        ),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
+    )
+    window._update_gog_account_state = lambda: GOGMixin._update_gog_account_state(
+        cast(Any, window)
+    )
+    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+
+    GOGMixin._handle_gog_account_action(cast(Any, window))
+
+    assert "logout" in calls
+    assert ("button", "Open login page") in calls
+    assert ("load", {"force_load": True}) in calls
+
+
+def test_gog_logout_removes_credentials_and_library_cache(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    api = GOGAPI()
+    api.data_dir.mkdir(parents=True)
+    api.auth_path.write_text("{}")
+    api.account_path.write_text('{"username": "gog-user"}')
+    api.library_path.write_text("[]")
+
+    assert api.get_account_name() == "gog-user"
+    assert api.logout() is True
+    assert not api.auth_path.exists()
+    assert not api.account_path.exists()
+    assert not api.library_path.exists()
+
+
+def test_gog_account_name_callback_updates_status() -> None:
+    values = []
+    window = SimpleNamespace(
+        gogAccountStatus=SimpleNamespace(setText=values.append),
+    )
+
+    GOGMixin._on_gog_account_name_loaded(cast(Any, window), "gog-user")
+
+    assert values == ["gog-user"]
+
+
+def test_gog_library_refresh_restores_account_status() -> None:
+    calls = []
+    window = SimpleNamespace(
+        _update_gog_account_state=lambda: calls.append("account"),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
+    )
+
+    GOGMixin._on_gog_library_loaded(cast(Any, window), [])
+
+    assert calls == ["account", ("load", {"force_load": True})]
 
 
 def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -> None:
     calls = []
     window = SimpleNamespace(
+        gog_api=SimpleNamespace(get_account_name=lambda: "gog-user"),
         gogAccountStatus=SimpleNamespace(setText=lambda text: calls.append(text)),
         loadGames=lambda **kwargs: calls.append(("load", kwargs)),
         _refresh_gog_library=lambda: calls.append("refresh"),
@@ -196,7 +279,7 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
     GOGMixin._on_gog_authenticated(cast(Any, window), True, "")
 
     assert calls == [
-        "GOG account connected",
+        "gog-user",
         ("load", {"force_load": True}),
         "refresh",
     ]

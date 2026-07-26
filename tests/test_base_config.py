@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from portprotonqt.config.base import BaseConfig
+from portprotonqt.config.game import GameConfig
 
 
 @pytest.fixture(autouse=True)
@@ -98,6 +99,14 @@ class TestBaseConfigReadWrite:
         from portprotonqt.config.validators import ValidationError
         with pytest.raises(ValidationError):
             cfg._save_value("flag", "yes", "bool")
+
+
+def test_game_config_saves_steam_account(tmp_path: Path):
+    config = GameConfig(config_file=tmp_path / "test.conf")
+
+    assert config.get_steam_account_id() == "auto"
+    config.set_steam_account_id("76561198012003723")
+    assert config.get_steam_account_id() == "76561198012003723"
 
 
 class TestUpdateAppVersion:

@@ -25,6 +25,7 @@ GOG_LOGIN_URL = (
 )
 GOGDL_RELEASE_URL = "https://api.github.com/repos/Heroic-Games-Launcher/heroic-gogdl/releases/latest"
 GOGDL_AUTH_TIMEOUT = 60
+GOG_USER_TIMEOUT = 15
 GOG_METADATA_WORKERS = 4
 GOG_SETUP_MARKER_VERSION = 1
 GOG_SETUP_TIMEOUT = 600
@@ -46,6 +47,7 @@ class GOGAPI:
         data_home = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local/share"))
         self.data_dir = data_home / "PortProtonQt" / "gog"
         self.auth_path = self.data_dir / "auth.json"
+        self.account_path = self.data_dir / "account.json"
         self.config_dir = self.data_dir / "gogdl"
         self.library_path = self.data_dir / "library.json"
         self.installed_path = self.data_dir / "installed.json"
@@ -135,6 +137,7 @@ class GOGAPI:
             return False, "gogdl returned an invalid authentication response"
         if not isinstance(data, dict) or data.get("error"):
             return False, "GOG rejected the authorization code"
+        self._cache_account(data)
         if self.auth_path.is_file():
             self.auth_path.chmod(0o600)
         return True, ""
@@ -156,6 +159,57 @@ class GOGAPI:
         """Return whether gogdl provides usable account credentials."""
         credentials = self.get_credentials()
         return bool(credentials.get("access_token") and credentials.get("user_id"))
+
+    def get_account_name(self) -> str:
+        """Return cached GOG account name or user ID."""
+        account = self._load_json(self.account_path, {})
+        if isinstance(account, dict) and account.get("username"):
+            return str(account["username"])
+        credentials = self._load_json(self.auth_path, {})
+        if isinstance(credentials, dict) and credentials.get("user_id"):
+            return str(credentials["user_id"])
+        return ""
+
+    def refresh_account_name(self) -> str:
+        """Fetch and cache the current GOG account name."""
+        return self._cache_account(self.get_credentials())
+
+    def _cache_account(self, credentials: dict) -> str:
+        """Fetch GOG account data for credentials and return its username."""
+        user_id = credentials.get("user_id")
+        access_token = credentials.get("access_token")
+        if not user_id or not access_token:
+            return ""
+        try:
+            response = requests.get(
+                f"https://users.gog.com/users/{user_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+                timeout=GOG_USER_TIMEOUT,
+            )
+            response.raise_for_status()
+            account = response.json()
+        except requests.RequestException as error:
+            logger.warning("Failed to load GOG account name: %s", error)
+            return ""
+        if not isinstance(account, dict) or not account.get("username"):
+            return ""
+        self._save_json(self.account_path, account)
+        return str(account["username"])
+
+    def logout(self) -> bool:
+        """Remove local GOG credentials and account library cache."""
+        try:
+            self.auth_path.unlink(missing_ok=True)
+        except OSError as error:
+            logger.error("Failed to remove GOG credentials: %s", error)
+            return False
+        try:
+            self.account_path.unlink(missing_ok=True)
+        except OSError as error:
+            logger.warning("Failed to remove cached GOG account name: %s", error)
+        self.clear_library_cache()
+        logger.info("GOG account disconnected")
+        return True
 
     def refresh_library(
         self, progress_callback: Callable[[int, int], None] | None = None

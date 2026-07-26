@@ -18,6 +18,7 @@ from portprotonqt.steam_api.utils import (
     remove_duplicates,
     convert_steam_id,
     get_last_steam_user,
+    get_steam_users,
 )
 from portprotonqt.steam_api.cache import (
     get_exiftool_data,
@@ -75,6 +76,7 @@ __all__ = [
     "remove_duplicates",
     "convert_steam_id",
     "get_last_steam_user",
+    "get_steam_users",
     # Cache
     "get_exiftool_data",
     "delete_cached_app_files",

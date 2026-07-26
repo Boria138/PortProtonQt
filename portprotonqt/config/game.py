@@ -25,3 +25,12 @@ class GameConfig(BaseConfig):
         """Set game display filter."""
         validate_string(filter_value, "display_filter", min_len=1, max_len=50)
         self._save_value("display_filter", filter_value, "str")
+
+    def get_steam_account_id(self) -> str:
+        """Get selected Steam account ID or automatic selection."""
+        return self._get_str("steam_account_id", "auto")
+
+    def set_steam_account_id(self, account_id: str) -> None:
+        """Set selected Steam account ID or automatic selection."""
+        validate_string(account_id, "steam_account_id", min_len=1, max_len=20)
+        self._save_value("steam_account_id", account_id, "str")

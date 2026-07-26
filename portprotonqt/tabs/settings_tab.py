@@ -42,7 +42,11 @@ from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.portproton_api import get_user_conf_setting, set_user_conf_setting
 from portprotonqt.qt_utils import get_system_dpi_for_wine
-from portprotonqt.steam_api import get_steam_compatibilitytools_dir
+from portprotonqt.steam_api import (
+    get_steam_compatibilitytools_dir,
+    get_steam_home,
+    get_steam_users,
+)
 from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
@@ -120,18 +124,44 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(genFrame)
 
-        gogFrame, gogForm = create_section(_("GOG Account"), self.theme)
+        gogFrame, gogForm = create_section(_("Accounts"), self.theme)
         gogForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(gogFrame)
+        self.steamAccountCombo = CustomComboBox(theme=self.theme)
+        self.steamAccountCombo.setStyleSheet(
+            self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE
+        )
+        self.steamAccountCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.steamAccountCombo.addItem(_("Auto"), "auto")
+        steam_home = get_steam_home()
+        steam_users = get_steam_users(steam_home) if steam_home else {}
+        for user_id, user_info in steam_users.items():
+            account_name = user_info.get("AccountName", user_id)
+            persona_name = user_info.get("PersonaName", account_name)
+            self.steamAccountCombo.addItem(
+                f"{persona_name} ({account_name})", user_id
+            )
+        selected_account = game_config.get_steam_account_id()
+        selected_index = self.steamAccountCombo.findData(selected_account)
+        self.steamAccountCombo.setCurrentIndex(max(selected_index, 0))
+        steam_account_title = QLabel(f"{_('Account')} Steam:")
+        steam_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(steam_account_title, self.steamAccountCombo)
         self.gogAccountStatus = QLabel()
         self.gogAccountStatus.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.gogAccountStatus.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.gogLoginButton = AutoSizeButton(_("Open login page"))
         self.gogLoginButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.gogLoginButton.clicked.connect(self._start_gog_login)
+        self.gogLoginButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gogLoginButton.clicked.connect(self._handle_gog_account_action)
         gog_buttons = QHBoxLayout()
+        gog_buttons.addWidget(self.gogAccountStatus)
         gog_buttons.addWidget(self.gogLoginButton)
-        gog_buttons.addStretch()
-        gogForm.addRow(self.gogAccountStatus, gog_buttons)
+        gog_account_title = QLabel(f"{_('Account')} GOG:")
+        gog_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(gog_account_title, gog_buttons)
         self._update_gog_account_state()
 
         self.timeDetailCombo = CustomComboBox(theme=self.theme)
@@ -188,6 +218,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             idx = 0
         self.trayMenuModeCombo.setCurrentIndex(idx)
         uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
+        self.setTabOrder(self.timeDetailCombo, self.steamAccountCombo)
+        self.setTabOrder(self.steamAccountCombo, self.gogLoginButton)
+        self.setTabOrder(self.gogLoginButton, self.trayMenuModeCombo)
 
         self.gamepad_type_keys = ["auto", "xbox", "playstation"]
         self.gamepad_type_labels = [_("Auto"), "Xbox", "PlayStation"]
@@ -764,6 +797,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
     def savePortProtonSettings(self):
         previous_economy_mode = ui_config.get_economy_mode()
+        game_config.set_steam_account_id(
+            str(self.steamAccountCombo.currentData())
+        )
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
         ui_config.set_time_detail_level(time_key)
