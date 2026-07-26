@@ -2054,10 +2054,10 @@ msgstr "Typ"
 msgid "Store"
 msgstr "Datenträger"
 
-msgid "Copy the final GOG login URL"
+msgid "Copy the link to clipboard"
 msgstr ""
 
-msgid "Open login page"
+msgid "Failed to log out of GOG account"
 msgstr ""
 
 msgid "Refreshing…"
@@ -2075,14 +2075,18 @@ msgstr "Datei: {0}"
 msgid "GOG account connected"
 msgstr "Verbunden"
 
+#, fuzzy
+msgid "Log out"
+msgstr "Abmelden"
+
+msgid "Open login page"
+msgstr ""
+
 msgid "GOG account not connected"
 msgstr ""
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
-msgstr ""
-
-msgid "GOG library updated"
 msgstr ""
 
 #, fuzzy, python-brace-format
@@ -2184,8 +2188,12 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr "PortProton-Einstellungen"
 
-msgid "GOG Account"
-msgstr ""
+#, fuzzy
+msgid "Accounts"
+msgstr "Einbinden"
+
+msgid "Auto"
+msgstr "Auto"
 
 msgid "Brief"
 msgstr "Vereinfacht"
@@ -2198,9 +2206,6 @@ msgstr "Interface-Einstellungen"
 
 msgid "Tray Menu Type:"
 msgstr "Typ des Tray-Menüs:"
-
-msgid "Auto"
-msgstr "Auto"
 
 msgid "Gamepad Type:"
 msgstr "Gamepad-Typ:"

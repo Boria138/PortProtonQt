@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-24 20:23+0500\n"
+"POT-Creation-Date: 2026-07-26 11:29+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1944,10 +1944,10 @@ msgstr ""
 msgid "Store"
 msgstr ""
 
-msgid "Copy the final GOG login URL"
+msgid "Copy the link to clipboard"
 msgstr ""
 
-msgid "Open login page"
+msgid "Failed to log out of GOG account"
 msgstr ""
 
 msgid "Refreshing…"
@@ -1963,14 +1963,17 @@ msgstr ""
 msgid "GOG account connected"
 msgstr ""
 
+msgid "Log out"
+msgstr ""
+
+msgid "Open login page"
+msgstr ""
+
 msgid "GOG account not connected"
 msgstr ""
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
-msgstr ""
-
-msgid "GOG library updated"
 msgstr ""
 
 #, python-brace-format
@@ -2065,7 +2068,10 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr ""
 
-msgid "GOG Account"
+msgid "Accounts"
+msgstr ""
+
+msgid "Auto"
 msgstr ""
 
 msgid "Brief"
@@ -2078,9 +2084,6 @@ msgid "Interface Settings"
 msgstr ""
 
 msgid "Tray Menu Type:"
-msgstr ""
-
-msgid "Auto"
 msgstr ""
 
 msgid "Gamepad Type:"
