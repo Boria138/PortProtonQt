@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QWidget
 
 import portprotonqt.detail_pages.utils as detail_utils
 from portprotonqt.detail_pages import DetailPageManager
+from portprotonqt.animations.detail_background import DetailBackgroundAnimations
 from portprotonqt.detail_pages.utils import (
     _build_palette_stops,
     _resolve_gradient_stops,
@@ -314,6 +315,23 @@ class TestResolveGradientStops:
         assert "stop:0 #ff0000" in result
         assert "stop:1 #00ff00" in result
 
+    def test_nested_background_gradient(self):
+        theme = SimpleNamespace(DETAIL_PAGE_BACKGROUNDS={
+            "gradient": {"stops": "stop:0 #123456, stop:1 #654321"},
+        })
+        result = _resolve_gradient_stops(theme, [])
+        assert result == "stop:0 #123456, stop:1 #654321"
+
+    def test_legacy_gradient_overrides_nested_background(self):
+        theme = SimpleNamespace(
+            DETAIL_PAGE_BACKGROUNDS={
+                "gradient": {"stops": "stop:0 #123456"},
+            },
+            DETAIL_PAGE_GRADIENT="stop:0 #abcdef",
+        )
+        result = _resolve_gradient_stops(theme, [])
+        assert result == "stop:0 #abcdef"
+
 
 # === _setup_wave_background ===
 
@@ -361,6 +379,24 @@ class TestSetupWaveBackground:
         mock_timer.timeout.connect.assert_called_once()
         mock_timer.start.assert_called_once()
 
+    def test_waves_use_nested_background_config(self, monkeypatch):
+        timer = MagicMock()
+        monkeypatch.setattr(
+            "portprotonqt.detail_pages.utils.QTimer", MagicMock(return_value=timer),
+        )
+        theme = SimpleNamespace(
+            DETAIL_PAGE_BG_MODE="waves",
+            DETAIL_PAGE_BACKGROUNDS={
+                "waves": {
+                    "animation_speed": 0.04,
+                    "animation_interval_ms": 45,
+                },
+            },
+        )
+        page = MagicMock()
+        _setup_wave_background(page, _make_palette(["#111"]), theme)
+        timer.setInterval.assert_called_once_with(45)
+
     def test_called_twice_updates_palette(self):
         theme = MagicMock()
         theme.DETAIL_PAGE_BG_MODE = "static_waves"
@@ -377,6 +413,50 @@ class TestSetupWaveBackground:
         assert state["palette"] == palette2
         assert state.get("original_paint") is not None
 
+
+# === DetailBackgroundAnimations ===
+
+
+class TestDetailBackgroundAnimations:
+    def test_supports_all_omikuji_backgrounds_in_static_mode(self):
+        manager = DetailBackgroundAnimations()
+        page = MagicMock()
+        config = {}
+        for effect in manager.effects:
+            theme = SimpleNamespace(
+                DETAIL_PAGE_BG_MODE=f"static_{effect}",
+                DETAIL_PAGE_BACKGROUNDS=config,
+            )
+            assert manager.setup(page, _make_palette(["#111"]), theme)
+            assert manager._states[page]["effect"] == effect
+            assert manager._states[page]["timer"] is None
+
+    def test_animated_mode_starts_timer(self, monkeypatch):
+        timer = MagicMock()
+        monkeypatch.setattr(
+            "portprotonqt.animations.detail_background.QTimer",
+            MagicMock(return_value=timer),
+        )
+        manager = DetailBackgroundAnimations()
+        page = MagicMock()
+        theme = SimpleNamespace(
+            DETAIL_PAGE_BG_MODE="aurora",
+            DETAIL_PAGE_BACKGROUNDS={
+                "animation_interval_ms": 40,
+                "animation_speed": 0.02,
+            },
+        )
+        assert manager.setup(page, _make_palette(["#111"]), theme)
+        timer.setInterval.assert_called_once_with(40)
+        timer.start.assert_called_once()
+        assert manager._states[page]["timer"] is timer
+
+    def test_wave_mode_is_not_claimed(self):
+        manager = DetailBackgroundAnimations()
+        page = MagicMock()
+        theme = SimpleNamespace(DETAIL_PAGE_BG_MODE="waves")
+        assert not manager.setup(page, _make_palette(["#111"]), theme)
+        assert page not in manager._states
 
 # === _remove_wave_background ===
 

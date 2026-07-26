@@ -13,8 +13,7 @@
 - [Library Layout Mode](#library-layout-mode)
 - [Detail Page Layout Mode](#detail-page-layout-mode)
 - [Detail Page Background Mode](#detail-page-background-mode)
-  - [Custom Gradient Stops](#custom-gradient-stops)
-  - [Wave Configuration](#wave-configuration)
+  - [Background Configuration](#background-configuration)
 - [Preloader](#preloader)
 - [Source Corner (Ribbon)](#source-corner-ribbon)
 - [Terminal Color Schemes](#terminal-color-schemes)
@@ -267,84 +266,156 @@ Economy mode also forces the compact detail page layout.
 You can control the detail page background style from the theme via `styles.py`:
 
 ```python
-# "gradient" (default), "static_waves", or "waves"
+# One of the background modes listed below
 DETAIL_PAGE_BG_MODE = "gradient"
 ```
 
 - `gradient`: diagonal linear gradient extracted from the cover image palette (default).
-- `static_waves`: gradient background with static (non-animated) wave shapes overlaid.
 - `waves`: gradient background with animated wave shapes that drift over time.
+- `aurora`: animated vertical aurora ribbons.
+- `metaballs`: animated glowing metaballs.
+- `sakura`: animated falling petals.
+- `veins`: animated connected vein pattern.
+- `diagnostics`: animated grid, signal trace, scanner, and compatibility status.
 
-### Custom Gradient Stops
-
-By default, the detail page gradient is generated from the cover image palette with evenly distributed positions. Define `DETAIL_PAGE_GRADIENT` in `styles.py` to override positions, colors, or both:
-
-```python
-# Custom positions — palette colors redistributed to these positions
-DETAIL_PAGE_GRADIENT = [0, 0.3, 0.7, 1]
-
-# Custom colors — position and color for each stop
-DETAIL_PAGE_GRADIENT = [
-    {"position": 0, "color": "#101010"},
-    {"position": 0.5, "color": "#202020"},
-    {"position": 1, "color": "#303030"},
-]
-
-# Raw QSS stop string
-DETAIL_PAGE_GRADIENT = "stop:0 #101010, stop:0.5 #202020, stop:1 #303030"
-```
-
-### Gradient Type and Number of Colors Extracted from the Cover
-
-You can set the gradient type (linear or radial), by defining `DETAIL_PAGE_GRADIENT_TYPE` in `styles.py`:
+Prefix an animated background mode with `static_` to render one frame without
+starting its animation timer. For example:
 
 ```python
-# Accepts `linear` or `radial`
-DETAIL_PAGE_GRADIENT_TYPE = 'linear'
+DETAIL_PAGE_BG_MODE = "static_diagnostics"
 ```
 
-Set the gradient direction:
+The supported static modes are `static_waves`, `static_aurora`,
+`static_metaballs`, `static_sakura`, `static_veins`, and
+`static_diagnostics`.
 
-```python
-# For linear gradients
-DETAIL_PAGE_GRADIENT_X1 = 0
-DETAIL_PAGE_GRADIENT_Y1 = 0
-DETAIL_PAGE_GRADIENT_X2 = 1
-DETAIL_PAGE_GRADIENT_Y2 = 0
-
-# For radial gradients
-DETAIL_PAGE_GRADIENT_CX = 0.3
-DETAIL_PAGE_GRADIENT_CY = 0.3
-DETAIL_PAGE_GRADIENT_RADIUS = 0.7
-DETAIL_PAGE_GRADIENT_FX = 0.3
-DETAIL_PAGE_GRADIENT_FY = 0.3
-```
-
-Set the number of colors to extract from the cover:
+Set the number of colors extracted from the cover:
 
 ```python
 # Must be at least 2
 DETAIL_PAGE_PALETTE_COLORS = 5
 ```
 
-### Wave Configuration
+### Background Configuration
 
-When `DETAIL_PAGE_BG_MODE` is `"static_waves"` or `"waves"`, you can customize the wave appearance via the `DETAIL_PAGE_WAVES` dictionary:
+Background modes use `DETAIL_PAGE_BACKGROUNDS`:
 
 ```python
-DETAIL_PAGE_WAVES = {
-    "layer_count": 4,              # Number of wave layers
-    "wave_amplitude_ratio": 0.06,  # Wave height as ratio of page height
-    "wave_frequency": 2.0,         # Number of wave cycles across the page
-    "layer_spacing_ratio": 0.04,   # Vertical spacing between layers as ratio of page height
-    "base_opacity": 0.45,          # Opacity of the first wave layer (0.0–1.0)
-    "opacity_decay": 0.85,         # Opacity multiplier for each subsequent layer
-    "animation_speed": 0.03,       # Phase increment per tick — "waves" mode only (higher = faster)
-    "animation_interval_ms": 30,   # Timer interval in ms — "waves" mode only (lower = smoother)
+DETAIL_PAGE_BACKGROUNDS = {
+    # Common settings for aurora, diagnostics, metaballs, sakura, and veins.
+    "animation_interval_ms": 30,  # Milliseconds between frames.
+    "animation_speed": 0.03,      # Phase increment per frame.
+    "gradient": {
+        # None uses cover colors.
+        # [0, 0.3, 0.7, 1] distributes cover colors at custom positions.
+        # [{"position": 0, "color": "#101010"}, ...] sets custom colors.
+        # "stop:0 #101010, stop:1 #303030" accepts raw QSS stops.
+        "stops": None,
+        "type": "linear", # "linear" or "radial".
+        "x1": 0,          # Linear gradient start X (0.0-1.0).
+        "y1": 0,          # Linear gradient start Y (0.0-1.0).
+        "x2": 1,          # Linear gradient end X (0.0-1.0).
+        "y2": 1,          # Linear gradient end Y (0.0-1.0).
+        "cx": 0.5,        # Radial gradient center X (0.0-1.0).
+        "cy": 0.5,        # Radial gradient center Y (0.0-1.0).
+        "radius": 0.5,    # Radial gradient radius relative to the page.
+        "fx": 0.5,        # Radial gradient focal point X (0.0-1.0).
+        "fy": 0.5,        # Radial gradient focal point Y (0.0-1.0).
+    },
+    "waves": {
+        "layer_count": 4,              # Number of overlapping wave layers.
+        "wave_amplitude_ratio": 0.06,  # Wave height / page height.
+        "wave_frequency": 2.0,         # Oscillations across the page.
+        "layer_spacing_ratio": 0.04,   # Layer gap / page height.
+        "base_opacity": 0.45,          # First layer opacity (0.0-1.0).
+        "opacity_decay": 0.85,         # Opacity multiplier for later layers.
+        "animation_speed": 0.03,       # Wave phase increment per frame.
+        "animation_interval_ms": 30,   # Milliseconds between wave frames.
+    },
+    "aurora": {
+        "line_count": 8,           # Number of vertical ribbons.
+        "line_width_ratio": 0.006, # Ribbon width / page width.
+        "opacity": 0.35,           # Ribbon opacity (0.0-1.0).
+        "steps": 40,               # Curve segments per ribbon.
+        "frequency": 5.0,          # Bends along each ribbon.
+        "speed": 1.2,              # Ribbon motion speed multiplier.
+        "phase_step": 0.8,         # Phase difference between ribbons.
+        "edge_offset": 0.5,        # Offset used to distribute ribbons.
+        "drift_ratio": 0.06,       # Horizontal drift / page width.
+    },
+    "diagnostics": {
+        "color": color_accent,     # Color of every diagnostics element.
+        "font_family": font_family,# Status text font.
+        "font_size": 13,           # Status text size in pixels.
+        "grid_spacing": 64,        # Grid cell size in pixels.
+        "grid_line_width": 1,      # Grid line width in pixels.
+        "grid_opacity": 0.08,      # Grid opacity (0.0-1.0).
+        "trace_baseline": 0.78,    # Trace Y position / page height.
+        "trace_amplitude": 0.025,  # Trace height / page height.
+        "trace_frequency": 28,     # Oscillations across the page.
+        "trace_speed": 1.4,        # Trace motion speed multiplier.
+        "trace_step_width": 4,     # Pixels between trace samples.
+        "trace_line_width": 2,     # Trace line width in pixels.
+        "trace_opacity": 0.45,     # Trace opacity (0.0-1.0).
+        "text_opacity": 0.7,       # Status text opacity (0.0-1.0).
+        "text_x_ratio": 0.025,     # Text left margin / page width.
+        "first_line_y_ratio": 0.88,# First status Y / page height.
+        "second_line_y_ratio": 0.91,# Second status Y / page height.
+        "status_text": "COMPATIBILITY LAYER: OPERATIONAL", # First status.
+        "containment_text": "WINDOWS CONTAINMENT: ACTIVE",  # Second status.
+        "sweep_offset": 0.25,      # Initial scanner X position (0.0-1.0).
+        "sweep_speed": 0.08,       # Scanner motion speed multiplier.
+        "sweep_width": 2,          # Scanner width in pixels.
+        "sweep_opacity": 0.2,      # Scanner opacity (0.0-1.0).
+    },
+    "metaballs": {
+        "count": 18,               # Number of glowing balls.
+        "seed_offset": 1,          # Seed offset for another layout.
+        "min_radius_ratio": 0.08,  # Minimum radius / page height.
+        "radius_range": 0.08,      # Random extra radius range.
+        "min_speed": 0.004,        # Minimum vertical travel speed.
+        "opacity": 0.55,           # Ball center opacity (0.0-1.0).
+        "x_seed": 1.31,            # Horizontal placement seed multiplier.
+        "y_seed": 7.13,            # Vertical placement seed multiplier.
+        "speed_seed": 2.71,        # Individual speed seed multiplier.
+    },
+    "sakura": {
+        "count": 32,               # Number of petals.
+        "seed_offset": 1,          # Seed offset for another layout.
+        "min_size_ratio": 0.009,   # Minimum size / page height.
+        "size_range": 0.009,       # Random extra size range.
+        "min_speed": 0.002,        # Minimum falling speed.
+        "opacity": 0.65,           # Petal opacity (0.0-1.0).
+        "sway_ratio": 0.04,        # Horizontal sway / page width.
+        "rotation_speed": 40,      # Degrees per animation phase.
+        "x_seed": 1.31,            # Horizontal placement seed multiplier.
+        "y_seed": 7.13,            # Vertical placement seed multiplier.
+        "speed_seed": 2.71,        # Individual speed seed multiplier.
+    },
+    "veins": {
+        "columns": 9,          # Number of point columns.
+        "rows": 6,             # Number of point rows.
+        "seed_offset": 1,      # Seed offset for another pattern.
+        "cell_offset": 0.5,    # Point position inside a grid cell.
+        "motion_ratio": 0.12,  # Horizontal movement / cell width.
+        "line_width": 2,       # Connection width in pixels.
+        "opacity": 0.3,        # Connection opacity (0.0-1.0).
+    },
 }
 ```
 
-Wave colors are derived from the darkened cover image palette. Each layer uses a different palette color with decreasing opacity. The `animation_speed` and `animation_interval_ms` parameters only affect the `"waves"` mode.
+Each named dictionary contains the visual constants for that effect. Copy the
+corresponding dictionary from the standard theme before overriding individual
+values so that all required keys remain present.
+
+The `diagnostics` effect also exposes `status_text` and `containment_text`. The
+standard theme uses `COMPATIBILITY LAYER: OPERATIONAL` and
+`WINDOWS CONTAINMENT: ACTIVE`.
+
+Existing themes may continue using `DETAIL_PAGE_GRADIENT`,
+`DETAIL_PAGE_GRADIENT_TYPE`, `DETAIL_PAGE_GRADIENT_X1` through
+`DETAIL_PAGE_GRADIENT_FY`, and `DETAIL_PAGE_WAVES`. Legacy values override the
+corresponding nested settings.
 
 ---
 

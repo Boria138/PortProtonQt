@@ -16,10 +16,12 @@ from portprotonqt.config import (
     parse_desktop_entry,
 )
 from portprotonqt.logger import get_logger
+from portprotonqt.animations.detail_background import DetailBackgroundAnimations
 
 logger = get_logger(__name__)
 _pixmap_relays: WeakKeyDictionary[QWidget, "_PixmapReadyRelay"] = WeakKeyDictionary()
 _cover_reveal_animations: WeakKeyDictionary[QLabel, QPropertyAnimation] = WeakKeyDictionary()
+_detail_backgrounds = DetailBackgroundAnimations()
 
 
 class _PixmapReadyRelay(QObject):
@@ -170,7 +172,7 @@ def _resolve_gradient_stops(theme, dark_palette: list) -> str:
     - list of float: palette colors at specified positions
     - list of dict/tuple/str: custom stops with position+color
     """
-    gradient_stops = getattr(theme, "DETAIL_PAGE_GRADIENT", None)
+    gradient_stops = _resolve_gradient_config(theme).get("stops")
     if gradient_stops is None:
         return _build_palette_stops(dark_palette)
     if isinstance(gradient_stops, str):
@@ -194,21 +196,45 @@ def _resolve_gradient_stops(theme, dark_palette: list) -> str:
     return ",\n".join(stop_parts)
 
 
+def _resolve_gradient_config(theme: object) -> dict:
+    """Resolve nested gradient settings with legacy theme compatibility."""
+    backgrounds = getattr(theme, "DETAIL_PAGE_BACKGROUNDS", {})
+    config = dict(backgrounds.get("gradient", {})) if isinstance(backgrounds, dict) else {}
+    legacy_names = {
+        "stops": "DETAIL_PAGE_GRADIENT",
+        "type": "DETAIL_PAGE_GRADIENT_TYPE",
+        "x1": "DETAIL_PAGE_GRADIENT_X1",
+        "y1": "DETAIL_PAGE_GRADIENT_Y1",
+        "x2": "DETAIL_PAGE_GRADIENT_X2",
+        "y2": "DETAIL_PAGE_GRADIENT_Y2",
+        "cx": "DETAIL_PAGE_GRADIENT_CX",
+        "cy": "DETAIL_PAGE_GRADIENT_CY",
+        "radius": "DETAIL_PAGE_GRADIENT_RADIUS",
+        "fx": "DETAIL_PAGE_GRADIENT_FX",
+        "fy": "DETAIL_PAGE_GRADIENT_FY",
+    }
+    for key, legacy_name in legacy_names.items():
+        if hasattr(theme, legacy_name):
+            config[key] = getattr(theme, legacy_name)
+    return config
+
+
 def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) -> None:
     """Apply palette-based stylesheet to detail page."""
     try:
         dark_palette = [
             main_window.darkenColor(color, factor=200) for color in palette
         ]
+        gradient_config = _resolve_gradient_config(main_window.theme)
         stops = _resolve_gradient_stops(main_window.theme, dark_palette)
-        gradient_type = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_TYPE', 'linear')
+        gradient_type = gradient_config.get("type", "linear")
 
         if gradient_type == 'radial':
-            cx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CX', 0.5)
-            cy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_CY', 0.5)
-            radius = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_RADIUS', 0.5)
-            fx = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FX', 0.5)
-            fy = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_FY', 0.5)
+            cx = gradient_config.get("cx", 0.5)
+            cy = gradient_config.get("cy", 0.5)
+            radius = gradient_config.get("radius", 0.5)
+            fx = gradient_config.get("fx", 0.5)
+            fy = gradient_config.get("fy", 0.5)
 
             stylesheet = f"""
             QWidget {{
@@ -219,10 +245,10 @@ def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) 
             }}
             """
         else:
-            x1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X1', 0)
-            y1 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y1', 0)
-            x2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_X2', 1)
-            y2 = getattr(main_window.theme, 'DETAIL_PAGE_GRADIENT_Y2', 1)
+            x1 = gradient_config.get("x1", 0)
+            y1 = gradient_config.get("y1", 0)
+            x2 = gradient_config.get("x2", 1)
+            y2 = gradient_config.get("y2", 1)
 
             stylesheet = f"""
             QWidget {{
@@ -247,11 +273,19 @@ def _setup_wave_background(detail_page: QWidget, dark_palette: list, theme) -> N
     """Setup wave background overlay based on theme DETAIL_PAGE_BG_MODE."""
     bg_mode = getattr(theme, "DETAIL_PAGE_BG_MODE", "gradient")
 
+    if _detail_backgrounds.setup(detail_page, dark_palette, theme):
+        _remove_wave_background(detail_page)
+        return
+    _detail_backgrounds.remove(detail_page)
+
     if bg_mode == "gradient":
         _remove_wave_background(detail_page)
         return
 
-    wave_config = getattr(theme, "DETAIL_PAGE_WAVES", {})
+    backgrounds = getattr(theme, "DETAIL_PAGE_BACKGROUNDS", {})
+    wave_config = backgrounds.get("waves", {}) if isinstance(backgrounds, dict) else {}
+    if hasattr(theme, "DETAIL_PAGE_WAVES"):
+        wave_config = theme.DETAIL_PAGE_WAVES
     state = _wave_states.get(detail_page)
     if state is None:
         state = {
@@ -365,6 +399,7 @@ def _apply_no_cover_style(detail_page: QWidget, theme) -> None:
     try:
         detail_page.setStyleSheet(theme.DETAIL_PAGE_NO_COVER_STYLE)
         _remove_wave_background(detail_page)
+        _detail_backgrounds.remove(detail_page)
         detail_page.update()
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping no-cover stylesheet update")

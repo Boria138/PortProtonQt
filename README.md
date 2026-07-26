@@ -68,6 +68,7 @@ PortProtonQt uses code and dependencies from the following projects:
 - [iat](https://sourceforge.net/projects/iat.berlios) — library for converting mdf and nrg to iso, GPLv3 license.
 - [pyte](https://github.com/selectel/pyte) — ANSI escape code parser, [LGPLv3](https://github.com/selectel/pyte?tab=LGPL-3.0-1-ov-file) license.
 - [gjs-osk](https://github.com/Vishram1123/gjs-osk) — base for virtual keyboard layout data, GPLv3 license.
+- [omikuji](https://github.com/omikuji-launcher/omikuji) — inspiration and source material for the procedural detail page backgrounds, [GPLv3](https://github.com/omikuji-launcher/omikuji/blob/master/LICENSE) license.
 
 See the [LICENSE](LICENSE) file for the full text of the licenses.
 

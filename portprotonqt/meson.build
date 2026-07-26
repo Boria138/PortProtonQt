@@ -46,6 +46,7 @@ install_data(
 # Install animations package
 install_data(
   ['animations/__init__.py',
+   'animations/detail_background.py',
    'animations/detail_page.py',
    'animations/game_card.py',
    'animations/library_controls.py',
