@@ -276,6 +276,8 @@ class GameCard(QFrame):
         self._scale = self.theme.GAME_CARD_ANIMATION["default_scale"]
         self._hovered = False
         self._focused = False
+        self._hover_sound_pending = False
+        self.setMouseTracking(True)
 
         self.animations = GameCardAnimations(self, self.theme)
         self.animations.setup_animations()
@@ -971,14 +973,21 @@ class GameCard(QFrame):
         self.animations.paint_border(QPainter(self))
 
     def enterEvent(self, event):
-        from portprotonqt.sound_manager import SoundManager
-        SoundManager().play("navigate")
+        self._hover_sound_pending = True
         self.animations.handle_enter_event()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+        self._hover_sound_pending = False
         self.animations.handle_leave_event()
         super().leaveEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._hover_sound_pending:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
+            self._hover_sound_pending = False
+        super().mouseMoveEvent(event)
 
     def focusInEvent(self, event):
         if (

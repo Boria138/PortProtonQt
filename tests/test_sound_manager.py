@@ -116,7 +116,7 @@ def test_sound_manager_reuses_slot_for_same_event() -> None:
 def test_sound_slot_restarts_loaded_effect() -> None:
     slot: Any = object.__new__(_SoundSlot)
     slot._effect = Mock()
-    slot._effect.isPlaying.return_value = False
+    slot._effect.isPlaying.return_value = True
     slot._loaded_event = "navigate"
 
     slot.play("navigate", Mock())
