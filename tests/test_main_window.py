@@ -967,6 +967,27 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     assert launch_events == ["popen", "game_launch"]
 
 
+def test_steam_launch_plays_game_launch_sound(monkeypatch: MonkeyPatch) -> None:
+    launch_events: list[str] = []
+    window: Any = MainWindow.__new__(MainWindow)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_launch_commands",
+        lambda _appid: [["steam", "-applaunch", "1"]],
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.subprocess.Popen",
+        lambda _command: launch_events.append("popen"),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.SoundManager",
+        lambda: SimpleNamespace(play=launch_events.append),
+    )
+
+    window._launch_steam_game("steam://rungameid/1")
+
+    assert launch_events == ["popen", "game_launch"]
+
+
 def test_process_portproton_desktop_calls_callback_without_asset_download(
     tmp_config_dir: Path,
     tmp_path: Path,

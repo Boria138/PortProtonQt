@@ -759,6 +759,7 @@ Place UI sound effects in the theme's `sounds/` directory. File names must match
 | `tab_switch` | Switching application tabs |
 | `game_launch` | Successful game process launch |
 | `gamepad_connect` | Connecting a gamepad |
+| `gamepad_off` | Disconnecting a gamepad |
 
 Use uncompressed PCM WAV files, for example `sounds/navigate.wav`. Other audio formats are not supported.
 

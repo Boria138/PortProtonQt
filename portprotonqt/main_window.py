@@ -2353,11 +2353,14 @@ class MainWindow(
         for command in get_steam_launch_commands(appid):
             try:
                 subprocess.Popen(command)
+                SoundManager().play("game_launch")
                 return
             except OSError as e:
                 logger.warning("Failed to launch Steam app %s with %s: %s", appid, command[0], e)
 
-        if not QDesktopServices.openUrl(QUrl(exec_line)):
+        if QDesktopServices.openUrl(QUrl(exec_line)):
+            SoundManager().play("game_launch")
+        else:
             logger.warning("Failed to open Steam URI: %s", exec_line)
 
     def _handle_gog_game(self, exec_line: str, button=None) -> None:

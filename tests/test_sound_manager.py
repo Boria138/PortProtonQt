@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QApplication, QComboBox, QMenu, QPushButton, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QMenu, QPushButton, QTabBar, QWidget
 from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
@@ -146,7 +146,8 @@ def test_standard_theme_provides_configured_sound_events() -> None:
         event for event in SOUND_EVENTS if manager._find_sound_path(event) is not None
     }
     assert available_events == {
-        "back", "click", "gamepad_connect", "navigate", "open", "tab_switch", "toggle",
+        "back", "click", "game_launch", "gamepad_connect", "gamepad_off",
+        "navigate", "open", "tab_switch", "toggle",
     }
     assert {
         "close", "confirm", "error", "keyboard_key", "notification", "scroll",
@@ -173,14 +174,25 @@ def test_widget_sound_can_disable_automatic_feedback() -> None:
     manager.play.assert_not_called()
 
 
-def test_combo_box_uses_toggle_sound() -> None:
+def test_combo_box_does_not_play_toggle_sound() -> None:
     app = QApplication.instance() or QApplication([])
     manager: Any = object.__new__(SoundManager)
     manager.play = Mock()
 
     manager.play_widget_sound(QComboBox())
 
-    manager.play.assert_called_once_with("toggle")
+    manager.play.assert_not_called()
+    assert app is not None
+
+
+def test_dialog_tab_bar_uses_tab_switch_sound() -> None:
+    app = QApplication.instance() or QApplication([])
+    manager: Any = object.__new__(SoundManager)
+    manager.play = Mock()
+
+    manager.play_widget_sound(QTabBar())
+
+    manager.play.assert_called_once_with("tab_switch")
     assert app is not None
 
 
@@ -230,6 +242,45 @@ def test_gamepad_connection_sound_plays_after_startup(monkeypatch: MonkeyPatch) 
     assert played_events == ["gamepad_connect"]
 
 
+def test_gamepad_disconnection_plays_sound(monkeypatch: MonkeyPatch) -> None:
+    played_events: list[str] = []
+    manager: Any = InputManager.__new__(InputManager)
+    manager._gamepad_polling_suspended = False
+    manager.gamepad = SimpleNamespace(close=lambda: None)
+    manager.find_gamepad = lambda: None
+    manager._reset_input_state = lambda: None
+    manager._refresh_gamepad_ui = lambda: None
+    monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_manager.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+
+    manager.check_gamepad()
+
+    assert played_events == ["gamepad_off"]
+
+
+def test_gamepad_dialog_tab_switch_plays_sound(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
+    current_index = [0]
+    tab_widget = SimpleNamespace(
+        currentIndex=lambda: current_index[0],
+        count=lambda: 2,
+        setCurrentIndex=lambda index: current_index.__setitem__(0, index),
+    )
+    manager: Any = InputManager.__new__(InputManager)
+    manager.winetricks_dialog = SimpleNamespace(tab_widget=tab_widget)
+    manager._handle_common_ui_elements = lambda _button: False
+    manager._focus_first_row_in_current_table = lambda: None
+    monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+
+    button = next(iter(input_manager.BUTTONS["next_tab"]))
+    manager.handle_winetricks_button(button, 1)
+
+    assert current_index == [1]
+    assert played_events == ["tab_switch"]
+    assert app is not None
+
+
 def test_menu_navigation_plays_sound(monkeypatch: MonkeyPatch) -> None:
     app = QApplication.instance() or QApplication([])
     menu = QMenu()
@@ -260,7 +311,7 @@ def test_menu_show_plays_open_sound(monkeypatch: MonkeyPatch) -> None:
     assert app is not None
 
 
-def test_combo_popup_show_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
+def test_combo_popup_show_does_not_play_toggle_sound(monkeypatch: MonkeyPatch) -> None:
     app = QApplication.instance() or QApplication([])
     played_events: list[str] = []
     manager = InputManager.__new__(InputManager)
@@ -270,6 +321,23 @@ def test_combo_popup_show_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(popup, QEvent(QEvent.Type.Show))
+
+    assert played_events == []
+    assert app is not None
+
+
+def test_combo_item_highlight_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    combo = QComboBox()
+    combo.addItems(["First", "Second"])
+    popup = QWidget(combo, Qt.WindowType.Popup)
+    monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+
+    manager.eventFilter(popup, QEvent(QEvent.Type.Show))
+    combo.highlighted.emit(1)
 
     assert played_events == ["toggle"]
     assert app is not None

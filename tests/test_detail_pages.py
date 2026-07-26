@@ -1,6 +1,7 @@
 """Tests for detail page utilities: gradient stops, wave background, shortcut buttons."""
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch
@@ -50,6 +51,25 @@ def test_gog_size_result_ignores_deleted_labels(monkeypatch: MonkeyPatch) -> Non
     assert [call.args[0] for call in label.setText.call_args_list] == [
         "1.0 MiB", "1.0 GiB",
     ]
+
+
+def test_play_button_disables_click_sound() -> None:
+    button = MagicMock()
+    manager = SimpleNamespace(
+        main_window=SimpleNamespace(
+            target_exe=None,
+            theme_manager=SimpleNamespace(get_icon=lambda *_args, **_kwargs: "play"),
+            toggleGame=lambda *_args: None,
+        ),
+        _make_action_button=lambda *_args: button,
+    )
+
+    result = DetailPageManager._create_play_button(
+        cast(Any, manager), "/games/game.exe", "game.exe"
+    )
+
+    assert result is button
+    button.setProperty.assert_called_once_with("sound_event", False)
 
 
 def test_detail_page_loads_exe_fallback_without_cover(monkeypatch: MonkeyPatch) -> None:
