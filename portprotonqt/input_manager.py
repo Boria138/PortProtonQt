@@ -41,6 +41,7 @@ from portprotonqt.gamepad_backend import (
     find_gamepad,
     shutdown as shutdown_gamepad_backend,
 )
+
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -823,13 +824,19 @@ class InputManager(QObject):
                 self.winetricks_dialog.reject()
 
             elif button_code in BUTTONS['prev_tab']:  # LB
-                new_index = max(0, self.winetricks_dialog.tab_widget.currentIndex() - 1)
+                current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                new_index = max(0, current_index - 1)
                 self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                if new_index != current_index:
+                    SoundManager().play("tab_switch")
                 self._focus_first_row_in_current_table()
 
             elif button_code in BUTTONS['next_tab']:  # RB
-                new_index = min(self.winetricks_dialog.tab_widget.count() - 1, self.winetricks_dialog.tab_widget.currentIndex() + 1)
+                current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
                 self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                if new_index != current_index:
+                    SoundManager().play("tab_switch")
                 self._focus_first_row_in_current_table()
 
             else:
@@ -1224,13 +1231,19 @@ class InputManager(QObject):
                     self.proton_manager_dialog.reject()
 
             elif button_code in BUTTONS['prev_tab']:  # LB: Previous tab
-                new_index = max(0, self.proton_manager_dialog.tab_widget.currentIndex() - 1)
+                current_index = self.proton_manager_dialog.tab_widget.currentIndex()
+                new_index = max(0, current_index - 1)
                 self.proton_manager_dialog.tab_widget.setCurrentIndex(new_index)
+                if new_index != current_index:
+                    SoundManager().play("tab_switch")
                 self._focus_first_row_in_current_proton_manager_table()
 
             elif button_code in BUTTONS['next_tab']:  # RB: Next tab
-                new_index = min(self.proton_manager_dialog.tab_widget.count() - 1, self.proton_manager_dialog.tab_widget.currentIndex() + 1)
+                current_index = self.proton_manager_dialog.tab_widget.currentIndex()
+                new_index = min(self.proton_manager_dialog.tab_widget.count() - 1, current_index + 1)
                 self.proton_manager_dialog.tab_widget.setCurrentIndex(new_index)
+                if new_index != current_index:
+                    SoundManager().play("tab_switch")
                 self._focus_first_row_in_current_proton_manager_table()
 
             else:
@@ -1593,13 +1606,19 @@ class InputManager(QObject):
                     self.settings_dialog.show_virtual_keyboard(self.settings_dialog.search_edit)
 
                 elif button_code in BUTTONS['prev_tab']:  # LB
-                    idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
+                    current_index = self.settings_dialog.tab_widget.currentIndex()
+                    idx = max(0, current_index - 1)
                     self.settings_dialog.tab_widget.setCurrentIndex(idx)
+                    if idx != current_index:
+                        SoundManager().play("tab_switch")
                     self._focus_first_row_in_current_settings_table()
 
                 elif button_code in BUTTONS['next_tab']:  # RB
-                    idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
+                    current_index = self.settings_dialog.tab_widget.currentIndex()
+                    idx = min(self.settings_dialog.tab_widget.count() - 1, current_index + 1)
                     self.settings_dialog.tab_widget.setCurrentIndex(idx)
+                    if idx != current_index:
+                        SoundManager().play("tab_switch")
                     self._focus_first_row_in_current_settings_table()
 
                 else:
@@ -3530,7 +3549,11 @@ class InputManager(QObject):
                 parent = obj.parent()
                 while isinstance(parent, QObject):
                     if isinstance(parent, QComboBox):
-                        SoundManager().play("toggle")
+                        if not parent.property("_sound_highlight_connected"):
+                            parent.highlighted.connect(
+                                lambda _index: SoundManager().play("toggle"),
+                            )
+                            parent.setProperty("_sound_highlight_connected", True)
                         break
                     parent = parent.parent()
 
@@ -4055,6 +4078,8 @@ class InputManager(QObject):
                 self._refresh_gamepad_ui()
                 self.check_gamepad()
 
+                if had_gamepad and not self.gamepad:
+                    SoundManager().play("gamepad_off")
                 if had_gamepad and not self.gamepad and display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(False)
 
@@ -4092,6 +4117,7 @@ class InputManager(QObject):
                 self.gamepad = None
                 self._reset_input_state()
                 self._refresh_gamepad_ui()
+                SoundManager().play("gamepad_off")
 
                 if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(False)

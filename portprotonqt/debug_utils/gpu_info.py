@@ -174,6 +174,7 @@ def get_selectable_gpu_entries() -> list[dict[str, str]]:
         device_id = gpu_info.get("device_id", "").strip()
         entry = {
             "device_name": device_name,
+            "device_type": device_type,
             "vendor_id": vendor_id,
             "device_id": device_id,
         }

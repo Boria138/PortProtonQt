@@ -377,6 +377,13 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 if hasattr(self.game_library_manager, 'gamesListLayout'):
                     self.game_library_manager.gamesListLayout.update()
 
+        if (
+            self.gog_api.auth_path.is_file()
+            and getattr(self, "gog_library_worker", None) is None
+        ):
+            self._refresh_gog_library()
+            return
+
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh
         QTimer.singleShot(50, lambda: self.loadGames(force_load=True))

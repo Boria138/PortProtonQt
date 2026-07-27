@@ -1991,10 +1991,10 @@ msgstr "类型"
 msgid "Store"
 msgstr "存储"
 
-msgid "Copy the final GOG login URL"
+msgid "Copy the link to clipboard"
 msgstr ""
 
-msgid "Open login page"
+msgid "Failed to log out of GOG account"
 msgstr ""
 
 msgid "Refreshing…"
@@ -2012,14 +2012,18 @@ msgstr "文件：{0}"
 msgid "GOG account connected"
 msgstr "已连接"
 
+#, fuzzy
+msgid "Log out"
+msgstr "注销"
+
+msgid "Open login page"
+msgstr ""
+
 msgid "GOG account not connected"
 msgstr ""
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
-msgstr ""
-
-msgid "GOG library updated"
 msgstr ""
 
 #, fuzzy, python-brace-format
@@ -2121,8 +2125,12 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
 
-msgid "GOG Account"
-msgstr ""
+#, fuzzy
+msgid "Accounts"
+msgstr "挂载"
+
+msgid "Auto"
+msgstr "自动"
 
 msgid "Brief"
 msgstr "简要"
@@ -2135,9 +2143,6 @@ msgstr "界面设置"
 
 msgid "Tray Menu Type:"
 msgstr "托盘菜单类型："
-
-msgid "Auto"
-msgstr "自动"
 
 msgid "Gamepad Type:"
 msgstr "游戏手柄类型："

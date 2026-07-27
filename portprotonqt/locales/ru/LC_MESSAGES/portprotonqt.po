@@ -2040,11 +2040,11 @@ msgstr "Тип"
 msgid "Store"
 msgstr "Магазин"
 
-msgid "Copy the final GOG login URL"
-msgstr "Скопируйте итоговый URL для входа в GOG"
+msgid "Copy the link to clipboard"
+msgstr "Скопировать ссылку в буфер обмена"
 
-msgid "Open login page"
-msgstr "Открыть страницу входа"
+msgid "Failed to log out of GOG account"
+msgstr "Не удалось выйти из аккаунта GOG"
 
 msgid "Refreshing…"
 msgstr "Обновление…"
@@ -2058,15 +2058,18 @@ msgstr "Ошибка входа в GOG: {0}"
 msgid "GOG account connected"
 msgstr "Аккаунт GOG подключён"
 
+msgid "Log out"
+msgstr "Выйти"
+
+msgid "Open login page"
+msgstr "Открыть страницу входа"
+
 msgid "GOG account not connected"
 msgstr "Аккаунт GOG не подключён"
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
 msgstr "Обновление библиотеки GOG… {0}/{1}"
-
-msgid "GOG library updated"
-msgstr "Библиотека GOG обновлена"
 
 msgid "Failed to refresh GOG library: {0}"
 msgstr "Не удалось обновить библиотеку GOG: {0}"
@@ -2159,8 +2162,11 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
 
-msgid "GOG Account"
-msgstr "Аккаунт GOG"
+msgid "Accounts"
+msgstr "Аккаунты"
+
+msgid "Auto"
+msgstr "Авто"
 
 msgid "Brief"
 msgstr "Упрощённый"
@@ -2173,9 +2179,6 @@ msgstr "Настройки интерфейса"
 
 msgid "Tray Menu Type:"
 msgstr "Тип области уведомления:"
-
-msgid "Auto"
-msgstr "Авто"
 
 msgid "Gamepad Type:"
 msgstr "Тип геймпада:"

@@ -10,6 +10,7 @@ install_data(
    'dialogs.py',
    'disc_image_utils.py',
    'downloader.py',
+  'compatibility_report.py',
   'game_card.py',
   'gamepad_backend.py',
   'game_library_manager.py',
@@ -39,13 +40,16 @@ install_data(
 )
 
 install_data(
-  'keyboard_layouts.json',
+  ['compatibility_rules.json',
+   'keyboard_layouts.json',
+  ],
   install_dir: pythondir / meson.project_name(),
 )
 
 # Install animations package
 install_data(
   ['animations/__init__.py',
+   'animations/detail_background.py',
    'animations/detail_page.py',
    'animations/game_card.py',
    'animations/library_controls.py',
@@ -71,6 +75,7 @@ install_data(
    'dialogs/appimage_update.py',
    'dialogs/base.py',
    'dialogs/dialog_utils.py',
+   'dialogs/compatibility_report.py',
    'dialogs/file_explorer.py',
    'dialogs/winetricks_dialog.py',
    'dialogs/settings_dialog.py',

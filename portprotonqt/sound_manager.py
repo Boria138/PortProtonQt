@@ -13,7 +13,7 @@ from portprotonqt.theme_security import is_safe_sound_file
 logger = get_logger(__name__)
 SOUND_EVENTS = frozenset({
     "navigate", "click", "back", "toggle", "open", "tab_switch",
-    "game_launch", "gamepad_connect",
+    "game_launch", "gamepad_connect", "gamepad_off",
 })
 MISSING_MEDIA_BACKEND_WARNING = "No QtMultimedia backends found."
 
@@ -149,7 +149,7 @@ class SoundManager:
             logger.warning("Failed to play UI sound %s: %s", event, e)
 
     def play_widget_sound(self, widget: object) -> None:
-        from PySide6.QtWidgets import QCheckBox, QComboBox, QPushButton
+        from PySide6.QtWidgets import QCheckBox, QPushButton, QTabBar
         from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, NavLabel
         property_method = getattr(widget, "property", None)
         sound_event = property_method("sound_event") if callable(property_method) else None
@@ -162,8 +162,8 @@ class SoundManager:
             self.play("click")
         elif isinstance(widget, QCheckBox):
             self.play("toggle")
-        elif isinstance(widget, QComboBox):
-            self.play("toggle")
+        elif isinstance(widget, QTabBar):
+            self.play("tab_switch")
         elif isinstance(widget, (ClickableLabel, NavLabel)):
             self.play("click")
 

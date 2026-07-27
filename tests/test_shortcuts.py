@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 import portprotonqt.scripts_utils.shortcut_tools as shortcut_tools
+import portprotonqt.steam_api.shortcuts as steam_shortcuts
 from portprotonqt.config.portproton import (
     _sanitize_icon_name,
     create_desktop_file,
@@ -24,6 +25,55 @@ from portprotonqt.config.portproton import (
     extract_exec_target_path,
     get_custom_data_dir_name,
 )
+
+
+def test_add_to_steam_for_all_accounts(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    steam_home = tmp_path / "steam"
+    user_ids = ("76561197960265729", "76561197960265730")
+    executable = tmp_path / "game.exe"
+    executable.touch()
+    script_path = tmp_path / "game.sh"
+
+    monkeypatch.setattr(steam_shortcuts, "get_steam_home", lambda: steam_home)
+    monkeypatch.setattr(
+        steam_shortcuts,
+        "get_steam_users",
+        lambda _steam_home: dict.fromkeys(user_ids, {}),
+    )
+    monkeypatch.setattr(
+        steam_shortcuts, "get_portproton_location", lambda: str(tmp_path)
+    )
+    monkeypatch.setattr(
+        steam_shortcuts, "get_portproton_start_command", lambda: "start"
+    )
+    monkeypatch.setattr(
+        steam_shortcuts,
+        "_create_launch_script",
+        lambda *_args: (str(script_path), ""),
+    )
+    monkeypatch.setattr(steam_shortcuts, "_generate_icon", lambda *_args: "")
+    monkeypatch.setattr(
+        steam_shortcuts.game_config, "get_steam_account_id", lambda: "all"
+    )
+    monkeypatch.setattr(
+        steam_shortcuts.ui_config, "get_economy_mode", lambda: True
+    )
+
+    result, _message = steam_shortcuts.add_to_steam(
+        "Test Game", str(executable), ""
+    )
+
+    assert result is True
+    for account_id in ("1", "2"):
+        shortcuts_path = (
+            steam_home / "userdata" / account_id / "config" / "shortcuts.vdf"
+        )
+        assert shortcuts_path.is_file()
+        shortcuts = steam_shortcuts.safe_vdf_load(shortcuts_path)["shortcuts"]
+        assert shortcuts["0"]["AppName"] == "Test Game"
 
 
 def test_custom_data_hash_distinguishes_same_exe_names(tmp_path: Path) -> None:

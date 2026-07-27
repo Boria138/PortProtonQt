@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+UNREAL_BOOTSTRAPPER_MAX_SIZE = 1_048_576
+
 DIRECTX_IMPORTS = {
     "ddraw.dll": "DirectDraw",
     "d3d8.dll": "DirectX 8",
@@ -53,18 +55,41 @@ def analyze_executable(file_path: str) -> dict[str, Any]:
     path = Path(file_path).expanduser().resolve()
     if not path.is_file():
         raise FileNotFoundError(f"File not found: {path}")
+    analysis_path = resolve_graphics_executable(str(path))
 
     directx = set()
     opengl = set()
 
-    if path.suffix.lower() in {".exe", ".dll"}:
-        _add_pe_imports(path, directx, opengl)
-    _add_file_signatures(path, directx, opengl)
+    if analysis_path.suffix.lower() in {".exe", ".dll"}:
+        _add_pe_imports(analysis_path, directx, opengl)
+    _add_file_signatures(analysis_path, directx, opengl)
 
     return {
         "highest_directx": _highest_directx(list(directx)),
         "uses_opengl": bool(opengl),
+        "source": str(analysis_path),
     }
+
+
+def resolve_graphics_executable(file_path: str) -> Path:
+    """Resolve a launcher to the binary that implements its graphics API."""
+    path = Path(file_path).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"File not found: {path}")
+    if path.stat().st_size < UNREAL_BOOTSTRAPPER_MAX_SIZE:
+        patterns = (
+            "*/Binaries/Win64/*-Win64-Shipping.exe",
+            "*/Binaries/Win32/*-Win32-Shipping.exe",
+        )
+        for pattern in patterns:
+            shipping_binaries = sorted(path.parent.glob(pattern))
+            if shipping_binaries:
+                return shipping_binaries[0]
+    if (path.parent / "renpy").is_dir():
+        renpy_libraries = sorted(path.parent.glob("lib/*/librenpython.dll"))
+        if renpy_libraries:
+            return renpy_libraries[0]
+    return path
 
 
 def _add_pe_imports(path: Path, directx: set[str], opengl: set[str]) -> None:

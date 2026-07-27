@@ -646,6 +646,7 @@ class DetailPageManager:
             icon = self.main_window.theme_manager.get_icon("play", as_path=True)
 
         play_button = self._make_action_button(text, icon)
+        play_button.setProperty("sound_event", False)
         play_button.clicked.connect(lambda: self.main_window.toggleGame(exec_line, play_button))
         return play_button
 

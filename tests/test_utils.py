@@ -38,6 +38,14 @@ from portprotonqt.steam_api.cache import (
 )
 
 
+@pytest.fixture(autouse=True)
+def use_automatic_steam_account(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.utils.game_config.get_steam_account_id",
+        lambda: "auto",
+    )
+
+
 @pytest.mark.parametrize(
     ("query", "expected_name"),
     [
@@ -398,6 +406,90 @@ def test_get_last_steam_user_falls_back_to_autologin(tmp_path: Path):
         '    }\n'
         '}\n',
         encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003723}
+
+
+def test_get_last_steam_user_prefers_autologin_to_most_recent(tmp_path: Path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "MostRecent" "1"\n'
+        '    }\n'
+        '    "76561198012003724"\n'
+        '    {\n'
+        '        "AutoLogin" "1"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003724}
+
+
+def test_get_last_steam_user_supports_legacy_most_recent(tmp_path: Path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "MostRecent" "1"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003723}
+
+
+def test_get_last_steam_user_uses_latest_timestamp(tmp_path: Path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "AutoLogin" "1"\n'
+        '        "Timestamp" "1755173073"\n'
+        '    }\n'
+        '    "76561198012003724"\n'
+        '    {\n'
+        '        "AutoLogin" "0"\n'
+        '        "Timestamp" "1784901561"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+
+    assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003724}
+
+
+def test_get_last_steam_user_uses_configured_account(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "loginusers.vdf").write_text(
+        '"users"\n{\n'
+        '    "76561198012003723"\n'
+        '    {\n'
+        '        "Timestamp" "1755173073"\n'
+        '    }\n'
+        '    "76561198012003724"\n'
+        '    {\n'
+        '        "Timestamp" "1784901561"\n'
+        '    }\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "portprotonqt.steam_api.utils.game_config.get_steam_account_id",
+        lambda: "76561198012003723",
     )
 
     assert get_last_steam_user(tmp_path) == {"SteamID": 76561198012003723}

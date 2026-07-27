@@ -9,6 +9,7 @@ from typing import BinaryIO
 from PIL import Image, UnidentifiedImageError
 import vdf
 
+from portprotonqt.config import game_config
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
@@ -253,16 +254,28 @@ def get_steam_compat_tool(appid: int) -> str | None:
 
 def get_last_steam_user(steam_home: Path) -> dict | None:
     """Return data for last Steam user from loginusers.vdf."""
-    loginusers_path = steam_home / "config/loginusers.vdf"
-    data = safe_vdf_load(loginusers_path)
-    users = data.get('users', {}) if data else {}
+    users = get_steam_users(steam_home)
+    configured_user_id = game_config.get_steam_account_id()
+    if configured_user_id != "auto" and configured_user_id in users:
+        return {'SteamID': int(configured_user_id)}
     selected_user_id = None
+    auto_login_user_id = None
+    most_recent_user_id = None
+    latest_timestamp = -1
     for user_id, user_info in users.items():
-        if user_info.get('MostRecent') == '1':
+        try:
+            timestamp = int(user_info.get('Timestamp', ''))
+        except ValueError:
+            timestamp = -1
+        if timestamp > latest_timestamp:
+            latest_timestamp = timestamp
             selected_user_id = user_id
-            break
-        if selected_user_id is None and user_info.get('AutoLogin') == '1':
-            selected_user_id = user_id
+        if auto_login_user_id is None and user_info.get('AutoLogin') == '1':
+            auto_login_user_id = user_id
+        if most_recent_user_id is None and user_info.get('MostRecent') == '1':
+            most_recent_user_id = user_id
+    if selected_user_id is None:
+        selected_user_id = auto_login_user_id or most_recent_user_id
     if selected_user_id is None:
         userdata_dir = steam_home / "userdata"
         try:
@@ -288,6 +301,17 @@ def get_last_steam_user(steam_home: Path) -> dict | None:
     except ValueError:
         logger.error(f"Invalid SteamID format: {selected_user_id}")
         return None
+
+
+def get_steam_users(steam_home: Path) -> dict[str, dict]:
+    """Return valid Steam users from loginusers.vdf."""
+    data = safe_vdf_load(steam_home / "config/loginusers.vdf")
+    users = data.get("users", {}) if data else {}
+    return {
+        str(user_id): user_info
+        for user_id, user_info in users.items()
+        if str(user_id).isdigit() and isinstance(user_info, dict)
+    }
 
 
 def convert_steam_id(steam_id: int) -> int:

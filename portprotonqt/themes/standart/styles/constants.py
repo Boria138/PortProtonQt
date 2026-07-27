@@ -254,6 +254,14 @@ virtual_keyboard_slide_bounce_animation_duration = 220
 virtual_keyboard_animation_type = "slide"
 DETAIL_PAGE_LAYOUT_MODE = "full"
 
+COMPATIBILITY_REPORT_DIALOG = {
+    "minimum_width": 760,
+    "minimum_height": 560,
+    "icon_size": 48,
+    "margin": 24,
+    "spacing": 16,
+}
+
 GAME_CARD_ANIMATION = {
     "detail_page_animation_type": "fade",
     "default_border_width": 2,
