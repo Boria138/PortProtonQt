@@ -8,12 +8,14 @@ import subprocess
 import tempfile
 import psutil
 import re
+import time
 from queue import Empty, Queue
 from threading import Thread
 from typing import TYPE_CHECKING
 from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail, get_exe_icon_cache_path
 from portprotonqt.dialogs import FileExplorer, ExeSettingsDialog
+from portprotonqt.dialogs.compatibility_report import CompatibilityReportDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
@@ -56,6 +58,11 @@ from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.disc_image_utils import DiscImageManager
+from portprotonqt.compatibility_report import (
+    CompatibilityLaunch,
+    analyze_launch,
+    is_suspected_crash,
+)
 from portprotonqt.sound_manager import SoundManager
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin
@@ -145,6 +152,7 @@ class MainWindow(
     QMainWindow,
 ):
     games_loaded = Signal(list)
+    compatibility_report_ready = Signal(str)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -305,6 +313,8 @@ class MainWindow(
         self.target_exe = None
         self.game_start_time = None
         self.game_start_exe = None
+        self.game_launch_monotonic = None
+        self.game_stopped_by_user = False
         self.current_running_button = None
         self.disc_image_manager = DiscImageManager()
         self.portproton_location = get_portproton_location()
@@ -312,6 +322,7 @@ class MainWindow(
         self.launch_exe = launch_exe  # Store launch_exe path
         self._pending_log_exe: str | None = None
         self.appimageUpdateWorker: AppImageUpdateWorker | None = None
+        self.compatibility_report_ready.connect(self._show_compatibility_report)
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
 
@@ -1936,6 +1947,7 @@ class MainWindow(
             self._set_running_button_stop()
         elif not child_running:
             # Game completed - reset flag, reset button and stop timer
+            self._analyze_short_launch()
             self.resetPlayButton()
             #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
@@ -2013,6 +2025,8 @@ class MainWindow(
                 self._update_playtime_after_exit(start_exe, elapsed)
             self.game_start_time = None
             self.game_start_exe = None
+            self.game_launch_monotonic = None
+            self.game_stopped_by_user = False
 
         self.target_exe = None
         # Reset dependency setup monitoring
@@ -2135,6 +2149,39 @@ class MainWindow(
             if state is not None:
                 self.launch_output_queue.put(state)
 
+    def _analyze_short_launch(self) -> None:
+        executable = getattr(self, "game_start_exe", None) or ""
+        started = getattr(self, "game_launch_monotonic", None)
+        if started is None:
+            return
+        duration = time.monotonic() - started
+        stopped_by_user = getattr(self, "game_stopped_by_user", False)
+        if not is_suspected_crash(duration, stopped_by_user, executable):
+            return
+        exit_code = next(
+            (process.poll() for process in self.game_processes if process.poll() is not None),
+            None,
+        )
+        launch = CompatibilityLaunch(
+            executable=executable,
+            exit_code=exit_code,
+            duration=duration,
+        )
+        worker = Thread(target=self._build_compatibility_report, args=(launch,), daemon=True)
+        worker.start()
+
+    def _build_compatibility_report(self, launch: CompatibilityLaunch) -> None:
+        try:
+            report = analyze_launch(launch, self.portproton_location or "")
+        except (OSError, ValueError, TypeError) as error:
+            logger.error("Compatibility analysis failed for %s: %s", launch.executable, error)
+            return
+        self.compatibility_report_ready.emit(report)
+
+    def _show_compatibility_report(self, report: str) -> None:
+        dialog = CompatibilityReportDialog(self, self.theme, report)
+        dialog.exec()
+
     def _terminate_game_processes(self) -> None:
         for proc in self.game_processes:
             if proc.poll() is not None:
@@ -2162,6 +2209,8 @@ class MainWindow(
         """Stop current game via PortProton CLI stop command."""
         if button is not None:
             self.current_running_button = button
+        self.game_stopped_by_user = True
+        self._analyze_short_launch()
 
         if not self._run_portproton_stop_command():
             return False
@@ -2499,6 +2548,7 @@ class MainWindow(
 
             # Launch game
             try:
+                self.game_stopped_by_user = False
                 process = subprocess.Popen(
                     launch_cmd,
                     env=env_vars,
@@ -2512,6 +2562,7 @@ class MainWindow(
                 )
                 SoundManager().play("game_launch")
                 self.game_processes.append(process)
+                self.game_launch_monotonic = time.monotonic()
                 self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
                 launch_time = datetime.now()

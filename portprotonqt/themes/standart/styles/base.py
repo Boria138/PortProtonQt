@@ -527,6 +527,37 @@ MESSAGE_BOX_STYLE = f"""
     }}
 """
 
+COMPATIBILITY_REPORT_DIALOG_STYLE = f"""
+    QDialog {{
+        background: {color_bg};
+    }}
+    QFrame#compatibilityHeader {{
+        background: {color_transparent};
+        border: {border_none};
+    }}
+    QLabel#compatibilityTitle {{
+        color: {color_text};
+        font-family: '{font_family}';
+        font-size: {font_size_header};
+        font-weight: 600;
+    }}
+    QLabel#compatibilitySummary {{
+        color: {color_text_muted};
+        font-family: '{font_family}';
+        font-size: {font_size_normal};
+    }}
+    QPlainTextEdit#compatibilityReport {{
+        background: {color_surface};
+        color: {color_text};
+        border: {border_thin} {color_border_subtle};
+        border-radius: {border_radius_small};
+        padding: 12px;
+        font-family: monospace;
+        font-size: {font_size_value};
+        selection-background-color: {color_accent};
+    }}
+"""
+
 # Favorite Star
 FAVORITE_LABEL_STYLE = f"color: {color_favorite_star}; font-size: 32px; background: {color_transparent};"
 

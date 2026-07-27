@@ -839,6 +839,38 @@ class FakeDetailPageManager:
         self.opened_data = dict(game_data)
 
 
+def test_stop_running_game_analyzes_before_stop_command_failure(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    analyzed = []
+    window.current_running_button = None
+    monkeypatch.setattr(window, "_analyze_short_launch", lambda: analyzed.append(True))
+    monkeypatch.setattr(window, "_run_portproton_stop_command", lambda: False)
+
+    assert window.stop_running_game() is False
+    assert analyzed == [True]
+
+
+def test_show_compatibility_report_uses_report_dialog(monkeypatch: MonkeyPatch) -> None:
+    calls = []
+    window: Any = MainWindow.__new__(MainWindow)
+    window.theme = object()
+
+    class ReportDialog:
+        def __init__(self, parent: object, theme: object, report: str) -> None:
+            calls.append((parent, theme, report))
+
+        def exec(self) -> None:
+            calls.append("exec")
+
+    monkeypatch.setattr("portprotonqt.main_window.CompatibilityReportDialog", ReportDialog)
+
+    window._show_compatibility_report("report text")
+
+    assert calls == [(window, window.theme, "report text"), "exec"]
+
+
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window.themesCombo = FakeComboBox([("Standard", None)])

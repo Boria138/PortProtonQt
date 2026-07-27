@@ -1,0 +1,2949 @@
+{
+  "version": 1,
+  "source": "Bottles compatibility rules",
+  "copyright": "Copyright 2026 mirkobrombin <brombin94@gmail.com>",
+  "license": "GPL-3.0-only",
+  "rules": [
+    {
+      "id": "Unity_Mono",
+      "category": "Engines",
+      "name": "Unity",
+      "description": "Unity Engine with Mono runtime",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "mono",
+          "text": "mono-2.0-bdwgc.dll"
+        },
+        {
+          "id": "assembly",
+          "text": "Assembly-CSharp.dll"
+        },
+        {
+          "id": "managed",
+          "text": "\\Managed\\"
+        }
+      ],
+      "required_sets": [
+        [
+          "mono"
+        ],
+        [
+          "assembly"
+        ],
+        [
+          "managed"
+        ]
+      ]
+    },
+    {
+      "id": "Unity_IL2CPP",
+      "category": "Engines",
+      "name": "Unity IL2CPP",
+      "description": "Unity Engine with IL2CPP runtime",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "gameassembly",
+          "text": "GameAssembly.dll"
+        },
+        {
+          "id": "il2cpp",
+          "text": "il2cpp"
+        },
+        {
+          "id": "metadata",
+          "text": "global-metadata.dat"
+        }
+      ],
+      "required_sets": [
+        [
+          "gameassembly"
+        ],
+        [
+          "il2cpp"
+        ],
+        [
+          "metadata"
+        ]
+      ]
+    },
+    {
+      "id": "Unreal_Engine",
+      "category": "Engines",
+      "name": "Unreal",
+      "description": "Unreal Engine 4/5",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "ue4",
+          "text": "UE4-"
+        },
+        {
+          "id": "ue5",
+          "text": "UE5-"
+        },
+        {
+          "id": "unrealcef",
+          "text": "UnrealCEFSubProcess"
+        },
+        {
+          "id": "engine",
+          "text": "Engine\\Binaries"
+        },
+        {
+          "id": "unrealgame",
+          "text": "UnrealGame"
+        },
+        {
+          "id": "uproject",
+          "text": ".uproject"
+        }
+      ],
+      "required_sets": [
+        [
+          "ue4",
+          "ue5"
+        ],
+        [
+          "ue4",
+          "unrealcef"
+        ],
+        [
+          "ue4",
+          "engine"
+        ],
+        [
+          "ue4",
+          "unrealgame"
+        ],
+        [
+          "ue4",
+          "uproject"
+        ],
+        [
+          "ue5",
+          "unrealcef"
+        ],
+        [
+          "ue5",
+          "engine"
+        ],
+        [
+          "ue5",
+          "unrealgame"
+        ],
+        [
+          "ue5",
+          "uproject"
+        ],
+        [
+          "unrealcef",
+          "engine"
+        ],
+        [
+          "unrealcef",
+          "unrealgame"
+        ],
+        [
+          "unrealcef",
+          "uproject"
+        ],
+        [
+          "engine",
+          "unrealgame"
+        ],
+        [
+          "engine",
+          "uproject"
+        ],
+        [
+          "unrealgame",
+          "uproject"
+        ]
+      ]
+    },
+    {
+      "id": "Godot_Engine",
+      "category": "Engines",
+      "name": "Godot",
+      "description": "Godot Game Engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "godot",
+          "text": "GODOT"
+        },
+        {
+          "id": "godot_project",
+          "text": "project.godot"
+        },
+        {
+          "id": "gdscript",
+          "text": "GDScript"
+        },
+        {
+          "id": "godot_pck",
+          "text": "Godot Engine"
+        }
+      ],
+      "required_sets": [
+        [
+          "godot",
+          "godot_project"
+        ],
+        [
+          "godot",
+          "gdscript"
+        ],
+        [
+          "godot",
+          "godot_pck"
+        ],
+        [
+          "godot_project",
+          "gdscript"
+        ],
+        [
+          "godot_project",
+          "godot_pck"
+        ],
+        [
+          "gdscript",
+          "godot_pck"
+        ]
+      ]
+    },
+    {
+      "id": "Source_Engine",
+      "category": "Engines",
+      "name": "Source Engine",
+      "description": "Valve Source Engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "tier0",
+          "text": "tier0.dll"
+        },
+        {
+          "id": "vstdlib",
+          "text": "vstdlib.dll"
+        },
+        {
+          "id": "vphysics",
+          "text": "vphysics.dll"
+        },
+        {
+          "id": "source",
+          "text": "hl2.exe"
+        }
+      ],
+      "required_sets": [
+        [
+          "tier0",
+          "vstdlib"
+        ],
+        [
+          "tier0",
+          "vphysics"
+        ],
+        [
+          "tier0",
+          "source"
+        ],
+        [
+          "vstdlib",
+          "vphysics"
+        ],
+        [
+          "vstdlib",
+          "source"
+        ],
+        [
+          "vphysics",
+          "source"
+        ]
+      ]
+    },
+    {
+      "id": "CryEngine",
+      "category": "Engines",
+      "name": "CryEngine",
+      "description": "CryEngine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "crysystem",
+          "text": "CrySystem.dll"
+        },
+        {
+          "id": "cryrender",
+          "text": "CryRenderD3D"
+        },
+        {
+          "id": "cryaction",
+          "text": "CryAction.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "crysystem"
+        ],
+        [
+          "cryrender"
+        ],
+        [
+          "cryaction"
+        ]
+      ]
+    },
+    {
+      "id": "REDengine",
+      "category": "Engines",
+      "name": "REDengine",
+      "description": "CD Projekt RED Engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "red",
+          "text": "REDengine"
+        },
+        {
+          "id": "witcher",
+          "text": "witcher"
+        },
+        {
+          "id": "cyberpunk",
+          "text": "Cyberpunk"
+        },
+        {
+          "id": "archive",
+          "text": ".archive"
+        }
+      ],
+      "required_sets": [
+        [
+          "red",
+          "witcher"
+        ],
+        [
+          "red",
+          "cyberpunk"
+        ],
+        [
+          "red",
+          "archive"
+        ],
+        [
+          "witcher",
+          "cyberpunk"
+        ],
+        [
+          "witcher",
+          "archive"
+        ],
+        [
+          "cyberpunk",
+          "archive"
+        ]
+      ]
+    },
+    {
+      "id": "RPGMaker",
+      "category": "Engines",
+      "name": "RPG Maker",
+      "description": "RPG Maker engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "rgss_header",
+          "text": "RGSSAD"
+        },
+        {
+          "id": "rpg_rt",
+          "text": "RPG_RT.exe"
+        },
+        {
+          "id": "rvdata",
+          "text": ".rvdata"
+        },
+        {
+          "id": "rvdata2",
+          "text": ".rvdata2"
+        },
+        {
+          "id": "rgss3a",
+          "text": ".rgss3a"
+        },
+        {
+          "id": "rpgmv_core",
+          "text": "js/rpg_core.js"
+        },
+        {
+          "id": "rpgmv_managers",
+          "text": "js/rpg_managers.js"
+        }
+      ],
+      "required_sets": [
+        [
+          "rgss_header"
+        ],
+        [
+          "rpg_rt"
+        ],
+        [
+          "rvdata"
+        ],
+        [
+          "rvdata2"
+        ],
+        [
+          "rgss3a"
+        ],
+        [
+          "rpgmv_core"
+        ],
+        [
+          "rpgmv_managers"
+        ]
+      ]
+    },
+    {
+      "id": "RenPy",
+      "category": "Engines",
+      "name": "Ren'Py",
+      "description": "Ren'Py Visual Novel Engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "renpy",
+          "text": "renpy"
+        },
+        {
+          "id": "rpa",
+          "text": ".rpa"
+        },
+        {
+          "id": "rpyc",
+          "text": ".rpyc"
+        }
+      ],
+      "required_sets": [
+        [
+          "renpy"
+        ],
+        [
+          "rpa"
+        ],
+        [
+          "rpyc"
+        ]
+      ]
+    },
+    {
+      "id": "Electron",
+      "category": "Frameworks",
+      "name": "Electron",
+      "description": "Electron/Chromium framework",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "electron",
+          "text": "electron.dll"
+        },
+        {
+          "id": "asar",
+          "text": "app.asar"
+        },
+        {
+          "id": "chromium",
+          "text": "libcef.dll"
+        },
+        {
+          "id": "nwjs",
+          "text": "nw.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "electron"
+        ],
+        [
+          "asar"
+        ],
+        [
+          "chromium"
+        ],
+        [
+          "nwjs"
+        ]
+      ]
+    },
+    {
+      "id": "Qt_Framework",
+      "category": "Frameworks",
+      "name": "Qt",
+      "description": "Qt Framework",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "qt5core",
+          "text": "Qt5Core.dll"
+        },
+        {
+          "id": "qt6core",
+          "text": "Qt6Core.dll"
+        },
+        {
+          "id": "qml",
+          "text": "Qt5Qml.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "qt5core"
+        ],
+        [
+          "qt6core"
+        ],
+        [
+          "qml"
+        ]
+      ]
+    },
+    {
+      "id": "CEF",
+      "category": "Frameworks",
+      "name": "CEF",
+      "description": "Chromium Embedded Framework",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "libcef",
+          "text": "libcef.dll"
+        },
+        {
+          "id": "cef",
+          "text": "cef_"
+        }
+      ],
+      "required_sets": [
+        [
+          "libcef"
+        ],
+        [
+          "cef"
+        ]
+      ]
+    },
+    {
+      "id": "Denuvo",
+      "category": "Protection",
+      "name": "Denuvo",
+      "description": "Denuvo Anti-Tamper",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "denuvo",
+          "text": "denuvo"
+        },
+        {
+          "id": "steam_stub",
+          "text": "steam_api_o.dll"
+        },
+        {
+          "id": "protect",
+          "text": "Protection-Steam.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "denuvo"
+        ],
+        [
+          "steam_stub"
+        ],
+        [
+          "protect"
+        ]
+      ]
+    },
+    {
+      "id": "VMProtect",
+      "category": "Protection",
+      "name": "VMProtect",
+      "description": "VMProtect packer/virtualizer",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "vmp0",
+          "text": ".vmp0"
+        },
+        {
+          "id": "vmp1",
+          "text": ".vmp1"
+        },
+        {
+          "id": "vmprotect",
+          "text": "VMProtect"
+        },
+        {
+          "id": "vmpsdk",
+          "text": "VMProtectSDK"
+        }
+      ],
+      "required_sets": [
+        [
+          "vmp0"
+        ],
+        [
+          "vmp1"
+        ],
+        [
+          "vmprotect"
+        ],
+        [
+          "vmpsdk"
+        ]
+      ]
+    },
+    {
+      "id": "Themida",
+      "category": "Protection",
+      "name": "Themida",
+      "description": "Themida/WinLicense protector",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "themida",
+          "text": ".themida"
+        },
+        {
+          "id": "winlicense",
+          "text": "WinLicense"
+        },
+        {
+          "id": "oreans",
+          "text": "Oreans"
+        }
+      ],
+      "required_sets": [
+        [
+          "themida"
+        ],
+        [
+          "winlicense"
+        ],
+        [
+          "oreans"
+        ]
+      ]
+    },
+    {
+      "id": "EasyAntiCheat",
+      "category": "Protection",
+      "name": "EasyAntiCheat",
+      "description": "EAC Anti-Cheat",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "eac_dll",
+          "text": "EasyAntiCheat.dll"
+        },
+        {
+          "id": "eac_x64",
+          "text": "EasyAntiCheat_x64.dll"
+        },
+        {
+          "id": "eac_sys",
+          "text": "EasyAntiCheat.sys"
+        },
+        {
+          "id": "eac_setup",
+          "text": "EasyAntiCheat_Setup.exe"
+        }
+      ],
+      "required_sets": [
+        [
+          "eac_dll"
+        ],
+        [
+          "eac_x64"
+        ],
+        [
+          "eac_sys"
+        ],
+        [
+          "eac_setup"
+        ]
+      ]
+    },
+    {
+      "id": "BattlEye",
+      "category": "Protection",
+      "name": "BattlEye",
+      "description": "BattlEye Anti-Cheat",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "be_dll",
+          "text": "BEClient.dll"
+        },
+        {
+          "id": "be_x64",
+          "text": "BEClient_x64.dll"
+        },
+        {
+          "id": "be_service",
+          "text": "BEService.exe"
+        },
+        {
+          "id": "be_sys",
+          "text": "BattlEye.sys"
+        },
+        {
+          "id": "be_core",
+          "text": "BattlEye Core"
+        }
+      ],
+      "required_sets": [
+        [
+          "be_dll"
+        ],
+        [
+          "be_x64"
+        ],
+        [
+          "be_service"
+        ],
+        [
+          "be_sys"
+        ],
+        [
+          "be_core"
+        ]
+      ]
+    },
+    {
+      "id": "UPX",
+      "category": "Packers",
+      "name": "UPX",
+      "description": "UPX Packer",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "upx0",
+          "text": "UPX0"
+        },
+        {
+          "id": "upx1",
+          "text": "UPX1"
+        },
+        {
+          "id": "upx2",
+          "text": "UPX!"
+        }
+      ],
+      "required_sets": [
+        [
+          "upx0"
+        ],
+        [
+          "upx1"
+        ],
+        [
+          "upx2"
+        ]
+      ]
+    },
+    {
+      "id": "Enigma",
+      "category": "Packers",
+      "name": "Enigma",
+      "description": "Enigma Protector",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "enigma",
+          "text": ".enigma"
+        },
+        {
+          "id": "enigma1",
+          "text": "ENIGMA"
+        }
+      ],
+      "required_sets": [
+        [
+          "enigma"
+        ],
+        [
+          "enigma1"
+        ]
+      ]
+    },
+    {
+      "id": "ASPack",
+      "category": "Packers",
+      "name": "ASPack",
+      "description": "ASPack Packer",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "aspack",
+          "text": ".aspack"
+        },
+        {
+          "id": "adata",
+          "text": ".adata"
+        }
+      ],
+      "required_sets": [
+        [
+          "aspack"
+        ],
+        [
+          "adata"
+        ]
+      ]
+    },
+    {
+      "id": "DotNet_Core",
+      "category": "Runtimes",
+      "name": ".NET Core/5+",
+      "description": "Modern .NET Runtime",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "hostfxr",
+          "text": "hostfxr.dll"
+        },
+        {
+          "id": "coreclr",
+          "text": "coreclr.dll"
+        },
+        {
+          "id": "dotnet",
+          "text": "dotnet"
+        },
+        {
+          "id": "runtimeconfig",
+          "text": ".runtimeconfig.json"
+        }
+      ],
+      "required_sets": [
+        [
+          "hostfxr"
+        ],
+        [
+          "coreclr"
+        ],
+        [
+          "dotnet"
+        ],
+        [
+          "runtimeconfig"
+        ]
+      ]
+    },
+    {
+      "id": "DotNet_Framework",
+      "category": "Runtimes",
+      "name": ".NET Framework",
+      "description": "Classic .NET Framework",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "mscoree",
+          "text": "mscoree.dll"
+        },
+        {
+          "id": "mscorlib",
+          "text": "mscorlib.dll"
+        },
+        {
+          "id": "clr",
+          "text": "clrjit.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "mscoree"
+        ],
+        [
+          "mscorlib"
+        ],
+        [
+          "clr"
+        ]
+      ]
+    },
+    {
+      "id": "Mono_Runtime",
+      "category": "Runtimes",
+      "name": "Mono",
+      "description": "Mono Runtime",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "mono",
+          "text": "mono-2.0"
+        },
+        {
+          "id": "mono_bdwgc",
+          "text": "mono-2.0-bdwgc.dll"
+        },
+        {
+          "id": "monolib",
+          "text": "libmono"
+        }
+      ],
+      "required_sets": [
+        [
+          "mono"
+        ],
+        [
+          "mono_bdwgc"
+        ],
+        [
+          "monolib"
+        ]
+      ]
+    },
+    {
+      "id": "Java_Runtime",
+      "category": "Runtimes",
+      "name": "Java",
+      "description": "Java Runtime Environment",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "jvm",
+          "text": "jvm.dll"
+        },
+        {
+          "id": "java",
+          "text": "java.exe"
+        },
+        {
+          "id": "jar",
+          "text": ".jar"
+        },
+        {
+          "id": "jni",
+          "text": "JNI_CreateJavaVM"
+        }
+      ],
+      "required_sets": [
+        [
+          "jvm"
+        ],
+        [
+          "java"
+        ],
+        [
+          "jar"
+        ],
+        [
+          "jni"
+        ]
+      ]
+    },
+    {
+      "id": "Python_Embedded",
+      "category": "Runtimes",
+      "name": "Python",
+      "description": "Embedded Python",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "python3",
+          "text": "python3"
+        },
+        {
+          "id": "python_dll",
+          "text": "python3"
+        },
+        {
+          "id": "pyc",
+          "text": ".pyc"
+        }
+      ],
+      "required_sets": [
+        [
+          "python3"
+        ],
+        [
+          "python_dll"
+        ],
+        [
+          "pyc"
+        ]
+      ]
+    },
+    {
+      "id": "Bink_Video",
+      "category": "Media",
+      "name": "Bink",
+      "description": "RAD Game Tools Bink Video",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "binkw32",
+          "text": "binkw32.dll"
+        },
+        {
+          "id": "binkw64",
+          "text": "binkw64.dll"
+        },
+        {
+          "id": "bink2",
+          "text": "bink2w64.dll"
+        },
+        {
+          "id": "bik",
+          "text": ".bik"
+        }
+      ],
+      "required_sets": [
+        [
+          "binkw32"
+        ],
+        [
+          "binkw64"
+        ],
+        [
+          "bink2"
+        ],
+        [
+          "bik"
+        ]
+      ]
+    },
+    {
+      "id": "FMOD_Audio",
+      "category": "Audio",
+      "name": "FMOD",
+      "description": "FMOD Audio Engine",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "fmod",
+          "text": "fmod.dll"
+        },
+        {
+          "id": "fmod64",
+          "text": "fmod64.dll"
+        },
+        {
+          "id": "fmodstudio",
+          "text": "fmodstudio.dll"
+        },
+        {
+          "id": "fev",
+          "text": ".fev"
+        },
+        {
+          "id": "fsb",
+          "text": ".fsb"
+        }
+      ],
+      "required_sets": [
+        [
+          "fmod"
+        ],
+        [
+          "fmod64"
+        ],
+        [
+          "fmodstudio"
+        ],
+        [
+          "fev"
+        ],
+        [
+          "fsb"
+        ]
+      ]
+    },
+    {
+      "id": "Wwise_Audio",
+      "category": "Audio",
+      "name": "Wwise",
+      "description": "Audiokinetic Wwise",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "wwise",
+          "text": "AkSoundEngine"
+        },
+        {
+          "id": "bnk",
+          "text": ".bnk"
+        },
+        {
+          "id": "wwisec",
+          "text": "wwise"
+        }
+      ],
+      "required_sets": [
+        [
+          "wwise"
+        ],
+        [
+          "bnk"
+        ],
+        [
+          "wwisec"
+        ]
+      ]
+    },
+    {
+      "id": "Miles_Audio",
+      "category": "Audio",
+      "name": "Miles",
+      "description": "RAD Game Tools Miles",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "miles32",
+          "text": "miles32.dll"
+        },
+        {
+          "id": "mss32",
+          "text": "mss32.dll"
+        },
+        {
+          "id": "miles64",
+          "text": "miles64.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "miles32"
+        ],
+        [
+          "mss32"
+        ],
+        [
+          "miles64"
+        ]
+      ]
+    },
+    {
+      "id": "Havok",
+      "category": "Physics",
+      "name": "Havok",
+      "description": "Havok Physics/Animation",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "havok",
+          "text": "hk"
+        },
+        {
+          "id": "hkengine",
+          "text": "hkBase"
+        },
+        {
+          "id": "hkanim",
+          "text": "hkaAnimation"
+        }
+      ],
+      "required_sets": [
+        [
+          "havok",
+          "hkengine"
+        ],
+        [
+          "havok",
+          "hkanim"
+        ],
+        [
+          "hkengine",
+          "hkanim"
+        ]
+      ]
+    },
+    {
+      "id": "PhysX",
+      "category": "Physics",
+      "name": "PhysX",
+      "description": "NVIDIA PhysX",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "physx",
+          "text": "PhysX"
+        },
+        {
+          "id": "physx3",
+          "text": "PhysX3"
+        },
+        {
+          "id": "physxloader",
+          "text": "physxloader"
+        },
+        {
+          "id": "physxcooking",
+          "text": "PhysXCooking"
+        }
+      ],
+      "required_sets": [
+        [
+          "physx"
+        ],
+        [
+          "physx3"
+        ],
+        [
+          "physxloader"
+        ],
+        [
+          "physxcooking"
+        ]
+      ]
+    },
+    {
+      "id": "DirectX12",
+      "category": "Graphics",
+      "name": "DirectX 12",
+      "description": "DirectX 12 API",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "d3d12",
+          "text": "d3d12.dll"
+        },
+        {
+          "id": "dxil",
+          "text": "dxil.dll"
+        },
+        {
+          "id": "d3d12core",
+          "text": "D3D12Core.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "d3d12"
+        ],
+        [
+          "dxil"
+        ],
+        [
+          "d3d12core"
+        ]
+      ]
+    },
+    {
+      "id": "Vulkan_API",
+      "category": "Graphics",
+      "name": "Vulkan",
+      "description": "Vulkan Graphics API",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "vulkan",
+          "text": "vulkan-1.dll"
+        },
+        {
+          "id": "vk",
+          "text": "vkCreateInstance"
+        },
+        {
+          "id": "spirv",
+          "text": ".spv"
+        }
+      ],
+      "required_sets": [
+        [
+          "vulkan"
+        ],
+        [
+          "vk"
+        ],
+        [
+          "spirv"
+        ]
+      ]
+    },
+    {
+      "id": "OpenGL",
+      "category": "Graphics",
+      "name": "OpenGL",
+      "description": "OpenGL Graphics",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "opengl",
+          "text": "opengl32.dll"
+        },
+        {
+          "id": "glew",
+          "text": "glew32.dll"
+        },
+        {
+          "id": "glad",
+          "text": "gladLoadGL"
+        }
+      ],
+      "required_sets": [
+        [
+          "opengl"
+        ],
+        [
+          "glew"
+        ],
+        [
+          "glad"
+        ]
+      ]
+    },
+    {
+      "id": "Steamworks",
+      "category": "Social/DRM",
+      "name": "Steamworks",
+      "description": "Steam Integration",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "steam_api",
+          "text": "steam_api.dll"
+        },
+        {
+          "id": "steam_api64",
+          "text": "steam_api64.dll"
+        },
+        {
+          "id": "steamclient",
+          "text": "steamclient.dll"
+        },
+        {
+          "id": "steamappid",
+          "text": "steam_appid.txt"
+        }
+      ],
+      "required_sets": [
+        [
+          "steam_api"
+        ],
+        [
+          "steam_api64"
+        ],
+        [
+          "steamclient"
+        ],
+        [
+          "steamappid"
+        ]
+      ]
+    },
+    {
+      "id": "GOG_Galaxy",
+      "category": "Social/DRM",
+      "name": "GOG Galaxy",
+      "description": "GOG Galaxy SDK",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "galaxy",
+          "text": "Galaxy.dll"
+        },
+        {
+          "id": "galaxy64",
+          "text": "Galaxy64.dll"
+        },
+        {
+          "id": "galaxypeer",
+          "text": "GalaxyPeer"
+        }
+      ],
+      "required_sets": [
+        [
+          "galaxy"
+        ],
+        [
+          "galaxy64"
+        ],
+        [
+          "galaxypeer"
+        ]
+      ]
+    },
+    {
+      "id": "Epic_Online",
+      "category": "Social/DRM",
+      "name": "Epic Online Services",
+      "description": "Epic Games SDK",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "eossdk",
+          "text": "EOSSDK"
+        },
+        {
+          "id": "epic",
+          "text": "EpicOnlineServices"
+        }
+      ],
+      "required_sets": [
+        [
+          "eossdk"
+        ],
+        [
+          "epic"
+        ]
+      ]
+    },
+    {
+      "id": "Discord_SDK",
+      "category": "Social/DRM",
+      "name": "Discord",
+      "description": "Discord Game SDK",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "discord",
+          "text": "discord_game_sdk"
+        },
+        {
+          "id": "discord_rpc",
+          "text": "discord-rpc"
+        }
+      ],
+      "required_sets": [
+        [
+          "discord"
+        ],
+        [
+          "discord_rpc"
+        ]
+      ]
+    },
+    {
+      "id": "OpenSSL",
+      "category": "Crypto",
+      "name": "OpenSSL",
+      "description": "OpenSSL Library",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "openssl",
+          "text": "OpenSSL"
+        },
+        {
+          "id": "libssl",
+          "text": "libssl"
+        },
+        {
+          "id": "libcrypto",
+          "text": "libcrypto"
+        },
+        {
+          "id": "ssleay",
+          "text": "ssleay32.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "openssl"
+        ],
+        [
+          "libssl"
+        ],
+        [
+          "libcrypto"
+        ],
+        [
+          "ssleay"
+        ]
+      ]
+    },
+    {
+      "id": "NSIS_Installer",
+      "category": "Installer",
+      "name": "NSIS",
+      "description": "Nullsoft Scriptable Install System",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "nsis",
+          "text": "NSIS"
+        },
+        {
+          "id": "nullsoft",
+          "text": "Nullsoft"
+        },
+        {
+          "id": "nsisbi",
+          "text": "NSIS.Library"
+        }
+      ],
+      "required_sets": [
+        [
+          "nsis"
+        ],
+        [
+          "nullsoft"
+        ],
+        [
+          "nsisbi"
+        ]
+      ]
+    },
+    {
+      "id": "InnoSetup_Installer",
+      "category": "Installer",
+      "name": "Inno Setup",
+      "description": "Inno Setup Installer",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "inno",
+          "text": "Inno Setup"
+        },
+        {
+          "id": "inno_sig",
+          "text": "innosetup"
+        },
+        {
+          "id": "iscc",
+          "text": "iscc.exe"
+        }
+      ],
+      "required_sets": [
+        [
+          "inno"
+        ],
+        [
+          "inno_sig"
+        ],
+        [
+          "iscc"
+        ]
+      ]
+    },
+    {
+      "id": "InstallShield_Installer",
+      "category": "Installer",
+      "name": "InstallShield",
+      "description": "InstallShield Installer",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "is",
+          "text": "InstallShield"
+        },
+        {
+          "id": "flexera",
+          "text": "Flexera"
+        },
+        {
+          "id": "is_cab",
+          "text": "_isetup/_setup.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "is"
+        ],
+        [
+          "flexera"
+        ],
+        [
+          "is_cab"
+        ]
+      ]
+    },
+    {
+      "id": "MSI_Installer",
+      "category": "Installer",
+      "name": "MSI",
+      "description": "Windows Installer Package",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "msi",
+          "text": "Windows Installer"
+        },
+        {
+          "id": "msiexec",
+          "text": "msiexec"
+        },
+        {
+          "id": "msidb",
+          "text": ".msi"
+        }
+      ],
+      "required_sets": [
+        [
+          "msi"
+        ],
+        [
+          "msiexec"
+        ],
+        [
+          "msidb"
+        ]
+      ]
+    },
+    {
+      "id": "WPF_Framework",
+      "category": "Frameworks",
+      "name": "WPF",
+      "description": "Windows Presentation Foundation",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "wpf",
+          "text": "PresentationFramework"
+        },
+        {
+          "id": "wpf_core",
+          "text": "PresentationCore"
+        },
+        {
+          "id": "wpf_ui",
+          "text": "WindowsBase"
+        },
+        {
+          "id": "xaml",
+          "text": ".xaml"
+        }
+      ],
+      "required_sets": [
+        [
+          "wpf",
+          "wpf_core"
+        ],
+        [
+          "wpf",
+          "wpf_ui"
+        ],
+        [
+          "wpf",
+          "xaml"
+        ],
+        [
+          "wpf_core",
+          "wpf_ui"
+        ],
+        [
+          "wpf_core",
+          "xaml"
+        ],
+        [
+          "wpf_ui",
+          "xaml"
+        ]
+      ]
+    },
+    {
+      "id": "WinForms_Framework",
+      "category": "Frameworks",
+      "name": "WinForms",
+      "description": "Windows Forms",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "winforms",
+          "text": "System.Windows.Forms"
+        },
+        {
+          "id": "forms_dll",
+          "text": "System.Windows.Forms.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "winforms"
+        ],
+        [
+          "forms_dll"
+        ]
+      ]
+    },
+    {
+      "id": "MFC_Runtime",
+      "category": "Runtimes",
+      "name": "MFC",
+      "description": "Microsoft Foundation Classes",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "mfc140",
+          "text": "mfc140"
+        },
+        {
+          "id": "mfc120",
+          "text": "mfc120"
+        },
+        {
+          "id": "mfc100",
+          "text": "mfc100"
+        },
+        {
+          "id": "mfcm",
+          "text": "mfcm140u.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "mfc140"
+        ],
+        [
+          "mfc120"
+        ],
+        [
+          "mfc100"
+        ],
+        [
+          "mfcm"
+        ]
+      ]
+    },
+    {
+      "id": "ATL_Runtime",
+      "category": "Runtimes",
+      "name": "ATL",
+      "description": "Active Template Library",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "atl140",
+          "text": "atl140.dll"
+        },
+        {
+          "id": "atl120",
+          "text": "atl120.dll"
+        },
+        {
+          "id": "atl",
+          "text": "ATL::CComObject"
+        }
+      ],
+      "required_sets": [
+        [
+          "atl140"
+        ],
+        [
+          "atl120"
+        ],
+        [
+          "atl"
+        ]
+      ]
+    },
+    {
+      "id": "XInput",
+      "category": "Input",
+      "name": "XInput",
+      "description": "Xbox Controller API",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "xinput1_4",
+          "text": "xinput1_4.dll"
+        },
+        {
+          "id": "xinput1_3",
+          "text": "xinput1_3.dll"
+        },
+        {
+          "id": "xinput9",
+          "text": "xinput9_1_0.dll"
+        },
+        {
+          "id": "xinputget",
+          "text": "XInputGetState"
+        }
+      ],
+      "required_sets": [
+        [
+          "xinput1_4"
+        ],
+        [
+          "xinput1_3"
+        ],
+        [
+          "xinput9"
+        ],
+        [
+          "xinputget"
+        ]
+      ]
+    },
+    {
+      "id": "DirectInput",
+      "category": "Input",
+      "name": "DirectInput",
+      "description": "Legacy DirectInput API",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "dinput",
+          "text": "dinput.dll"
+        },
+        {
+          "id": "dinput8",
+          "text": "dinput8.dll"
+        },
+        {
+          "id": "dicreate",
+          "text": "DirectInputCreate"
+        }
+      ],
+      "required_sets": [
+        [
+          "dinput"
+        ],
+        [
+          "dinput8"
+        ],
+        [
+          "dicreate"
+        ]
+      ]
+    },
+    {
+      "id": "RawInput",
+      "category": "Input",
+      "name": "RawInput",
+      "description": "Raw Input API",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "rawinput",
+          "text": "GetRawInputData"
+        },
+        {
+          "id": "rawinputdev",
+          "text": "RegisterRawInputDevices"
+        }
+      ],
+      "required_sets": [
+        [
+          "rawinput"
+        ],
+        [
+          "rawinputdev"
+        ]
+      ]
+    },
+    {
+      "id": "UWP_App",
+      "category": "Warning",
+      "name": "UWP/Modern API",
+      "description": "Uses Modern Windows APIs - Requires WinMetadata",
+      "severity": "high",
+      "patterns": [
+        {
+          "id": "uwp_core",
+          "text": "Windows.ApplicationModel.Core"
+        },
+        {
+          "id": "uwp_activation",
+          "text": "Windows.ApplicationModel.Activation"
+        },
+        {
+          "id": "uwp_package",
+          "text": "Windows.ApplicationModel.Package"
+        },
+        {
+          "id": "appx_manifest",
+          "text": "AppxManifest.xml"
+        },
+        {
+          "id": "msix_package",
+          "text": "MSIX Package"
+        },
+        {
+          "id": "uwp_store",
+          "text": "Windows.Services.Store"
+        }
+      ],
+      "required_sets": [
+        [
+          "uwp_core",
+          "uwp_activation"
+        ],
+        [
+          "uwp_core",
+          "uwp_package"
+        ],
+        [
+          "uwp_core",
+          "appx_manifest"
+        ],
+        [
+          "uwp_core",
+          "msix_package"
+        ],
+        [
+          "uwp_core",
+          "uwp_store"
+        ],
+        [
+          "uwp_activation",
+          "uwp_package"
+        ],
+        [
+          "uwp_activation",
+          "appx_manifest"
+        ],
+        [
+          "uwp_activation",
+          "msix_package"
+        ],
+        [
+          "uwp_activation",
+          "uwp_store"
+        ],
+        [
+          "uwp_package",
+          "appx_manifest"
+        ],
+        [
+          "uwp_package",
+          "msix_package"
+        ],
+        [
+          "uwp_package",
+          "uwp_store"
+        ],
+        [
+          "appx_manifest",
+          "msix_package"
+        ],
+        [
+          "appx_manifest",
+          "uwp_store"
+        ],
+        [
+          "msix_package",
+          "uwp_store"
+        ]
+      ]
+    },
+    {
+      "id": "SecuROM_DRM",
+      "category": "Warning",
+      "name": "SecuROM",
+      "description": "SecuROM DRM - Often problematic",
+      "severity": "high",
+      "patterns": [
+        {
+          "id": "securom",
+          "text": "SecuROM"
+        },
+        {
+          "id": "sony_dadc",
+          "text": "Sony DADC"
+        },
+        {
+          "id": "uaservice",
+          "text": "uaservice7.exe"
+        }
+      ],
+      "required_sets": [
+        [
+          "securom",
+          "sony_dadc"
+        ],
+        [
+          "securom",
+          "uaservice"
+        ],
+        [
+          "sony_dadc",
+          "uaservice"
+        ]
+      ]
+    },
+    {
+      "id": "SafeDisc_DRM",
+      "category": "Warning",
+      "name": "SafeDisc",
+      "description": "SafeDisc DRM - Will NOT work",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "safedisc",
+          "text": "SafeDisc"
+        },
+        {
+          "id": "macrovision",
+          "text": "Macrovision"
+        },
+        {
+          "id": "secdrv",
+          "text": "secdrv.sys"
+        },
+        {
+          "id": "drvmgt",
+          "text": "drvmgt.sys"
+        }
+      ],
+      "required_sets": [
+        [
+          "secdrv"
+        ],
+        [
+          "drvmgt"
+        ],
+        [
+          "safedisc",
+          "macrovision"
+        ]
+      ]
+    },
+    {
+      "id": "StarForce_DRM",
+      "category": "Warning",
+      "name": "StarForce",
+      "description": "StarForce DRM - Will NOT work",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "starforce",
+          "text": "StarForce"
+        },
+        {
+          "id": "protect",
+          "text": "protect.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "starforce",
+          "protect"
+        ]
+      ]
+    },
+    {
+      "id": "WMV_Codec",
+      "category": "Media",
+      "name": "WMV/WMA",
+      "description": "Windows Media codecs",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "wmv",
+          "text": "wmvcore.dll"
+        },
+        {
+          "id": "wma",
+          "text": "WMADEC"
+        },
+        {
+          "id": "wmplayer",
+          "text": "Windows Media"
+        }
+      ],
+      "required_sets": [
+        [
+          "wmv"
+        ],
+        [
+          "wma"
+        ],
+        [
+          "wmplayer"
+        ]
+      ]
+    },
+    {
+      "id": "QuickTime",
+      "category": "Media",
+      "name": "QuickTime",
+      "description": "Apple QuickTime",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "qt",
+          "text": "QuickTime"
+        },
+        {
+          "id": "qtcf",
+          "text": "QTCF.dll"
+        },
+        {
+          "id": "mov",
+          "text": ".mov"
+        }
+      ],
+      "required_sets": [
+        [
+          "qt",
+          "qtcf"
+        ],
+        [
+          "qt",
+          "mov"
+        ],
+        [
+          "qtcf",
+          "mov"
+        ]
+      ]
+    },
+    {
+      "id": "Registry_Modifications",
+      "category": "Registry",
+      "name": "Registry Keys",
+      "description": "Contains Windows Registry modification strings",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "reg1",
+          "text": "REGEDIT4"
+        },
+        {
+          "id": "reg2",
+          "text": "Windows Registry Editor Version 5.00"
+        },
+        {
+          "id": "key1",
+          "text": "HKEY_LOCAL_MACHINE"
+        },
+        {
+          "id": "key2",
+          "text": "HKEY_CURRENT_USER"
+        },
+        {
+          "id": "key3",
+          "text": "HKLM\\"
+        },
+        {
+          "id": "key4",
+          "text": "HKCU\\"
+        },
+        {
+          "id": "capture",
+          "regex": "HK(LM|CU|EY_LOCAL_MACHINE|EY_CURRENT_USER)\\\\[a-zA-Z0-9_ \\\\-]{2,}"
+        }
+      ],
+      "required_sets": [
+        [
+          "reg1"
+        ],
+        [
+          "reg2"
+        ],
+        [
+          "capture"
+        ],
+        [
+          "key1",
+          "key2"
+        ],
+        [
+          "key1",
+          "key3"
+        ],
+        [
+          "key1",
+          "key4"
+        ],
+        [
+          "key2",
+          "key3"
+        ],
+        [
+          "key2",
+          "key4"
+        ],
+        [
+          "key3",
+          "key4"
+        ]
+      ]
+    },
+    {
+      "id": "Driver_Service",
+      "category": "Warning",
+      "name": "Kernel Driver or Service",
+      "description": "Attempts to install a Kernel Driver or Service",
+      "severity": "high",
+      "patterns": [
+        {
+          "id": "svc1",
+          "text": "CreateService"
+        },
+        {
+          "id": "svc2",
+          "text": "StartService"
+        },
+        {
+          "id": "sys",
+          "text": ".sys"
+        },
+        {
+          "id": "reg",
+          "text": "SYSTEM\\CurrentControlSet\\Services"
+        }
+      ],
+      "required_sets": [
+        [
+          "svc1",
+          "svc2"
+        ],
+        [
+          "sys",
+          "reg"
+        ]
+      ]
+    },
+    {
+      "id": "Upscaling_Tech",
+      "category": "Upscaling",
+      "name": "Upscaling Technology",
+      "description": "DLSS, FSR or XeSS detected",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "dlss",
+          "text": "nvngx_dlss.dll"
+        },
+        {
+          "id": "dlss_framegen",
+          "text": "nvngx_dlssg.dll"
+        },
+        {
+          "id": "fsr_dll",
+          "text": "ffx_fsr2_api_x64.dll"
+        },
+        {
+          "id": "fsr_dx12",
+          "text": "amd_fidelityfx_dx12.dll"
+        },
+        {
+          "id": "fsr_vk",
+          "text": "amd_fidelityfx_vk.dll"
+        },
+        {
+          "id": "xess",
+          "text": "libxess.dll"
+        }
+      ],
+      "required_sets": [
+        [
+          "dlss"
+        ],
+        [
+          "dlss_framegen"
+        ],
+        [
+          "fsr_dll"
+        ],
+        [
+          "fsr_dx12"
+        ],
+        [
+          "fsr_vk"
+        ],
+        [
+          "xess"
+        ]
+      ]
+    },
+    {
+      "id": "Node_Native_Module",
+      "category": "System",
+      "name": "Native Modules",
+      "description": "Node.js Native Modules (FFI/Bindings)",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "ffi",
+          "text": "ffi-napi"
+        },
+        {
+          "id": "ref",
+          "text": "ref-napi"
+        },
+        {
+          "id": "bindings",
+          "text": "bindings"
+        },
+        {
+          "id": "node_gyp",
+          "text": "node-gyp"
+        },
+        {
+          "id": "koffi",
+          "text": "koffi"
+        }
+      ],
+      "required_sets": [
+        [
+          "ffi"
+        ],
+        [
+          "ref"
+        ],
+        [
+          "bindings"
+        ],
+        [
+          "node_gyp"
+        ],
+        [
+          "koffi"
+        ]
+      ]
+    },
+    {
+      "id": "Node_System_Commands",
+      "category": "System",
+      "name": "System Commands (Node)",
+      "description": "Executes system shell commands",
+      "severity": "high",
+      "patterns": [
+        {
+          "id": "exec",
+          "text": "child_process.exec"
+        },
+        {
+          "id": "spawn",
+          "text": "child_process.spawn"
+        },
+        {
+          "id": "execSync",
+          "text": "execSync"
+        },
+        {
+          "id": "spawnSync",
+          "text": "spawnSync"
+        },
+        {
+          "id": "cmd",
+          "text": "cmd.exe"
+        },
+        {
+          "id": "powershell",
+          "text": "powershell"
+        }
+      ],
+      "required_sets": [
+        [
+          "exec"
+        ],
+        [
+          "spawn"
+        ],
+        [
+          "execSync"
+        ],
+        [
+          "spawnSync"
+        ],
+        [
+          "cmd"
+        ],
+        [
+          "powershell"
+        ]
+      ]
+    },
+    {
+      "id": "Node_Registry_Access",
+      "category": "Registry",
+      "name": "Registry Access (Node)",
+      "description": "Accesses Windows Registry via Node.js",
+      "severity": "info",
+      "patterns": [
+        {
+          "id": "reg_query",
+          "text": "reg.exe query"
+        },
+        {
+          "id": "reg_add",
+          "text": "reg.exe add"
+        },
+        {
+          "id": "regedit",
+          "text": "regedit"
+        }
+      ],
+      "required_sets": [
+        [
+          "reg_query"
+        ],
+        [
+          "reg_add"
+        ],
+        [
+          "regedit"
+        ]
+      ]
+    },
+    {
+      "id": "Node_Kernel_Driver",
+      "category": "System",
+      "name": "Kernel Driver (Node)",
+      "description": "Attempts to interact with Kernel Drivers",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "create_file",
+          "text": "CreateFile"
+        },
+        {
+          "id": "device_io",
+          "text": "DeviceIoControl"
+        },
+        {
+          "id": "ioctl",
+          "text": "IOCTL_"
+        },
+        {
+          "id": "symbolic",
+          "text": "DefineDosDevice"
+        }
+      ],
+      "required_sets": [
+        [
+          "create_file",
+          "device_io"
+        ],
+        [
+          "create_file",
+          "ioctl"
+        ],
+        [
+          "create_file",
+          "symbolic"
+        ],
+        [
+          "device_io",
+          "ioctl"
+        ],
+        [
+          "device_io",
+          "symbolic"
+        ],
+        [
+          "ioctl",
+          "symbolic"
+        ]
+      ]
+    },
+    {
+      "id": "Stealer_Browser_Credential_Exfil",
+      "category": "Security",
+      "name": "Browser credential stealer",
+      "description": "Reads browser credential or cookie stores and embeds a known data exfiltration endpoint",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "c1",
+          "text": "Login Data"
+        },
+        {
+          "id": "c2",
+          "text": "cookies.sqlite"
+        },
+        {
+          "id": "c3",
+          "text": "\\User Data\\Default\\"
+        },
+        {
+          "id": "c4",
+          "text": "moz_cookies"
+        },
+        {
+          "id": "c5",
+          "text": "encrypted_key"
+        },
+        {
+          "id": "e1",
+          "text": "api.telegram.org/bot"
+        },
+        {
+          "id": "e2",
+          "text": "discord.com/api/webhooks"
+        },
+        {
+          "id": "e3",
+          "text": "gofile.io"
+        },
+        {
+          "id": "e4",
+          "text": "anonfiles"
+        }
+      ],
+      "required_sets": [
+        [
+          "c1",
+          "c2",
+          "e1"
+        ],
+        [
+          "c1",
+          "c2",
+          "e2"
+        ],
+        [
+          "c1",
+          "c2",
+          "e3"
+        ],
+        [
+          "c1",
+          "c2",
+          "e4"
+        ],
+        [
+          "c1",
+          "c3",
+          "e1"
+        ],
+        [
+          "c1",
+          "c3",
+          "e2"
+        ],
+        [
+          "c1",
+          "c3",
+          "e3"
+        ],
+        [
+          "c1",
+          "c3",
+          "e4"
+        ],
+        [
+          "c1",
+          "c4",
+          "e1"
+        ],
+        [
+          "c1",
+          "c4",
+          "e2"
+        ],
+        [
+          "c1",
+          "c4",
+          "e3"
+        ],
+        [
+          "c1",
+          "c4",
+          "e4"
+        ],
+        [
+          "c1",
+          "c5",
+          "e1"
+        ],
+        [
+          "c1",
+          "c5",
+          "e2"
+        ],
+        [
+          "c1",
+          "c5",
+          "e3"
+        ],
+        [
+          "c1",
+          "c5",
+          "e4"
+        ],
+        [
+          "c2",
+          "c3",
+          "e1"
+        ],
+        [
+          "c2",
+          "c3",
+          "e2"
+        ],
+        [
+          "c2",
+          "c3",
+          "e3"
+        ],
+        [
+          "c2",
+          "c3",
+          "e4"
+        ],
+        [
+          "c2",
+          "c4",
+          "e1"
+        ],
+        [
+          "c2",
+          "c4",
+          "e2"
+        ],
+        [
+          "c2",
+          "c4",
+          "e3"
+        ],
+        [
+          "c2",
+          "c4",
+          "e4"
+        ],
+        [
+          "c2",
+          "c5",
+          "e1"
+        ],
+        [
+          "c2",
+          "c5",
+          "e2"
+        ],
+        [
+          "c2",
+          "c5",
+          "e3"
+        ],
+        [
+          "c2",
+          "c5",
+          "e4"
+        ],
+        [
+          "c3",
+          "c4",
+          "e1"
+        ],
+        [
+          "c3",
+          "c4",
+          "e2"
+        ],
+        [
+          "c3",
+          "c4",
+          "e3"
+        ],
+        [
+          "c3",
+          "c4",
+          "e4"
+        ],
+        [
+          "c3",
+          "c5",
+          "e1"
+        ],
+        [
+          "c3",
+          "c5",
+          "e2"
+        ],
+        [
+          "c3",
+          "c5",
+          "e3"
+        ],
+        [
+          "c3",
+          "c5",
+          "e4"
+        ],
+        [
+          "c4",
+          "c5",
+          "e1"
+        ],
+        [
+          "c4",
+          "c5",
+          "e2"
+        ],
+        [
+          "c4",
+          "c5",
+          "e3"
+        ],
+        [
+          "c4",
+          "c5",
+          "e4"
+        ]
+      ]
+    },
+    {
+      "id": "Stealer_Discord_Token_Grabber",
+      "category": "Security",
+      "name": "Discord token grabber",
+      "description": "Harvests Discord tokens from local storage and exfiltrates them",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "store",
+          "text": "Local Storage\\leveldb"
+        },
+        {
+          "id": "mfa",
+          "text": "mfa."
+        },
+        {
+          "id": "tok",
+          "regex": "[A-Za-z0-9_-]{24}\\.[A-Za-z0-9_-]{6}\\.[A-Za-z0-9_-]{27}"
+        },
+        {
+          "id": "e1",
+          "text": "discord.com/api/webhooks"
+        },
+        {
+          "id": "e2",
+          "text": "api.telegram.org/bot"
+        }
+      ],
+      "required_sets": [
+        [
+          "store",
+          "mfa",
+          "e1"
+        ],
+        [
+          "store",
+          "mfa",
+          "e2"
+        ],
+        [
+          "store",
+          "tok",
+          "e1"
+        ],
+        [
+          "store",
+          "tok",
+          "e2"
+        ]
+      ]
+    },
+    {
+      "id": "Stealer_CryptoWallet_Theft",
+      "category": "Security",
+      "name": "Crypto wallet stealer",
+      "description": "Targets cryptocurrency wallet files and embeds a known data exfiltration endpoint",
+      "severity": "critical",
+      "patterns": [
+        {
+          "id": "w1",
+          "text": "wallet.dat"
+        },
+        {
+          "id": "w2",
+          "text": "Exodus\\exodus.wallet"
+        },
+        {
+          "id": "w3",
+          "text": "Electrum\\wallets"
+        },
+        {
+          "id": "w4",
+          "text": "Ethereum\\keystore"
+        },
+        {
+          "id": "w5",
+          "text": "Atomic\\Local Storage"
+        },
+        {
+          "id": "e1",
+          "text": "api.telegram.org/bot"
+        },
+        {
+          "id": "e2",
+          "text": "discord.com/api/webhooks"
+        },
+        {
+          "id": "e3",
+          "text": "gofile.io"
+        }
+      ],
+      "required_sets": [
+        [
+          "w1",
+          "w2",
+          "e1"
+        ],
+        [
+          "w1",
+          "w2",
+          "e2"
+        ],
+        [
+          "w1",
+          "w2",
+          "e3"
+        ],
+        [
+          "w1",
+          "w3",
+          "e1"
+        ],
+        [
+          "w1",
+          "w3",
+          "e2"
+        ],
+        [
+          "w1",
+          "w3",
+          "e3"
+        ],
+        [
+          "w1",
+          "w4",
+          "e1"
+        ],
+        [
+          "w1",
+          "w4",
+          "e2"
+        ],
+        [
+          "w1",
+          "w4",
+          "e3"
+        ],
+        [
+          "w1",
+          "w5",
+          "e1"
+        ],
+        [
+          "w1",
+          "w5",
+          "e2"
+        ],
+        [
+          "w1",
+          "w5",
+          "e3"
+        ],
+        [
+          "w2",
+          "w3",
+          "e1"
+        ],
+        [
+          "w2",
+          "w3",
+          "e2"
+        ],
+        [
+          "w2",
+          "w3",
+          "e3"
+        ],
+        [
+          "w2",
+          "w4",
+          "e1"
+        ],
+        [
+          "w2",
+          "w4",
+          "e2"
+        ],
+        [
+          "w2",
+          "w4",
+          "e3"
+        ],
+        [
+          "w2",
+          "w5",
+          "e1"
+        ],
+        [
+          "w2",
+          "w5",
+          "e2"
+        ],
+        [
+          "w2",
+          "w5",
+          "e3"
+        ],
+        [
+          "w3",
+          "w4",
+          "e1"
+        ],
+        [
+          "w3",
+          "w4",
+          "e2"
+        ],
+        [
+          "w3",
+          "w4",
+          "e3"
+        ],
+        [
+          "w3",
+          "w5",
+          "e1"
+        ],
+        [
+          "w3",
+          "w5",
+          "e2"
+        ],
+        [
+          "w3",
+          "w5",
+          "e3"
+        ],
+        [
+          "w4",
+          "w5",
+          "e1"
+        ],
+        [
+          "w4",
+          "w5",
+          "e2"
+        ],
+        [
+          "w4",
+          "w5",
+          "e3"
+        ]
+      ]
+    },
+    {
+      "id": "Suspicious_Exfil_Channel",
+      "category": "Security",
+      "name": "Suspicious data exfiltration endpoint",
+      "description": "Embeds a Telegram bot or Discord webhook endpoint commonly abused to exfiltrate stolen data",
+      "severity": "warning",
+      "patterns": [
+        {
+          "id": "e1",
+          "text": "api.telegram.org/bot"
+        },
+        {
+          "id": "e2",
+          "text": "discord.com/api/webhooks"
+        }
+      ],
+      "required_sets": [
+        [
+          "e1"
+        ],
+        [
+          "e2"
+        ]
+      ]
+    }
+  ]
+}
