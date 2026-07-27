@@ -133,6 +133,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         )
         self.steamAccountCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.steamAccountCombo.addItem(_("Auto"), "auto")
+        self.steamAccountCombo.addItem(_("All"), "all")
         steam_home = get_steam_home()
         steam_users = get_steam_users(steam_home) if steam_home else {}
         for user_id, user_info in steam_users.items():

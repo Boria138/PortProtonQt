@@ -19,6 +19,7 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.config import (
     extract_exec_target_path,
+    game_config,
     get_portproton_location,
     get_portproton_start_command,
     ui_config,
@@ -27,6 +28,7 @@ from portprotonqt.steam_api.utils import (
     safe_vdf_load,
     get_steam_home,
     get_last_steam_user,
+    get_steam_users,
     convert_steam_id,
 )
 from portprotonqt.steam_api.api import (
@@ -401,15 +403,26 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
         logger.error("Steam home directory not found")
         return (False, "Steam directory not found")
 
-    last_user = get_last_steam_user(steam_home)
-    if not last_user or 'SteamID' not in last_user:
-        logger.error("Failed to retrieve Steam user ID")
-        return (False, "Failed to get Steam user ID")
-
     userdata_dir = steam_home / "userdata"
-    user_id = last_user['SteamID']
-    unsigned_id = convert_steam_id(user_id)
-    user_dir = userdata_dir / str(unsigned_id)
+    selected_account = game_config.get_steam_account_id()
+    if selected_account == "all":
+        steam_users = get_steam_users(steam_home)
+        user_dirs = [
+            userdata_dir / str(convert_steam_id(int(user_id)))
+            for user_id in steam_users
+        ]
+        if not user_dirs:
+            logger.error("Failed to retrieve Steam user IDs")
+            return (False, "Failed to get Steam user IDs")
+    else:
+        last_user = get_last_steam_user(steam_home)
+        if not last_user or 'SteamID' not in last_user:
+            logger.error("Failed to retrieve Steam user ID")
+            return (False, "Failed to get Steam user ID")
+        unsigned_id = convert_steam_id(last_user['SteamID'])
+        user_dirs = [userdata_dir / str(unsigned_id)]
+
+    user_dir = user_dirs[0]
     steam_shortcuts_path = user_dir / "config" / "shortcuts.vdf"
     grid_dir = user_dir / "config" / "grid"
     os.makedirs(grid_dir, exist_ok=True)
@@ -417,15 +430,17 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
     appid = None
     was_api_used = False
 
-    logger.info("Attempting to add shortcut via Steam CEF API")
-    api_response = call_steam_api(
-        "createShortcut",
-        game_name,
-        script_path,
-        str(Path(script_path).parent),
-        icon_path,
-        ""
-    )
+    api_response = None
+    if selected_account != "all":
+        logger.info("Attempting to add shortcut via Steam CEF API")
+        api_response = call_steam_api(
+            "createShortcut",
+            game_name,
+            script_path,
+            str(Path(script_path).parent),
+            icon_path,
+            ""
+        )
 
     if api_response and isinstance(api_response, dict) and 'id' in api_response:
         appid = api_response['id']
@@ -433,11 +448,13 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
         logger.info(f"Shortcut successfully added via API. AppID: {appid}")
     else:
         logger.warning("Failed to add shortcut via API. Falling back to shortcuts.vdf")
-        appid, error = _add_shortcut_via_vdf(
-            game_name, script_path, icon_path, steam_shortcuts_path, user_dir
-        )
-        if error:
-            return (False, error)
+        for user_dir in user_dirs:
+            steam_shortcuts_path = user_dir / "config" / "shortcuts.vdf"
+            appid, error = _add_shortcut_via_vdf(
+                game_name, script_path, icon_path, steam_shortcuts_path, user_dir
+            )
+            if error:
+                return (False, error)
 
     if not appid:
         return (False, "Failed to create shortcut using any method")
