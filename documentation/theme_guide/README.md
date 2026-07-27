@@ -274,7 +274,7 @@ DETAIL_PAGE_BG_MODE = "gradient"
 - `waves`: gradient background with animated wave shapes that drift over time.
 - `aurora`: animated vertical aurora ribbons.
 - `metaballs`: animated glowing metaballs.
-- `sakura`: animated falling petals.
+- `leaf`: animated falling leaves with a configurable foliage type.
 - `veins`: animated connected vein pattern.
 - `diagnostics`: animated grid, signal trace, scanner, and compatibility status.
 
@@ -286,7 +286,7 @@ DETAIL_PAGE_BG_MODE = "static_diagnostics"
 ```
 
 The supported static modes are `static_waves`, `static_aurora`,
-`static_metaballs`, `static_sakura`, `static_veins`, and
+`static_metaballs`, `static_leaf`, `static_veins`, and
 `static_diagnostics`.
 
 Set the number of colors extracted from the cover:
@@ -302,7 +302,7 @@ Background modes use `DETAIL_PAGE_BACKGROUNDS`:
 
 ```python
 DETAIL_PAGE_BACKGROUNDS = {
-    # Common settings for aurora, diagnostics, metaballs, sakura, and veins.
+    # Common settings for aurora, diagnostics, leaf, metaballs, and veins.
     "animation_interval_ms": 30,  # Milliseconds between frames.
     "animation_speed": 0.03,      # Phase increment per frame.
     "gradient": {
@@ -379,13 +379,15 @@ DETAIL_PAGE_BACKGROUNDS = {
         "y_seed": 7.13,            # Vertical placement seed multiplier.
         "speed_seed": 2.71,        # Individual speed seed multiplier.
     },
-    "sakura": {
-        "count": 32,               # Number of petals.
+    "leaf": {
+        # "generic", "sakura", "oak", "maple", or "birch".
+        "type": "generic",         # Shape of the falling foliage.
+        "count": 32,               # Number of leaves.
         "seed_offset": 1,          # Seed offset for another layout.
         "min_size_ratio": 0.009,   # Minimum size / page height.
         "size_range": 0.009,       # Random extra size range.
         "min_speed": 0.002,        # Minimum falling speed.
-        "opacity": 0.65,           # Petal opacity (0.0-1.0).
+        "opacity": 0.65,           # Leaf opacity (0.0-1.0).
         "sway_ratio": 0.04,        # Horizontal sway / page width.
         "rotation_speed": 40,      # Degrees per animation phase.
         "x_seed": 1.31,            # Horizontal placement seed multiplier.

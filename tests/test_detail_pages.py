@@ -418,6 +418,16 @@ class TestSetupWaveBackground:
 
 
 class TestDetailBackgroundAnimations:
+    def test_leaf_replaces_sakura_background(self) -> None:
+        manager = DetailBackgroundAnimations()
+        assert "leaf" in manager.effects
+        assert "sakura" not in manager.effects
+
+    def test_builds_supported_leaf_shapes(self) -> None:
+        manager = DetailBackgroundAnimations()
+        for leaf_type in ("generic", "sakura", "oak", "maple", "birch"):
+            assert manager._leaf_path(leaf_type, 10).elementCount() > 0
+
     def test_supports_all_omikuji_backgrounds_in_static_mode(self):
         manager = DetailBackgroundAnimations()
         page = MagicMock()

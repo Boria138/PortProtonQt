@@ -274,7 +274,7 @@ DETAIL_PAGE_BG_MODE = "gradient"
 - `waves`: градиентный фон с анимированными волнами, движущимися во времени.
 - `aurora`: анимированные вертикальные ленты северного сияния.
 - `metaballs`: анимированные светящиеся метаболы.
-- `sakura`: анимированные падающие лепестки.
+- `leaf`: анимированная падающая листва с настраиваемым типом.
 - `veins`: анимированный связанный узор прожилок.
 - `diagnostics`: анимированная сетка, осциллограмма, сканер и статус совместимости.
 
@@ -286,7 +286,7 @@ DETAIL_PAGE_BG_MODE = "static_diagnostics"
 ```
 
 Доступные статические режимы: `static_waves`, `static_aurora`,
-`static_metaballs`, `static_sakura`, `static_veins` и `static_diagnostics`.
+`static_metaballs`, `static_leaf`, `static_veins` и `static_diagnostics`.
 
 Количество цветов, извлекаемых из обложки:
 
@@ -301,7 +301,7 @@ DETAIL_PAGE_PALETTE_COLORS = 5
 
 ```python
 DETAIL_PAGE_BACKGROUNDS = {
-    # Общие настройки aurora, diagnostics, metaballs, sakura и veins.
+    # Общие настройки aurora, diagnostics, leaf, metaballs и veins.
     "animation_interval_ms": 30,  # Интервал между кадрами в мс.
     "animation_speed": 0.03,      # Приращение фазы за кадр.
     "gradient": {
@@ -378,13 +378,15 @@ DETAIL_PAGE_BACKGROUNDS = {
         "y_seed": 7.13,            # Seed вертикального положения.
         "speed_seed": 2.71,        # Seed индивидуальной скорости.
     },
-    "sakura": {
-        "count": 32,               # Количество лепестков.
+    "leaf": {
+        # "generic", "sakura", "oak", "maple" или "birch".
+        "type": "generic",         # Форма падающей листвы.
+        "count": 32,               # Количество листьев.
         "seed_offset": 1,          # Смещение seed для другого рисунка.
         "min_size_ratio": 0.009,   # Минимальный размер / высота.
         "size_range": 0.009,       # Случайный дополнительный размер.
         "min_speed": 0.002,        # Минимальная скорость падения.
-        "opacity": 0.65,           # Прозрачность лепестков.
+        "opacity": 0.65,           # Прозрачность листьев.
         "sway_ratio": 0.04,        # Покачивание / ширина страницы.
         "rotation_speed": 40,      # Градусы вращения на единицу фазы.
         "x_seed": 1.31,            # Seed горизонтального положения.

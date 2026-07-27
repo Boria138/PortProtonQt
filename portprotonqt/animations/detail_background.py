@@ -18,7 +18,7 @@ from PySide6.QtWidgets import QWidget
 class DetailBackgroundAnimations:
     """Manage animated and static omikuji detail backgrounds."""
 
-    effects = frozenset({"aurora", "diagnostics", "metaballs", "sakura", "veins"})
+    effects = frozenset({"aurora", "diagnostics", "leaf", "metaballs", "veins"})
 
     def __init__(self) -> None:
         self._states: WeakKeyDictionary[QWidget, dict] = WeakKeyDictionary()
@@ -88,7 +88,7 @@ class DetailBackgroundAnimations:
             "aurora": self._paint_aurora,
             "diagnostics": self._paint_diagnostics,
             "metaballs": self._paint_metaballs,
-            "sakura": self._paint_sakura,
+            "leaf": self._paint_leaf,
             "veins": self._paint_veins,
         }
         painters[state["effect"]](painter, rect, state)
@@ -197,12 +197,13 @@ class DetailBackgroundAnimations:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawEllipse(QPointF(x, y), radius, radius)
 
-    def _paint_sakura(self, painter: QPainter, rect: QRectF, state: dict) -> None:
-        config = state["config"]["sakura"]
+    def _paint_leaf(self, painter: QPainter, rect: QRectF, state: dict) -> None:
+        config = state["config"]["leaf"]
         color = QColor(state["palette"][-1])
         color.setAlphaF(config["opacity"])
         painter.setBrush(color)
         painter.setPen(Qt.PenStyle.NoPen)
+        leaf_type = config["type"]
         for index in range(config["count"]):
             seed = index + config["seed_offset"]
             size = rect.height() * (
@@ -217,8 +218,58 @@ class DetailBackgroundAnimations:
             painter.save()
             painter.translate(x, y)
             painter.rotate(state["phase"] * config["rotation_speed"] + seed)
-            painter.drawEllipse(QRectF(-size, -size / 2, size * 2, size))
+            painter.drawPath(self._leaf_path(leaf_type, size))
             painter.restore()
+
+    @staticmethod
+    def _leaf_path(leaf_type: str, size: float) -> QPainterPath:
+        shapes = {
+            "sakura": (
+                (0, -0.62), (0.2, -0.95), (0.68, -0.82), (0.92, -0.3),
+                (0.72, 0.35), (0, 0.92), (-0.72, 0.35), (-0.92, -0.3),
+                (-0.68, -0.82), (-0.2, -0.95),
+            ),
+            "oak": (
+                (0, -1), (0.3, -0.82), (0.18, -0.64), (0.56, -0.55),
+                (0.25, -0.34), (0.64, -0.16), (0.27, 0.02),
+                (0.55, 0.28), (0.2, 0.36), (0.14, 0.62), (0.08, 0.58),
+                (0.08, 1), (-0.08, 1), (-0.08, 0.58), (-0.14, 0.62),
+                (-0.2, 0.36), (-0.55, 0.28), (-0.27, 0.02),
+                (-0.64, -0.16), (-0.25, -0.34), (-0.56, -0.55),
+                (-0.18, -0.64), (-0.3, -0.82),
+            ),
+            "maple": (
+                (0, -1),
+                (0.14, -0.55), (0.36, -0.72), (0.32, -0.36),
+                (0.72, -0.48), (0.56, -0.12), (1, -0.05),
+                (0.62, 0.2), (0.72, 0.5), (0.22, 0.38),
+                (0.08, 0.55), (0.08, 1), (-0.08, 1),
+                (-0.08, 0.55), (-0.22, 0.38), (-0.72, 0.5),
+                (-0.62, 0.2), (-1, -0.05), (-0.56, -0.12),
+                (-0.72, -0.48), (-0.32, -0.36), (-0.36, -0.72),
+                (-0.14, -0.55),
+            ),
+            "birch": (
+                (0, -1), (0.18, -0.72), (0.38, -0.78), (0.34, -0.56),
+                (0.58, -0.55), (0.48, -0.34), (0.68, -0.26),
+                (0.52, -0.08), (0.62, 0.12), (0.35, 0.22),
+                (0.12, 0.48), (0.07, 1), (-0.07, 1), (-0.12, 0.48),
+                (-0.35, 0.22), (-0.62, 0.12), (-0.52, -0.08),
+                (-0.68, -0.26), (-0.48, -0.34), (-0.58, -0.55),
+                (-0.34, -0.56), (-0.38, -0.78), (-0.18, -0.72),
+            ),
+            "generic": (
+                (0, -1), (0.38, -0.65), (0.62, -0.15), (0.5, 0.3),
+                (0.12, 0.62), (0.07, 1), (-0.07, 1), (-0.12, 0.62),
+                (-0.5, 0.3), (-0.62, -0.15), (-0.38, -0.65),
+            ),
+        }
+        points = shapes.get(leaf_type, shapes["generic"])
+        path = QPainterPath(QPointF(size * points[0][0], size * points[0][1]))
+        for x_ratio, y_ratio in points[1:]:
+            path.lineTo(size * x_ratio, size * y_ratio)
+        path.closeSubpath()
+        return path
 
     def _paint_veins(self, painter: QPainter, rect: QRectF, state: dict) -> None:
         config = state["config"]["veins"]
