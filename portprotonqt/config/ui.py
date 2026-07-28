@@ -455,6 +455,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "sounds_enabled")
         self._save_value("sounds_enabled", enabled, "bool")
 
+    def get_crash_reports_enabled(self) -> bool:
+        """Get compatibility reports after game crashes setting."""
+        return self._get_bool("crash_reports_enabled", True)
+
+    def set_crash_reports_enabled(self, enabled: bool) -> None:
+        """Set compatibility reports after game crashes setting."""
+        validate_bool(enabled, "crash_reports_enabled")
+        self._save_value("crash_reports_enabled", enabled, "bool")
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""

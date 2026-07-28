@@ -5,6 +5,7 @@ import pytest
 
 from portprotonqt.config.base import BaseConfig
 from portprotonqt.config.game import GameConfig
+from portprotonqt.config.ui import UIConfig
 
 
 @pytest.fixture(autouse=True)
@@ -107,6 +108,14 @@ def test_game_config_saves_steam_account(tmp_path: Path):
     assert config.get_steam_account_id() == "auto"
     config.set_steam_account_id("76561198012003723")
     assert config.get_steam_account_id() == "76561198012003723"
+
+
+def test_crash_reports_config_defaults_to_enabled(tmp_path: Path):
+    config = UIConfig(config_file=tmp_path / "test.conf")
+
+    assert config.get_crash_reports_enabled() is True
+    config.set_crash_reports_enabled(False)
+    assert config.get_crash_reports_enabled() is False
 
 
 class TestUpdateAppVersion:

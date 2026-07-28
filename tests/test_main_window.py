@@ -874,6 +874,25 @@ def test_dxvk_incompatibility_reports_after_manual_stop(
     assert reports == ["forced report"]
 
 
+def test_disabled_crash_reports_skip_launch_analysis(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    started = []
+    monkeypatch.setattr(
+        "portprotonqt.main_window.ui_config.get_crash_reports_enabled",
+        lambda: False,
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.Thread",
+        lambda **_kwargs: SimpleNamespace(start=lambda: started.append(True)),
+    )
+
+    window._analyze_short_launch()
+
+    assert started == []
+
+
 def test_wine_log_marker_resets_launch_timer(monkeypatch: MonkeyPatch) -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window.launch_output_queue = Queue()

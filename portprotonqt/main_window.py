@@ -2154,6 +2154,8 @@ class MainWindow(
                 self.launch_output_queue.put(state)
 
     def _analyze_short_launch(self) -> None:
+        if not ui_config.get_crash_reports_enabled():
+            return
         executable = getattr(self, "game_start_exe", None) or ""
         started = getattr(self, "game_launch_monotonic", None)
         if started is None:
