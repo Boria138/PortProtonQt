@@ -956,6 +956,16 @@ msgstr "Titelbild wird heruntergeladen…"
 msgid "No cover selected"
 msgstr "Kein Titelbild ausgewählt"
 
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+#, fuzzy
+msgid "Close"
+msgstr "Maus"
+
 msgid "Open"
 msgstr "Öffnen"
 
@@ -2212,6 +2222,9 @@ msgstr "Tab „Automatische Installation“ ausblenden"
 
 msgid "Enable UI Sounds"
 msgstr "Benutzeroberflächen-Sounds aktivieren"
+
+msgid "Show compatibility report after game crash"
+msgstr ""
 
 msgid "Disable runtime download"
 msgstr "Runtime-Download deaktivieren"

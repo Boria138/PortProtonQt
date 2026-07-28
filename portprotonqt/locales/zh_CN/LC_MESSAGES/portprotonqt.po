@@ -914,6 +914,16 @@ msgstr "正在下载封面…"
 msgid "No cover selected"
 msgstr "未选择封面"
 
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+#, fuzzy
+msgid "Close"
+msgstr "鼠标"
+
 msgid "Open"
 msgstr "打开"
 
@@ -2167,6 +2177,9 @@ msgstr "隐藏自动安装标签页"
 
 msgid "Enable UI Sounds"
 msgstr "启用界面音效"
+
+msgid "Show compatibility report after game crash"
+msgstr ""
 
 msgid "Disable runtime download"
 msgstr "禁用运行时下载"

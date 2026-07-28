@@ -959,6 +959,16 @@ msgstr "Baixando capa…"
 msgid "No cover selected"
 msgstr "Nenhuma capa selecionada"
 
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+#, fuzzy
+msgid "Close"
+msgstr "Mouse"
+
 msgid "Open"
 msgstr "Abrir"
 
@@ -2228,6 +2238,9 @@ msgstr "Ocultar Aba de Instalação Automática"
 
 msgid "Enable UI Sounds"
 msgstr "Ativar sons da interface"
+
+msgid "Show compatibility report after game crash"
+msgstr ""
 
 msgid "Disable runtime download"
 msgstr "Desativar download de runtime"
