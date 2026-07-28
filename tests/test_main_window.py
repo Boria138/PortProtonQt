@@ -20,10 +20,12 @@ from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
 import portprotonqt.tabs.gog_tab as gog_tab_module
 import portprotonqt.tabs.library_tab as library_tab_module
+import portprotonqt.tabs.system_tab as system_tab_module
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
     MainWindowSettingsTabMixin,
+    MainWindowSystemTabMixin,
     MainWindowThemeTabMixin,
     MainWindowWineTabMixin,
 )
@@ -1358,3 +1360,51 @@ def test_update_delete_missing_exe_button_visibility(tmp_path: Path) -> None:
     MainWindowLibraryTabMixin.updateDeleteMissingExeButton(window)
 
     assert button.visible is True
+
+
+def test_system_action_uses_systemctl_with_systemd(monkeypatch: MonkeyPatch) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setattr(system_tab_module.os.path, "isdir", lambda path: True)
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin._runSystemAction(window, "reboot")
+
+    assert calls == [("systemctl", ["reboot"])]
+
+
+def test_system_action_uses_loginctl_with_elogind(monkeypatch: MonkeyPatch) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setattr(system_tab_module.os.path, "isdir", lambda path: False)
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin._runSystemAction(window, "suspend")
+
+    assert calls == [("loginctl", ["suspend"])]
+
+
+def test_logout_uses_current_session_id(monkeypatch: MonkeyPatch) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setenv("XDG_SESSION_ID", "session-1")
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.logoutSystem(window)
+
+    assert calls == [("loginctl", ["terminate-session", "session-1"])]
+
+
+def test_logout_skips_without_session_id(monkeypatch: MonkeyPatch) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.delenv("XDG_SESSION_ID", raising=False)
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.logoutSystem(window)
+
+    assert calls == []

@@ -46,6 +46,7 @@ logger = get_logger(__name__)
 
 AUDIO_MAX_VOLUME = 150
 
+
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
 
@@ -896,25 +897,29 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(buttons_layout)
         layout.addStretch()
 
-    def _runLoginctlAction(self, action: str) -> None:
-        args = [action]
-        if action == "terminate-session":
-            args.append("self")
-        if QProcess.startDetached("loginctl", args):
+    def _runSystemAction(self, action: str) -> None:
+        command = "systemctl" if os.path.isdir("/run/systemd/system") else "loginctl"
+        if QProcess.startDetached(command, [action]):
             return
-        logger.error("Failed to execute loginctl %s", " ".join(args))
+        logger.error("Failed to execute %s %s", command, action)
 
     def rebootSystem(self) -> None:
-        self._runLoginctlAction("reboot")
+        self._runSystemAction("reboot")
 
     def shutdownSystem(self) -> None:
-        self._runLoginctlAction("poweroff")
+        self._runSystemAction("poweroff")
 
     def suspendSystem(self) -> None:
-        self._runLoginctlAction("suspend")
+        self._runSystemAction("suspend")
 
     def logoutSystem(self) -> None:
-        self._runLoginctlAction("terminate-session")
+        session_id = os.getenv("XDG_SESSION_ID")
+        if not session_id:
+            logger.error("Cannot log out: XDG_SESSION_ID is not set")
+            return
+        if QProcess.startDetached("loginctl", ["terminate-session", session_id]):
+            return
+        logger.error("Failed to execute loginctl terminate-session %s", session_id)
 
     def loadSystemNetworks(self) -> None:
         self.runNetworkOperation("load")
