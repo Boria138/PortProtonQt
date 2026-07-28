@@ -177,6 +177,10 @@ def get_selectable_gpu_entries() -> list[dict[str, str]]:
             "device_type": device_type,
             "vendor_id": vendor_id,
             "device_id": device_id,
+            "driver_name": gpu_info.get("driver_name", "").strip(),
+            "driver_info": gpu_info.get("driver_info", "").strip(),
+            "driver_version": gpu_info.get("driver_version", "").strip(),
+            "api_version": gpu_info.get("api_version", "").strip(),
         }
 
         if device_type == "DISCRETE_GPU":

@@ -852,6 +852,51 @@ def test_stop_running_game_analyzes_before_stop_command_failure(
     assert analyzed == [True]
 
 
+def test_dxvk_incompatibility_reports_after_manual_stop(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    reports = []
+    launch = SimpleNamespace(executable="/games/game.exe", duration=60.0)
+    window.portproton_location = "/portproton"
+    window.compatibility_report_ready = SimpleNamespace(emit=reports.append)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.has_dxvk_vulkan_incompatibility",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(
+        "portprotonqt.main_window.analyze_launch",
+        lambda _launch, _path: "forced report",
+    )
+
+    window._build_compatibility_report(launch, stopped_by_user=True)
+
+    assert reports == ["forced report"]
+
+
+def test_wine_log_marker_resets_launch_timer(monkeypatch: MonkeyPatch) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    window.launch_output_queue = Queue()
+    window.launch_output_queue.put((None, None, True))
+    window.game_launch_started = False
+    window.game_launch_monotonic = 10.0
+    window.wine_download_seen = True
+    window.wine_download_percent = 0.0
+    monkeypatch.setattr("portprotonqt.main_window.time.monotonic", lambda: 90.0)
+
+    window._drain_launch_output_progress()
+
+    assert window.game_launch_monotonic == 90.0
+
+
+def test_update_prefix_log_marks_wine_launch_start() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+
+    state = window._parse_process_status_line("[INFO] Info: Update prefix log:")
+
+    assert state == (None, None, True)
+
+
 def test_show_compatibility_report_uses_report_dialog(monkeypatch: MonkeyPatch) -> None:
     calls = []
     window: Any = MainWindow.__new__(MainWindow)

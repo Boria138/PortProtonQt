@@ -149,6 +149,137 @@ def test_integrated_gpu_recommendation_uses_selected_device(
     assert compatibility._uses_integrated_gpu({"PW_GPU_USE": "disabled"}) is False
 
 
+def test_newest_dxvk_checks_vulkan_and_driver_versions(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        compatibility,
+        "get_selectable_gpu_entries",
+        lambda: [{
+            "device_name": "AMD GPU",
+            "device_type": "DISCRETE_GPU",
+            "vendor_id": "0x1002",
+            "driver_name": "radv",
+            "api_version": "1.4.309",
+            "driver_version": "24.3.4",
+        }],
+    )
+
+    details, suggestions = compatibility._dxvk_vulkan_compatibility({
+        "PW_VULKAN_USE": "6",
+        "DXVK_NEW_VER": "3.0",
+    })
+
+    assert details == (
+        "Newest DXVK 3.0: Vulkan 1.4.309 (requires 1.4+); "
+        "AMD RADV 24.3.4 (requires 25.0+)"
+    )
+    assert "Update AMD RADV to 25.0+ or switch to Stable DXVK." in suggestions
+
+
+def test_newest_dxvk_distinguishes_nvidia_nvk(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        compatibility,
+        "get_selectable_gpu_entries",
+        lambda: [{
+            "device_name": "NVIDIA GPU",
+            "device_type": "DISCRETE_GPU",
+            "vendor_id": "0x10de",
+            "driver_name": "Mesa NVK",
+            "driver_info": "Mesa 25.0.7",
+            "driver_version": "25.0.7",
+            "api_version": "1.4.309",
+        }],
+    )
+
+    details, suggestions = compatibility._dxvk_vulkan_compatibility({
+        "PW_VULKAN_USE": "6",
+        "DXVK_NEW_VER": "3.0",
+    })
+
+    assert details is not None
+    assert "NVIDIA NVK 25.0.7 (requires 25.1+)" in details
+    assert "Update NVIDIA NVK to 25.1+ or switch to Stable DXVK." in suggestions
+
+
+def test_stable_and_sarek_use_their_vulkan_requirements(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        compatibility,
+        "get_selectable_gpu_entries",
+        lambda: [{
+            "device_name": "Old GPU",
+            "device_type": "DISCRETE_GPU",
+            "vendor_id": "0xffff",
+            "api_version": "1.1.126",
+        }],
+    )
+
+    stable_details, stable_suggestions = compatibility._dxvk_vulkan_compatibility({
+        "PW_VULKAN_USE": "2",
+        "DXVK_OLD_VER": "2.6.2",
+    })
+    sarek_details, sarek_suggestions = compatibility._dxvk_vulkan_compatibility({
+        "PW_VULKAN_USE": "1",
+        "DXVK_SAREK_VER": "sarek-1.11.0",
+    })
+
+    assert stable_details == "Stable DXVK 2.6.2: Vulkan 1.1.126 (requires 1.3+)"
+    assert "Switch to Sarek for Vulkan 1.1 drivers." in stable_suggestions
+    assert sarek_details == "Sarek DXVK sarek-1.11.0: Vulkan 1.1.126 (requires 1.1+)"
+    assert sarek_suggestions == []
+
+
+def test_stable_dxvk_checks_driver_version(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        compatibility,
+        "get_selectable_gpu_entries",
+        lambda: [{
+            "device_name": "NVIDIA GPU",
+            "device_type": "DISCRETE_GPU",
+            "vendor_id": "0x10de",
+            "driver_name": "NVIDIA",
+            "driver_info": "550.40.07",
+            "driver_version": "",
+            "api_version": "1.3.289",
+        }],
+    )
+
+    details, suggestions = compatibility._dxvk_vulkan_compatibility({
+        "PW_VULKAN_USE": "2",
+        "DXVK_OLD_VER": "2.7",
+    })
+
+    assert details is not None
+    assert "NVIDIA 550.40.07 (requires 550.54.14+)" in details
+    assert "Update NVIDIA to 550.54.14+ or switch to Sarek." in suggestions
+
+
+def test_dxvk_incompatibility_forces_report(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        compatibility,
+        "get_portproton_env",
+        lambda _path: {"PW_VULKAN_USE": "2", "DXVK_OLD_VER": "2.7"},
+    )
+    monkeypatch.setattr(
+        compatibility,
+        "get_selectable_gpu_entries",
+        lambda: [{
+            "device_name": "Intel Ivy Bridge",
+            "device_type": "INTEGRATED_GPU",
+            "vendor_id": "0x8086",
+            "driver_name": "Intel ANV",
+            "driver_version": "24.2.0",
+            "api_version": "1.2.0",
+        }],
+    )
+
+    assert compatibility.has_dxvk_vulkan_incompatibility("/games/game.exe") is True
+
+
 def test_suggestions_omit_gamemode_and_discrete_gpu_when_not_integrated() -> None:
     suggestions = compatibility._compatibility_suggestions(
         {"Engines": ["Ren'Py"]}, "None", "", {"PW_GPU_USE": "disabled"}
