@@ -108,6 +108,31 @@ def test_json_database_contains_all_bottles_rules() -> None:
     }
 
 
+def test_signature_details_do_not_repeat_detection_from_neighbors() -> None:
+    findings = [
+        {
+            "category": "Engines",
+            "name": "Unity IL2CPP",
+            "source": "Main executable",
+            "severity": "info",
+            "description": "Unity runtime",
+        },
+        {
+            "category": "Engines",
+            "name": "Unity IL2CPP",
+            "source": "Neighbor: GameAssembly.dll",
+            "severity": "info",
+            "description": "Unity runtime",
+        },
+    ]
+
+    details = compatibility._format_signature_details(findings)
+
+    assert details == [
+        "- [INFO] Engines: Unity IL2CPP (Main executable) — Unity runtime"
+    ]
+
+
 def test_json_scanner_preserves_grouped_security_conditions(tmp_path: Path) -> None:
     executable = tmp_path / "suspicious.exe"
     executable.write_bytes(
