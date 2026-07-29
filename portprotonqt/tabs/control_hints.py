@@ -253,7 +253,7 @@ class MainWindowControlHintsMixin:
             _set_control_hint_icon(
                 icon_label,
                 (
-                    self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
+                    self.theme_manager.get_icon(icon_name, self.current_theme_name, as_path=True),
                     self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                 ),
                 26,
@@ -293,8 +293,8 @@ class MainWindowControlHintsMixin:
                 _set_control_hint_icon(
                     guide_icon,
                     (
-                        self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),
-                        self.theme_manager.get_theme_image("ps_share", self.current_theme_name),
+                        self.theme_manager.get_icon("xbox_view", self.current_theme_name, as_path=True),
+                        self.theme_manager.get_icon("ps_share", self.current_theme_name, as_path=True),
                         self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                     ),
                     26,
@@ -304,8 +304,8 @@ class MainWindowControlHintsMixin:
                 _set_control_hint_icon(
                     guide_icon,
                     (
-                        self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),
-                        self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),
+                        self.theme_manager.get_icon("xbox_xbox", self.current_theme_name, as_path=True),
+                        self.theme_manager.get_icon("ps_ps", self.current_theme_name, as_path=True),
                         self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                     ),
                     26,
@@ -318,7 +318,7 @@ class MainWindowControlHintsMixin:
             _set_control_hint_icon(
                 plus_icon,
                 (
-                    self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                    self.theme_manager.get_icon("key_+", self.current_theme_name, as_path=True),
                     self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                 ),
                 26,
@@ -333,8 +333,8 @@ class MainWindowControlHintsMixin:
                 _set_control_hint_icon(
                     select_icon,
                     (
-                        self.theme_manager.get_theme_image("xbox_start", self.current_theme_name),
-                        self.theme_manager.get_theme_image("ps_options", self.current_theme_name),
+                        self.theme_manager.get_icon("xbox_start", self.current_theme_name, as_path=True),
+                        self.theme_manager.get_icon("ps_options", self.current_theme_name, as_path=True),
                         self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                     ),
                     26,
@@ -344,8 +344,8 @@ class MainWindowControlHintsMixin:
                 _set_control_hint_icon(
                     select_icon,
                     (
-                        self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),
-                        self.theme_manager.get_theme_image("ps_share", self.current_theme_name),
+                        self.theme_manager.get_icon("xbox_view", self.current_theme_name, as_path=True),
+                        self.theme_manager.get_icon("ps_share", self.current_theme_name, as_path=True),
                         self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                     ),
                     26,
@@ -425,7 +425,7 @@ class MainWindowControlHintsMixin:
         else:
             left_icon_name = "key_left"
         left_pix = _load_control_hint_pixmap(
-            (self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name),),
+            (self.theme_manager.get_icon(left_icon_name, self.current_theme_name, as_path=True),),
             32,
             32,
         )
@@ -438,7 +438,7 @@ class MainWindowControlHintsMixin:
         else:
             right_icon_name = "key_right"
         right_pix = _load_control_hint_pixmap(
-            (self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name),),
+            (self.theme_manager.get_icon(right_icon_name, self.current_theme_name, as_path=True),),
             32,
             32,
         )
@@ -505,7 +505,7 @@ class MainWindowControlHintsMixin:
                         _set_control_hint_icon(
                             guide_icon,
                             (
-                                self.theme_manager.get_theme_image(guide_icon_name, self.current_theme_name),
+                                self.theme_manager.get_icon(guide_icon_name, self.current_theme_name, as_path=True),
                                 self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                             ),
                             26,
@@ -515,7 +515,7 @@ class MainWindowControlHintsMixin:
                         _set_control_hint_icon(
                             plus_icon,
                             (
-                                self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                                self.theme_manager.get_icon("key_+", self.current_theme_name, as_path=True),
                                 self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                             ),
                             26,
@@ -539,7 +539,7 @@ class MainWindowControlHintsMixin:
                         _set_control_hint_icon(
                             select_icon,
                             (
-                                self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
+                                self.theme_manager.get_icon(select_icon_name, self.current_theme_name, as_path=True),
                                 self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                             ),
                             26,
@@ -557,7 +557,7 @@ class MainWindowControlHintsMixin:
                         _set_control_hint_icon(
                             icon_label,
                             (
-                                self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
+                                self.theme_manager.get_icon(icon_name, self.current_theme_name, as_path=True),
                                 self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
                             ),
                             26,
