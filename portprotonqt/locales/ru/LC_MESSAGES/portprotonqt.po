@@ -957,6 +957,16 @@ msgstr "Скачивание обложки…"
 msgid "No cover selected"
 msgstr "Обложка не выбрана"
 
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+#, fuzzy
+msgid "Close"
+msgstr "Мышь"
+
 msgid "Open"
 msgstr "Открыть"
 
@@ -2203,6 +2213,9 @@ msgstr "Скрыть вкладку \"Автоустановка\""
 
 msgid "Enable UI Sounds"
 msgstr "Включить звуки интерфейса"
+
+msgid "Show compatibility report after game crash"
+msgstr ""
 
 msgid "Disable runtime download"
 msgstr "Отключить скачивание контейнера"

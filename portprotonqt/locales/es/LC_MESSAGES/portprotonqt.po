@@ -972,6 +972,15 @@ msgstr "Descargando portada…"
 msgid "No cover selected"
 msgstr "No se ha seleccionado ninguna portada"
 
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
 msgid "Open"
 msgstr "Abrir"
 
@@ -2214,6 +2223,9 @@ msgid "Hide Auto-Install Tab"
 msgstr ""
 
 msgid "Enable UI Sounds"
+msgstr ""
+
+msgid "Show compatibility report after game crash"
 msgstr ""
 
 msgid "Disable runtime download"

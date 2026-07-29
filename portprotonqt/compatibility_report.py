@@ -34,6 +34,18 @@ PE_MACHINE_AMD64 = 0x8664
 COMPATIBILITY_SCAN_BYTES = 67_108_864
 COMPATIBILITY_NEIGHBOR_SCAN_LIMIT = 20
 COMPATIBILITY_RULES_PATH = Path(__file__).with_name("compatibility_rules.json")
+DXVK_VULKAN_REQUIREMENTS = {
+    "6": ("Newest", "DXVK_NEW_VER", (1, 4)),
+    "2": ("Stable", "DXVK_OLD_VER", (1, 3)),
+    "1": ("Sarek", "DXVK_SAREK_VER", (1, 1)),
+}
+DXVK_DRIVER_REQUIREMENTS = {
+    "0x1002": ("AMD RADV", (25, 0), "driver_version"),
+    "0x10de": ("NVIDIA", (550, 54, 14), "driver_info"),
+    "0x8086": ("Intel ANV", (25, 1), "driver_version"),
+}
+DXVK_NVK_REQUIREMENT = ("NVIDIA NVK", (25, 1), "driver_version")
+DXVK_NEWEST_NVIDIA_REQUIREMENT = ("NVIDIA", (575, 51, 2), "driver_info")
 VCRUN_COMPONENTS = {
     "Visual C++ 2010": ("vcrun2010",),
     "Visual C++ 2012": ("vcrun2012",),
@@ -296,6 +308,81 @@ def _uses_integrated_gpu(environment: dict[str, str]) -> bool:
     )
 
 
+def _version_at_least(version: str, required: tuple[int, ...]) -> bool:
+    parts = tuple(int(part) for part in re.findall(r"\d+", version)[:len(required)])
+    normalized = parts + (0,) * (len(required) - len(parts))
+    return bool(parts) and normalized >= required
+
+
+def _selected_gpu(environment: dict[str, str]) -> dict[str, str] | None:
+    entries = get_selectable_gpu_entries()
+    selected_name = environment.get("PW_GPU_USE", "")
+    if selected_name and selected_name != "disabled":
+        return next(
+            (entry for entry in entries if entry["device_name"] == selected_name),
+            None,
+        )
+    return entries[0] if entries else None
+
+
+def _dxvk_driver_requirement(
+    gpu: dict[str, str], backend: str,
+) -> tuple[str, tuple[int, ...], str] | None:
+    vendor_id = gpu.get("vendor_id", "").lower()
+    driver_name = gpu.get("driver_name", "").lower()
+    if vendor_id == "0x10de" and "nvk" in driver_name:
+        return DXVK_NVK_REQUIREMENT
+    if vendor_id == "0x10de" and backend == "6":
+        return DXVK_NEWEST_NVIDIA_REQUIREMENT
+    return DXVK_DRIVER_REQUIREMENTS.get(vendor_id)
+
+
+def _dxvk_vulkan_compatibility(
+    environment: dict[str, str],
+) -> tuple[str | None, list[str]]:
+    backend = environment.get("PW_VULKAN_USE", "")
+    requirement = DXVK_VULKAN_REQUIREMENTS.get(backend)
+    if requirement is None:
+        return None, []
+    backend_name, version_key, required_vulkan = requirement
+    dxvk_version = environment.get(version_key, "unknown")
+    gpu = _selected_gpu(environment)
+    if gpu is None:
+        return f"{backend_name} DXVK {dxvk_version}: Vulkan version unknown", []
+
+    api_version = gpu.get("api_version", "unknown")
+    required_api = ".".join(map(str, required_vulkan))
+    details = f"{backend_name} DXVK {dxvk_version}: Vulkan {api_version} (requires {required_api}+)"
+    suggestions = []
+    if not _version_at_least(api_version, required_vulkan):
+        suggestions.append(
+            f"Update the graphics driver: {backend_name} DXVK requires Vulkan {required_api}+."
+        )
+        if backend != "1" and _version_at_least(api_version, (1, 1)):
+            suggestions.append("Switch to Sarek for Vulkan 1.1 drivers.")
+
+    driver_requirement = _dxvk_driver_requirement(gpu, backend)
+    if backend not in {"6", "2"} or driver_requirement is None:
+        return details, suggestions
+    driver_name, required_driver, version_field = driver_requirement
+    driver_version = gpu.get(version_field, "unknown")
+    required_version = ".".join(map(str, required_driver))
+    details += f"; {driver_name} {driver_version} (requires {required_version}+)"
+    if not _version_at_least(driver_version, required_driver):
+        fallback = "Stable DXVK" if backend == "6" else "Sarek"
+        suggestions.append(
+            f"Update {driver_name} to {required_version}+ or switch to {fallback}."
+        )
+    return details, suggestions
+
+
+def has_dxvk_vulkan_incompatibility(executable: str) -> bool:
+    """Return whether configured DXVK cannot run on the selected GPU."""
+    environment = get_portproton_env(executable)
+    _details, suggestions = _dxvk_vulkan_compatibility(environment)
+    return bool(suggestions)
+
+
 def _compatibility_suggestions(
     findings: dict[str, list[str]],
     graphics: str,
@@ -386,6 +473,8 @@ def analyze_launch(launch: CompatibilityLaunch, portproton_path: str) -> str:
         shipping_executable,
         environment,
     )
+    dxvk_compatibility, version_suggestions = _dxvk_vulkan_compatibility(environment)
+    suggestions.extend(version_suggestions)
     lines = [
         "Compatibility report",
         "",
@@ -398,6 +487,8 @@ def analyze_launch(launch: CompatibilityLaunch, portproton_path: str) -> str:
         f"Configured 3D API: {get_vulkan_use_info(portproton_path, launch.executable)}",
         f"Detected 3D API: {detected_graphics}",
     ]
+    if dxvk_compatibility:
+        lines.append(f"DXVK/Vulkan compatibility: {dxvk_compatibility}")
     if graphics_executable != launch.executable:
         lines.append(f"3D API source: {graphics_executable}")
     if environment.get("PW_WINDOWS_VER"):

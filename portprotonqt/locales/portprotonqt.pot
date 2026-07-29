@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-26 11:29+0500\n"
+"POT-Creation-Date: 2026-07-28 11:58+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -879,6 +879,15 @@ msgid "Downloading cover…"
 msgstr ""
 
 msgid "No cover selected"
+msgstr ""
+
+msgid "Compatibility report"
+msgstr ""
+
+msgid "The program stopped. Compatibility details were collected automatically."
+msgstr ""
+
+msgid "Close"
 msgstr ""
 
 msgid "Open"
@@ -2108,6 +2117,9 @@ msgid "Hide Auto-Install Tab"
 msgstr ""
 
 msgid "Enable UI Sounds"
+msgstr ""
+
+msgid "Show compatibility report after game crash"
 msgstr ""
 
 msgid "Disable runtime download"

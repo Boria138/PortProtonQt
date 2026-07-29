@@ -61,6 +61,7 @@ from portprotonqt.disc_image_utils import DiscImageManager
 from portprotonqt.compatibility_report import (
     CompatibilityLaunch,
     analyze_launch,
+    has_dxvk_vulkan_incompatibility,
     is_suspected_crash,
 )
 from portprotonqt.sound_manager import SoundManager
@@ -849,7 +850,8 @@ class MainWindow(
         progress_match = re.fullmatch(r'([0-9]*\.?[0-9]+)%', line_text)
         if progress_match:
             percent = float(progress_match.group(1))
-        elif "the prefix has been updated" in line_lower \
+        elif "update prefix log:" in line_lower \
+                or "the prefix has been updated" in line_lower \
                 or "log wine:" in line_lower \
                 or "log from runtime and wine:" in line_lower:
             launch_started = True
@@ -1988,6 +1990,8 @@ class MainWindow(
             except Empty:
                 break
             if launch_started:
+                if not self.game_launch_started:
+                    self.game_launch_monotonic = time.monotonic()
                 self.game_launch_started = True
                 continue
             if status is not None:
@@ -2150,14 +2154,14 @@ class MainWindow(
                 self.launch_output_queue.put(state)
 
     def _analyze_short_launch(self) -> None:
+        if not ui_config.get_crash_reports_enabled():
+            return
         executable = getattr(self, "game_start_exe", None) or ""
         started = getattr(self, "game_launch_monotonic", None)
         if started is None:
             return
         duration = time.monotonic() - started
         stopped_by_user = getattr(self, "game_stopped_by_user", False)
-        if not is_suspected_crash(duration, stopped_by_user, executable):
-            return
         exit_code = next(
             (process.poll() for process in self.game_processes if process.poll() is not None),
             None,
@@ -2167,11 +2171,22 @@ class MainWindow(
             exit_code=exit_code,
             duration=duration,
         )
-        worker = Thread(target=self._build_compatibility_report, args=(launch,), daemon=True)
+        worker = Thread(
+            target=self._build_compatibility_report,
+            args=(launch, stopped_by_user),
+            daemon=True,
+        )
         worker.start()
 
-    def _build_compatibility_report(self, launch: CompatibilityLaunch) -> None:
+    def _build_compatibility_report(
+        self, launch: CompatibilityLaunch, stopped_by_user: bool
+    ) -> None:
         try:
+            incompatible_dxvk = has_dxvk_vulkan_incompatibility(launch.executable)
+            if not incompatible_dxvk and not is_suspected_crash(
+                launch.duration, stopped_by_user, launch.executable
+            ):
+                return
             report = analyze_launch(launch, self.portproton_location or "")
         except (OSError, ValueError, TypeError) as error:
             logger.error("Compatibility analysis failed for %s: %s", launch.executable, error)

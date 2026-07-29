@@ -359,6 +359,29 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         sounds_enabled_layout.addStretch()
         uiForm.addRow(sounds_enabled_layout)
 
+        self.crashReportsEnabledCheckBox = QCheckBox()
+        self.crashReportsEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.crashReportsEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.crashReportsEnabledTitle = QLabel(
+            _("Show compatibility report after game crash")
+        )
+        self.crashReportsEnabledTitle.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        self.crashReportsEnabledTitle.setStyleSheet(
+            self.theme.SETTINGS_TITLE_CHECKBOX_STYLE
+        )
+        self.crashReportsEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.crashReportsEnabledCheckBox.setChecked(
+            ui_config.get_crash_reports_enabled()
+        )
+        crash_reports_enabled_layout = QHBoxLayout()
+        crash_reports_enabled_layout.setContentsMargins(0, 0, 0, 0)
+        crash_reports_enabled_layout.addWidget(self.crashReportsEnabledCheckBox)
+        crash_reports_enabled_layout.addWidget(self.crashReportsEnabledTitle)
+        crash_reports_enabled_layout.addStretch()
+        uiForm.addRow(crash_reports_enabled_layout)
+
         disable_runtime_download_layout = None
         if not os.getenv("FLATPAK_ID"):
             self.disableRuntimeDownloadCheckBox = QCheckBox()
@@ -948,6 +971,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         sounds_enabled = self.soundsEnabledCheckBox.isChecked()
         ui_config.set_sounds_enabled(sounds_enabled)
+        ui_config.set_crash_reports_enabled(
+            self.crashReportsEnabledCheckBox.isChecked()
+        )
 
         from portprotonqt.sound_manager import SoundManager
         SoundManager().reload_config()
