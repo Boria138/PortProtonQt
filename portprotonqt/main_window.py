@@ -2041,7 +2041,7 @@ class MainWindow(
         self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
-        self.loadGames(force_load=True)
+        self._refresh_portproton_shortcuts()
 
     def _update_game_list_playtime(
         self, games: list[tuple], exe_path: str, additional_seconds: int
