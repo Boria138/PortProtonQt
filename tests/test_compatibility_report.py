@@ -51,6 +51,11 @@ def test_analyze_launch_reports_graphics_runtime_and_context(
     monkeypatch.setattr(compatibility, "get_vulkan_use_info", lambda *_args: "DXVK")
     monkeypatch.setattr(
         compatibility,
+        "_glibc_32_compatibility",
+        lambda: ("unavailable", ["Install or enable 32-bit glibc."]),
+    )
+    monkeypatch.setattr(
+        compatibility,
         "analyze_executable",
         lambda _path: {"highest_directx": "DirectX 11", "uses_opengl": False},
     )
@@ -66,6 +71,8 @@ def test_analyze_launch_reports_graphics_runtime_and_context(
     assert "Configured 3D API: DXVK" in report
     assert "Detected 3D API: DirectX 11" in report
     assert "Detected Runtimes: Visual C++ 2015-2022" in report
+    assert "32-bit glibc: unavailable" in report
+    assert "- Install or enable 32-bit glibc." in report
 
 
 def test_analyze_launch_detects_engine_and_dotnet_markers(
@@ -303,6 +310,19 @@ def test_dxvk_incompatibility_forces_report(monkeypatch: MonkeyPatch) -> None:
     )
 
     assert compatibility.has_dxvk_vulkan_incompatibility("/games/game.exe") is True
+
+
+def test_glibc_32_compatibility_reports_missing_elf_loader(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(compatibility.os.path, "isfile", lambda _path: False)
+
+    details, suggestions = compatibility._glibc_32_compatibility()
+
+    assert details == "unavailable (missing /lib/ld-linux.so.2)"
+    assert suggestions == [
+        "Install or enable 32-bit glibc with its ELF loader."
+    ]
 
 
 def test_suggestions_omit_gamemode_and_discrete_gpu_when_not_integrated() -> None:

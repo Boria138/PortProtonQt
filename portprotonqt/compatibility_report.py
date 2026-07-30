@@ -34,6 +34,7 @@ PE_MACHINE_AMD64 = 0x8664
 COMPATIBILITY_SCAN_BYTES = 4_194_304
 COMPATIBILITY_NEIGHBOR_SCAN_LIMIT = 20
 COMPATIBILITY_RULES_PATH = Path(__file__).with_name("compatibility_rules.json")
+I586_ELF_LOADER = "/lib/ld-linux.so.2"
 DXVK_VULKAN_REQUIREMENTS = {
     "6": ("Newest", "DXVK_NEW_VER", (1, 4)),
     "2": ("Stable", "DXVK_OLD_VER", (1, 3)),
@@ -393,6 +394,17 @@ def has_dxvk_vulkan_incompatibility(executable: str) -> bool:
     return bool(suggestions)
 
 
+def _glibc_32_compatibility() -> tuple[str, list[str]]:
+    if os.path.isfile(I586_ELF_LOADER):
+        return "available", []
+    return (
+        f"unavailable (missing {I586_ELF_LOADER})",
+        [
+            "Install or enable 32-bit glibc with its ELF loader."
+        ],
+    )
+
+
 def _compatibility_suggestions(
     findings: dict[str, list[str]],
     graphics: str,
@@ -485,6 +497,8 @@ def analyze_launch(launch: CompatibilityLaunch, portproton_path: str) -> str:
     )
     dxvk_compatibility, version_suggestions = _dxvk_vulkan_compatibility(environment)
     suggestions.extend(version_suggestions)
+    glibc_32_compatibility, glibc_32_suggestions = _glibc_32_compatibility()
+    suggestions.extend(glibc_32_suggestions)
     lines = [
         "Compatibility report",
         "",
@@ -496,6 +510,7 @@ def analyze_launch(launch: CompatibilityLaunch, portproton_path: str) -> str:
         f"Wine/Proton: {get_wine_version(portproton_path, launch.executable)}",
         f"Configured 3D API: {get_vulkan_use_info(portproton_path, launch.executable)}",
         f"Detected 3D API: {detected_graphics}",
+        f"32-bit glibc: {glibc_32_compatibility}",
     ]
     if dxvk_compatibility:
         lines.append(f"DXVK/Vulkan compatibility: {dxvk_compatibility}")
