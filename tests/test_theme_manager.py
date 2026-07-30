@@ -2,16 +2,82 @@
 import ast
 import types
 from pathlib import Path
+import orjson
 import pytest
 
 from portprotonqt.theme_manager import (
+    DMS_COLOR_ROLES,
     ThemeManager,
     _get_parent_theme_name,
     _inject_ast_constants,
     _inject_parent_theme_constants,
     _is_valid_theme_name,
     _read_theme_parent_name,
+    load_dms_palette,
 )
+
+
+# === load_dms_palette ===
+
+
+class TestLoadDmsPalette:
+    def _palette(self) -> dict:
+        dark = dict.fromkeys(DMS_COLOR_ROLES, "#131318")
+        light = dict.fromkeys(DMS_COLOR_ROLES, "#fcf8ff")
+        dark["primary"] = "#c6bfff"
+        return {"colors": {"dark": dark, "light": light}}
+
+    def _write_palette(self, tmp_path: Path, palette: object) -> Path:
+        colors_dir = tmp_path / "DankMaterialShell"
+        colors_dir.mkdir()
+        colors_file = colors_dir / "dms-colors.json"
+        colors_file.write_bytes(orjson.dumps(palette))
+        return colors_file
+
+    def test_loads_variant_and_ignores_unknown_roles(
+        self, tmp_path: Path, monkeypatch,
+    ):
+        palette = self._palette()
+        palette["colors"]["dark"]["unknown"] = "#ffffff"
+        self._write_palette(tmp_path, palette)
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+        colors = load_dms_palette("dark")
+
+        assert colors["background"] == "#131318"
+        assert colors["primary"] == "#c6bfff"
+        assert "unknown" not in colors
+
+    def test_invalid_document_falls_back(self, tmp_path: Path, monkeypatch):
+        self._write_palette(tmp_path, [])
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+        assert load_dms_palette("light") == {}
+
+    def test_rejects_invalid_color_value(self, tmp_path: Path, monkeypatch):
+        palette = self._palette()
+        palette["colors"]["dark"]["primary"] = "url(evil)"
+        self._write_palette(tmp_path, palette)
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+        assert load_dms_palette("dark") == {}
+
+    def test_rejects_group_writable_file(self, tmp_path: Path, monkeypatch):
+        colors_file = self._write_palette(tmp_path, self._palette())
+        colors_file.chmod(0o664)
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+        assert load_dms_palette("dark") == {}
+
+    def test_rejects_symlink(self, tmp_path: Path, monkeypatch):
+        colors_dir = tmp_path / "DankMaterialShell"
+        colors_dir.mkdir()
+        target = tmp_path / "palette.json"
+        target.write_bytes(orjson.dumps(self._palette()))
+        (colors_dir / "dms-colors.json").symlink_to(target)
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+        assert load_dms_palette("dark") == {}
 
 
 # === _is_valid_theme_name ===
