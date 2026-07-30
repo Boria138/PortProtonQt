@@ -993,8 +993,8 @@ class DetailPageManager:
         return None
 
     def _is_action_button_text(self, text: str) -> bool:
-        """Check if button text is Play or Stop."""
-        return text in (_("Start"), _("Stop"))
+        """Check if button text is a primary game action."""
+        return text in (_("Start"), _("Stop"), _("Install"))
 
     def _on_favorite_click(self, name: str) -> str:
         """Handle favorite toggle click."""
