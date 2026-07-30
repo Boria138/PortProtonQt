@@ -70,9 +70,9 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     container = QWidget()
     container.show()
 
-    first_card = DummyCard(container, FIRST_CARD_X)
-    hidden_card = DummyCard(container, HIDDEN_CARD_X)
     next_card = DummyCard(container, NEXT_CARD_X)
+    hidden_card = DummyCard(container, HIDDEN_CARD_X)
+    first_card = DummyCard(container, FIRST_CARD_X)
     first_card.show()
     hidden_card.hide()
     next_card.show()
@@ -86,6 +86,10 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     manager._navigate_game_cards(container, 0, PAD_DPAD_X, 1)
 
     assert QApplication.focusWidget() is next_card
+
+    manager._navigate_game_cards(container, 0, PAD_DPAD_X, -1)
+
+    assert QApplication.focusWidget() is first_card
 
 
 def test_library_toolbar_navigation_includes_delete_missing_button() -> None:

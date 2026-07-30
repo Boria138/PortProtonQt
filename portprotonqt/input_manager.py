@@ -395,6 +395,8 @@ class InputManager(QObject):
             if not matched:
                 rows[y] = [card]
         sorted_rows = sorted(rows.items(), key=lambda x: x[0])
+        for _row_y, row_cards in sorted_rows:
+            row_cards.sort(key=lambda card: card.pos().x())
         if not sorted_rows:
             return
         current_row_idx = None
