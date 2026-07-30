@@ -303,9 +303,6 @@ class ThemeStoreMixin:
         if not getattr(self, "themeStoreLoaded", False):
             return
         self.themeStoreLoaded = False
-        worker = getattr(self, "themeStoreImageWorker", None)
-        if worker is not None:
-            worker.cancel()
         self._load_theme_store()
 
     def _on_theme_store_loaded(self, themes: list) -> None:
@@ -327,7 +324,6 @@ class ThemeStoreMixin:
         self.themeStoreStatusLabel.setText(_("Failed to load themes"))
 
     def _populate_theme_store_cards(self) -> None:
-        self._cancel_theme_store_image_worker()
         self.themeStoreCards = {}
         self.themeStoreCardsByUrl = {}
         self.themeStoreLoadedUrls = set()
@@ -397,7 +393,7 @@ class ThemeStoreMixin:
         if not pending:
             return
         if getattr(self, "themeStoreImageWorker", None) is not None:
-            self._cancel_theme_store_image_worker()
+            return
         worker = ThemeStoreImageWorker(pending)
         worker.loaded.connect(self._on_theme_store_preview_loaded)
         worker.finished.connect(
@@ -427,6 +423,7 @@ class ThemeStoreMixin:
             item for item in getattr(self, "_imageWorkerPool", [])
             if item.isRunning()
         ]
+        QTimer.singleShot(0, self._schedule_visible_image_load)
 
     def _get_visible_theme_urls(self) -> list[str]:
         viewport = self.themeStoreScrollArea.viewport()
@@ -475,6 +472,9 @@ class ThemeStoreMixin:
         return max(1, width // self._themeStoreCardWidth)
 
     def _on_theme_store_preview_loaded(self, url: str, data: bytes) -> None:
+        sender = self.sender()
+        if sender is not None and sender is not getattr(self, "themeStoreImageWorker", None):
+            return
         self.themeStoreLoadedUrls.add(url)
         card = self.themeStoreCardsByUrl.get(url)
         pixmap = QPixmap()

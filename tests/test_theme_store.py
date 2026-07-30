@@ -124,3 +124,35 @@ def test_stale_list_worker_result_does_not_replace_theme_store_data() -> None:
     assert window.themeStoreThemes == [{"name": "current"}]
     assert not window.populated
     assert not window.scheduled
+
+
+def test_visible_image_load_keeps_active_worker(monkeypatch: Any) -> None:
+    window = cast(Any, FakeThemeStore())
+    worker = FakeWorker()
+    window.themeStoreThemes = [{"name": "theme"}]
+    window.themeStoreGridIndex = 1
+    window.themeStoreLoadedUrls = set()
+    window.themeStoreImageWorker = worker
+    window._get_visible_theme_urls = lambda: ["preview.png"]
+
+    def fail_worker_creation(*_args: object) -> None:
+        raise AssertionError("A second image worker was created")
+
+    monkeypatch.setattr(theme_store, "ThemeStoreImageWorker", fail_worker_creation)
+
+    window._schedule_visible_image_load()
+
+    assert window.themeStoreImageWorker is worker
+    assert not worker.cancelled
+
+
+def test_stale_preview_does_not_mark_url_loaded() -> None:
+    window = cast(Any, FakeThemeStore())
+    current_worker = object()
+    window.themeStoreImageWorker = current_worker
+    window.themeStoreLoadedUrls = set()
+    window._sender = object()
+
+    window._on_theme_store_preview_loaded("preview.png", b"image")
+
+    assert window.themeStoreLoadedUrls == set()
