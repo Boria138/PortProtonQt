@@ -783,6 +783,9 @@ class FakeInputManager:
     def suspend_gamepad_polling(self) -> None:
         self.suspended = True
 
+    def resume_gamepad_polling(self) -> None:
+        self.suspended = False
+
 
 class FakeButton:
     def __init__(self) -> None:
@@ -1060,6 +1063,31 @@ def test_launch_dependency_percent_updates_button_before_status() -> None:
     window._set_running_button_progress()
 
     assert button.text == "Downloading Wine… 0.1%"
+
+
+def test_reset_play_button_refreshes_new_portproton_shortcuts() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    reloads = []
+    shortcut_refreshes = []
+    window.current_running_button = None
+    window.game_start_time = None
+    window.game_start_exe = None
+    window.target_exe = "Game.exe"
+    window.wine_download_seen = False
+    window.wine_download_percent = 0.0
+    window.wine_download_status = ""
+    window.game_launch_started = True
+    window.game_processes = []
+    window._animated_covers_suspended = False
+    window.input_manager = FakeInputManager()
+    window.loadGames = lambda **kwargs: reloads.append(kwargs)
+    window._refresh_portproton_shortcuts = lambda: shortcut_refreshes.append(True)
+
+    window.resetPlayButton()
+
+    assert reloads == []
+    assert shortcut_refreshes == [True]
+    assert window.target_exe is None
 
 
 def test_toggle_game_replaces_invalid_launch_output_bytes(

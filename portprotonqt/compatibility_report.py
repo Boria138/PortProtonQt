@@ -31,7 +31,7 @@ logger = get_logger(__name__)
 CRASH_THRESHOLD_SECONDS = 5
 COMPATIBILITY_ALWAYS_REPORT_ENV = "PORTPROTONQT_COMPATIBILITY_ALWAYS_REPORT"
 PE_MACHINE_AMD64 = 0x8664
-COMPATIBILITY_SCAN_BYTES = 67_108_864
+COMPATIBILITY_SCAN_BYTES = 4_194_304
 COMPATIBILITY_NEIGHBOR_SCAN_LIMIT = 20
 COMPATIBILITY_RULES_PATH = Path(__file__).with_name("compatibility_rules.json")
 DXVK_VULKAN_REQUIREMENTS = {
@@ -128,9 +128,12 @@ def _load_rules() -> list[dict[str, Any]]:
     return rules if isinstance(rules, list) else []
 
 
-def _matched_pattern_ids(data: bytes, patterns: list[dict[str, str]]) -> set[str]:
-    lowered = data.lower()
-    flattened_wide = lowered.replace(b"\x00", b"")
+def _matched_pattern_ids(
+    data: bytes,
+    lowered: bytes,
+    flattened_wide: bytes,
+    patterns: list[dict[str, str]],
+) -> set[str]:
     matched = set()
     for pattern in patterns:
         identifier = pattern.get("id", "")
@@ -156,9 +159,16 @@ def _scan_file(
         logger.warning("Compatibility report failed to scan %s: %s", file_path, error)
         return []
     data = os.path.basename(file_path).encode(errors="ignore") + b"\n" + data
+    lowered = data.lower()
+    flattened_wide = lowered.replace(b"\x00", b"")
     findings = []
     for rule in rules:
-        matched = _matched_pattern_ids(data, rule.get("patterns", []))
+        matched = _matched_pattern_ids(
+            data,
+            lowered,
+            flattened_wide,
+            rule.get("patterns", []),
+        )
         required_sets = rule.get("required_sets", [])
         if not any(set(required).issubset(matched) for required in required_sets):
             continue
@@ -426,7 +436,7 @@ def _format_signature_details(items: list[dict[str, str]]) -> list[str]:
     lines = []
     seen = set()
     for item in items:
-        key = (item["category"], item["name"], item["source"])
+        key = (item["category"], item["name"])
         if key in seen:
             continue
         seen.add(key)
