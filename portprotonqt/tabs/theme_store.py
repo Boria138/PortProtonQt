@@ -43,6 +43,7 @@ class ThemeStoreCard(QFrame):
         self.theme_data = theme_data
         self.card_width = card_width
         self.setObjectName("themeStoreCard")
+        self.setProperty("sound_event", "open")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFixedWidth(card_width)

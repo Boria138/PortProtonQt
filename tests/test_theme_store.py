@@ -2,8 +2,10 @@
 
 from typing import Any, cast
 
+from PySide6.QtWidgets import QApplication
+
 from portprotonqt.tabs import theme_store
-from portprotonqt.tabs.theme_store import ThemeStoreMixin
+from portprotonqt.tabs.theme_store import ThemeStoreCard, ThemeStoreMixin
 
 
 class FakeSignal:
@@ -62,6 +64,21 @@ class FakeThemeStore(ThemeStoreMixin):
 
     def _schedule_visible_image_load(self) -> None:
         self.scheduled = True
+
+
+def test_theme_store_card_uses_open_sound() -> None:
+    app = QApplication.instance() or QApplication([])
+    theme = type("Theme", (), {
+        "THEME_STORE_CARD_STYLE": "",
+        "THEME_STORE_PREVIEW_STYLE": "",
+        "THEME_STORE_CARD_TITLE_STYLE": "",
+        "THEME_STORE_CARD_META_STYLE": "",
+    })()
+
+    card = ThemeStoreCard({}, theme)
+
+    assert card.property("sound_event") == "open"
+    assert app is not None
 
 
 def test_load_theme_store_keeps_replaced_list_worker(monkeypatch: Any) -> None:
