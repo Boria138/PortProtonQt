@@ -28,7 +28,11 @@ UPOWER_PATH = "/org/freedesktop/UPower"
 UPOWER_INTERFACE = "org.freedesktop.UPower"
 DBUS_PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 
-class NetworkManagerError(Exception):
+class SystemManagerError(Exception):
+    """Base error for system manager operations."""
+
+
+class NetworkManagerError(SystemManagerError):
     """Raised when NetworkManager D-Bus operations fail."""
 
 
@@ -44,7 +48,7 @@ class DbusFastSystemBus:
         except Exception as exc:
             asyncio.set_event_loop(None)
             self._loop.close()
-            raise NetworkManagerError("Failed to connect to system D-Bus") from exc
+            raise SystemManagerError("Failed to connect to system D-Bus") from exc
 
     def close(self) -> None:
         try:
@@ -59,15 +63,15 @@ class DbusFastSystemBus:
             member_name = self._to_member_name(member)
             method = getattr(dbus_interface, f"call_{member_name}", None)
             if method is None:
-                raise NetworkManagerError(f"D-Bus method not found: {interface}.{member}")
+                raise SystemManagerError(f"D-Bus method not found: {interface}.{member}")
             result = self._run(method(*args))
             if isinstance(result, tuple) and len(result) == 1:
                 return result[0]
             return result
-        except NetworkManagerError:
+        except SystemManagerError:
             raise
         except Exception as exc:
-            raise NetworkManagerError(str(exc)) from exc
+            raise SystemManagerError(str(exc)) from exc
 
     def get_property(self, service: str, path: str, interface: str, prop: str):
         value = self.call(

@@ -19,7 +19,7 @@ from portprotonqt.system_manager.common import (
     UPOWER_INTERFACE,
     UPOWER_PATH,
     UPOWER_SERVICE,
-    NetworkManagerError,
+    SystemManagerError,
     Variant,
 )
 
@@ -35,6 +35,10 @@ BLUEZ_AGENT_INTERFACE = "org.bluez.Agent1"
 BLUEZ_AGENT_MANAGER_INTERFACE = "org.bluez.AgentManager1"
 BLUEZ_AGENT_MANAGER_PATH = "/org/bluez"
 BLUEZ_AGENT_PATH = "/org/portprotonqt/BluetoothAgent"
+
+
+class BluetoothManagerError(SystemManagerError):
+    """Raised when Bluetooth manager operations fail."""
 
 
 def dbus_method(annotations: dict[str, str]) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -143,7 +147,7 @@ class BluetoothManagerWorker(QThread):
         try:
             service = BluetoothManagerService(self._request_pairing_response)
             payload = service.execute(self.operation, self.params)
-        except NetworkManagerError as exc:
+        except SystemManagerError as exc:
             self.operation_failed.emit(self.operation, str(exc))
             return
         except Exception as exc:
@@ -217,7 +221,7 @@ class BluetoothManagerService:
         elif operation == "forget":
             self.forget_device(params.get("address", ""))
         else:
-            raise NetworkManagerError("Unsupported Bluetooth operation")
+            raise BluetoothManagerError("Unsupported Bluetooth operation")
 
     def list_devices(self, discovered: list[tuple[str, str]] | None = None) -> dict:
         payload = {
@@ -252,7 +256,7 @@ class BluetoothManagerService:
         finally:
             try:
                 self._call_bluez(adapter_path, f"{BLUEZ_ADAPTER_INTERFACE}.StopDiscovery")
-            except NetworkManagerError:
+            except SystemManagerError:
                 logger.warning("Failed to stop Bluetooth discovery")
         return self.list_devices()
 
@@ -317,7 +321,7 @@ class BluetoothManagerService:
                 f"{BLUEZ_AGENT_MANAGER_INTERFACE}.UnregisterAgent",
                 BLUEZ_AGENT_PATH,
             )
-        except NetworkManagerError:
+        except SystemManagerError:
             logger.warning("Failed to unregister Bluetooth pairing agent")
         self.dbus.unexport_interface(BLUEZ_AGENT_PATH)
         self._pairing_agent_registered = False
@@ -354,7 +358,7 @@ class BluetoothManagerService:
             return
         device = self._require_device(address)
         if not bool(device.get("connected", False)):
-            raise NetworkManagerError("The selected Bluetooth device is not connected")
+            raise BluetoothManagerError("The selected Bluetooth device is not connected")
         self._call_bluez(str(device["path"]), f"{BLUEZ_DEVICE_INTERFACE}.Disconnect")
         logger.info("Bluetooth device disconnected")
 
@@ -374,7 +378,7 @@ class BluetoothManagerService:
     def _get_managed_objects(self) -> dict:
         raw = self._call_bluez(BLUEZ_ROOT_PATH, f"{BLUEZ_OBJECT_MANAGER_INTERFACE}.GetManagedObjects")
         if not isinstance(raw, dict):
-            raise NetworkManagerError("Failed to load Bluetooth objects")
+            raise BluetoothManagerError("Failed to load Bluetooth objects")
         return raw
 
     def _get_adapter_path(self, objects: dict) -> str:
@@ -386,10 +390,10 @@ class BluetoothManagerService:
 
     def _require_adapter_path(self) -> str:
         if not self._has_physical_adapter():
-            raise NetworkManagerError("Bluetooth adapter not found")
+            raise BluetoothManagerError("Bluetooth adapter not found")
         adapter_path = self._get_adapter_path(self._get_managed_objects())
         if not adapter_path:
-            raise NetworkManagerError("Bluetooth adapter not found")
+            raise BluetoothManagerError("Bluetooth adapter not found")
         return adapter_path
 
     def _has_physical_adapter(self) -> bool:
@@ -453,14 +457,14 @@ class BluetoothManagerService:
     def _require_powered(self) -> None:
         payload = self.list_devices()
         if not payload["powered"]:
-            raise NetworkManagerError("Bluetooth is disabled")
+            raise BluetoothManagerError("Bluetooth is disabled")
 
     def _require_device(self, address: str) -> dict:
         target = address.upper()
         for device in self.list_devices()["devices"]:
             if str(device["address"]).upper() == target:
                 return device
-        raise NetworkManagerError("Bluetooth device not found")
+        raise BluetoothManagerError("Bluetooth device not found")
 
     def _get_bluetooth_state(self, device: dict) -> str:
         if bool(device.get("connected", False)):
@@ -548,7 +552,7 @@ class BluetoothManagerService:
                 member,
                 *args,
             )
-        except NetworkManagerError:
+        except SystemManagerError:
             return ""
 
     def _call_upower_property(self, object_path: str, property_name: str) -> str:
@@ -559,7 +563,7 @@ class BluetoothManagerService:
                 "org.freedesktop.UPower.Device",
                 property_name,
             )
-        except NetworkManagerError:
+        except SystemManagerError:
             return ""
         return self._extract_dbus_property_value(output)
 
@@ -573,8 +577,8 @@ class BluetoothManagerService:
                 member,
                 *args,
             )
-        except NetworkManagerError as exc:
-            raise NetworkManagerError(self._clean_bluetooth_error(str(exc))) from exc
+        except SystemManagerError as exc:
+            raise BluetoothManagerError(self._clean_bluetooth_error(str(exc))) from exc
 
     def _clean_bluetooth_error(self, error_text: str) -> str:
         cleaned = error_text.split(":", 1)[-1].strip()
