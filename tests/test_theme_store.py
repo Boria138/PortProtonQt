@@ -2,8 +2,10 @@
 
 from typing import Any, cast
 
+from PySide6.QtWidgets import QApplication
+
 from portprotonqt.tabs import theme_store
-from portprotonqt.tabs.theme_store import ThemeStoreMixin
+from portprotonqt.tabs.theme_store import ThemeStoreCard, ThemeStoreMixin
 
 
 class FakeSignal:
@@ -62,6 +64,21 @@ class FakeThemeStore(ThemeStoreMixin):
 
     def _schedule_visible_image_load(self) -> None:
         self.scheduled = True
+
+
+def test_theme_store_card_uses_open_sound() -> None:
+    app = QApplication.instance() or QApplication([])
+    theme = type("Theme", (), {
+        "THEME_STORE_CARD_STYLE": "",
+        "THEME_STORE_PREVIEW_STYLE": "",
+        "THEME_STORE_CARD_TITLE_STYLE": "",
+        "THEME_STORE_CARD_META_STYLE": "",
+    })()
+
+    card = ThemeStoreCard({}, theme)
+
+    assert card.property("sound_event") == "open"
+    assert app is not None
 
 
 def test_load_theme_store_keeps_replaced_list_worker(monkeypatch: Any) -> None:
@@ -124,3 +141,35 @@ def test_stale_list_worker_result_does_not_replace_theme_store_data() -> None:
     assert window.themeStoreThemes == [{"name": "current"}]
     assert not window.populated
     assert not window.scheduled
+
+
+def test_visible_image_load_keeps_active_worker(monkeypatch: Any) -> None:
+    window = cast(Any, FakeThemeStore())
+    worker = FakeWorker()
+    window.themeStoreThemes = [{"name": "theme"}]
+    window.themeStoreGridIndex = 1
+    window.themeStoreLoadedUrls = set()
+    window.themeStoreImageWorker = worker
+    window._get_visible_theme_urls = lambda: ["preview.png"]
+
+    def fail_worker_creation(*_args: object) -> None:
+        raise AssertionError("A second image worker was created")
+
+    monkeypatch.setattr(theme_store, "ThemeStoreImageWorker", fail_worker_creation)
+
+    window._schedule_visible_image_load()
+
+    assert window.themeStoreImageWorker is worker
+    assert not worker.cancelled
+
+
+def test_stale_preview_does_not_mark_url_loaded() -> None:
+    window = cast(Any, FakeThemeStore())
+    current_worker = object()
+    window.themeStoreImageWorker = current_worker
+    window.themeStoreLoadedUrls = set()
+    window._sender = object()
+
+    window._on_theme_store_preview_loaded("preview.png", b"image")
+
+    assert window.themeStoreLoadedUrls == set()

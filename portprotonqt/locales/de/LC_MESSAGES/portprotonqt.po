@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-07-25 17:07+0000\n"
+"PO-Revision-Date: 2026-07-28 16:30+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.1\n"
+"X-Generator: Weblate 2026.7.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
-msgstr "Das Spiel beenden"
+msgstr "Spiel beenden"
 
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
@@ -957,14 +957,15 @@ msgid "No cover selected"
 msgstr "Kein Titelbild ausgewählt"
 
 msgid "Compatibility report"
-msgstr ""
+msgstr "Kompatibilitätsbericht"
 
 msgid "The program stopped. Compatibility details were collected automatically."
 msgstr ""
+"Das Programm wurde beendet. Kompatibilitätsdetails wurden automatisch "
+"erfasst."
 
-#, fuzzy
 msgid "Close"
-msgstr "Maus"
+msgstr "Schließen"
 
 msgid "Open"
 msgstr "Öffnen"
@@ -2054,10 +2055,10 @@ msgid "Store"
 msgstr "Store"
 
 msgid "Copy the link to clipboard"
-msgstr ""
+msgstr "Link in die Zwischenablage kopieren"
 
 msgid "Failed to log out of GOG account"
-msgstr ""
+msgstr "Abmeldung vom GOG-Konto fehlgeschlagen"
 
 msgid "Refreshing…"
 msgstr "Aktualisieren…"
@@ -2180,9 +2181,8 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr "PortProton-Einstellungen"
 
-#, fuzzy
 msgid "Accounts"
-msgstr "Einbinden"
+msgstr "Accounts"
 
 msgid "Auto"
 msgstr "Auto"
@@ -2224,7 +2224,7 @@ msgid "Enable UI Sounds"
 msgstr "Benutzeroberflächen-Sounds aktivieren"
 
 msgid "Show compatibility report after game crash"
-msgstr ""
+msgstr "Kompatibilitätsbericht nach Spielabsturz anzeigen"
 
 msgid "Disable runtime download"
 msgstr "Runtime-Download deaktivieren"

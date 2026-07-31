@@ -441,7 +441,11 @@ def create_details_widget(
         _add_details_description(details_layout, main_window.theme, description)
 
     if game_info_layout:
-        details_layout.addLayout(game_info_layout)
+        details_layout.addWidget(
+            create_compact_layout_panel(
+                parent, main_window.theme, game_info_layout
+            )
+        )
 
     if controller_support:
         _add_controller_support(details_layout, main_window.theme, controller_support)

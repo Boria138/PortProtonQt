@@ -70,9 +70,9 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     container = QWidget()
     container.show()
 
-    first_card = DummyCard(container, FIRST_CARD_X)
-    hidden_card = DummyCard(container, HIDDEN_CARD_X)
     next_card = DummyCard(container, NEXT_CARD_X)
+    hidden_card = DummyCard(container, HIDDEN_CARD_X)
+    first_card = DummyCard(container, FIRST_CARD_X)
     first_card.show()
     hidden_card.hide()
     next_card.show()
@@ -86,6 +86,40 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     manager._navigate_game_cards(container, 0, PAD_DPAD_X, 1)
 
     assert QApplication.focusWidget() is next_card
+
+    manager._navigate_game_cards(container, 0, PAD_DPAD_X, -1)
+
+    assert QApplication.focusWidget() is first_card
+
+
+def test_card_grid_navigation_uses_visual_rows() -> None:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication.instance() or QApplication([])
+    container = QWidget()
+    container.show()
+
+    bottom_right = DummyCard(container, NEXT_CARD_X)
+    bottom_right.move(NEXT_CARD_X, 20)
+    top_left = DummyCard(container, FIRST_CARD_X)
+    bottom_left = DummyCard(container, FIRST_CARD_X)
+    bottom_left.move(FIRST_CARD_X, 20)
+    top_right = DummyCard(container, NEXT_CARD_X)
+    for card in (bottom_right, top_left, bottom_left, top_right):
+        card.show()
+    app.processEvents()
+
+    manager = InputManager.__new__(InputManager)
+    top_left.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    assert manager._navigate_card_grid(
+        [bottom_right, top_left, bottom_left, top_right], PAD_DPAD_X, 1
+    )
+    assert QApplication.focusWidget() is top_right
+
+    assert manager._navigate_card_grid(
+        [bottom_right, top_left, bottom_left, top_right], PAD_DPAD_Y, 1
+    )
+    assert QApplication.focusWidget() is bottom_right
 
 
 def test_library_toolbar_navigation_includes_delete_missing_button() -> None:

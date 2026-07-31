@@ -7,9 +7,13 @@ from PySide6.QtCore import QThread, Signal
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-from portprotonqt.system_manager.common import DbusFastSystemBus, NetworkManagerError, Variant
+from portprotonqt.system_manager.common import DbusFastSystemBus, SystemManagerError, Variant
 
 logger = get_logger(__name__)
+
+class StorageManagerError(SystemManagerError):
+    """Raised when storage manager operations fail."""
+
 
 class StorageManagerWorker(QThread):
     """Run storage actions outside the UI thread."""
@@ -26,7 +30,7 @@ class StorageManagerWorker(QThread):
         try:
             service = StorageManagerService()
             payload = service.execute(self.operation, self.params)
-        except NetworkManagerError as exc:
+        except SystemManagerError as exc:
             self.operation_failed.emit(self.operation, str(exc))
             return
         except Exception as exc:
@@ -68,7 +72,7 @@ class StorageManagerService:
         elif operation == "unmount":
             self.unmount_device(params.get("device_path", ""))
         else:
-            raise NetworkManagerError("Unsupported storage operation")
+            raise StorageManagerError("Unsupported storage operation")
 
     def list_devices(self) -> dict:
         objects = self._get_managed_objects()
@@ -85,7 +89,7 @@ class StorageManagerService:
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if device["mounted"]:
-            raise NetworkManagerError("The selected device is already mounted")
+            raise StorageManagerError("The selected device is already mounted")
         self._call_filesystem_method(device["object_path"], "Mount")
         logger.info("Device mounted")
 
@@ -96,7 +100,7 @@ class StorageManagerService:
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if not device["mounted"]:
-            raise NetworkManagerError("The selected device is not mounted")
+            raise StorageManagerError("The selected device is not mounted")
         self._call_filesystem_method(device["object_path"], "Unmount")
         logger.info("Device unmounted")
 
@@ -108,7 +112,7 @@ class StorageManagerService:
             "GetManagedObjects",
         )
         if not isinstance(managed_objects, dict):
-            raise NetworkManagerError("Failed to parse storage device list")
+            raise StorageManagerError("Failed to parse storage device list")
         return managed_objects
 
     def _collect_storage_devices(self, objects: dict) -> list[dict]:
@@ -188,7 +192,7 @@ class StorageManagerService:
         for device in self._collect_storage_devices(objects):
             if device["path"] == device_path:
                 return device
-        raise NetworkManagerError("Storage device not found")
+        raise StorageManagerError("Storage device not found")
 
     def _call_filesystem_method(self, object_path: str, method_name: str) -> None:
         self.dbus.call(

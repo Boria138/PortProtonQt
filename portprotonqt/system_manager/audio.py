@@ -10,11 +10,15 @@ from PySide6.QtCore import QThread, Signal
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-from portprotonqt.system_manager.common import NetworkManagerError
+from portprotonqt.system_manager.common import SystemManagerError
 
 logger = get_logger(__name__)
 
 AUDIO_MAX_VOLUME = 150
+
+class AudioManagerError(SystemManagerError):
+    """Raised when audio manager operations fail."""
+
 
 class AudioManagerWorker(QThread):
     """Run audio actions outside the UI thread."""
@@ -31,7 +35,7 @@ class AudioManagerWorker(QThread):
         service = AudioManagerService()
         try:
             payload = service.execute(self.operation, self.params)
-        except NetworkManagerError as exc:
+        except SystemManagerError as exc:
             self.operation_failed.emit(self.operation, str(exc))
             return
         except Exception as exc:
@@ -79,7 +83,7 @@ class AudioManagerService:
             try:
                 volume_value = int(volume)
             except (TypeError, ValueError) as exc:
-                raise NetworkManagerError("Invalid volume value") from exc
+                raise AudioManagerError("Invalid volume value") from exc
             volume_value = max(0, min(AUDIO_MAX_VOLUME, volume_value))
             self._run_pactl(["set-sink-volume", sink_name, f"{volume_value}%"])
             logger.info("Output volume updated")
@@ -105,7 +109,7 @@ class AudioManagerService:
             logger.info("Audio profile updated")
 
         else:
-            raise NetworkManagerError("Unsupported audio operation")
+            raise AudioManagerError("Unsupported audio operation")
 
     def list_audio(self) -> dict:
         if not self.pactl_path:
@@ -330,7 +334,7 @@ class AudioManagerService:
 
     def _run_pactl(self, args: list[str]) -> str:
         if not self.pactl_path:
-            raise NetworkManagerError("pactl is not available")
+            raise AudioManagerError("pactl is not available")
         process_env = os.environ.copy()
         process_env["LC_ALL"] = "C"
         process_env["LANG"] = "C"
@@ -344,7 +348,7 @@ class AudioManagerService:
         if result.returncode == 0:
             return result.stdout
         error_text = result.stderr.strip() or result.stdout.strip()
-        raise NetworkManagerError(self._clean_audio_error(error_text))
+        raise AudioManagerError(self._clean_audio_error(error_text))
 
     def _clean_audio_error(self, error_text: str) -> str:
         cleaned = (error_text or "").strip()

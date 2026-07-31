@@ -25,6 +25,7 @@ from portprotonqt.system_manager.common import (
     NM_WIFI_DEVICE_TYPE,
     NM_WIRELESS_INTERFACE,
     NetworkManagerError,
+    SystemManagerError,
     Variant,
 )
 
@@ -45,7 +46,7 @@ class NetworkManagerWorker(QThread):
         try:
             service = NetworkManagerService()
             payload = service.execute(self.operation, self.params)
-        except NetworkManagerError as exc:
+        except SystemManagerError as exc:
             self.operation_failed.emit(self.operation, str(exc))
             return
         except Exception as exc:
