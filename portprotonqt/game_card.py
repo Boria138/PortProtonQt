@@ -267,7 +267,10 @@ class GameCard(QFrame):
         self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
-        self.base_extra_margin = 8 if self.list_layout else 20
+        config_name = "GAME_CARD_LIST" if self.list_layout else "GAME_CARD_GRID"
+        self.card_layout_cfg = getattr(self.theme, config_name, {})
+        default_margin = 8 if self.list_layout else 20
+        self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
@@ -290,10 +293,10 @@ class GameCard(QFrame):
 
         if self.list_layout:
             self.layout_ = QHBoxLayout(self)
-            self.layout_.setSpacing(12)
+            self.layout_.setSpacing(self.card_layout_cfg.get("spacing", 12))
         else:
             self.layout_ = QVBoxLayout(self)
-            self.layout_.setSpacing(5)
+            self.layout_.setSpacing(self.card_layout_cfg.get("spacing", 5))
         self.layout_.setContentsMargins(self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2)
 
         self.coverWidget = QWidget()
@@ -440,8 +443,9 @@ class GameCard(QFrame):
 
     def _load_cover_image(self, cover_path: str) -> None:
         if self.list_layout:
-            width = 64
-            height = 64
+            cover_size = self.card_layout_cfg.get("cover_load_size", 64)
+            width = cover_size
+            height = cover_size
         else:
             width = self.base_card_width
             height = int(self.base_card_width * 1.5)
@@ -469,7 +473,7 @@ class GameCard(QFrame):
     def _set_animated_cover(self, cover_path: str, width: int, height: int) -> bool:
         if not cover_path or not os.path.isfile(cover_path):
             return False
-        radius = 8 if self.list_layout else 15
+        radius = self.card_layout_cfg.get("cover_radius", 8 if self.list_layout else 15)
         if not set_animated_cover(self.coverLabel, cover_path, width, height, radius):
             return False
         self.animated_cover_path = cover_path
@@ -477,7 +481,8 @@ class GameCard(QFrame):
         return True
 
     def _update_animated_cover_size(self) -> None:
-        radius = max(8, int(10 * self._scale)) if self.list_layout else int(15 * self._scale)
+        default_radius = 8 if self.list_layout else 15
+        radius = int(self.card_layout_cfg.get("cover_radius", default_radius) * self._scale)
         update_animated_cover_size(
             self.coverLabel,
             self.coverLabel.width(),
@@ -512,12 +517,13 @@ class GameCard(QFrame):
             if self.list_layout:
                 target_width = self.coverLabel.width() if self.coverLabel.width() > 0 else 56
                 target_height = self.coverLabel.height() if self.coverLabel.height() > 0 else 56
-                radius = max(8, int(10 * self._scale))
+                radius = int(self.card_layout_cfg.get("cover_radius", 8) * self._scale)
                 aspect_mode = Qt.AspectRatioMode.KeepAspectRatio
             else:
                 target_width = int(self.base_card_width * self._scale)
-                target_height = int(target_width * 1.5)
-                radius = int(15 * self._scale)
+                cover_ratio = self.card_layout_cfg.get("cover_aspect_ratio", 1.5)
+                target_height = int(target_width * cover_ratio)
+                radius = int(self.card_layout_cfg.get("cover_radius", 15) * self._scale)
                 aspect_mode = Qt.AspectRatioMode.KeepAspectRatioByExpanding
             scaled_pixmap = self.base_pixmap.scaled(
                 target_width,
@@ -622,20 +628,31 @@ class GameCard(QFrame):
         scaled_extra = int(self.base_extra_margin * self._scale)
         self.layout_.setContentsMargins(scaled_extra // 2, scaled_extra // 2, scaled_extra // 2, scaled_extra // 2)
         if self.list_layout:
-            row_height = max(68, int(72 * self._scale))
-            icon_size = max(48, int(56 * self._scale))
-            margin_left = 10
+            row_height = max(
+                self.card_layout_cfg.get("min_row_height", 68),
+                int(self.card_layout_cfg.get("row_height", 72) * self._scale),
+            )
+            icon_size = max(
+                self.card_layout_cfg.get("min_cover_size", 48),
+                int(self.card_layout_cfg.get("cover_size", 56) * self._scale),
+            )
+            margin_left = self.card_layout_cfg.get("cover_left_margin", 10)
             self.setFixedSize(scaled_width + scaled_extra, row_height + scaled_extra)
             self.coverWidget.setFixedSize(icon_size + margin_left, icon_size)
-            self.coverWidget.setContentsMargins(10, 0, 0, 0)
+            self.coverWidget.setContentsMargins(margin_left, 0, 0, 0)
             self.coverLabel.setFixedSize(icon_size, icon_size)
         else:
             small_card_mode = self.base_card_width < self.theme.COMPACT_CARD["width_threshold"]
-            height_ratio = self.theme.COMPACT_CARD["height_ratio"] if small_card_mode else 1.8
+            height_ratio = (
+                self.theme.COMPACT_CARD["height_ratio"]
+                if small_card_mode else self.card_layout_cfg.get("card_height_ratio", 1.8)
+            )
             scaled_height = int(self.base_card_width * height_ratio * self._scale)
             self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
-            self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
-            self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.5))
+            cover_ratio = self.card_layout_cfg.get("cover_aspect_ratio", 1.5)
+            cover_height = int(scaled_width * cover_ratio)
+            self.coverWidget.setFixedSize(scaled_width, cover_height)
+            self.coverLabel.setFixedSize(scaled_width, cover_height)
 
         self.update_cover_pixmap()
 
@@ -696,7 +713,7 @@ class GameCard(QFrame):
                 pass
 
         try:
-            self.shadow.setBlurRadius(int(20 * self._scale))
+            self.shadow.setBlurRadius(int(self.theme.shadow_blur_radius * self._scale))
         except RuntimeError:
             # Handle the case where the Qt object was deleted
             pass
