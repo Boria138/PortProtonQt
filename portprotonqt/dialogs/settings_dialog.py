@@ -795,7 +795,7 @@ class ExeSettingsDialog(
                     line_edit.setEnabled(False)
                     line_edit.setStyleSheet(self.theme.SETTINGS_DISABLED_INPUT_STYLE)
 
-                if setting['key'] == 'PW_RUN_AFTER_EXE':
+                if setting['key'] in ('PW_RUN_AFTER_EXE', 'PW_NETWORK_BLOCKLIST'):
                     text_container = QWidget()
                     text_container.setProperty("ppqt_run_after_exe_widget", True)
                     text_layout = QHBoxLayout(text_container)
@@ -810,7 +810,7 @@ class ExeSettingsDialog(
                     if is_blocked:
                         browse_button.setEnabled(False)
 
-                    def open_run_after_exe_selector(
+                    def open_setting_file_selector(
                         _checked: bool = False,
                         target_line_edit=line_edit,
                         file_filter="",
@@ -832,7 +832,7 @@ class ExeSettingsDialog(
                         )
                         file_explorer.exec()
 
-                    browse_button.clicked.connect(open_run_after_exe_selector)
+                    browse_button.clicked.connect(open_setting_file_selector)
                     text_layout.addWidget(browse_button)
                     self.advanced_table.setCellWidget(row, 1, text_container)
                 else:
