@@ -118,7 +118,16 @@ def _reveal_cover(image_label: QLabel, theme) -> None:
         effect = QGraphicsOpacityEffect(image_label)
         image_label.setGraphicsEffect(effect)
 
-    duration = theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
+    animation_type = theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
+    duration_key = "detail_page_fade_duration"
+    default_duration = 350
+    if animation_type.startswith("slide_"):
+        duration_key = "detail_page_slide_duration"
+        default_duration = 500
+    elif animation_type == "bounce":
+        duration_key = "detail_page_bounce_duration"
+        default_duration = 400
+    duration = theme.GAME_CARD_ANIMATION.get(duration_key, default_duration)
     animation = QPropertyAnimation(effect, QByteArray(b"opacity"), image_label)
     animation.setDuration(duration)
     animation.setStartValue(effect.opacity())
