@@ -395,6 +395,7 @@ class MainWindow(
         self.wine_download_seen = False
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
+        self.game_target_started = False
 
         # Central widget and main layout
         centralWidget = QWidget()
@@ -850,11 +851,6 @@ class MainWindow(
         progress_match = re.fullmatch(r'([0-9]*\.?[0-9]+)%', line_text)
         if progress_match:
             percent = float(progress_match.group(1))
-        elif "update prefix log:" in line_lower \
-                or "the prefix has been updated" in line_lower \
-                or "log wine:" in line_lower \
-                or "log from runtime and wine:" in line_lower:
-            launch_started = True
         elif "download " in line_lower and " from " in line_lower:
             filename_match = re.search(r'download\s+(.+?)\s+from\s+', line, re.IGNORECASE)
             filename = filename_match.group(1) if filename_match else line
@@ -1941,9 +1937,14 @@ class MainWindow(
         if dependency_active:
             # Dependencies are downloading/extracting - update button with progress
             self._set_running_button_progress()
-        elif target_running or (self.game_launch_started and child_running):
+        elif target_running:
+            if not getattr(self, "game_target_started", False):
+                self.game_launch_monotonic = time.monotonic()
+                self.game_target_started = True
             self.game_launch_started = True
             # Game started - set flag, update button to "Stop"
+            self._set_running_button_stop()
+        elif self.game_launch_started and child_running:
             self._set_running_button_stop()
         elif child_running:
             self._set_running_button_stop()
@@ -2038,6 +2039,7 @@ class MainWindow(
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
+        self.game_target_started = False
         self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
@@ -2577,7 +2579,7 @@ class MainWindow(
                 )
                 SoundManager().play("game_launch")
                 self.game_processes.append(process)
-                self.game_launch_monotonic = time.monotonic()
+                self.game_launch_monotonic = None
                 self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
                 launch_time = datetime.now()
@@ -2598,6 +2600,7 @@ class MainWindow(
                 self.wine_download_percent = 0.0
                 self.wine_download_status = _("Downloading Wine…")
                 self.game_launch_started = False
+                self.game_target_started = False
 
                 self.checkProcessTimer = QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)

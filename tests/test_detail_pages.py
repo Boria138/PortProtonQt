@@ -12,11 +12,30 @@ from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.animations.detail_background import DetailBackgroundAnimations
 from portprotonqt.detail_pages.utils import (
     _build_palette_stops,
+    _reveal_cover,
     _resolve_gradient_stops,
     _setup_wave_background,
     _remove_wave_background,
     _wave_states,
 )
+
+
+def test_bounce_cover_reveal_uses_bounce_duration(monkeypatch: MonkeyPatch) -> None:
+    animation = MagicMock()
+    effect = MagicMock()
+    image_label = MagicMock()
+    image_label.graphicsEffect.return_value = effect
+    theme = SimpleNamespace(GAME_CARD_ANIMATION={
+        "detail_page_animation_type": "bounce",
+        "detail_page_fade_duration": 100,
+        "detail_page_bounce_duration": 700,
+    })
+    monkeypatch.setattr(detail_utils, "QGraphicsOpacityEffect", MagicMock)
+    monkeypatch.setattr(detail_utils, "QPropertyAnimation", MagicMock(return_value=animation))
+
+    _reveal_cover(image_label, theme)
+
+    animation.setDuration.assert_called_once_with(700)
 
 
 def test_detail_page_exe_fallback_uses_image_cache(

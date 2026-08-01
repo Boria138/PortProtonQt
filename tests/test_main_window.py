@@ -898,27 +898,31 @@ def test_disabled_crash_reports_skip_launch_analysis(
     assert started == []
 
 
-def test_wine_log_marker_resets_launch_timer(monkeypatch: MonkeyPatch) -> None:
+def test_target_process_resets_launch_timer_once(monkeypatch: MonkeyPatch) -> None:
     window: Any = MainWindow.__new__(MainWindow)
-    window.launch_output_queue = Queue()
-    window.launch_output_queue.put((None, None, True))
-    window.game_launch_started = False
+    window.game_launch_started = True
+    window.game_target_started = False
     window.game_launch_monotonic = 10.0
-    window.wine_download_seen = True
-    window.wine_download_percent = 0.0
+    window.checkProcessTimer = None
+    window.is_target_exe_running = lambda: True
+    window._has_running_game_process = lambda: True
+    window._drain_launch_output_progress = lambda: False
+    window._set_running_button_stop = lambda: None
     monkeypatch.setattr("portprotonqt.main_window.time.monotonic", lambda: 90.0)
 
-    window._drain_launch_output_progress()
+    window.checkTargetExe()
+    window.checkTargetExe()
 
     assert window.game_launch_monotonic == 90.0
+    assert window.game_target_started is True
 
 
-def test_update_prefix_log_marks_wine_launch_start() -> None:
+def test_update_prefix_log_does_not_mark_wine_launch_start() -> None:
     window: Any = MainWindow.__new__(MainWindow)
 
     state = window._parse_process_status_line("[INFO] Info: Update prefix log:")
 
-    assert state == (None, None, True)
+    assert state is None
 
 
 def test_show_compatibility_report_uses_report_dialog(monkeypatch: MonkeyPatch) -> None:

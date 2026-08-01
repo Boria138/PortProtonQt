@@ -241,6 +241,40 @@ LIBRARY_LAYOUT_MODE = "grid"
 - `grid`: многоколоночная сетка карточек (классическое поведение).
 - `list`: горизонтальные карточки-строки (формат лаунчера).
 
+Геометрия карточек управляется через `GAME_CARD_LIST` и `GAME_CARD_GRID`:
+
+```python
+GAME_CARD_LIST = {
+    "extra_margin": 8,
+    "spacing": 12,
+    "cover_load_size": 64,
+    "cover_size": 56,
+    "min_cover_size": 48,
+    "cover_left_margin": 10,
+    "row_height": 72,
+    "min_row_height": 68,
+    "cover_radius": 8,
+    "border_radius": 18,
+}
+
+GAME_CARD_GRID = {
+    "extra_margin": 20,
+    "spacing": 5,
+    "cover_aspect_ratio": 1.5,
+    "card_height_ratio": 1.8,
+    "cover_radius": 15,
+    "border_radius": 18,
+}
+```
+
+Значения задаются в логических пикселях. `cover_radius` применяется к
+статическим и анимированным обложкам, а `border_radius` — к отрисовываемой
+обводке при фокусе и наведении. Ширина обложки в сеточном режиме по-прежнему
+определяется настройкой размера карточек библиотеки.
+
+Тень карточек использует общие константы темы `shadow_blur_radius` и
+`shadow_offset` как в сеточном, так и в списочном режиме.
+
 Это параметр уровня темы и не зависит от настроек приложения.
 
 ---

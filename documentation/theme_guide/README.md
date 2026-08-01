@@ -241,6 +241,39 @@ LIBRARY_LAYOUT_MODE = "grid"
 - `grid`: multi-column card grid (classic behavior).
 - `list`: horizontal row-style cards (launcher-style list).
 
+Card geometry is controlled by `GAME_CARD_LIST` and `GAME_CARD_GRID`:
+
+```python
+GAME_CARD_LIST = {
+    "extra_margin": 8,
+    "spacing": 12,
+    "cover_load_size": 64,
+    "cover_size": 56,
+    "min_cover_size": 48,
+    "cover_left_margin": 10,
+    "row_height": 72,
+    "min_row_height": 68,
+    "cover_radius": 8,
+    "border_radius": 18,
+}
+
+GAME_CARD_GRID = {
+    "extra_margin": 20,
+    "spacing": 5,
+    "cover_aspect_ratio": 1.5,
+    "card_height_ratio": 1.8,
+    "cover_radius": 15,
+    "border_radius": 18,
+}
+```
+
+Values are logical pixels. `cover_radius` applies to static and animated covers;
+`border_radius` applies to the painted focus and hover border. Grid cover width
+continues to follow the library card-size setting.
+
+Card shadows use the shared `shadow_blur_radius` and `shadow_offset` theme
+constants in both grid and list layouts.
+
 This is a theme-level option and does not depend on app settings.
 
 ---

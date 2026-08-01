@@ -245,7 +245,8 @@ class GameCardAnimations:
             pen.setColor(QColor(0, 0, 0, 0))
         painter.setPen(pen)
         painter.setBrush(fill_brush)
-        radius = 18 * self.game_card._scale
+        radius = self.game_card.card_layout_cfg.get("border_radius", 18)
+        radius *= self.game_card._scale
         bw = round(self.game_card._borderWidth / 2)
         rect = self.game_card.rect().adjusted(bw, bw, -bw, -bw)
         if rect.isEmpty():

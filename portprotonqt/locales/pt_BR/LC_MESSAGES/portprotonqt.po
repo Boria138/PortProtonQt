@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-07-22 12:06+0000\n"
+"PO-Revision-Date: 2026-07-31 06:07+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.6.1\n"
+"X-Generator: Weblate 2026.7.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -153,9 +153,8 @@ msgstr "Excluir do PortProton"
 msgid "Launch Game"
 msgstr "Iniciar Jogo"
 
-#, fuzzy
 msgid "Repair"
-msgstr "Pareado"
+msgstr "Reparar"
 
 msgid "Remove from Desktop"
 msgstr "Remover da Área de Trabalho"
@@ -173,7 +172,7 @@ msgid "Delete"
 msgstr "Excluir"
 
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
 msgid "Open Game Folder"
 msgstr "Abrir Pasta do Jogo"
@@ -372,9 +371,8 @@ msgstr "Sistema"
 msgid "Themes"
 msgstr "Temas"
 
-#, fuzzy
 msgid "Downloads"
-msgstr "Baixar"
+msgstr "Downloads"
 
 msgid "Warning"
 msgstr "Aviso"
@@ -960,14 +958,15 @@ msgid "No cover selected"
 msgstr "Nenhuma capa selecionada"
 
 msgid "Compatibility report"
-msgstr ""
+msgstr "Relatório de compatibilidade"
 
 msgid "The program stopped. Compatibility details were collected automatically."
 msgstr ""
+"O programa foi encerrado. As informações de compatibilidade foram coletadas "
+"automaticamente."
 
-#, fuzzy
 msgid "Close"
-msgstr "Mouse"
+msgstr "Fechar"
 
 msgid "Open"
 msgstr "Abrir"
@@ -2023,131 +2022,114 @@ msgstr "Desmontar"
 msgid "Set output"
 msgstr "Definir saída"
 
-#, fuzzy
 msgid "Queued"
-msgstr "Usado"
+msgstr "Na fila"
 
-#, fuzzy
 msgid "Completed"
-msgstr "Atualização concluída"
+msgstr "Concluído"
 
-#, fuzzy
 msgid "Clear List"
-msgstr "Limpar Tudo"
+msgstr "Limpar lista"
 
-#, fuzzy
 msgid "Now Downloading"
-msgstr "Baixando"
+msgstr "Baixando agora"
 
-#, fuzzy
 msgid "Waiting…"
-msgstr "Aviso"
+msgstr "Aguardando…"
 
-#, fuzzy
 msgid "Disk: "
-msgstr "Link:"
+msgstr "Disco: "
 
-#, fuzzy
 msgid "Game Title"
-msgstr "Largura do jogo"
+msgstr "Título do jogo"
 
-#, fuzzy
 msgid "Started at"
-msgstr "Estado"
+msgstr "Iniciado em"
 
 msgid "Type"
 msgstr "Tipo"
 
-#, fuzzy
 msgid "Store"
-msgstr "Armazenamento"
+msgstr "Loja"
 
 msgid "Copy the link to clipboard"
-msgstr ""
+msgstr "Copiar o link para a área de transferência"
 
 msgid "Failed to log out of GOG account"
-msgstr ""
+msgstr "Falha ao sair da conta GOG"
 
 msgid "Refreshing…"
 msgstr "Atualizando…"
 
-#, fuzzy
 msgid "Unknown error"
-msgstr "Jogo Desconhecido"
+msgstr "Erro desconhecido"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "GOG login failed: {0}"
-msgstr "Arquivo: {0}"
+msgstr "Falha no login da GOG: {0}"
 
-#, fuzzy
 msgid "GOG account connected"
-msgstr "Conectado"
+msgstr "Conta GOG conectada"
 
-#, fuzzy
 msgid "Log out"
 msgstr "Encerrar sessão"
 
 msgid "Open login page"
-msgstr ""
+msgstr "Abrir página de login"
 
 msgid "GOG account not connected"
-msgstr ""
+msgstr "Conta GOG não conectada"
 
 #, python-brace-format
 msgid "Refreshing GOG library… {0}/{1}"
-msgstr ""
+msgstr "Atualizando biblioteca da GOG… {0}/{1}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to refresh GOG library: {0}"
-msgstr "Falha ao iniciar o jogo: {0}"
+msgstr "Falha ao atualizar a biblioteca da GOG: {0}"
 
 msgid "Select installation folder"
-msgstr ""
+msgstr "Selecionar pasta de instalação"
 
 msgid "Another GOG operation is already running"
-msgstr ""
+msgstr "Outra operação da GOG já está em execução"
 
 msgid "GOG installation not found"
-msgstr ""
+msgstr "Instalação da GOG não encontrada"
 
-#, fuzzy
 msgid "Select GOG game folder"
-msgstr "Excluir Pasta"
+msgstr "Selecionar pasta do jogo da GOG"
 
 msgid "Selected folder is not this GOG game"
-msgstr ""
+msgstr "A pasta selecionada não corresponde a este jogo da GOG"
 
 #, python-brace-format
 msgid "Delete '{0}' and all files in its installation folder?"
-msgstr ""
+msgstr "Excluir '{0}' e todos os arquivos da sua pasta de instalação?"
 
-#, fuzzy
 msgid "Starting"
-msgstr "Configuração"
+msgstr "Iniciando"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Download: {0} MiB/s"
-msgstr "Baixando… {0}%"
+msgstr "Baixando: {0} MiB/s"
 
 #, python-brace-format
 msgid "Disk: {0} MiB/s"
-msgstr ""
+msgstr "Disco: {0} MiB/s"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "ETA: {0}"
-msgstr ", ETA: {}s"
+msgstr "Tempo estimado: {0}"
 
-#, fuzzy
 msgid "Failed"
-msgstr "Detalhado"
+msgstr "Falhou"
 
-#, fuzzy
 msgid "Repaired"
-msgstr "Pareado"
+msgstr "Reparado"
 
-#, fuzzy
 msgid "Download process failed"
-msgstr "Download em Andamento"
+msgstr "O processo de download falhou"
 
 msgid "Quick Launch"
 msgstr "Início Rápido"
@@ -2196,9 +2178,8 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"
 
-#, fuzzy
 msgid "Accounts"
-msgstr "Montar"
+msgstr "Contas"
 
 msgid "Auto"
 msgstr "Automático"
@@ -2240,7 +2221,7 @@ msgid "Enable UI Sounds"
 msgstr "Ativar sons da interface"
 
 msgid "Show compatibility report after game crash"
-msgstr ""
+msgstr "Mostrar relatório de compatibilidade após a falha do jogo"
 
 msgid "Disable runtime download"
 msgstr "Desativar download de runtime"
@@ -2263,9 +2244,8 @@ msgstr "Baixar automaticamente o PPDB de"
 msgid "Auto update AppImage"
 msgstr "Atualização automática do AppImage"
 
-#, fuzzy
 msgid "Integrate AppImage"
-msgstr "Atualização automática do AppImage"
+msgstr "Integrar AppImage"
 
 msgid "Force system DPI for Wine"
 msgstr "Forçar DPI do sistema para o Wine"
@@ -2337,11 +2317,11 @@ msgstr "Tem certeza de que deseja limpar o cache? Esta ação não pode ser desf
 
 #, python-brace-format
 msgid "AppImage integrated at: {path}"
-msgstr ""
+msgstr "AppImage integrado em: {path}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to integrate AppImage: {error}"
-msgstr "Falha ao renomear o arquivo: {error}"
+msgstr "Falha ao integrar o AppImage: {error}"
 
 msgid "Failed to update xdg-autostart entry."
 msgstr "Falha ao atualizar a entrada xdg-autostart."
