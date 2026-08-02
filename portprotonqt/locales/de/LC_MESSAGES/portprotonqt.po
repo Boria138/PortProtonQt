@@ -2186,6 +2186,9 @@ msgstr "Accounts"
 msgid "Auto"
 msgstr "Auto"
 
+msgid "Account"
+msgstr ""
+
 msgid "Brief"
 msgstr "Vereinfacht"
 

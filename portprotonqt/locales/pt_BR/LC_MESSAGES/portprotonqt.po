@@ -2184,6 +2184,9 @@ msgstr "Contas"
 msgid "Auto"
 msgstr "Automático"
 
+msgid "Account"
+msgstr ""
+
 msgid "Brief"
 msgstr "Resumido"
 
