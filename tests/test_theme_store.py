@@ -1,8 +1,11 @@
 """Theme store UI race regression tests."""
 
+from types import SimpleNamespace
 from typing import Any, cast
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QEvent, QPointF, Qt
+from PySide6.QtGui import QEnterEvent, QMouseEvent
+from PySide6.QtWidgets import QApplication, QLabel
 
 from portprotonqt.tabs import theme_store
 from portprotonqt.tabs.theme_store import ThemeStoreCard, ThemeStoreMixin
@@ -66,8 +69,9 @@ class FakeThemeStore(ThemeStoreMixin):
         self.scheduled = True
 
 
-def test_theme_store_card_uses_open_sound() -> None:
+def test_theme_store_card_uses_mouse_sounds(monkeypatch: Any) -> None:
     app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
     theme = type("Theme", (), {
         "THEME_STORE_CARD_STYLE": "",
         "THEME_STORE_PREVIEW_STYLE": "",
@@ -75,9 +79,27 @@ def test_theme_store_card_uses_open_sound() -> None:
         "THEME_STORE_CARD_META_STYLE": "",
     })()
 
+    monkeypatch.setattr(
+        "portprotonqt.sound_manager.SoundManager",
+        lambda: SimpleNamespace(play=played_events.append),
+    )
     card = ThemeStoreCard({}, theme)
+    card.enterEvent(QEnterEvent(QPointF(), QPointF(), QPointF()))
+    card.mouseMoveEvent(QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(),
+        QPointF(),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    ))
+    card.click()
 
-    assert card.property("sound_event") == "open"
+    assert played_events == ["navigate", "open"]
+    assert all(
+        label.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        for label in card.findChildren(QLabel)
+    )
     assert app is not None
 
 
