@@ -67,7 +67,11 @@ SVG_PAINT_ATTR_PATTERN = re.compile(
 SVG_PAINT_ATTRIBUTES = {"fill", "stroke", "color", "stop-color", "flood-color", "lighting-color"}
 SVG_ANIMATION_TAGS = {"animate", "animateMotion", "animateTransform", "set"}
 SVG_KEEP_PAINT_VALUES = {"none", "transparent", "inherit", "initial", "unset", "freeze", "remove"}
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+SVG_CACHE_VERSION = 2
 NON_INHERITED_THEME_CONSTANTS = {"ICON_COLORS"}
+
+ET.register_namespace("", SVG_NAMESPACE)
 
 # Folder where all custom themes are located
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -216,7 +220,7 @@ def _colored_svg_cache_path(icon_path: str, color: str) -> str | None:
     except OSError as e:
         logger.warning("Cannot stat SVG icon '%s': %s", icon_path, e)
         return None
-    digest_source = f"{icon_path}:{stat.st_mtime_ns}:{color}".encode()
+    digest_source = f"{SVG_CACHE_VERSION}:{icon_path}:{stat.st_mtime_ns}:{color}".encode()
     digest = hashlib.sha256(digest_source).hexdigest()[:16]
     return str(CACHE_DIR / "icons" / f"{digest}.svg")
 

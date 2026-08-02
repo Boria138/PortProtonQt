@@ -671,7 +671,7 @@ class AutoSizeButton(QPushButton):
 
         if icon_color and self._icon_name:
             colored_path = self.theme_manager.get_colored_icon_path(
-                self._icon_name,
+                icon_path,
                 icon_color,
                 self.current_theme_name
             )
