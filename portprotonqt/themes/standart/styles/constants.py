@@ -72,6 +72,7 @@ color_surface = "#3f424d"
 color_surface_elevated = "#32343d"
 color_surface_hover = "#404554"
 color_text = "#ffffff"
+color_text_accent_hover = "#ffffff"
 color_transparent = "transparent"
 color_overlay = "rgba(40, 42, 51, 0.9)"
 

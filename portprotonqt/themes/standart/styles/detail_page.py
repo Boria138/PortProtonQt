@@ -16,13 +16,16 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     }}
     QPushButton:hover {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         background: {color_accent};
         border: {border_thin} {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -43,6 +46,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:checked {{
         background: {color_accent};
         border: {border_thin} {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -123,12 +127,15 @@ PLAY_BUTTON_STYLE = f"""
     }}
     QPushButton:hover {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
