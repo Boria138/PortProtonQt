@@ -4,6 +4,7 @@ import types
 from pathlib import Path
 import orjson
 import pytest
+from PySide6.QtSvg import QSvgRenderer
 
 from portprotonqt.theme_manager import (
     DMS_COLOR_ROLES,
@@ -542,6 +543,19 @@ class TestColoredSvgIcons:
         assert colored_path is not None
         assert colored_path != str(icon_path)
         assert 'fill="#123456"' in Path(colored_path).read_text(encoding="utf-8")
+
+    def test_colored_namespaced_svg_is_valid_for_qt(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)
+        icon_path = tmp_path / "icon.svg"
+        icon_path.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#fff"/></svg>',
+            encoding="utf-8",
+        )
+
+        colored_path = ThemeManager().get_colored_icon_path(str(icon_path), "#123456")
+
+        assert colored_path is not None
+        assert QSvgRenderer(colored_path).isValid()
 
     def test_recolors_svg_paint_attributes(self, tmp_path: Path, monkeypatch):
         monkeypatch.setattr("portprotonqt.theme_manager.CACHE_DIR", tmp_path)

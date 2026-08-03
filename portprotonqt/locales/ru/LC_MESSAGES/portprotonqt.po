@@ -2179,6 +2179,9 @@ msgstr "Аккаунты"
 msgid "Auto"
 msgstr "Авто"
 
+msgid "Account"
+msgstr "Аккаунт"
+
 msgid "Brief"
 msgstr "Упрощённый"
 

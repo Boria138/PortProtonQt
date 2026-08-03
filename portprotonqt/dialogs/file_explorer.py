@@ -8,9 +8,13 @@ from PIL import Image, ImageQt
 from PySide6.QtGui import QPixmap, QIcon, QImage, QImageReader
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QScrollArea, QWidget, QScroller, QApplication, QSizePolicy
+    QScrollArea, QWidget, QScroller, QApplication, QSizePolicy, QStyle,
+    QStyledItemDelegate, QStyleOptionViewItem
 )
-from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRunnable, Slot, QSize, QTimer
+from PySide6.QtCore import (
+    Qt, QObject, Signal, QMimeDatabase, QModelIndex, QPersistentModelIndex,
+    QThreadPool, QRunnable, Slot, QSize, QTimer
+)
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -32,6 +36,25 @@ DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 THUMBNAIL_PRELOAD_ROWS = 5
 THUMBNAIL_QUEUE_LIMIT = 24
 THUMBNAIL_SCROLL_DELAY_MS = 80
+THEMED_ICON_ROLE = Qt.ItemDataRole.UserRole.value + 1
+
+
+class FileIconDelegate(QStyledItemDelegate):
+    """Draw themed list icons in their active mode on hover."""
+
+    def initStyleOption(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        super().initStyleOption(option, index)
+        if not index.data(THEMED_ICON_ROLE):
+            return
+        if not option.state & QStyle.StateFlag.State_MouseOver:
+            return
+        pixmap = option.icon.pixmap(option.decorationSize, QIcon.Mode.Active)
+        if not pixmap.isNull():
+            option.icon = QIcon(pixmap)
 
 
 class FileExplorer(DraggableDialog):
@@ -225,14 +248,40 @@ class FileExplorer(DraggableDialog):
         self.thumbnail_cache[file_path] = icon
         item = self.file_items.get(file_path)
         if item:
+            item.setData(THEMED_ICON_ROLE, None)
             item.setIcon(icon)
 
     def _get_file_type_icon(self, file_path: str) -> QIcon | None:
         icon_name = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(file_path)[1].lower())
         if not icon_name:
             return None
-        icon = theme_manager.get_icon(icon_name)
+        icon = self._get_list_icon(icon_name)
         return icon if isinstance(icon, QIcon) and not icon.isNull() else None
+
+    def _get_list_icon(self, icon_name: str) -> QIcon:
+        icon_path = theme_manager.get_icon(icon_name, as_path=True)
+        if not isinstance(icon_path, str) or not os.path.exists(icon_path):
+            return QIcon()
+
+        icon = QIcon()
+        icon.addFile(icon_path, QSize(), QIcon.Mode.Normal)
+        colors = getattr(self.theme, "ICON_COLORS", {})
+        if not isinstance(colors, dict):
+            return icon
+
+        modes = {
+            "hover": QIcon.Mode.Active,
+            "focused": QIcon.Mode.Selected,
+            "disabled": QIcon.Mode.Disabled,
+        }
+        for state, mode in modes.items():
+            color = colors.get(f"{icon_name}_{state}", colors.get(f"*_{state}"))
+            if not isinstance(color, str):
+                continue
+            colored_path = theme_manager.get_colored_icon_path(icon_name, color)
+            if colored_path:
+                icon.addFile(colored_path, QSize(), mode)
+        return icon
 
     def schedule_thumbnail_loading(self) -> None:
         """Schedule thumbnail loading after scroll events settle."""
@@ -309,6 +358,7 @@ class FileExplorer(DraggableDialog):
         self.main_layout.addWidget(self.path_label)
 
         self.file_list = QListWidget()
+        self.file_list.setItemDelegate(FileIconDelegate(self.file_list))
         self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE + self.theme.SCROLL_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
         self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
@@ -530,15 +580,17 @@ class FileExplorer(DraggableDialog):
         try:
             if self.directory_only:
                 item = QListWidgetItem("./")
-                folder_icon = theme_manager.get_icon("folder")
+                folder_icon = self._get_list_icon("folder")
                 if isinstance(folder_icon, QIcon):
                     item.setIcon(folder_icon)
+                    item.setData(THEMED_ICON_ROLE, True)
                 self.file_list.addItem(item)
             if self.current_path != "/":
                 item = QListWidgetItem("../")
-                folder_icon = theme_manager.get_icon("folder")
+                folder_icon = self._get_list_icon("folder")
                 if isinstance(folder_icon, QIcon):
                     item.setIcon(folder_icon)
+                    item.setData(THEMED_ICON_ROLE, True)
                 self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
@@ -546,9 +598,10 @@ class FileExplorer(DraggableDialog):
 
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
-                folder_icon = theme_manager.get_icon("folder")
+                folder_icon = self._get_list_icon("folder")
                 if isinstance(folder_icon, QIcon):
                     item.setIcon(folder_icon)
+                    item.setData(THEMED_ICON_ROLE, True)
                 self.file_list.addItem(item)
 
             if not self.directory_only:
@@ -566,6 +619,7 @@ class FileExplorer(DraggableDialog):
                     file_type_icon = self._get_file_type_icon(file_path)
                     if file_type_icon:
                         item.setIcon(file_type_icon)
+                        item.setData(THEMED_ICON_ROLE, True)
                     if (
                         f.lower().endswith(".ppack")
                         or mime_type.name() == "application/x-portproton-prefix-backup"
@@ -573,9 +627,10 @@ class FileExplorer(DraggableDialog):
                         or mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
                         or mime_type.inherits("application/vnd.squashfs")
                     ):
-                        ppack_icon = theme_manager.get_icon("ppack")
+                        ppack_icon = self._get_list_icon("ppack")
                         if isinstance(ppack_icon, QIcon):
                             item.setIcon(ppack_icon)
+                            item.setData(THEMED_ICON_ROLE, True)
                     self.file_items[file_path] = item
                     self.file_list.addItem(item)
 

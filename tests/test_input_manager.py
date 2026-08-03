@@ -1,6 +1,5 @@
 """Tests for gamepad input navigation."""
 
-import os
 from types import SimpleNamespace
 from typing import cast
 
@@ -65,7 +64,6 @@ class DummyCard(QFrame):
 
 
 def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> None:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     container = QWidget()
     container.show()
@@ -93,7 +91,6 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
 
 
 def test_card_grid_navigation_uses_visual_rows() -> None:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     container = QWidget()
     container.show()
@@ -123,7 +120,6 @@ def test_card_grid_navigation_uses_visual_rows() -> None:
 
 
 def test_library_toolbar_navigation_includes_delete_missing_button() -> None:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance() or QApplication([])
     toolbar = QWidget()
     toolbar.show()

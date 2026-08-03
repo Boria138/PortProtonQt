@@ -394,6 +394,7 @@ tests/
 ├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
 ├── test_autoinstall_status.py # Autoinstall installed-status matching regressions
 ├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
+├── test_file_explorer.py    # File explorer themed icon state regressions
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
 ├── test_time_utils.py       # Playtime parsing, last launch cache, formatting

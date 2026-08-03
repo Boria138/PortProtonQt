@@ -42,10 +42,11 @@ class ThemeStoreCard(QFrame):
         super().__init__()
         self.theme_data = theme_data
         self.card_width = card_width
+        self._hover_sound_pending = False
         self.setObjectName("themeStoreCard")
-        self.setProperty("sound_event", "open")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setMouseTracking(True)
         self.setFixedWidth(card_width)
         self.setStyleSheet(theme.THEME_STORE_CARD_STYLE)
 
@@ -54,6 +55,7 @@ class ThemeStoreCard(QFrame):
         layout.setSpacing(0)
 
         self.previewLabel = QLabel()
+        self.previewLabel.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.previewLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.previewLabel.setFixedHeight(int(card_width * 0.57))
         self.previewLabel.setStyleSheet(theme.THEME_STORE_PREVIEW_STYLE)
@@ -61,15 +63,18 @@ class ThemeStoreCard(QFrame):
 
         name = str(theme_data.get("name", ""))
         nameLabel = QLabel(name)
+        nameLabel.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         nameLabel.setStyleSheet(theme.THEME_STORE_CARD_TITLE_STYLE)
         layout.addWidget(nameLabel)
 
         author = str(theme_data.get("author") or _("Unknown"))
         authorLabel = QLabel(_("by {0}").format(author))
+        authorLabel.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         authorLabel.setStyleSheet(theme.THEME_STORE_CARD_META_STYLE)
         layout.addWidget(authorLabel)
 
         statsLabel = QLabel(self._stats_text())
+        statsLabel.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         statsLabel.setStyleSheet(theme.THEME_STORE_CARD_META_STYLE)
         layout.addWidget(statsLabel)
 
@@ -99,7 +104,24 @@ class ThemeStoreCard(QFrame):
             self.click()
         super().mousePressEvent(event)
 
+    def enterEvent(self, event) -> None:
+        self._hover_sound_pending = True
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._hover_sound_pending = False
+        super().leaveEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._hover_sound_pending:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
+            self._hover_sound_pending = False
+        super().mouseMoveEvent(event)
+
     def click(self) -> None:
+        from portprotonqt.sound_manager import SoundManager
+        SoundManager().play("open")
         self.clicked.emit(self.theme_data)
 
 

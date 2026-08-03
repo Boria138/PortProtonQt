@@ -2142,6 +2142,9 @@ msgstr "挂载"
 msgid "Auto"
 msgstr "自动"
 
+msgid "Account"
+msgstr ""
+
 msgid "Brief"
 msgstr "简要"
 
