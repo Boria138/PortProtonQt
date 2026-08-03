@@ -198,6 +198,17 @@ def is_restore_prefix_request(args: argparse.Namespace) -> bool:
 def main():
     parsed_args = parse_args()
 
+    if os.environ.get("PORTPROTONQT_INTEGRATE_APPIMAGE") == "1":
+        from portprotonqt.appimage_integration import integrate_appimage
+
+        setup_logger(parsed_args.debug_level)
+        try:
+            integrate_appimage()
+        except (OSError, subprocess.SubprocessError, KeyError) as error:
+            get_logger(__name__).error("Failed to integrate AppImage: %s", error)
+            return 1
+        return 0
+
     # Handle --reinstall-steam-compat-tool flag
     if parsed_args.reinstall_steam_compat_tool:
         success = reinstall_steam_compat_tool()

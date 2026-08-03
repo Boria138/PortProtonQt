@@ -1,5 +1,6 @@
 """Tests for user-level AppImage integration."""
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -79,6 +80,28 @@ def test_integrate_appimage_installs_handlers(
     assert commands == mime_commands + [
         ["update-desktop-database", str(applications)]
     ]
+
+
+def test_app_integrates_appimage_without_starting_gui(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from portprotonqt import app
+
+    integrated: list[bool] = []
+    monkeypatch.setenv("PORTPROTONQT_INTEGRATE_APPIMAGE", "1")
+    monkeypatch.setattr(
+        app,
+        "parse_args",
+        lambda: SimpleNamespace(debug_level="NOTSET"),
+    )
+    monkeypatch.setattr(
+        appimage_integration,
+        "integrate_appimage",
+        lambda: integrated.append(True),
+    )
+
+    assert app.main() == 0
+    assert integrated == [True]
 
 
 def test_integrate_appimage_requires_metadata(
