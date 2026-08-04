@@ -27,6 +27,7 @@ QTableWidget::item:selected,
 QTableWidget::item:selected:!active,
 QTableWidget::item:hover {{
     background: {color_accent};
+    color: {color_text_accent_hover};
 }}
 /* LogArea */
 QFrame {{

@@ -77,7 +77,7 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QMessageBox, QApplication, QPushButton, QCheckBox)
-from PySide6.QtCore import Qt, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QFileSystemWatcher, QObject
+from PySide6.QtCore import Qt, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QThread, QFileSystemWatcher, QObject
 from PySide6.QtGui import QColor, QDesktopServices, QHideEvent, QShowEvent, QGuiApplication
 from typing import cast
 from collections.abc import Callable
@@ -323,6 +323,7 @@ class MainWindow(
         self.launch_exe = launch_exe  # Store launch_exe path
         self._pending_log_exe: str | None = None
         self.appimageUpdateWorker: AppImageUpdateWorker | None = None
+        self.gogdlUpdateWorker: QThread | None = None
         self.compatibility_report_ready.connect(self._show_compatibility_report)
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)

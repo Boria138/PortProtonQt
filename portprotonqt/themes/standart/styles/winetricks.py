@@ -29,7 +29,7 @@ QTableWidget::item:selected,
 QTableWidget::item:focus,
 QTableWidget::item:selected:focus {{
     background: {color_accent};
-    color: {color_text};
+    color: {color_text_accent_hover};
     selection-background-color: {color_accent};
 }}
 QTableWidget::item:hover {{
@@ -37,6 +37,6 @@ QTableWidget::item:hover {{
 }}
 QTableWidget::item:selected:hover {{
     background: {color_accent};
-    color: {color_text};
+    color: {color_text_accent_hover};
 }}
 """

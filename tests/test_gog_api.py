@@ -288,12 +288,56 @@ def test_ensure_gogdl_downloads_matching_architecture(tmp_path: Path, monkeypatc
     api.data_dir = tmp_path
     asset = {"name": "gogdl_linux_x86_64"}
     response = Mock()
-    response.json.return_value = {"assets": [asset]}
+    response.json.return_value = {"assets": [asset], "tag_name": "v1.2.1"}
     monkeypatch.setattr("portprotonqt.gog_api.platform.machine", lambda: "x86_64")
     monkeypatch.setattr("portprotonqt.gog_api.requests.get", lambda *args, **kwargs: response)
-    monkeypatch.setattr(api, "_download_gogdl_asset", lambda selected: str(selected["name"]))
+    monkeypatch.setattr(
+        api, "_install_gogdl_release",
+        lambda selected, tag: f'{selected["name"]}:{tag}',
+    )
 
-    assert api.ensure_gogdl() == "gogdl_linux_x86_64"
+    assert api.ensure_gogdl() == "gogdl_linux_x86_64:v1.2.1"
+
+
+def test_update_gogdl_skips_current_release(tmp_path: Path, monkeypatch) -> None:
+    api = GOGAPI()
+    api.data_dir = tmp_path
+    api.gogdl_version_path = tmp_path / "bin/gogdl.version"
+    gogdl_path = tmp_path / "bin/gogdl"
+    gogdl_path.parent.mkdir()
+    gogdl_path.touch()
+    gogdl_path.chmod(0o755)
+    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", lambda: ({}, "v1.2.1"))
+    install = Mock()
+    monkeypatch.setattr(api, "_install_gogdl_release", install)
+
+    assert api.update_gogdl() == str(gogdl_path)
+    install.assert_not_called()
+
+
+def test_update_gogdl_installs_new_release(tmp_path: Path, monkeypatch) -> None:
+    api = GOGAPI()
+    api.data_dir = tmp_path
+    api.gogdl_version_path = tmp_path / "bin/gogdl.version"
+    asset = {"name": "gogdl_linux_x86_64"}
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", lambda: (asset, "v1.2.1"))
+    monkeypatch.setattr(
+        api, "_install_gogdl_release",
+        lambda selected, tag: f'{selected["name"]}:{tag}',
+    )
+
+    assert api.update_gogdl() == "gogdl_linux_x86_64:v1.2.1"
+
+
+def test_install_gogdl_release_records_version(tmp_path: Path, monkeypatch) -> None:
+    api = GOGAPI()
+    api.gogdl_version_path = tmp_path / "bin/gogdl.version"
+    api.gogdl_version_path.parent.mkdir()
+    monkeypatch.setattr(api, "_download_gogdl_asset", lambda _asset: "/bin/gogdl")
+
+    assert api._install_gogdl_release({}, "v1.2.1") == "/bin/gogdl"
+    assert api.gogdl_version_path.read_text(encoding="utf-8") == "v1.2.1"
 
 
 def test_authenticate_returns_gogdl_error(monkeypatch) -> None:

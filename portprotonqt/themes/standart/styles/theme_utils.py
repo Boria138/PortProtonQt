@@ -22,18 +22,18 @@ CONTEXT_MENU_STYLE = f"""
     }}
     QMenu::item:selected {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QMenu::item:disabled {{
             color: {color_separator};
         }}
     QMenu::item:hover {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QMenu::item:focus {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
         border: {border_thin} {color_border_focus};
         border-radius: {border_radius_small};
     }}
@@ -61,14 +61,17 @@ QPushButton {{
 QPushButton:hover {{
     background-color: {color_accent};
     border: {border_thin} {color_accent};
+    color: {color_text_accent_hover};
 }}
 QPushButton:focus {{
     border: {border_thin} {color_accent};
     background-color: {color_accent};
+    color: {color_text_accent_hover};
 }}
 QPushButton[vk_selected="true"] {{
     border: {border_thin} {color_accent};
     background-color: {color_accent};
+    color: {color_text_accent_hover};
 }}
 QPushButton:pressed {{
     background-color: {color_surface};
@@ -76,7 +79,7 @@ QPushButton:pressed {{
 }}
 QPushButton[checked="true"] {{
     background-color: {color_accent};
-    color: {color_text};
+    color: {color_text_accent_hover};
     border: {border_none} {color_transparent};
 }}
 QPushButton[checked="true"]:focus {{

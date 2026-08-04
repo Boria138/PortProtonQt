@@ -20,17 +20,17 @@ FILE_EXPLORER_STYLE = f"""
     }}
     QListView::item:selected {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
         border-radius: {border_radius_small};
     }}
     QListView::item:hover {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
         border-radius: {border_radius_small};
     }}
     QListView::item:focus {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
         border-radius: {border_radius_small};
     }}
 """

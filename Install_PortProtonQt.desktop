@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Install PortProtonQt
+Name[ru]=Установить PortProtonQt
+Name[es]=Instalar PortProtonQt
+Comment=Download and install the latest PortProtonQt AppImage
+Comment[ru]=Скачать и установить последнюю версию PortProtonQt AppImage
+Exec=sh -c "(curl -fsSL https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/install.sh || curl -fsSL https://raw.githubusercontent.com/Boria138/PortProtonQt/main/install.sh) | sh"
+Icon=system-software-install
+StartupNotify=false
+Terminal=true
+Type=Application
+Categories=Game;

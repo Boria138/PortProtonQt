@@ -198,6 +198,17 @@ def is_restore_prefix_request(args: argparse.Namespace) -> bool:
 def main():
     parsed_args = parse_args()
 
+    if os.environ.get("PORTPROTONQT_INTEGRATE_APPIMAGE") == "1":
+        from portprotonqt.appimage_integration import integrate_appimage
+
+        setup_logger(parsed_args.debug_level)
+        try:
+            integrate_appimage()
+        except (OSError, subprocess.SubprocessError, KeyError) as error:
+            get_logger(__name__).error("Failed to integrate AppImage: %s", error)
+            return 1
+        return 0
+
     # Handle --reinstall-steam-compat-tool flag
     if parsed_args.reinstall_steam_compat_tool:
         success = reinstall_steam_compat_tool()
@@ -328,11 +339,13 @@ def main():
 
     from PySide6.QtCore import QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
+    from requests import RequestException
     from portprotonqt.appimage_updater import (
         APPIMAGE_UPDATE_START_DELAY_MS,
         AppImageUpdateWorker,
     )
     from portprotonqt.main_window import MainWindow
+    from portprotonqt.gog_api import GOGAPI
     from portprotonqt.port_data_path_selector import ask_portdata_path, is_portdata_path_read_write
     from portprotonqt.portproton_api import (
         PortProtonAPI,
@@ -674,6 +687,27 @@ def main():
     )
     window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
     QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
+
+    class GOGDLUpdateWorker(QThread):
+        """Update gogdl without blocking the UI thread."""
+
+        def __init__(self, api: GOGAPI) -> None:
+            super().__init__()
+            self.api = api
+
+        def run(self) -> None:
+            try:
+                self.api.update_gogdl()
+            except (OSError, RequestException):
+                logger.exception("Failed to update gogdl")
+
+    gogdl_update_worker = GOGDLUpdateWorker(window.gog_api)
+    window.gogdlUpdateWorker = gogdl_update_worker
+    gogdl_update_worker.finished.connect(
+        lambda: setattr(window, "gogdlUpdateWorker", None)
+    )
+    gogdl_update_worker.finished.connect(gogdl_update_worker.deleteLater)
+    gogdl_update_worker.start()
 
     # Execute the initial PortProton command after the UI is set up
     class InitialCommandWorker(QThread):

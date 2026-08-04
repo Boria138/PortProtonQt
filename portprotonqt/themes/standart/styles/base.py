@@ -237,14 +237,17 @@ ACTION_BUTTON_STYLE = f"""
     }}
     QPushButton:hover {{
         background: {color_accent};
+        color: {color_text_accent_hover};
         border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
         background: {color_bg};
+        color: {color_text_accent_hover};color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -262,6 +265,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -269,6 +273,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -286,6 +291,7 @@ DRIVES_BUTTON_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -293,6 +299,7 @@ DRIVES_BUTTON_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -311,6 +318,7 @@ OVERLAY_BUTTON_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -318,6 +326,7 @@ OVERLAY_BUTTON_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -520,10 +529,12 @@ MESSAGE_BOX_STYLE = f"""
     QMessageBox QPushButton:hover {{
         background: {color_accent};
         border-color: border: {border_thin} {color_accent};
+        color: {color_text_accent_hover};
     }}
     QMessageBox QPushButton:focus {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -615,11 +626,13 @@ COMBOBOX_STYLE = f"""
     QComboBox:hover {{
         border: {border_medium} {color_accent};
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     /* Focus state */
     QComboBox:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QComboBox:disabled {{
         background: {color_combo_disabled_bg};
@@ -686,7 +699,7 @@ COMBOBOX_STYLE = f"""
     /* Selection in list when item is focused */
     QListView::item:focus {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -748,6 +761,7 @@ SETTINGS_TABLE_COMBOBOX_STYLE = f"""
     QComboBox#settingsTableCombo:focus {{
         background: {color_surface};
         border: {border_medium} {color_accent};
+        color: {color_text};
     }}
 """
 
@@ -870,9 +884,10 @@ TAB_STYLE = f"""
     }}
     QTabBar::tab:selected {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QTabBar::tab:hover {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """

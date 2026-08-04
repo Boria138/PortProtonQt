@@ -49,6 +49,7 @@ class GOGAPI:
         self.auth_path = self.data_dir / "auth.json"
         self.account_path = self.data_dir / "account.json"
         self.config_dir = self.data_dir / "gogdl"
+        self.gogdl_version_path = self.data_dir / "bin/gogdl.version"
         self.library_path = self.data_dir / "library.json"
         self.installed_path = self.data_dir / "installed.json"
         self.sizes_path = self.data_dir / "sizes.json"
@@ -76,19 +77,51 @@ class GOGAPI:
         existing = self.get_gogdl_path()
         if existing:
             return existing
+        asset, release_tag = self._get_latest_gogdl_release()
+        return self._install_gogdl_release(asset, release_tag)
+
+    def update_gogdl(self) -> str:
+        """Update the bundled gogdl binary to the latest official release."""
+        asset, release_tag = self._get_latest_gogdl_release()
+        bundled = self.data_dir / "bin/gogdl"
+        if (
+            bundled.is_file()
+            and os.access(bundled, os.X_OK)
+            and self._get_gogdl_release_tag() == release_tag
+        ):
+            return str(bundled)
+        return self._install_gogdl_release(asset, release_tag)
+
+    def _get_latest_gogdl_release(self) -> tuple[dict, str]:
+        """Return the matching asset and tag from the latest gogdl release."""
         architecture = {"x86_64": "x86_64", "aarch64": "arm64"}.get(platform.machine())
         if not architecture:
             raise OSError(f"Unsupported gogdl architecture: {platform.machine()}")
         response = requests.get(GOGDL_RELEASE_URL, timeout=15)
         response.raise_for_status()
+        release = response.json()
         asset_name = f"gogdl_linux_{architecture}"
         asset = next(
-            (item for item in response.json().get("assets", []) if item.get("name") == asset_name),
+            (item for item in release.get("assets", []) if item.get("name") == asset_name),
             None,
         )
         if not asset:
             raise OSError(f"gogdl release asset not found: {asset_name}")
-        return self._download_gogdl_asset(asset)
+        release_tag = str(release.get("tag_name", ""))
+        if not release_tag:
+            raise OSError("gogdl release tag not found")
+        return asset, release_tag
+
+    def _get_gogdl_release_tag(self) -> str:
+        try:
+            return self.gogdl_version_path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return ""
+
+    def _install_gogdl_release(self, asset: dict, release_tag: str) -> str:
+        path = self._download_gogdl_asset(asset)
+        self.gogdl_version_path.write_text(release_tag, encoding="utf-8")
+        return path
 
     def _download_gogdl_asset(self, asset: dict) -> str:
         target = self.data_dir / "bin/gogdl"
