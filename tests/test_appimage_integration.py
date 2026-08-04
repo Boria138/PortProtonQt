@@ -16,7 +16,10 @@ def test_integrate_appimage_installs_handlers(
     source.parent.mkdir()
     appdir.mkdir()
     source.write_text("appimage", encoding="utf-8")
-    (appdir / ".DirIcon").write_text("icon", encoding="utf-8")
+    (appdir / f"{appimage_integration.APP_ID}.svg").write_text(
+        "icon",
+        encoding="utf-8",
+    )
     (appdir / f"{appimage_integration.APP_ID}.desktop").write_text(
         "[Desktop Entry]\n"
         "Name=PortProtonQt\n"
@@ -36,14 +39,14 @@ def test_integrate_appimage_installs_handlers(
         lambda _location: str(desktop_dir),
     )
     stale_applications = tmp_path / "data" / "applications"
-    stale_icons = tmp_path / "AppImages" / ".icons"
+    icon_dir = tmp_path / "data/icons/hicolor/scalable/apps"
     stale_applications.mkdir(parents=True)
-    stale_icons.mkdir(parents=True)
+    icon_dir.mkdir(parents=True)
     (stale_applications / f"{appimage_integration.APP_ID}.log.desktop").write_text(
         "stale",
         encoding="utf-8",
     )
-    stale_png = stale_icons / f"{appimage_integration.APP_ID}.png"
+    stale_png = icon_dir / f"{appimage_integration.APP_ID}.png"
     stale_png.write_text("stale", encoding="utf-8")
     commands = []
     monkeypatch.setattr(
@@ -57,12 +60,19 @@ def test_integrate_appimage_installs_handlers(
     assert destination == tmp_path / "AppImages" / "portprotonqt.appimage"
     assert destination.read_text(encoding="utf-8") == "appimage"
     assert not stale_png.exists()
+    installed_icon = (
+        tmp_path
+        / "data/icons/hicolor/scalable/apps"
+        / f"{appimage_integration.APP_ID}.svg"
+    )
+    assert installed_icon.read_text(encoding="utf-8") == "icon"
     applications = tmp_path / "data" / "applications"
     main_entry = (
         applications / f"{appimage_integration.APP_ID}.desktop"
     ).read_text()
     assert str(destination) in main_entry
     assert "TryExec=" in main_entry
+    assert f"Icon={appimage_integration.APP_ID}\n" in main_entry
     desktop_entry = desktop_dir / f"{appimage_integration.APP_ID}.desktop"
     assert desktop_entry.read_text(encoding="utf-8") == main_entry
     assert desktop_entry.stat().st_mode & 0o111
@@ -75,6 +85,7 @@ def test_integrate_appimage_installs_handlers(
         assert "NoDisplay=true" in entry
         assert "Name=PortProtonQt — " in entry
         assert "Comment=" in entry
+        assert f"Icon={appimage_integration.APP_ID}\n" in entry
         assert "StartupWMClass=ru.linux_gaming.PortProtonQt" in entry
         assert "StartupNotify=true" in entry
     mime_commands = [
