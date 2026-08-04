@@ -29,6 +29,12 @@ def test_integrate_appimage_installs_handlers(
     monkeypatch.setenv("APPDIR", str(appdir))
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    desktop_dir = tmp_path / "Desktop"
+    monkeypatch.setattr(
+        appimage_integration.QStandardPaths,
+        "writableLocation",
+        lambda _location: str(desktop_dir),
+    )
     stale_applications = tmp_path / "data" / "applications"
     stale_icons = tmp_path / "AppImages" / ".icons"
     stale_applications.mkdir(parents=True)
@@ -57,6 +63,9 @@ def test_integrate_appimage_installs_handlers(
     ).read_text()
     assert str(destination) in main_entry
     assert "TryExec=" in main_entry
+    desktop_entry = desktop_dir / f"{appimage_integration.APP_ID}.desktop"
+    assert desktop_entry.read_text(encoding="utf-8") == main_entry
+    assert desktop_entry.stat().st_mode & 0o111
     for mode in ("log", "silent"):
         entry = (
             applications / f"{appimage_integration.APP_ID}.{mode}.desktop"
@@ -82,26 +91,37 @@ def test_integrate_appimage_installs_handlers(
     ]
 
 
-def test_app_integrates_appimage_without_starting_gui(
+def test_app_continues_startup_after_integrating_appimage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from portprotonqt import app
 
     integrated: list[bool] = []
+    reinstalled: list[bool] = []
     monkeypatch.setenv("PORTPROTONQT_INTEGRATE_APPIMAGE", "1")
     monkeypatch.setattr(
         app,
         "parse_args",
-        lambda: SimpleNamespace(debug_level="NOTSET"),
+        lambda: SimpleNamespace(
+            debug_level="NOTSET",
+            reinstall_steam_compat_tool=True,
+        ),
     )
     monkeypatch.setattr(
         appimage_integration,
         "integrate_appimage",
         lambda: integrated.append(True),
     )
+    monkeypatch.setattr(
+        app,
+        "reinstall_steam_compat_tool",
+        lambda: reinstalled.append(True) or True,
+    )
 
-    assert app.main() == 0
+    with pytest.raises(SystemExit, match="0"):
+        app.main()
     assert integrated == [True]
+    assert reinstalled == [True]
 
 
 def test_integrate_appimage_requires_metadata(

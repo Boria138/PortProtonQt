@@ -207,7 +207,6 @@ def main():
         except (OSError, subprocess.SubprocessError, KeyError) as error:
             get_logger(__name__).error("Failed to integrate AppImage: %s", error)
             return 1
-        return 0
 
     # Handle --reinstall-steam-compat-tool flag
     if parsed_args.reinstall_steam_compat_tool:

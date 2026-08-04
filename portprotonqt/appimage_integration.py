@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QStandardPaths, QThread, Signal
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -95,11 +95,16 @@ def _install_desktop_files(
     icon: Path,
 ) -> None:
     content = source.read_text(encoding="utf-8")
+    rewritten_content = _rewrite_main_desktop(content, appimage, icon)
     main_path = applications_dir / f"{APP_ID}.desktop"
-    main_path.write_text(
-        _rewrite_main_desktop(content, appimage, icon),
-        encoding="utf-8",
+    main_path.write_text(rewritten_content, encoding="utf-8")
+    desktop_dir = Path(
+        QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
     )
+    desktop_dir.mkdir(parents=True, exist_ok=True)
+    desktop_path = desktop_dir / f"{APP_ID}.desktop"
+    desktop_path.write_text(rewritten_content, encoding="utf-8")
+    desktop_path.chmod(EXECUTABLE_MODE)
     for mode in INTEGRATION_MODES:
         path = applications_dir / f"{APP_ID}.{mode}.desktop"
         path.write_text(_mode_desktop(mode, appimage, icon), encoding="utf-8")
