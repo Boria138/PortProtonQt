@@ -39,7 +39,7 @@ def test_integrate_appimage_installs_handlers(
         lambda _location: str(desktop_dir),
     )
     stale_applications = tmp_path / "data" / "applications"
-    icon_dir = tmp_path / "data/icons/hicolor/scalable/apps"
+    icon_dir = tmp_path / "data/icons"
     stale_applications.mkdir(parents=True)
     icon_dir.mkdir(parents=True)
     (stale_applications / f"{appimage_integration.APP_ID}.log.desktop").write_text(
@@ -62,7 +62,7 @@ def test_integrate_appimage_installs_handlers(
     assert not stale_png.exists()
     installed_icon = (
         tmp_path
-        / "data/icons/hicolor/scalable/apps"
+        / "data/icons"
         / f"{appimage_integration.APP_ID}.svg"
     )
     assert installed_icon.read_text(encoding="utf-8") == "icon"

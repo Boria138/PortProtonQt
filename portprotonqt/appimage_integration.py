@@ -151,7 +151,7 @@ def integrate_appimage() -> Path:
     appimages_dir = Path.home() / "AppImages"
     data_home = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local/share"))
     applications_dir = data_home / "applications"
-    icon_dir = data_home / "icons/hicolor/scalable/apps"
+    icon_dir = data_home / "icons"
     appimages_dir.mkdir(parents=True, exist_ok=True)
     applications_dir.mkdir(parents=True, exist_ok=True)
     icon_dir.mkdir(parents=True, exist_ok=True)
