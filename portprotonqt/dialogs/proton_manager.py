@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from PySide6.QtGui import QGuiApplication
+from shiboken6 import isValid
 
 from portprotonqt.config import get_portproton_start_command, ui_config
 from portprotonqt.dialogs.base import DraggableDialog
@@ -21,7 +22,9 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
 from portprotonqt.version_utils import version_sort_key
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
-from portprotonqt.dialogs.wine_loader import WineLoadingThread, get_cpu_level
+from portprotonqt.dialogs.wine_loader import (
+    InstalledWineSizeThread, WineLoadingThread, get_cpu_level,
+)
 from portprotonqt.dialogs.wine_downloader import DownloadThread
 from portprotonqt.dialogs.wine_extractor import ExtractionThread
 from portprotonqt.preloader import Preloader
@@ -29,6 +32,7 @@ from portprotonqt.steam_api import get_steam_compatibilitytools_dir, get_steam_h
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+WINE_TABLE_ROW_BATCH_SIZE = 8
 
 
 class ProtonManager(DraggableDialog):
@@ -47,6 +51,7 @@ class ProtonManager(DraggableDialog):
         self.input_manager = input_manager
         self.initial_command_executed = False
         self.wine_loading_thread = None
+        self._installed_size_tables = {}
 
         self.main_window = None
         parent_widget = self.parent()
@@ -249,9 +254,47 @@ class ProtonManager(DraggableDialog):
 
     def on_wine_data_loaded(self, metadata):
         self.wine_metadata = metadata
-        self.refresh_wine_tabs()
-        if hasattr(self, 'content_stack'):
-            self.content_stack.setCurrentIndex(1)
+        self._start_incremental_wine_tabs(metadata)
+
+    def _start_incremental_wine_tabs(self, metadata: dict) -> None:
+        self.cpu_level = get_cpu_level()
+        logger.info("Detected CPU level: %s", self.cpu_level)
+        tabs = []
+        for source_name, entries in metadata.items():
+            filtered_entries = self.filter_entries_by_cpu_level(entries, source_name)
+            tabs.append((source_name, sorted(filtered_entries, key=version_sort_key)))
+        tabs.sort(key=lambda item: (item[0] != 'proton_lg', item[0]))
+        self.selected_assets.clear()
+        self.tab_widget.clear()
+        self._wine_tab_queue = tabs
+        self._wine_current_tab = None
+        QTimer.singleShot(0, self._add_next_wine_row_batch)
+
+    def _add_next_wine_row_batch(self) -> None:
+        if self._wine_current_tab is None:
+            if not self._wine_tab_queue:
+                self.create_installed_tab()
+                self.update_selection_display()
+                self.content_stack.setCurrentIndex(1)
+                return
+            source_name, entries = self._wine_tab_queue.pop(0)
+            table = self._create_empty_wine_tab(source_name, len(entries))
+            self._wine_current_tab = (source_name, entries, table, 0)
+
+        source_name, entries, table, row_index = self._wine_current_tab
+        batch_end = min(row_index + WINE_TABLE_ROW_BATCH_SIZE, len(entries))
+        table.setUpdatesEnabled(False)
+        try:
+            for index in range(row_index, batch_end):
+                self.add_asset_row_from_json(table, index, entries[index], source_name)
+        finally:
+            table.setUpdatesEnabled(True)
+        if batch_end == len(entries):
+            logger.info("Successfully created tab for %s", source_name)
+            self._wine_current_tab = None
+        else:
+            self._wine_current_tab = (source_name, entries, table, batch_end)
+        QTimer.singleShot(0, self._add_next_wine_row_batch)
 
     def on_wine_data_load_error(self, error_msg):
         logger.error(f"Wine data loading failed: {error_msg}")
@@ -341,12 +384,6 @@ class ProtonManager(DraggableDialog):
 
     def create_tab_from_entries(self, source_name, entries):
         try:
-            tab = QWidget()
-            tab.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            layout = QVBoxLayout(tab)
-            layout.setContentsMargins(5, 5, 5, 5)
-            layout.setSpacing(5)
-            table = self.create_table_widget()
             all_entries = []
             for entry in entries:
                 url = entry.get('url', '')
@@ -357,17 +394,27 @@ class ProtonManager(DraggableDialog):
                         entry['filename'] = url_filename
                 all_entries.append(entry)
             all_entries.sort(key=version_sort_key)
-            table.setRowCount(len(all_entries))
+            table = self._create_empty_wine_tab(source_name, len(all_entries))
             for row_index, entry in enumerate(all_entries):
                 self.add_asset_row_from_json(table, row_index, entry, source_name)
-            layout.addWidget(table, 1)
-            tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()
-            self.tab_widget.addTab(tab, tab_name)
             logger.info(f"Successfully created tab for {source_name}")
             return True
         except Exception as e:
             logger.error(f"Error creating tab for {source_name}: {e}")
             return False
+
+    def _create_empty_wine_tab(self, source_name: str, row_count: int) -> QTableWidget:
+        tab = QWidget()
+        tab.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
+        table = self.create_table_widget()
+        table.setRowCount(row_count)
+        layout.addWidget(table, 1)
+        tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()
+        self.tab_widget.addTab(tab, tab_name)
+        return table
 
     def get_short_source_name(self, full_name):
         if full_name is None:
@@ -506,6 +553,24 @@ class ProtonManager(DraggableDialog):
             self.add_installed_row(table, row_index, version_name, version_path)
         layout.addWidget(table, 1)
         self.tab_widget.addTab(tab, _("Installed"))
+        size_thread = InstalledWineSizeThread(installed_versions, self)
+        self._installed_size_tables[size_thread] = table
+        size_thread.sizes_loaded.connect(self._on_installed_sizes_loaded)
+        size_thread.finished.connect(self._on_installed_size_thread_finished)
+        size_thread.finished.connect(size_thread.deleteLater)
+        size_thread.start()
+
+    def _on_installed_sizes_loaded(self, sizes: list[str]) -> None:
+        table = self._installed_size_tables.get(self.sender())
+        if table is None or not isValid(table):
+            return
+        for row_index, size in enumerate(sizes):
+            size_item = table.item(row_index, 2)
+            if size_item is not None and size:
+                size_item.setText(size)
+
+    def _on_installed_size_thread_finished(self) -> None:
+        self._installed_size_tables.pop(self.sender(), None)
 
     def get_installed_versions(self) -> list[tuple[str, str]]:
         portproton_location = self.portproton_location
@@ -562,8 +627,7 @@ class ProtonManager(DraggableDialog):
         version_item = QTableWidgetItem(version_name)
         version_item.setFlags(version_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         table.setItem(row_index, 1, version_item)
-        size_str = self.get_directory_size(version_path)
-        size_item = QTableWidgetItem(size_str)
+        size_item = QTableWidgetItem(_("Unknown"))
         size_item.setFlags(size_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         table.setItem(row_index, 2, size_item)
         for col in range(table.columnCount()):
@@ -576,30 +640,6 @@ class ProtonManager(DraggableDialog):
 
     def on_installed_version_toggled(self, state):
         self.update_selection_display()
-
-    def get_directory_size(self, path):
-        try:
-            total_size = 0
-            for dirpath, _dirnames, filenames in os.walk(path):
-                for filename in filenames:
-                    filepath = os.path.join(dirpath, filename)
-                    if os.path.exists(filepath):
-                        total_size += os.path.getsize(filepath)
-            if total_size == 0:
-                return "0 B"
-            elif total_size < 1024:
-                return f"{total_size}.0 B"
-            elif total_size < 1024 * 1024:
-                return f"{int(total_size / 1024)}.{int((total_size / 1024 * 10) % 10)} KiB"
-            elif total_size < 1024 * 1024 * 1024:
-                return f"{int(total_size / (1024 * 1024))}.{int((total_size / (1024 * 1024) * 10) % 10)} MiB"
-            elif total_size < 1024 * 1024 * 1024 * 1024:
-                return f"{int(total_size / (1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024) * 10) % 10)} GiB"
-            else:
-                return f"{int(total_size / (1024 * 1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024 * 1024) * 10) % 10)} TiB"
-        except Exception as e:
-            logger.debug("Failed to format size: %s", e)
-            return _("Unknown")
 
     def convert_size_to_bytes(self, size_str):
         if not size_str or size_str == _("Unknown"):
