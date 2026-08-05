@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGraphicsItem, QToolButton, QFrame, QLabel, QGraph
 from PySide6.QtWidgets import QSpacerItem, QGraphicsPixmapItem, QDialog, QApplication
 from PIL import Image, ImageQt, ImageSequence
 from portprotonqt.config import ui_config
-from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.theme_manager import ThemeManager, load_theme
 from portprotonqt.downloader import Downloader
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.logger import get_logger
@@ -396,15 +396,16 @@ def load_pixmap_async(
     def process_image():
         theme_manager = ThemeManager()
         current_theme_name = ui_config.get_theme()
+        theme = theme_manager.current_theme_module or load_theme(current_theme_name)
 
         def finish_with(pixmap: QPixmap):
             # Check if pixmap is valid before attempting to scale it
             if pixmap.isNull():
                 # Create a default placeholder pixmap instead of trying to scale a null pixmap
                 placeholder_pixmap = QPixmap(width, height)
-                placeholder_pixmap.fill(QColor("#333333"))
+                placeholder_pixmap.fill(QColor(theme.color_placeholder_bg))
                 painter = QPainter(placeholder_pixmap)
-                painter.setPen(QPen(QColor("white")))
+                painter.setPen(QPen(QColor(theme.color_white)))
                 painter.drawText(placeholder_pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
                 painter.end()
                 callback(placeholder_pixmap)
@@ -432,9 +433,9 @@ def load_pixmap_async(
                     logger.warning(f"Failed to load placeholder image from {placeholder_path}")
                 return pixmap
             pixmap = QPixmap(width, height)
-            pixmap.fill(QColor("#333333"))
+            pixmap.fill(QColor(theme.color_placeholder_bg))
             painter = QPainter(pixmap)
-            painter.setPen(QPen(QColor("white")))
+            painter.setPen(QPen(QColor(theme.color_white)))
             painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
             painter.end()
             return pixmap
@@ -690,9 +691,9 @@ class FullscreenDialog(QDialog):
         if pixmap.isNull():
             # Create a default placeholder pixmap instead of trying to scale a null pixmap
             placeholder_pixmap = QPixmap(self.FIXED_WIDTH - 80, self.FIXED_HEIGHT)
-            placeholder_pixmap.fill(QColor("#333333"))
+            placeholder_pixmap.fill(QColor(self.theme.color_placeholder_bg))
             painter = QPainter(placeholder_pixmap)
-            painter.setPen(QPen(QColor("white")))
+            painter.setPen(QPen(QColor(self.theme.color_white)))
             painter.drawText(placeholder_pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
             painter.end()
             self.imageLabel.setPixmap(placeholder_pixmap)

@@ -612,7 +612,7 @@ class GamescopeSettingsMixin:
         selector_layout.addWidget(self.gamescope_category_combo)
 
         self.gamescope_category_stack = QStackedWidget()
-        self.gamescope_category_stack.setStyleSheet("background: transparent;")
+        self.gamescope_category_stack.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         selector_layout.addWidget(self.gamescope_category_stack)
 
         toggle_lookup = dict(GAMESCOPE_TOGGLE_SPECS)

@@ -1468,7 +1468,7 @@ class MainWindow(
         def on_pixmap(pixmap):
             if pixmap.isNull():
                 if callback:
-                    callback([QColor("#1a1a1a")] * num_colors)
+                    callback([QColor(self.theme.color_default_fallback)] * num_colors)
                     return
 
             image = pixmap.toImage()
@@ -1504,7 +1504,7 @@ class MainWindow(
         """Extract color palette from a QPixmap directly."""
         if pixmap.isNull():
             if callback:
-                callback([QColor("#1a1a1a")] * num_colors)
+                callback([QColor(self.theme.color_default_fallback)] * num_colors)
                 return
 
         image = pixmap.toImage()

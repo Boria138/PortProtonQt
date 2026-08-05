@@ -567,7 +567,7 @@ class MangoHudSettingsMixin:
         selector_layout.addWidget(self.mangohud_category_combo)
 
         self.mangohud_category_stack = QStackedWidget()
-        self.mangohud_category_stack.setStyleSheet("background: transparent;")
+        self.mangohud_category_stack.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         selector_layout.addWidget(self.mangohud_category_stack)
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)

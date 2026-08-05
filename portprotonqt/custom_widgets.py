@@ -837,7 +837,7 @@ class AutoHideScrollArea(QScrollArea):
         self.fade_duration_ms = fade_duration_ms
 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.setStyleSheet("background: transparent;")
+        self.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
 
         self._v_scrollbar = self.verticalScrollBar()
         self._v_scrollbar.installEventFilter(self)

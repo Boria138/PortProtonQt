@@ -758,6 +758,20 @@ class TestThemeStylesIntegrity:
         content = self._read_theme("classic-light")
         assert 'THEME_INHERITS = "standart-light"' in content
 
+    def test_standart_defines_shared_visual_constants(self):
+        styles_dir = self._themes_dir / "standart" / "styles"
+        constants = (styles_dir / "constants.py").read_text(encoding="utf-8")
+        base = (styles_dir / "base.py").read_text(encoding="utf-8")
+
+        assert "color_preloader" in constants
+        assert "TRANSPARENT_BACKGROUND_STYLE" in base
+
+    def test_standart_light_defines_shared_visual_constants(self):
+        content = self._read_theme("standart-light")
+
+        assert "color_preloader" in content
+        assert "TRANSPARENT_BACKGROUND_STYLE" in content
+
 
 # === Integration: all theme .py files are valid Python ===
 

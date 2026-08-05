@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QWidget
 from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager, load_theme
 
-_DEFAULT_PRELOADER = {
+PRELOADER_DEFAULT = {
     "style": "default",
     "speed": 180.0,
     "line_width": 20,
@@ -18,6 +18,8 @@ _DEFAULT_PRELOADER = {
     "bat_flap_speed": 3.0,
     "bat_alpha": 220,
     "bat_color": "#bd93f9",
+    "bat_eye_color": "#282a36",
+    "bat_fang_color": "#f8f8f2",
     "pulse_count": 3,
     "pulse_max_radius": 40,
     "pulse_speed": 2.0,
@@ -43,7 +45,7 @@ def _load_preloader_config() -> dict:
             theme = load_theme(ui_config.get_theme())
         except FileNotFoundError:
             theme = load_theme("standart")
-    return getattr(theme, "PRELOADER", _DEFAULT_PRELOADER)
+    return PRELOADER_DEFAULT | getattr(theme, "PRELOADER", {})
 
 
 class Preloader(QWidget):
@@ -236,7 +238,7 @@ class Preloader(QWidget):
 
         eye_r = size * 0.018
         blink = max(0.1, abs(math.sin((time.time() - self._pulse_start) * 0.4)))
-        painter.setBrush(QBrush(QColor("#282a36")))
+        painter.setBrush(QBrush(QColor(self._config["bat_eye_color"])))
         for side in (-1, 1):
             painter.drawEllipse(
                 QPointF(side * head_r * 0.35, head_y),
@@ -245,7 +247,7 @@ class Preloader(QWidget):
 
         fang_len = size * 0.07
         fang_w = size * 0.015
-        painter.setBrush(QBrush(QColor("#f8f8f2")))
+        painter.setBrush(QBrush(QColor(self._config["bat_fang_color"])))
         for side in (-1, 1):
             path = QPainterPath()
             fx = side * head_r * 0.18
@@ -297,7 +299,6 @@ class Preloader(QWidget):
             if parsed.isValid():
                 return parsed
 
-        fallback = QColor(0, 120, 215)
         theme_manager = ThemeManager()
         theme = theme_manager.current_theme_module
         if theme is None:
@@ -312,7 +313,7 @@ class Preloader(QWidget):
             parsed = self._parse_color_string(getattr(theme, attr_name))
             if parsed.isValid():
                 return parsed
-        return fallback
+        return QColor(load_theme("standart").color_preloader)
 
     def _parse_color_string(self, value):
         if isinstance(value, QColor):

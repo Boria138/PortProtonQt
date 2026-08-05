@@ -43,3 +43,4 @@ portprotonqt/locales/*/LC_MESSAGES/*.mo
 
 # AI
 .codex
+CODE_QUALITY_PLAN.md
