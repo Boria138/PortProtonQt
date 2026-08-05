@@ -48,8 +48,16 @@ jobs:
             echo "Syncing branch: $branch"
             git push origin "refs/remotes/upstream/$branch:refs/heads/$branch" --force
           done
+
+          # 5. Remove branches deleted from upstream
+          for branch in $(git branch -r | grep 'origin/' | grep -v 'origin/main' | grep -v 'origin/HEAD' | sed 's/.*origin\///'); do
+            if ! git show-ref --verify --quiet "refs/remotes/upstream/$branch"; then
+              echo "Removing stale branch: $branch"
+              git push origin --delete "$branch"
+            fi
+          done
           
-          # 5. Push tags
+          # 6. Push tags
           git push origin --tags --force
 
       - name: Sync Releases and Assets
