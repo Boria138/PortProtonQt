@@ -599,7 +599,12 @@ def test_remote_cover_replaces_immediate_exe_fallback_only_on_success(
     monkeypatch.setattr(image_utils.image_executor, "submit", lambda callback: callback())
     monkeypatch.setattr(image_utils, "downloader", SimpleNamespace(download_async=defer_download))
     monkeypatch.setattr(image_utils.ui_config, "get_theme", lambda: "standart")
-    monkeypatch.setattr(image_utils, "ThemeManager", lambda: SimpleNamespace())
+    theme = SimpleNamespace(color_placeholder_bg="#333333", color_white="#ffffff")
+    monkeypatch.setattr(
+        image_utils,
+        "ThemeManager",
+        lambda: SimpleNamespace(current_theme_module=theme),
+    )
 
     image_utils.load_pixmap_async(
         "https://example.org/game.jpg", 100, 150,
