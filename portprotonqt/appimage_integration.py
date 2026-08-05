@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QStandardPaths, QThread, Signal
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -53,10 +53,10 @@ def _remove_existing_integration(applications_dir: Path, icon_dir: Path) -> None
         (icon_dir / f"{APP_ID}{suffix}").unlink(missing_ok=True)
 
 
-def _rewrite_main_desktop(content: str, appimage: Path, icon: Path) -> str:
+def _rewrite_main_desktop(content: str, appimage: Path) -> str:
     exec_line = f"Exec={shlex.join([str(appimage), '%u'])}"
     content = re.sub(r"^Exec=.*$", exec_line, content, count=1, flags=re.MULTILINE)
-    content = re.sub(r"^Icon=.*$", f"Icon={icon}", content, flags=re.MULTILINE)
+    content = re.sub(r"^Icon=.*$", f"Icon={APP_ID}", content, flags=re.MULTILINE)
     if re.search(r"^TryExec=", content, flags=re.MULTILINE):
         return re.sub(
             r"^TryExec=.*$",
@@ -68,7 +68,7 @@ def _rewrite_main_desktop(content: str, appimage: Path, icon: Path) -> str:
     return content.replace("Type=Application\n", f"Type=Application\nTryExec={appimage}\n", 1)
 
 
-def _mode_desktop(mode: str, appimage: Path, icon: Path) -> str:
+def _mode_desktop(mode: str, appimage: Path) -> str:
     action = _("Run in logging mode") if mode == "log" else _("Run in silent mode")
     exec_line = shlex.join([str(appimage), f"--{mode}", "%u"])
     return (
@@ -79,7 +79,7 @@ def _mode_desktop(mode: str, appimage: Path, icon: Path) -> str:
         "Type=Application\n"
         f"Comment={action}\n"
         "Terminal=false\n"
-        f"Icon={icon}\n"
+        f"Icon={APP_ID}\n"
         f"StartupWMClass={APP_ID}\n"
         "Categories=Game;\n"
         "NoDisplay=true\n"
@@ -92,17 +92,21 @@ def _install_desktop_files(
     source: Path,
     applications_dir: Path,
     appimage: Path,
-    icon: Path,
 ) -> None:
     content = source.read_text(encoding="utf-8")
+    rewritten_content = _rewrite_main_desktop(content, appimage)
     main_path = applications_dir / f"{APP_ID}.desktop"
-    main_path.write_text(
-        _rewrite_main_desktop(content, appimage, icon),
-        encoding="utf-8",
+    main_path.write_text(rewritten_content, encoding="utf-8")
+    desktop_dir = Path(
+        QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
     )
+    desktop_dir.mkdir(parents=True, exist_ok=True)
+    desktop_path = desktop_dir / f"{APP_ID}.desktop"
+    desktop_path.write_text(rewritten_content, encoding="utf-8")
+    desktop_path.chmod(EXECUTABLE_MODE)
     for mode in INTEGRATION_MODES:
         path = applications_dir / f"{APP_ID}.{mode}.desktop"
-        path.write_text(_mode_desktop(mode, appimage, icon), encoding="utf-8")
+        path.write_text(_mode_desktop(mode, appimage), encoding="utf-8")
 
 
 def _set_default_mime_handlers() -> None:
@@ -130,17 +134,8 @@ def _get_appimage_metadata(appdir: Path) -> tuple[Path, Path]:
             f"share/applications/{APP_ID}.desktop",
         ),
     )
-    icon = _find_appimage_asset(
-        appdir,
-        (
-            ".DirIcon",
-            f"{APP_ID}.svg",
-            f"{APP_ID}.png",
-            f"usr/share/icons/hicolor/scalable/apps/{APP_ID}.svg",
-            f"share/icons/hicolor/scalable/apps/{APP_ID}.svg",
-        ),
-    )
-    if not desktop or not icon:
+    icon = appdir / f"{APP_ID}.svg"
+    if not desktop or not icon.is_file():
         raise FileNotFoundError("AppImage desktop metadata is incomplete")
     return desktop, icon
 
@@ -156,18 +151,18 @@ def integrate_appimage() -> Path:
     appimages_dir = Path.home() / "AppImages"
     data_home = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local/share"))
     applications_dir = data_home / "applications"
-    icon_dir = appimages_dir / ".icons"
+    icon_dir = data_home / "icons"
     appimages_dir.mkdir(parents=True, exist_ok=True)
     applications_dir.mkdir(parents=True, exist_ok=True)
     icon_dir.mkdir(parents=True, exist_ok=True)
 
     destination = appimages_dir / "portprotonqt.appimage"
     resolved_icon = icon_source.resolve()
-    icon = icon_dir / f"{APP_ID}{resolved_icon.suffix or '.svg'}"
+    icon = icon_dir / f"{APP_ID}.svg"
     _remove_existing_integration(applications_dir, icon_dir)
     _copy_appimage(source, destination)
     shutil.copy2(resolved_icon, icon)
-    _install_desktop_files(desktop_source, applications_dir, destination, icon)
+    _install_desktop_files(desktop_source, applications_dir, destination)
     _set_default_mime_handlers()
     try:
         subprocess.run(
