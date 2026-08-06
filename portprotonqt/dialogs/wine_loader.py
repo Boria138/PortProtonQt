@@ -91,7 +91,15 @@ class WineLoadingThread(QThread):
 
     def run(self):
         try:
-            json_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
+            cloud_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
+            github_url = "https://raw.githubusercontent.com/Boria138/PortProton-Wine-Metadata/main/wine_metadata_all.json"
+            from portprotonqt.portproton_api import get_user_conf_setting
+
+            json_url = (
+                cloud_url
+                if get_user_conf_setting("MIRROR") == "CLOUD"
+                else github_url
+            )
 
             with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as tmp:
                 temp_path = tmp.name

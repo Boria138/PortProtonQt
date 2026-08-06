@@ -2,6 +2,7 @@
 import subprocess
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtWidgets import QApplication, QWidget
@@ -9,6 +10,7 @@ from PySide6.QtWidgets import QApplication, QWidget
 from portprotonqt.config.ui import UIConfig
 from portprotonqt import appimage_updater
 from portprotonqt.dialogs.appimage_update import AppImageUpdateDialog
+from portprotonqt import portproton_api
 
 FAKE_UPDATE_MARKER = "FAKE_UPDATE_APPLIED"
 
@@ -90,6 +92,32 @@ def test_parse_appimage_update_progress_line() -> None:
     assert progress == (42, "42% \u2193 54.0 MB/128.0 MB")
 
 
+@pytest.mark.parametrize(
+    ("mirror", "expected_url"),
+    (
+        ("CLOUD", appimage_updater.CHANGELOG_URL),
+        ("GITHUB", appimage_updater.CHANGELOG_GITHUB_URL),
+    ),
+)
+def test_download_changelog_uses_selected_mirror(
+    mirror: str,
+    expected_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    response = MagicMock()
+    response.content = b"changelog"
+    session = MagicMock()
+    session.get.return_value.__enter__.return_value = response
+    monkeypatch.setattr(portproton_api, "get_user_conf_setting", lambda _key: mirror)
+    monkeypatch.setattr(appimage_updater, "get_requests_session", lambda: session)
+
+    assert appimage_updater._download_changelog() == "changelog"
+    session.get.assert_called_once_with(
+        expected_url,
+        timeout=appimage_updater.CHANGELOG_TIMEOUT,
+    )
+
+
 def test_appimage_update_worker_skips_when_disabled(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -118,6 +146,11 @@ def test_appimage_update_worker_runs_update(
     appimage = tmp_path / "PortProtonQt.AppImage"
     appimage.write_text("", encoding="utf-8")
     monkeypatch.setenv("APPIMAGE", str(appimage))
+    monkeypatch.setattr(
+        portproton_api,
+        "get_user_conf_setting",
+        lambda _key: "CLOUD",
+    )
     monkeypatch.setattr(
         appimage_updater.ui_config,
         "get_auto_appimage_updates",
@@ -151,13 +184,18 @@ def test_appimage_update_worker_runs_update(
     assert available == [("Repo changelog", "")]
 
 
-def test_appimage_update_worker_uses_fallback_mirror(
+def test_appimage_update_worker_uses_github_mirror(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     appimage = tmp_path / "PortProtonQt.AppImage"
     appimage.write_text("", encoding="utf-8")
     monkeypatch.setenv("APPIMAGE", str(appimage))
+    monkeypatch.setattr(
+        portproton_api,
+        "get_user_conf_setting",
+        lambda _key: "GITHUB",
+    )
     monkeypatch.setattr(
         appimage_updater.ui_config,
         "get_auto_appimage_updates",
@@ -169,8 +207,6 @@ def test_appimage_update_worker_uses_fallback_mirror(
 
     def run_tool(args: list[str], timeout: int) -> subprocess.CompletedProcess[str]:
         calls.append(args)
-        if "-u" not in args:
-            return subprocess.CompletedProcess(args, 0, stderr=" Error: primary failed")
         return subprocess.CompletedProcess(args, 1)
 
     monkeypatch.setattr(appimage_updater, "_run_appimageupdatetool", run_tool)
@@ -188,16 +224,15 @@ def test_appimage_update_worker_uses_fallback_mirror(
     worker.run()
 
     assert calls == [
-        ["/tool", "-j", str(appimage)],
         [
             "/tool",
             "-j",
             "-u",
-            appimage_updater.FALLBACK_UPDATE_INFO,
+            appimage_updater.GITHUB_UPDATE_INFO,
             str(appimage),
         ],
     ]
-    assert available == [("Repo changelog", appimage_updater.FALLBACK_UPDATE_INFO)]
+    assert available == [("Repo changelog", appimage_updater.GITHUB_UPDATE_INFO)]
 
 
 def test_appimage_update_worker_emits_pty_progress(

@@ -4215,8 +4215,13 @@ gui_proton_downloader () {
         return 0
     fi
 
-    METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
-    METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
+    METADATA_CLOUD_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
+    METADATA_GITHUB_URL="https://raw.githubusercontent.com/Boria138/PortProton-Wine-Metadata/main/wine_metadata_all.json"
+    if [[ "${MIRROR}" == CLOUD ]] ; then
+        METADATA=$(curl -fL -A 'PortProton' -s "$METADATA_CLOUD_URL")
+    else
+        METADATA=$(curl -fL -s "$METADATA_GITHUB_URL")
+    fi
     if [[ -z "$METADATA" ]] ; then
         fatal "failed to fetch metadata"
     fi
