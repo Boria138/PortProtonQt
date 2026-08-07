@@ -385,6 +385,7 @@ class MangoHudSettingsMixin:
         self.mangohud_toggle_widget_keys = {}
         self.mangohud_fps_widgets = {}
         self.mangohud_category_groups = {}
+        self.mangohud_search_widget = None
         self.mangohud_gpu_options = []
         self.mangohud_actions_group = None
         self.mangohud_presets_group = None
@@ -1231,9 +1232,40 @@ class MangoHudSettingsMixin:
 
     def _filter_mangohud_settings(self, search_text):
         """Filter MangoHud groups based on search text."""
-        mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
-        mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
-        config_visible = mangohud_enabled and not mangohud_user_conf_enabled
+        config_visible = self.current_settings.get('PW_MANGOHUD') == '1' \
+            and self.current_settings.get('PW_MANGOHUD_USER_CONF') != '1'
+        for checkbox in self.mangohud_toggle_widgets.values():
+            layout = checkbox.parentWidget().layout()
+            if layout is not None:
+                layout.removeWidget(checkbox)
+        self._remove_mangohud_search_page()
+        matching = []
+        for key, checkbox in self.mangohud_toggle_widgets.items():
+            description = MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, '')
+            matches = not search_text or search_text in f"{checkbox.text()} {description}".lower()
+            checkbox.setVisible(matches)
+            if matches:
+                matching.append((key, checkbox))
+        columns = self.theme.mangoHudSwitchesColumns
+        if search_text:
+            result_widget, result_layout = self._create_mangohud_search_page()
+            for index, (_key, checkbox) in enumerate(matching):
+                result_layout.addWidget(checkbox, index // columns, (index % columns) * 2 + 1)
+            self.mangohud_category_combo.setVisible(False)
+            self.mangohud_category_stack.setCurrentWidget(result_widget)
+        else:
+            category_positions = {}
+            for key, checkbox in matching:
+                category = next((name for name, keys in MANGOHUD_TOGGLE_CATEGORIES.items() if key in keys), _("Other"))
+                widget = self.mangohud_category_groups[category]
+                index = category_positions.get(category, 0)
+                cast(QGridLayout, widget.layout()).addWidget(
+                    checkbox, index // columns, (index % columns) * 2 + 1
+                )
+                category_positions[category] = index + 1
+            self.mangohud_category_combo.setVisible(True)
+            self.on_mangohud_category_changed(self.mangohud_category_combo.currentText())
+        self._update_mangohud_category_stack_height()
         for group_box in self.mangohud_tab.findChildren(QGroupBox):
             if not config_visible:
                 group_box.setVisible(group_box is self.mangohud_actions_group)
@@ -1241,11 +1273,38 @@ class MangoHudSettingsMixin:
             if not search_text:
                 group_box.setVisible(True)
                 continue
-            group_text = group_box.title().lower()
-            label_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QLabel))
-            checkbox_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QCheckBox))
-            content_text = f"{label_text} {checkbox_text}"
-            group_box.setVisible(search_text in group_text or search_text in content_text)
+            content_widgets = group_box.findChildren(QLabel) + group_box.findChildren(QCheckBox)
+            content_match = any(search_text in widget.text().lower() for widget in content_widgets)
+            group_box.setVisible(
+                search_text in group_box.title().lower() or content_match
+                or group_box is self.mangohud_toggle_group and bool(matching)
+            )
+
+    def _create_mangohud_search_page(self) -> tuple[QWidget, QGridLayout]:
+        source_widget = next(iter(self.mangohud_category_groups.values()))
+        source_layout = cast(QGridLayout, source_widget.layout())
+        widget = QWidget()
+        layout = QGridLayout(widget)
+        margins = source_layout.contentsMargins()
+        layout.setContentsMargins(margins.left(), margins.top(), margins.right(), margins.bottom())
+        layout.setHorizontalSpacing(source_layout.horizontalSpacing())
+        layout.setVerticalSpacing(source_layout.verticalSpacing())
+        columns = self.theme.mangoHudSwitchesColumns
+        for column in range(columns * 2 + 1):
+            layout.setColumnStretch(column, source_layout.columnStretch(column))
+        self.mangohud_category_stack.addWidget(widget)
+        self.mangohud_search_widget = widget
+        return widget, layout
+
+    def _remove_mangohud_search_page(self) -> None:
+        widget = getattr(self, 'mangohud_search_widget', None)
+        if widget is None:
+            return
+        for checkbox in widget.findChildren(QCheckBox):
+            checkbox.setParent(self.mangohud_toggle_group)
+        self.mangohud_category_stack.removeWidget(widget)
+        widget.deleteLater()
+        self.mangohud_search_widget = None
 
     def _get_default_mangohud_config(self) -> str | None:
         """Read DEFAULT_MANGOHUD_CONFIG from scripts/var."""

@@ -267,6 +267,7 @@ class GamescopeSettingsMixin:
         self.gamescope_toggle_widgets = {}
         self.gamescope_toggle_widget_keys = {}
         self.gamescope_category_groups = {}
+        self.gamescope_search_widget = None
         self.gamescope_resolution_widgets = {}
         self.gamescope_actions_group = None
         self.gamescope_toggle_group = None
@@ -1027,6 +1028,35 @@ class GamescopeSettingsMixin:
     def _filter_gamescope_settings(self, search_text):
         """Filter Gamescope groups based on search text."""
         gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
+        for checkbox in self.gamescope_toggle_widgets.values():
+            layout = checkbox.parentWidget().layout()
+            if layout is not None:
+                layout.removeWidget(checkbox)
+        self._remove_gamescope_search_page()
+        matching = []
+        for key, checkbox in self.gamescope_toggle_widgets.items():
+            description = GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, '')
+            matches = not search_text or search_text in f"{checkbox.text()} {description}".lower()
+            checkbox.setVisible(matches)
+            if matches:
+                matching.append((key, checkbox))
+        if search_text:
+            result_widget, result_layout = self._create_gamescope_search_page()
+            for index, (_key, checkbox) in enumerate(matching):
+                result_layout.addWidget(checkbox, index // 2, (index % 2) * 2 + 1)
+            self.gamescope_category_combo.setVisible(False)
+            self.gamescope_category_stack.setCurrentWidget(result_widget)
+        else:
+            category_positions = {}
+            for key, checkbox in matching:
+                category = next((name for name, keys in GAMESCOPE_TOGGLE_CATEGORIES.items() if key in keys), _("Other"))
+                widget = self.gamescope_category_groups[category]
+                index = category_positions.get(category, 0)
+                cast(QGridLayout, widget.layout()).addWidget(checkbox, index // 2, (index % 2) * 2 + 1)
+                category_positions[category] = index + 1
+            self.gamescope_category_combo.setVisible(True)
+            self.on_gamescope_category_changed(self.gamescope_category_combo.currentText())
+        self._update_gamescope_category_stack_height()
         for group_box in self.gamescope_tab.findChildren(QGroupBox):
             if not gamescope_enabled:
                 group_box.setVisible(group_box is self.gamescope_actions_group)
@@ -1034,8 +1064,34 @@ class GamescopeSettingsMixin:
             if not search_text:
                 group_box.setVisible(True)
                 continue
-            group_text = group_box.title().lower()
-            label_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QLabel))
-            checkbox_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QCheckBox))
-            content_text = f"{label_text} {checkbox_text}"
-            group_box.setVisible(search_text in group_text or search_text in content_text)
+            content_widgets = group_box.findChildren(QLabel) + group_box.findChildren(QCheckBox)
+            content_match = any(search_text in widget.text().lower() for widget in content_widgets)
+            group_box.setVisible(
+                search_text in group_box.title().lower() or content_match
+                or group_box is self.gamescope_toggle_group and bool(matching)
+            )
+
+    def _create_gamescope_search_page(self) -> tuple[QWidget, QGridLayout]:
+        source_widget = next(iter(self.gamescope_category_groups.values()))
+        source_layout = cast(QGridLayout, source_widget.layout())
+        widget = QWidget()
+        layout = QGridLayout(widget)
+        margins = source_layout.contentsMargins()
+        layout.setContentsMargins(margins.left(), margins.top(), margins.right(), margins.bottom())
+        layout.setHorizontalSpacing(source_layout.horizontalSpacing())
+        layout.setVerticalSpacing(source_layout.verticalSpacing())
+        for column in range(source_layout.columnCount()):
+            layout.setColumnStretch(column, source_layout.columnStretch(column))
+        self.gamescope_category_stack.addWidget(widget)
+        self.gamescope_search_widget = widget
+        return widget, layout
+
+    def _remove_gamescope_search_page(self) -> None:
+        widget = getattr(self, 'gamescope_search_widget', None)
+        if widget is None:
+            return
+        for checkbox in widget.findChildren(QCheckBox):
+            checkbox.setParent(self.gamescope_toggle_group)
+        self.gamescope_category_stack.removeWidget(widget)
+        widget.deleteLater()
+        self.gamescope_search_widget = None

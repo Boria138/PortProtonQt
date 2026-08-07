@@ -356,6 +356,28 @@ class VkBasaltSettingsMixin:
         vkbasalt_enabled = self.current_settings.get('PW_VKBASALT') == '1'
         user_conf_enabled = self.current_settings.get('PW_VKBASALT_USER_CONF') == '1'
         config_visible = vkbasalt_enabled and not user_conf_enabled
+        if self.vkbasalt_shaders_layout is not None:
+            shaders_group = self.vkbasalt_shaders_group
+            group_match = not search_text or (
+                shaders_group is not None and search_text in shaders_group.title().lower()
+            )
+            matching = [
+                (shader, checkbox)
+                for shader, checkbox in self.vkbasalt_shader_widgets.items()
+                if group_match or search_text in shader.lower()
+            ]
+            matching_widgets = {checkbox for _, checkbox in matching}
+            for checkbox in self.vkbasalt_shader_widgets.values():
+                self.vkbasalt_shaders_layout.removeWidget(checkbox)
+                checkbox.setVisible(group_match or checkbox in matching_widgets)
+            columns = self.theme.mangoHudSwitchesColumns
+            for index, (_, checkbox) in enumerate(matching):
+                self.vkbasalt_shaders_layout.addWidget(
+                    checkbox,
+                    index // columns,
+                    (index % columns) * 2 + 1,
+                )
+            self.vkbasalt_shaders_layout.activate()
         for group_box in self.vkbasalt_tab.findChildren(QGroupBox):
             if not config_visible:
                 group_box.setVisible(group_box is self.vkbasalt_actions_group)

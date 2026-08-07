@@ -402,6 +402,7 @@ tests/
 ├── test_theme_store.py      # Theme store UI worker lifecycle and race regressions
 ├── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
 ├── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
+├── test_settings_search.py  # MangoHud, vkBasalt, Gamescope settings search and layout regressions
 └── test_detail_pages.py     # Detail page gradient stops, wave background modes, palette handling
 ```
 
@@ -427,7 +428,7 @@ pre-commit run pytest
 - Tests MUST mock external resources (network, system paths, env vars)
 - Tests MUST NOT depend on system state (installed apps, real Steam dirs)
 - Use `monkeypatch` for environment variables and function patching
-- Keep tests locale-independent (assert numbers, not translated strings)
+- Keep tests locale-independent: assert stable identifiers or numbers instead of translated strings; resolve values created through `_()` from the same application mapping using stable identifiers; use `monkeypatch` to provide deterministic text when testing translated search or matching
 - Test regression scenarios from git fix commits
 
 ### Key Regression Areas
