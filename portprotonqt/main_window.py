@@ -76,7 +76,7 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QMessageBox, QApplication, QPushButton, QCheckBox)
-from PySide6.QtCore import Qt, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QThread, QFileSystemWatcher, QObject
+from PySide6.QtCore import Qt, QEvent, QEventLoop, QUrl, Signal, QTimer, Slot, QProcess, QThread, QFileSystemWatcher, QObject
 from PySide6.QtGui import QColor, QDesktopServices, QHideEvent, QShowEvent, QGuiApplication
 from typing import cast
 from collections.abc import Callable
@@ -2287,13 +2287,21 @@ class MainWindow(
         ]
 
     def _get_installed_alt_package_names(self) -> list[str]:
-        result = subprocess.run(
-            ["rpm", "-qa", "--qf", "%{NAME}\n"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                subprocess.run,
+                ["rpm", "-qa", "--qf", "%{NAME}\n"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            event_flags = QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents
+            QApplication.processEvents(event_flags)
+            while not future.done():
+                QApplication.processEvents(event_flags)
+                time.sleep(0.01)
+            result = future.result()
         if result.returncode != 0:
             raise subprocess.SubprocessError(result.stderr.strip())
 
@@ -2525,7 +2533,18 @@ class MainWindow(
             if not self.stop_running_game(update_button):
                 QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
         else:
+            if update_button:
+                try:
+                    update_button.setText(_("Stop"))
+                    icon = self.theme_manager.get_icon("stop", as_path=True)
+                    update_button.setIcon(icon)
+                except RuntimeError:
+                    update_button = None
             if not self._check_alt_i586_dependencies_before_launch():
+                if update_button:
+                    update_button.setText(_("Start"))
+                    icon = self.theme_manager.get_icon("play", as_path=True)
+                    update_button.setIcon(icon)
                 return
 
             # Save button reference for reset after game completion
@@ -2563,14 +2582,6 @@ class MainWindow(
                 self.game_start_exe = file_to_check
                 save_last_launch(exe_name, launch_time)
                 self._update_last_launch_after_start(file_to_check, launch_time)
-                if update_button:
-                    try:
-                        update_button.setText(_("Stop"))
-                        icon = self.theme_manager.get_icon("stop", as_path=True)
-                        update_button.setIcon(icon)
-                    except RuntimeError:
-                        pass
-
                 # Reset dependency setup monitoring
                 self.wine_download_seen = False
                 self.wine_download_percent = 0.0
