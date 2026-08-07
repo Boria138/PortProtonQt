@@ -6,7 +6,6 @@ import signal
 import shlex
 import subprocess
 import tempfile
-import psutil
 import re
 import time
 from queue import Empty, Queue
@@ -91,6 +90,7 @@ logger = get_logger(__name__)
 DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 ALT_BIARCH_REPO = "x86_64-i586"
 ALT_BIARCH_URL = "https://www.altlinux.org/Biarch"
+GAME_LAUNCH_MARKER = "PORTPROTONQT_GAME_LAUNCH_STARTED"
 ALT_I586_BASE_PACKAGES = (
     "glibc-nss",
     "glibc-gconv-modules",
@@ -396,7 +396,6 @@ class MainWindow(
         self.wine_download_seen = False
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
-        self.game_target_started = False
 
         # Central widget and main layout
         centralWidget = QWidget()
@@ -848,7 +847,7 @@ class MainWindow(
         line_text = line.strip()
         line_lower = line.lower()
         status = percent = None
-        launch_started = False
+        launch_started = line_text == GAME_LAUNCH_MARKER
         progress_match = re.fullmatch(r'([0-9]*\.?[0-9]+)%', line_text)
         if progress_match:
             percent = float(progress_match.group(1))
@@ -1916,40 +1915,17 @@ class MainWindow(
             parent = parent.parent()
 
 
-    def is_target_exe_running(self):
-        """Check if process named self.target_exe is running via psutil."""
-        if not self.target_exe:
-            return False
-        for proc in psutil.process_iter(attrs=["name"]):
-            if proc.info["name"].lower() == self.target_exe.lower():
-                return True
-        return False
-
     def checkTargetExe(self):
-        """
-        Check if game is running.
-        If game process (target_exe) detected - set flag and update button.
-        If game completed - reset flag, update button and stop timer.
-        """
-        target_running = self.is_target_exe_running()
+        """Update launch state from the marker and PortProton process."""
         child_running = self._has_running_game_process()
         dependency_active = self._drain_launch_output_progress()
 
         if dependency_active:
             # Dependencies are downloading/extracting - update button with progress
             self._set_running_button_progress()
-        elif target_running:
-            if not getattr(self, "game_target_started", False):
-                self.game_launch_monotonic = time.monotonic()
-                self.game_target_started = True
-            self.game_launch_started = True
-            # Game started - set flag, update button to "Stop"
-            self._set_running_button_stop()
-        elif self.game_launch_started and child_running:
-            self._set_running_button_stop()
         elif child_running:
             self._set_running_button_stop()
-        elif not child_running:
+        else:
             # Game completed - reset flag, reset button and stop timer
             self._analyze_short_launch()
             self.resetPlayButton()
@@ -2040,7 +2016,6 @@ class MainWindow(
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
-        self.game_target_started = False
         self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
@@ -2601,7 +2576,6 @@ class MainWindow(
                 self.wine_download_percent = 0.0
                 self.wine_download_status = _("Downloading Wine…")
                 self.game_launch_started = False
-                self.game_target_started = False
 
                 self.checkProcessTimer = QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)

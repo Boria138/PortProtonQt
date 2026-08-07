@@ -4089,6 +4089,7 @@ steamplay_launch () {
         fi
 
         print_info "$proton_runner in use."
+        printf '%s\n' 'PORTPROTONQT_GAME_LAUNCH_STARTED'
         pw_launch_wrapper \
         ${PW_RUN_GAMESCOPE} \
         env \
@@ -4114,6 +4115,7 @@ portwine_launch () {
     fi
 
     [[ $PW_LOG != 1 ]] && debug_timer --start -s "PW_TIME_IN_GAME"
+    printf '%s\n' 'PORTPROTONQT_GAME_LAUNCH_STARTED'
     if [[ -n "${LAUNCH_URI}" ]] ; then
         export WINEFSYNC="1"
         pw_run start /high /b "${LAUNCH_URI}" &

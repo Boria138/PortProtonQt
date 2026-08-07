@@ -428,6 +428,10 @@ def _compatibility_suggestions(
     needs_dotnet = needs_dotnet or "WPF" in findings.get("Frameworks", [])
     if needs_dotnet and prefix_name != "DOTNET":
         suggestions.append("Use the DOTNET prefix.")
+    installers = findings.get("Installer", [])
+    wine_version = environment.get("PW_WINE_USE", "")
+    if installers and not wine_version.startswith("WINE_LG"):
+        suggestions.append("Use WINE_LG for installers.")
     winetricks_log = environment.get("PW_WINETRICKS_LOG", "").lower()
     missing_vcrun = [
         components[-1]
@@ -500,8 +504,6 @@ def analyze_launch(launch: CompatibilityLaunch, portproton_path: str) -> str:
     glibc_32_compatibility, glibc_32_suggestions = _glibc_32_compatibility()
     suggestions.extend(glibc_32_suggestions)
     lines = [
-        "Compatibility report",
-        "",
         f"Executable: {launch.executable}",
         f"Exit code: {launch.exit_code if launch.exit_code is not None else 'unknown'}",
         f"Runtime before exit: {launch.duration:.1f} s",

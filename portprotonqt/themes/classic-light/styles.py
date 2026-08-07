@@ -512,7 +512,7 @@ QTableWidget::item:selected:hover {{
 
 HINT_BAR_STYLE = f"""
     QWidget {{
-        max-height: 40px;
+        max-height: 82px;
     }}
 """
 

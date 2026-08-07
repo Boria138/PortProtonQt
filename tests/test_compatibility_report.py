@@ -354,6 +354,25 @@ def test_dotnet_suggestion_uses_dedicated_prefix() -> None:
     assert "Use the DOTNET prefix." not in dotnet_suggestions
 
 
+def test_installer_suggestion_uses_wine_lg() -> None:
+    findings = {"Installer": ["NSIS", "Inno Setup"]}
+    default_suggestions = compatibility._compatibility_suggestions(
+        findings,
+        "None",
+        "",
+        {"PW_WINE_USE": "PROTON_LG"},
+    )
+    wine_lg_suggestions = compatibility._compatibility_suggestions(
+        findings,
+        "None",
+        "",
+        {"PW_WINE_USE": "WINE_LG_11-10"},
+    )
+
+    assert "Use WINE_LG for installers." in default_suggestions
+    assert "Use WINE_LG for installers." not in wine_lg_suggestions
+
+
 def test_directx_12_does_not_suggest_enabling_vkd3d() -> None:
     suggestions = compatibility._compatibility_suggestions(
         {"Engines": ["Unreal"]},

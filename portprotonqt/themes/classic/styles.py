@@ -423,7 +423,7 @@ TAB_STYLE = f"""
 
 HINT_BAR_STYLE = """
     QWidget {
-        max-height: 40px;
+        max-height: 82px;
     }
 """
 

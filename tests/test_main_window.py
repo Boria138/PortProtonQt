@@ -898,23 +898,20 @@ def test_disabled_crash_reports_skip_launch_analysis(
     assert started == []
 
 
-def test_target_process_resets_launch_timer_once(monkeypatch: MonkeyPatch) -> None:
+def test_launch_marker_starts_crash_timer(monkeypatch: MonkeyPatch) -> None:
     window: Any = MainWindow.__new__(MainWindow)
-    window.game_launch_started = True
-    window.game_target_started = False
-    window.game_launch_monotonic = 10.0
-    window.checkProcessTimer = None
-    window.is_target_exe_running = lambda: True
-    window._has_running_game_process = lambda: True
-    window._drain_launch_output_progress = lambda: False
-    window._set_running_button_stop = lambda: None
+    window.launch_output_queue = Queue()
+    window.game_launch_started = False
+    window.game_launch_monotonic = None
+    window.wine_download_seen = False
     monkeypatch.setattr("portprotonqt.main_window.time.monotonic", lambda: 90.0)
 
-    window.checkTargetExe()
-    window.checkTargetExe()
+    state = window._parse_process_status_line("PORTPROTONQT_GAME_LAUNCH_STARTED")
+    window.launch_output_queue.put(state)
+    window._drain_launch_output_progress()
 
     assert window.game_launch_monotonic == 90.0
-    assert window.game_target_started is True
+    assert window.game_launch_started is True
 
 
 def test_update_prefix_log_does_not_mark_wine_launch_start() -> None:

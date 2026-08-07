@@ -182,3 +182,12 @@ def test_run_after_batch_is_created_next_to_exe() -> None:
     assert 'start "" /unix "${PW_RUN_AFTER_EXE}"' in helper
     assert 'LAUNCH_PARAMETERS="" proxy_launch_parameters="" \\' in helper
     assert 'pw_run "${PW_VD_TMP[@]}" "${run_after_bat}"' in helper
+
+
+def test_game_launch_marker_is_emitted_for_wine_and_proton() -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
+        encoding="utf-8",
+    )
+
+    marker = "printf '%s\\n' 'PORTPROTONQT_GAME_LAUNCH_STARTED'"
+    assert helper.count(marker) == 2
