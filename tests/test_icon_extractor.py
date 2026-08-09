@@ -495,6 +495,30 @@ class TestGenerateThumbnail:
             img = Image.open(str(out))
             assert img.size == (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
 
+    def test_uses_executable_from_neighboring_batch(self, tmp_path):
+        launcher = tmp_path / "GameLauncher.exe"
+        launcher.touch()
+        target = tmp_path / "MKKE.exe"
+        target.touch()
+        (tmp_path / "custom-launcher.cmd").write_text(
+            "start MKKE.exe\nexit\n",
+            encoding="utf-8",
+        )
+        out = tmp_path / "thumb.png"
+        png_data = _make_png_bytes(32, 32)
+
+        with patch.object(
+            IconExtractor,
+            "get_icon",
+            autospec=True,
+            side_effect=[None, io.BytesIO(png_data)],
+        ) as get_icon:
+            assert generate_thumbnail(str(launcher), str(out)) is True
+
+        assert get_icon.call_count == 2
+        assert get_icon.call_args_list[1].args[0].file_path == str(target)
+        assert out.exists()
+
     def test_custom_size_with_mock(self, tmp_path):
         f = tmp_path / "game.exe"
         f.write_bytes(b"MZ" + b"\x00" * 100)

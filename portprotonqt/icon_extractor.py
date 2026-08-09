@@ -2,6 +2,7 @@
 
 import os
 import re
+import shlex
 import struct
 import io
 import pefile
@@ -13,6 +14,36 @@ logger = get_logger(__name__)
 RT_ICON = 3
 RT_GROUP_ICON = 14
 THUMBNAIL_SIZE = 128
+
+
+def _resolve_batch_icon_target(inputfile: str) -> str | None:
+    """Return an executable launched by a neighboring command file."""
+    input_dir = os.path.dirname(inputfile)
+    try:
+        command_files = sorted(
+            filename for filename in os.listdir(input_dir)
+            if filename.lower().endswith((".bat", ".cmd"))
+        )
+    except (OSError, ValueError) as error:
+        logger.warning("Failed to inspect command files in %s: %s", input_dir, error)
+        return None
+
+    for filename in command_files:
+        batch_path = os.path.join(input_dir, filename)
+        try:
+            with open(batch_path, encoding="utf-8") as batch_file:
+                for line in batch_file:
+                    for token in shlex.split(line, posix=False):
+                        exe_name = token.strip('"')
+                        exe_path = os.path.join(input_dir, exe_name)
+                        if (
+                            exe_name.lower().endswith(".exe")
+                            and os.path.isfile(exe_path)
+                        ):
+                            return exe_path
+        except (OSError, UnicodeError, ValueError) as error:
+            logger.warning("Failed to process command file %s: %s", batch_path, error)
+    return None
 
 
 def get_exe_icon_cache_path(exe_path: str) -> str:
@@ -44,6 +75,10 @@ def generate_thumbnail(inputfile: str, outfile: str, size: int = 128, force_resi
     try:
         extractor = IconExtractor(inputfile)
         data = extractor.get_icon()
+        if data is None:
+            target_path = _resolve_batch_icon_target(inputfile)
+            if target_path:
+                data = IconExtractor(target_path).get_icon()
         if data is None:
             return False
 
