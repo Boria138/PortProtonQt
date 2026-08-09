@@ -35,6 +35,7 @@ color_surface = "#F0F2F5"
 color_surface_elevated = "#E9ECEF"
 color_surface_hover = "#DEE2E6"
 color_text = "#ffffff"
+color_text_accent_hover = "#F8F9FC"
 color_surface_light = "#d2d3db"
 color_surface_mid = "#9394a5"
 color_text_dark = "#212529"
@@ -199,6 +200,7 @@ PLAY_BUTTON_STYLE = f"""
     }}
     QPushButton:hover, QPushButton:pressed, QPushButton:focus {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -216,10 +218,12 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     }}
     QPushButton:hover, QPushButton:pressed {{
         background: {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         background: {color_accent};
         border: {border_thin} {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -238,6 +242,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:hover, QPushButton:pressed, QPushButton:focus, QPushButton:checked {{
         background: {color_accent};
         border: {border_thin} {color_accent};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -314,12 +319,12 @@ COMBOBOX_STYLE = f"""
     QComboBox:hover {{
         border: {border_medium} {color_accent};
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QComboBox:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QComboBox:disabled {{
         background: {color_surface_hover};
@@ -385,7 +390,7 @@ COMBOBOX_STYLE = f"""
     }}
     QListView::item:focus {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
 """ % (
     theme_manager.get_icon("down", current_theme_name, as_path=True),
@@ -460,12 +465,11 @@ TAB_STYLE = f"""
     }}
     QTabBar::tab:selected {{
         background: {color_accent};
-        color: {color_text_dark};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QTabBar::tab:hover {{
         background: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -498,15 +502,16 @@ QTableWidget::item:selected,
 QTableWidget::item:focus,
 QTableWidget::item:selected:focus {{
     background: {color_accent};
-    color: {color_text};
+    color: {color_text_accent_hover};
     selection-background-color: {color_accent};
 }}
 QTableWidget::item:hover {{
     background: {color_transparent};
+    color: {color_text_accent_hover};
 }}
 QTableWidget::item:selected:hover {{
     background: {color_accent};
-    color: {color_text};
+    color: {color_text_accent_hover};
 }}
 """
 
@@ -530,15 +535,17 @@ ACTION_BUTTON_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_accent};
         color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
 """
 
@@ -556,7 +563,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:hover {{
         background: {color_accent};
         border: {border_medium} {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
     QPushButton:pressed {{
         background: {color_bg};
@@ -564,7 +571,7 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:focus {{
         border: {border_medium} {color_accent};
         background-color: {color_accent};
-        color: {color_text};
+        color: {color_text_accent_hover};
     }}
 """
 

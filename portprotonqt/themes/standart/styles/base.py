@@ -242,7 +242,7 @@ ACTION_BUTTON_STYLE = f"""
     }}
     QPushButton:pressed {{
         background: {color_bg};
-        color: {color_text_accent_hover};color: {color_text_accent_hover};
+        color: {color_text_accent_hover};
     }}
     QPushButton:focus {{
         border: {border_medium} {color_accent};
