@@ -3,6 +3,13 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-08-10
+
+### Fixed
+- Исправлено определение SteamID по `AutoLogin` или единственному профилю `userdata`, если в `loginusers.vdf` отсутствует `MostRecent`
+
+---
+
 ## [1.3.1] - 2026-07-18
 
 ### Fixed
