@@ -11,7 +11,9 @@ from typing import Any, cast
 from dbus_fast import BusType, DBusError, Message, Variant
 from dbus_fast.aio import MessageBus
 
+from portprotonqt.config import ui_config
 from portprotonqt.logger import get_logger
+from portprotonqt.theme_manager import ThemeManager, load_theme
 
 
 logger = get_logger(__name__)
@@ -347,6 +349,17 @@ async def _main() -> int:
     args = parse_args()
     try:
         if args.command == "notify":
+            if args.icon in {"info", "warning", "error"}:
+                theme_name = ui_config.get_theme()
+                theme_manager = ThemeManager()
+                load_theme(theme_name)
+                icon_path = theme_manager.get_icon(
+                    args.icon,
+                    theme_name,
+                    as_path=True,
+                )
+                if isinstance(icon_path, str):
+                    args.icon = icon_path
             request = NotificationRequest(
                 args.app,
                 args.icon,

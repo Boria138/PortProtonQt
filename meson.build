@@ -112,11 +112,6 @@ install_subdir(
 )
 
 install_subdir(
-  'build-aux/share/portproton/img',
-  install_dir: datadir / 'portproton',
-)
-
-install_subdir(
   'build-aux/share/portproton/scripts/portwine_db',
   install_dir: datadir / 'portproton' / 'scripts',
   install_mode: 'rwxr-xr-x',
