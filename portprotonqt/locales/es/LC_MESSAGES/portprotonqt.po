@@ -2160,6 +2160,10 @@ msgstr ""
 msgid "All"
 msgstr ""
 
+#, fuzzy
+msgid "Only Installed"
+msgstr "Instalado"
+
 msgid "Display Filter:"
 msgstr ""
 

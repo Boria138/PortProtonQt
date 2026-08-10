@@ -2060,6 +2060,9 @@ msgstr ""
 msgid "All"
 msgstr ""
 
+msgid "Only Installed"
+msgstr ""
+
 msgid "Display Filter:"
 msgstr ""
 

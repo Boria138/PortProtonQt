@@ -2155,6 +2155,10 @@ msgstr "Método de Ordenação:"
 msgid "All"
 msgstr "Todos"
 
+#, fuzzy
+msgid "Only Installed"
+msgstr "Instalado"
+
 msgid "Display Filter:"
 msgstr "Filtro de Exibição:"
 
