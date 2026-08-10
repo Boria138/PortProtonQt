@@ -118,6 +118,28 @@ def save_last_launch(exe_name, launch_time):
             f.write(f"{key} {iso_time}\n")
 
 
+def remove_last_launch(exe_name: str) -> None:
+    """Remove the last launch entry for an executable."""
+    file_path = get_last_launch_path()
+    if not exe_name or not os.path.exists(file_path):
+        return
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            lines = f.readlines()
+        kept_lines = []
+        for line in lines:
+            parsed_line = _parse_last_launch_line(line)
+            if parsed_line and parsed_line[0] == exe_name:
+                continue
+            kept_lines.append(line)
+        if len(kept_lines) == len(lines):
+            return
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.writelines(kept_lines)
+    except OSError as e:
+        logger.warning("Failed to remove last launch for %s: %s", exe_name, e)
+
+
 def save_playtime(exe_path: str, additional_seconds: int) -> None:
     """Save and accumulate playtime for the executable."""
     if not exe_path or additional_seconds <= 0 or "steamapps" in exe_path.lower():

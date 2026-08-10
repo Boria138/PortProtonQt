@@ -897,12 +897,14 @@ class ContextMenuManager:
         if not exe_path:
             return
 
-        from portprotonqt.time_utils import get_statistics_path
+        from portprotonqt.time_utils import get_statistics_path, remove_last_launch
         statistics_file = get_statistics_path()
+        target_path = os.path.normpath(exe_path)
+        exe_name = os.path.splitext(os.path.basename(target_path))[0]
+        remove_last_launch(exe_name)
         if not os.path.exists(statistics_file):
             return
 
-        target_path = os.path.normpath(exe_path)
         kept_lines = []
         removed = False
 
