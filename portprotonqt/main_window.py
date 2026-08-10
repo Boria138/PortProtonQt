@@ -1046,22 +1046,24 @@ class MainWindow(
         def on_game_info(game: dict, steam_info: dict) -> None:
             nonlocal processed_count
             app_id = str(game.get("app_id", ""))
-            action = "launch" if api.is_game_installed(app_id, installed) else "install"
-            games.append((
-                str(game.get("title", app_id)),
-                str(game.get("description", "")), str(game.get("cover", "")),
-                app_id,
-                steam_info.get("controller_support", ""),
-                f"gog://{action}/{app_id}",
-                _("Never"), format_playtime(0),
-                steam_info.get("protondb_tier", ""),
-                steam_info.get("anticheat_status", ""),
-                0, 0,
-                "gog",
-                steam_info.get("anticheat_slug", ""),
-                steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
-                steam_info.get("appid", ""),
-            ))
+            is_installed = api.is_game_installed(app_id, installed)
+            if game_config.get_display_filter() != "installed" or is_installed:
+                action = "launch" if is_installed else "install"
+                games.append((
+                    str(game.get("title", app_id)),
+                    str(game.get("description", "")), str(game.get("cover", "")),
+                    app_id,
+                    steam_info.get("controller_support", ""),
+                    f"gog://{action}/{app_id}",
+                    _("Never"), format_playtime(0),
+                    steam_info.get("protondb_tier", ""),
+                    steam_info.get("anticheat_status", ""),
+                    0, 0,
+                    "gog",
+                    steam_info.get("anticheat_slug", ""),
+                    steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
+                    steam_info.get("appid", ""),
+                ))
             processed_count += 1
             if processed_count == len(library):
                 callback(games)
