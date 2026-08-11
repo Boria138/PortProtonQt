@@ -277,8 +277,15 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
         controls_layout.addWidget(self.gamesSortCombo)
 
-        self.filter_keys = ["all", "steam", "gog", "portproton", "favorites"]
-        self.filter_labels = [_("All"), "Steam", "GOG", "PortProton", _("Favorites")]
+        self.filter_keys = ["all", "installed", "steam", "gog", "portproton", "favorites"]
+        self.filter_labels = [
+            _("All"),
+            _("Only Installed"),
+            "Steam",
+            "GOG",
+            "PortProton",
+            _("Favorites"),
+        ]
         self.gamesDisplayCombo = self._create_library_combo(self.filter_labels, _("Display Filter:"))
         self._set_combo_current_key(
             self.gamesDisplayCombo,

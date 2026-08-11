@@ -11,6 +11,7 @@ from datetime import datetime
 from portprotonqt.time_utils import (
     _parse_last_launch_line,
     save_last_launch,
+    remove_last_launch,
     get_last_launch,
     get_last_launch_timestamp,
     get_last_launch_path,
@@ -139,6 +140,23 @@ class TestSaveAndGetLastLaunch:
 
 
 # ── get_last_launch_timestamp ────────────────────────────────────────────────
+
+class TestRemoveLastLaunch:
+    def test_removes_only_target_entry(self, tmp_path, monkeypatch):
+        cache_file = tmp_path / "PortProtonQt" / "last_launch"
+        monkeypatch.setattr(
+            "portprotonqt.time_utils.get_last_launch_path",
+            lambda: str(cache_file),
+        )
+        save_last_launch("game", datetime(2026, 1, 1))
+        save_last_launch("other", datetime(2026, 2, 1))
+
+        remove_last_launch("game")
+
+        contents = cache_file.read_text(encoding="utf-8")
+        assert "game " not in contents
+        assert "other " in contents
+
 
 class TestGetLastLaunchTimestamp:
     def test_returns_timestamp(self, tmp_path, monkeypatch):

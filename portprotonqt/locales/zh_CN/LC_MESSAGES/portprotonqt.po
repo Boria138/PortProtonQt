@@ -2112,6 +2112,10 @@ msgstr "游戏排序方式:"
 msgid "All"
 msgstr "全部"
 
+#, fuzzy
+msgid "Only Installed"
+msgstr "已安装"
+
 msgid "Display Filter:"
 msgstr "显示筛选："
 

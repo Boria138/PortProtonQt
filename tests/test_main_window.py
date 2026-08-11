@@ -12,6 +12,7 @@ from pytest import MonkeyPatch
 from PySide6.QtCore import Qt
 
 from portprotonqt.animations.library_controls import _animation_duration
+from portprotonqt.config import game_config
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
@@ -1295,6 +1296,32 @@ def test_legacy_gog_library_refreshes_metadata(
     worker.start.assert_called_once_with()
     worker.loaded.connect.call_args.args[0]([])
     test_window._load_gog_games_async.assert_called_once_with(callback)
+
+
+def test_installed_filter_excludes_uninstalled_gog_games(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.gog_api = SimpleNamespace(
+        load_installed=lambda: {"installed": {}},
+        load_library=lambda: [
+            {"app_id": "installed", "title": "Installed", "steam_appid": ""},
+            {"app_id": "uninstalled", "title": "Uninstalled", "steam_appid": ""},
+        ],
+        is_game_installed=lambda app_id, _installed: app_id == "installed",
+    )
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "installed")
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_game_info_async",
+        lambda _name, _uri, callback: callback({}),
+    )
+    results = []
+
+    MainWindow._load_gog_games_async(window, results.append)
+
+    assert [game[3] for game in results[0]] == ["installed"]
+    assert results[0][0][5] == "gog://launch/installed"
 
 
 def test_gog_metadata_search_ignores_uri_components(monkeypatch: MonkeyPatch) -> None:

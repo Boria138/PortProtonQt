@@ -2150,6 +2150,10 @@ msgstr "Метод сортировки:"
 msgid "All"
 msgstr "Все"
 
+#, fuzzy
+msgid "Only Installed"
+msgstr "Установленные"
+
 msgid "Display Filter:"
 msgstr "Фильтр:"
 
