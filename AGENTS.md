@@ -403,7 +403,8 @@ tests/
 ├── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
 ├── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
 ├── test_settings_search.py  # MangoHud, vkBasalt, Gamescope settings search and layout regressions
-└── test_detail_pages.py     # Detail page gradient stops, wave background modes, palette handling
+├── test_detail_pages.py     # Detail page gradient stops, wave background modes, palette handling
+└── test_proton_manager.py   # Local Wine/Proton drag-and-drop and safe archive extraction
 ```
 
 ### Running Tests
@@ -444,6 +445,7 @@ pre-commit run pytest
 | `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
 | `detail_pages` | DETAIL_PAGE_GRADIENT stops override, wave background modes | — |
 | `detail_pages` | Edit/Add shortcut buttons shown together for non-Steam games | 7e38d9a |
+| `wine_extractor` | Archive traversal and process-wide cwd changes during extraction | — |
 
 ---
 
@@ -948,6 +950,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-07-20
-**Version:** 1.2
+**Last updated:** 2026-08-11
+**Version:** 1.3
 **Status:** Release

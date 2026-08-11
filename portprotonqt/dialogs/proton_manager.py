@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
     QStackedWidget, QPushButton
 )
-from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtCore import QEvent, QMimeData, QObject, Qt, QTimer
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QGuiApplication
 from shiboken6 import isValid
 
 from portprotonqt.config import get_portproton_start_command, ui_config
@@ -33,6 +33,7 @@ from portprotonqt.steam_api import get_steam_compatibilitytools_dir, get_steam_h
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
 WINE_TABLE_ROW_BATCH_SIZE = 8
+WINE_ARCHIVE_EXTENSIONS = ('.tar.xz', '.tar.gz')
 
 
 class ProtonManager(DraggableDialog):
@@ -52,6 +53,7 @@ class ProtonManager(DraggableDialog):
         self.initial_command_executed = False
         self.wine_loading_thread = None
         self._installed_size_tables = {}
+        self.setAcceptDrops(True)
 
         self.main_window = None
         parent_widget = self.parent()
@@ -66,6 +68,48 @@ class ProtonManager(DraggableDialog):
 
         if self.input_manager:
             self.enable_proton_manager_mode()
+
+    @staticmethod
+    def _get_dropped_wine_archives(mime_data: QMimeData) -> list[str]:
+        if not mime_data.hasUrls():
+            return []
+        archive_paths = []
+        for url in mime_data.urls():
+            if not url.isLocalFile():
+                continue
+            archive_path = url.toLocalFile()
+            if os.path.isfile(archive_path) and archive_path.lower().endswith(
+                WINE_ARCHIVE_EXTENSIONS
+            ):
+                archive_paths.append(archive_path)
+        return archive_paths
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if self._get_dropped_wine_archives(event.mimeData()):
+            event.acceptProposedAction()
+            return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        archive_paths = self._get_dropped_wine_archives(event.mimeData())
+        if not archive_paths or self.is_downloading:
+            event.ignore()
+            return
+        self.install_local_archives(archive_paths)
+        event.acceptProposedAction()
+
+    def install_local_archives(self, archive_paths: list[str]) -> None:
+        self.assets_to_download = [
+            {
+                'source_name': 'proton_lg',
+                'asset_name': os.path.basename(path),
+                'local_path': path,
+            }
+            for path in archive_paths
+        ]
+        self.current_download_index = 0
+        self.is_downloading = True
+        self.start_next_download()
 
     def _init_gamepad_tooltip(self) -> None:
         self._gamepad_tooltip_map = {}
@@ -992,10 +1036,20 @@ class ProtonManager(DraggableDialog):
             QMessageBox.information(self, _("Downloading Complete"), _("All selected WINE/Proton have been downloaded!"))
             return
         asset_data = self.assets_to_download[self.current_download_index]
+        local_path = asset_data.get('local_path')
+        if local_path:
+            self.download_progress.setValue(0)
+            self.download_frame.setVisible(True)
+            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+            self.download_btn.setEnabled(False)
+            self.clear_btn.setEnabled(False)
+            self.start_extraction_for_asset(asset_data, local_path)
+            return
         self.download_asset(asset_data)
 
     def download_asset(self, asset_data):
         temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
+        asset_data['cleanup_dir'] = temp_dir
         filename = os.path.join(temp_dir, asset_data['asset_name'])
         download_url = asset_data['download_url']
         download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
@@ -1066,12 +1120,13 @@ class ProtonManager(DraggableDialog):
                     else:
                         logger.error(f"Failed to extract: {archive_path}")
                         QMessageBox.critical(self, _("Extraction Error"), _("Failed to extract archive: {0}").format(archive_path))
-                    temp_dir = os.path.dirname(filepath)
-                    try:
-                        shutil.rmtree(temp_dir)
-                        logger.debug(f"Cleaned up temporary directory: {temp_dir}")
-                    except Exception as e:
-                        logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+                    cleanup_dir = asset_data.get('cleanup_dir')
+                    if cleanup_dir:
+                        try:
+                            shutil.rmtree(cleanup_dir)
+                            logger.debug(f"Cleaned up temporary directory: {cleanup_dir}")
+                        except Exception as e:
+                            logger.warning(f"Could not clean up temporary directory {cleanup_dir}: {e}")
                     if self.current_extraction_thread and self.current_extraction_thread.isRunning():
                         logger.debug("Waiting for extraction thread to finish...")
                         if not self.current_extraction_thread.wait(500):
@@ -1081,12 +1136,13 @@ class ProtonManager(DraggableDialog):
                 def extraction_error(error_msg):
                     logger.error(f"Extraction error: {error_msg}")
                     QMessageBox.critical(self, "Extraction Error", f"Failed to extract archive: {error_msg}")
-                    temp_dir = os.path.dirname(filepath)
-                    try:
-                        shutil.rmtree(temp_dir)
-                        logger.debug(f"Cleaned up temporary directory after error: {temp_dir}")
-                    except Exception as e:
-                        logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+                    cleanup_dir = asset_data.get('cleanup_dir')
+                    if cleanup_dir:
+                        try:
+                            shutil.rmtree(cleanup_dir)
+                            logger.debug(f"Cleaned up temporary directory after error: {cleanup_dir}")
+                        except Exception as e:
+                            logger.warning(f"Could not clean up temporary directory {cleanup_dir}: {e}")
                     if self.current_extraction_thread and self.current_extraction_thread.isRunning():
                         logger.debug("Waiting for extraction thread to finish after error...")
                         if not self.current_extraction_thread.wait(500):
@@ -1100,23 +1156,25 @@ class ProtonManager(DraggableDialog):
                 self.current_extraction_thread.error.connect(extraction_error)
                 self.current_extraction_thread.start()
             except Exception as e:
-                temp_dir = os.path.dirname(filepath)
-                try:
-                    shutil.rmtree(temp_dir)
-                    logger.debug(f"Cleaned up temporary directory after exception: {temp_dir}")
-                except Exception as cleanup_error:
-                    logger.warning(f"Could not clean up temporary directory {temp_dir}: {cleanup_error}")
+                cleanup_dir = asset_data.get('cleanup_dir')
+                if cleanup_dir:
+                    try:
+                        shutil.rmtree(cleanup_dir)
+                        logger.debug(f"Cleaned up temporary directory after exception: {cleanup_dir}")
+                    except Exception as cleanup_error:
+                        logger.warning(f"Could not clean up temporary directory {cleanup_dir}: {cleanup_error}")
                 logger.error(f"Error starting extraction thread for {filepath}: {e}")
                 QMessageBox.critical(self, "Extraction Error", f"Failed to start extraction: {e}")
                 self.current_download_index += 1
                 QTimer.singleShot(100, self.start_next_download)
         else:
-            temp_dir = os.path.dirname(filepath)
-            try:
-                shutil.rmtree(temp_dir)
-                logger.debug(f"Cleaned up temporary directory: {temp_dir}")
-            except Exception as e:
-                logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+            cleanup_dir = asset_data.get('cleanup_dir')
+            if cleanup_dir:
+                try:
+                    shutil.rmtree(cleanup_dir)
+                    logger.debug(f"Cleaned up temporary directory: {cleanup_dir}")
+                except Exception as e:
+                    logger.warning(f"Could not clean up temporary directory {cleanup_dir}: {e}")
             logger.warning("PortProton location not provided, skipping extraction")
             self.current_download_index += 1
             QTimer.singleShot(100, self.start_next_download)
@@ -1194,7 +1252,11 @@ class ProtonManager(DraggableDialog):
             super().reject()
 
 
-def show_proton_manager(parent=None, portproton_location=None, input_manager=None):
+def show_proton_manager(
+    parent=None, portproton_location=None, input_manager=None, local_archives=None
+):
     dialog = ProtonManager(parent, portproton_location, input_manager=input_manager)
     dialog.show()
+    if local_archives:
+        dialog.install_local_archives(local_archives)
     return dialog

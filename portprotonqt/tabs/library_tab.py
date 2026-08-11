@@ -30,6 +30,10 @@ from portprotonqt.config import (
 from portprotonqt.context_menu_manager import CustomLineEdit
 from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
+from portprotonqt.dialogs.proton_manager import (
+    WINE_ARCHIVE_EXTENSIONS,
+    show_proton_manager,
+)
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.logger import get_logger
@@ -493,15 +497,21 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
                 path = url.toLocalFile().lower()
-                if path.endswith(LAUNCH_FILE_EXTENSIONS + PP_FILE_EXTENSIONS):
+                if path.endswith(
+                    LAUNCH_FILE_EXTENSIONS + PP_FILE_EXTENSIONS + WINE_ARCHIVE_EXTENSIONS
+                ):
                     event.acceptProposedAction()
                     return
         event.ignore()
 
     def dropEvent(self, event):
+        wine_archives = []
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             path_lower = path.lower()
+            if path_lower.endswith(WINE_ARCHIVE_EXTENSIONS) and os.path.isfile(path):
+                wine_archives.append(path)
+                continue
             if path_lower.endswith(BACKUP_EXTENSION):
                 self._perform_restore(path)
                 event.acceptProposedAction()
@@ -514,6 +524,14 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 self.openAddGameDialog(path)
                 event.acceptProposedAction()
                 break
+        if wine_archives:
+            show_proton_manager(
+                self,
+                self.portproton_location,
+                input_manager=self.input_manager,
+                local_archives=wine_archives,
+            )
+            event.acceptProposedAction()
 
     def openAddGameDialog(self, exe_path=None):
         if self.current_add_game_dialog is not None and self.current_add_game_dialog.isVisible():

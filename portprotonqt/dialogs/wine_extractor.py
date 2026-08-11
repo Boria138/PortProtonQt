@@ -31,6 +31,20 @@ class ExtractionThread(QThread):
         self._mutex.unlock()
         return not running
 
+    def _get_entry_path(self, entry_path: str, link_path: str | None = None) -> str:
+        extract_root = os.path.realpath(self.extract_dir)
+        target_path = os.path.realpath(os.path.join(extract_root, entry_path))
+        if os.path.commonpath((extract_root, target_path)) != extract_root:
+            raise ValueError(f"Archive entry escapes extraction directory: {entry_path}")
+        if link_path is None:
+            return target_path
+        link_target = os.path.realpath(
+            os.path.join(os.path.dirname(target_path), link_path)
+        )
+        if os.path.commonpath((extract_root, link_target)) != extract_root:
+            raise ValueError(f"Archive link escapes extraction directory: {entry_path}")
+        return target_path
+
     def run(self):
         try:
             self.progress.emit(0)
@@ -48,10 +62,6 @@ class ExtractionThread(QThread):
             last_progress = -1
             last_bytes_read = 0
 
-            original_dir = os.getcwd()
-            old_umask = os.umask(0)
-            os.chdir(self.extract_dir)
-
             try:
                 deferred_times = []
 
@@ -63,23 +73,25 @@ class ExtractionThread(QThread):
                         entry_path = entry.pathname
                         if entry_path is None:
                             continue
+                        link_path = os.fsdecode(entry.linkpath) if entry.issym else None
+                        target_path = self._get_entry_path(entry_path, link_path)
 
                         if entry.isdir:
-                            os.makedirs(entry_path, exist_ok=True)
+                            os.makedirs(target_path, exist_ok=True)
                             if entry.mode:
                                 try:
-                                    os.chmod(entry_path, entry.mode)
+                                    os.chmod(target_path, entry.mode)
                                 except (OSError, PermissionError):
                                     pass
                             if entry.mtime:
-                                deferred_times.append((entry_path, entry.mtime))
+                                deferred_times.append((target_path, entry.mtime))
 
                         elif entry.isfile:
-                            parent_dir = os.path.dirname(entry_path)
+                            parent_dir = os.path.dirname(target_path)
                             if parent_dir:
                                 os.makedirs(parent_dir, exist_ok=True)
 
-                            with open(entry_path, 'wb') as f:
+                            with open(target_path, 'wb') as f:
                                 for block in entry.get_blocks():
                                     if self._should_stop():
                                         return
@@ -87,28 +99,27 @@ class ExtractionThread(QThread):
 
                             if entry.mode:
                                 try:
-                                    os.chmod(entry_path, entry.mode)
+                                    os.chmod(target_path, entry.mode)
                                 except (OSError, PermissionError):
                                     pass
 
                             if entry.mtime:
                                 try:
-                                    os.utime(entry_path, (entry.mtime, entry.mtime))
+                                    os.utime(target_path, (entry.mtime, entry.mtime))
                                 except (OSError, PermissionError):
                                     pass
 
                         elif entry.issym:
-                            parent_dir = os.path.dirname(entry_path)
+                            parent_dir = os.path.dirname(target_path)
                             if parent_dir:
                                 os.makedirs(parent_dir, exist_ok=True)
 
-                            if os.path.lexists(entry_path):
-                                os.remove(entry_path)
+                            if os.path.lexists(target_path):
+                                os.remove(target_path)
 
-                            link_path = entry.linkpath
                             if link_path is not None:
                                 try:
-                                    os.symlink(link_path, entry_path)
+                                    os.symlink(link_path, target_path)
                                 except (OSError, NotImplementedError):
                                     pass
 
@@ -152,8 +163,7 @@ class ExtractionThread(QThread):
                 self.finished.emit(self.archive_path, True)
 
             finally:
-                os.chdir(original_dir)
-                os.umask(old_umask)
+                self.eta.emit(0)
 
         except Exception as e:
             if not self._should_stop():
