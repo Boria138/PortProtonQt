@@ -291,7 +291,7 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
         'description': _("Changing the WINDOWS emulation version may be required to run older games. WINDOWS versions below 10 do not support new games with DirectX 12"),
         'type': 'combo',
         'options': ['11', '10', '7', 'XP'],
-        'default': '10'
+        'default': '11'
     })
 
     # 5. DLL Overrides

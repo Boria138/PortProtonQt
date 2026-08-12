@@ -18,7 +18,7 @@ try:
     APP_VERSION = version_module.APP_VERSION
 except ImportError:
     APP_COMMIT = ""
-    APP_VERSION = "1.3.1"
+    APP_VERSION = "1.3.2"
 
 __app_version__ = os.environ.get("PORTPROTONQT_VERSION", APP_VERSION)
 
