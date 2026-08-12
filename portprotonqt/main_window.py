@@ -2542,6 +2542,7 @@ class MainWindow(
                     update_button.setIcon(icon)
                 except RuntimeError:
                     update_button = None
+            SoundManager().play("game_launch")
             if not self._check_alt_i586_dependencies_before_launch():
                 if update_button:
                     update_button.setText(_("Start"))
@@ -2574,7 +2575,6 @@ class MainWindow(
                     errors="replace",
                     bufsize=1,
                 )
-                SoundManager().play("game_launch")
                 self.game_processes.append(process)
                 self.game_launch_monotonic = None
                 self._start_launch_output_reader(process)

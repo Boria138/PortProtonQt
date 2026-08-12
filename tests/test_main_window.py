@@ -1137,6 +1137,7 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
 
     def check_alt_dependencies() -> bool:
         launch_button_states.append(button.text)
+        launch_events.append("dependencies")
         return True
 
     monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", fake_popen)
@@ -1162,7 +1163,7 @@ def test_toggle_game_replaces_invalid_launch_output_bytes(
     assert popen_kwargs["errors"] == "replace"
     assert window.input_manager.suspended
     assert launch_button_states == [button.text]
-    assert launch_events == ["popen", "game_launch"]
+    assert launch_events == ["game_launch", "dependencies", "popen"]
 
 
 def test_steam_launch_plays_game_launch_sound(monkeypatch: MonkeyPatch) -> None:
