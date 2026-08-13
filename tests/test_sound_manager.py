@@ -13,6 +13,9 @@ from PySide6.QtWidgets import QApplication, QComboBox, QMenu, QPushButton, QTabB
 from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
+import portprotonqt.input_manager.dialog_modes as input_dialog_modes
+import portprotonqt.input_manager.keyboard as input_keyboard
+import portprotonqt.input_manager.runtime as input_runtime
 import portprotonqt.main_window as main_window
 import portprotonqt.sound_manager as sound_manager
 import portprotonqt.tabs.system_tab as system_tab
@@ -214,6 +217,8 @@ def test_gamepad_connection_sound_skips_initial_device(monkeypatch: MonkeyPatch)
     manager._refresh_gamepad_ui = lambda: None
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
     monkeypatch.setattr(input_manager.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+    monkeypatch.setattr(input_runtime, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_runtime.display_config, "get_auto_fullscreen_gamepad", lambda: False)
 
     manager.check_gamepad()
     manager._initial_gamepad_check = False
@@ -236,6 +241,8 @@ def test_gamepad_connection_sound_plays_after_startup(monkeypatch: MonkeyPatch) 
     manager._refresh_gamepad_ui = lambda: None
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
     monkeypatch.setattr(input_manager.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+    monkeypatch.setattr(input_runtime, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_runtime.display_config, "get_auto_fullscreen_gamepad", lambda: False)
 
     manager.check_gamepad()
 
@@ -252,6 +259,8 @@ def test_gamepad_disconnection_plays_sound(monkeypatch: MonkeyPatch) -> None:
     manager._refresh_gamepad_ui = lambda: None
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
     monkeypatch.setattr(input_manager.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+    monkeypatch.setattr(input_runtime, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_runtime.display_config, "get_auto_fullscreen_gamepad", lambda: False)
 
     manager.check_gamepad()
 
@@ -272,6 +281,7 @@ def test_gamepad_dialog_tab_switch_plays_sound(monkeypatch: MonkeyPatch) -> None
     manager._handle_common_ui_elements = lambda _button: False
     manager._focus_first_row_in_current_table = lambda: None
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_dialog_modes, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     button = next(iter(input_manager.BUTTONS["next_tab"]))
     manager.handle_winetricks_button(button, 1)
@@ -290,6 +300,7 @@ def test_menu_navigation_plays_sound(monkeypatch: MonkeyPatch) -> None:
     played_events: list[str] = []
     manager: Any = InputManager.__new__(InputManager)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_dialog_modes, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager._navigate_menu_actions(menu, direction_down=True)
 
@@ -304,6 +315,7 @@ def test_menu_show_plays_open_sound(monkeypatch: MonkeyPatch) -> None:
     manager = InputManager.__new__(InputManager)
     QObject.__init__(manager)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(QMenu(), QEvent(QEvent.Type.Show))
 
@@ -319,6 +331,7 @@ def test_combo_popup_show_does_not_play_toggle_sound(monkeypatch: MonkeyPatch) -
     combo = QComboBox()
     popup = QWidget(combo, Qt.WindowType.Popup)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(popup, QEvent(QEvent.Type.Show))
 
@@ -335,6 +348,7 @@ def test_combo_item_highlight_plays_toggle_sound(monkeypatch: MonkeyPatch) -> No
     combo.addItems(["First", "Second"])
     popup = QWidget(combo, Qt.WindowType.Popup)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(popup, QEvent(QEvent.Type.Show))
     combo.highlighted.emit(1)
@@ -349,6 +363,7 @@ def test_combo_show_does_not_play_open_sound(monkeypatch: MonkeyPatch) -> None:
     manager = InputManager.__new__(InputManager)
     QObject.__init__(manager)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(QComboBox(), QEvent(QEvent.Type.Show))
 
@@ -363,6 +378,7 @@ def test_right_mouse_button_does_not_play_widget_sound(monkeypatch: MonkeyPatch)
     QObject.__init__(manager)
     sound_manager = SimpleNamespace(play_widget_sound=played_widgets.append)
     monkeypatch.setattr(input_manager, "SoundManager", lambda: sound_manager)
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: sound_manager)
     event = QMouseEvent(
         QEvent.Type.MouseButtonRelease,
         QPointF(),

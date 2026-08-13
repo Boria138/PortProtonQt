@@ -878,21 +878,113 @@ install_data(
 
 ```
 PortProtonQt/
-├── portprotonqt/          # Python package
-│   ├── app.py            # Entry point
-│   ├── main_window.py    # Main window
-│   ├── game_card.py      # Game card widget
-│   ├── steam_api.py      # Steam integration
-│   ├── egs_api.py        # Epic Games integration
-│   ├── theme_manager.py  # Theme management
-│   ├── logger.py         # Logging
-│   └── themes/           # Theme files
-├── tests/                # Unit tests
-├── build-aux/            # Build resources
-├── dev-scripts/          # Development scripts
-├── documentation/        # Documentation
-├── meson.build          # Meson config
-├── pyproject.toml       # Python config
+├── portprotonqt/                    # Python package
+│   ├── animations/                  # UI animation modules
+│   │   ├── detail_background.py
+│   │   ├── detail_page.py
+│   │   ├── game_card.py
+│   │   ├── library_controls.py
+│   │   └── virtual_keyboard.py
+│   ├── config/                      # Application configuration
+│   │   ├── base.py
+│   │   ├── cache.py
+│   │   ├── display.py
+│   │   ├── favorites.py
+│   │   ├── game.py
+│   │   ├── gamepad.py
+│   │   ├── portproton.py
+│   │   ├── proxy.py
+│   │   ├── ui.py
+│   │   ├── validators.py
+│   │   └── window.py
+│   ├── debug_utils/                 # Debug data collection and processing
+│   │   ├── debug_log_manager.py
+│   │   ├── env_utils.py
+│   │   ├── game_debug.py
+│   │   ├── gpu_info.py
+│   │   ├── log_processor.py
+│   │   ├── system_info.py
+│   │   └── xorg_utils.py
+│   ├── detail_pages/                # Game detail page components
+│   │   ├── utils.py
+│   │   └── widgets.py
+│   ├── dialogs/                     # Application dialogs
+│   │   ├── appimage_update.py
+│   │   ├── base.py
+│   │   ├── compatibility_report.py
+│   │   ├── dialog_utils.py
+│   │   ├── file_explorer.py
+│   │   ├── prefix_backup.py
+│   │   ├── proton_manager.py
+│   │   ├── settings_dialog.py
+│   │   ├── settings_gamescope.py
+│   │   ├── settings_mangohud.py
+│   │   ├── settings_vkbasalt.py
+│   │   ├── wine_downloader.py
+│   │   ├── wine_extractor.py
+│   │   ├── wine_loader.py
+│   │   └── winetricks_dialog.py
+│   ├── input_manager/               # Keyboard and gamepad input routing
+│   │   ├── buttons.py
+│   │   ├── constants.py
+│   │   ├── dialog_modes.py
+│   │   ├── dpad.py
+│   │   ├── file_explorer.py
+│   │   ├── keyboard.py
+│   │   ├── mixin.py
+│   │   ├── runtime.py
+│   │   ├── settings.py
+│   │   └── settings_visual.py
+│   ├── scripts_utils/               # Helpers used by PortProton scripts
+│   │   ├── dbus_tools.py
+│   │   ├── easyterm.py
+│   │   ├── graphics_detector.py
+│   │   ├── idle_inhibit.py
+│   │   ├── json_tools.py
+│   │   ├── mount_points.py
+│   │   ├── power_profiles.py
+│   │   ├── prefix_backup.py
+│   │   └── shortcut_tools.py
+│   ├── steam_api/                   # Steam API, cache, and shortcuts
+│   │   ├── api.py
+│   │   ├── cache.py
+│   │   ├── shortcuts.py
+│   │   └── utils.py
+│   ├── system_manager/              # System settings backends
+│   │   ├── audio.py
+│   │   ├── bluetooth.py
+│   │   ├── common.py
+│   │   ├── network.py
+│   │   └── storage.py
+│   ├── tabs/                        # Main window tabs and workers
+│   │   ├── autoinstall_tab.py
+│   │   ├── control_hints.py
+│   │   ├── gog_tab.py
+│   │   ├── library_tab.py
+│   │   ├── settings_tab.py
+│   │   ├── system_tab.py
+│   │   ├── theme_store.py
+│   │   ├── theme_store_workers.py
+│   │   ├── theme_tab.py
+│   │   ├── wine_tab.py
+│   │   └── workers.py
+│   ├── locales/                    # Translation catalogs
+│   ├── terminal_schemes/           # Terminal color schemes
+│   ├── themes/                     # Built-in themes and assets
+│   ├── app.py                      # Entry point
+│   ├── game_card.py                # Game card widget
+│   ├── gog_api.py                  # GOG integration
+│   ├── main_window.py              # Main window
+│   ├── native_gamepad.py           # Native SDL3 gamepad backend
+│   ├── portproton_api.py           # PortProton integration
+│   ├── theme_manager.py            # Theme management
+│   └── logger.py                   # Logging
+├── tests/                          # Unit tests
+├── build-aux/                      # Build resources
+├── dev-scripts/                    # Development scripts
+├── documentation/                  # Documentation
+├── meson.build                     # Meson config
+├── pyproject.toml                  # Python config
 └── .pre-commit-config.yaml
 ```
 

@@ -5,6 +5,7 @@ Maintainer: Ivan Mazhukin <vanyamajukin@outlook.com>
 Build-Depends:
  debhelper-compat (= 13),
  gettext,
+ libsdl3-dev,
  libvulkan-dev,
  meson,
  ninja-build,

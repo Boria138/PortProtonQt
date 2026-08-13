@@ -211,7 +211,11 @@ class ExeSettingsDialog(
 
         if self.input_manager:
             self.input_manager.enable_settings_mode(self)
-            self.input_manager.gamepad_hotplug.connect(self._update_vkbasalt_toggle_key_visibility)
+            self.input_manager.connect_surface_signal(
+                'settings_dialog',
+                self.input_manager.gamepad_hotplug,
+                self._update_vkbasalt_toggle_key_visibility,
+            )
 
         self.hints_widget, self.hints_labels = create_dialog_hints_widget(
             self.theme, self.main_window, self.input_manager, context='settings'
@@ -219,12 +223,12 @@ class ExeSettingsDialog(
         self.main_layout.addWidget(self.hints_widget)
 
         if self.input_manager:
-            self.input_manager.button_event.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
-            self.input_manager.dpad_moved.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
+            def update_hints(*_args: object) -> None:
+                update_dialog_hints(
+                    self.hints_labels, self.main_window, self.input_manager,
+                    theme_manager, self.current_theme_name,
+                )
+            self.input_manager.connect_surface_updates('settings_dialog', update_hints)
             update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
 
         self.init_virtual_keyboard()

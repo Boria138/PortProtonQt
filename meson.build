@@ -13,15 +13,15 @@ conf = configuration_data()
 conf.set('PYTHON', python3.full_path())
 
 version_conf = configuration_data()
-version_conf.set_quoted('APP_VERSION', meson.project_version())
-version_conf.set_quoted('APP_COMMIT', '')
+version_conf.set('APP_VERSION', meson.project_version())
+version_conf.set('APP_COMMIT', '')
 
 if get_option('nightly')
   git = find_program('git', required: false)
   if git.found()
     git_commit = run_command(git, 'rev-parse', '--short', 'HEAD', check: false)
     if git_commit.returncode() == 0
-      version_conf.set_quoted('APP_COMMIT', git_commit.stdout().strip())
+      version_conf.set('APP_COMMIT', git_commit.stdout().strip())
     endif
   endif
 endif
@@ -30,6 +30,8 @@ endif
 prefix = get_option('prefix')
 datadir = prefix / get_option('datadir')
 bindir = prefix / get_option('bindir')
+libdir = prefix / get_option('libdir')
+conf.set('GAMEPAD_LIBRARY_DIR', libdir / meson.project_name())
 
 # Use custom purelibdir if specified, otherwise use default
 purelibdir_opt = get_option('python_purelibdir')
@@ -38,17 +40,7 @@ pkgdatadir = pythondir / meson.project_name()
 
 # C compiler for vk_gpu_info
 cc = meson.get_compiler('c')
-
-configured_version = configure_file(
-  input: 'portprotonqt/_version.py.in',
-  output: '_version.py',
-  configuration: version_conf,
-)
-
-install_data(
-  configured_version,
-  install_dir: pythondir / meson.project_name(),
-)
+sdl3_dep = dependency('sdl3', required: true)
 
 # Install Python package
 subdir('portprotonqt')

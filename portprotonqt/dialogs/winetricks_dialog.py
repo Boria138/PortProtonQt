@@ -86,12 +86,12 @@ class WinetricksDialog(DraggableDialog):
         self.main_layout.addWidget(self.hints_widget)
 
         if self.input_manager:
-            self.input_manager.button_event.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
-            self.input_manager.dpad_moved.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
+            def update_hints(*_args: object) -> None:
+                update_dialog_hints(
+                    self.hints_labels, self.main_window, self.input_manager,
+                    theme_manager, self.current_theme_name,
+                )
+            self.input_manager.connect_surface_updates('winetricks_dialog', update_hints)
             update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
 
     def setup_ui(self):
