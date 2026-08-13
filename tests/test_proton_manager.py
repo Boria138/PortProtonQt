@@ -89,3 +89,19 @@ def test_library_drop_opens_manager_for_wine_archive(tmp_path, monkeypatch) -> N
 
     assert event.accepted
     assert calls[0]["local_archives"] == [str(archive_path)]
+
+
+def test_open_wine_folder_creates_and_opens_dist(tmp_path, monkeypatch) -> None:
+    opened_urls = []
+    manager = cast(Any, ProtonManager.__new__(ProtonManager))
+    manager.portproton_location = str(tmp_path)
+    monkeypatch.setattr(
+        "portprotonqt.dialogs.proton_manager.QDesktopServices.openUrl",
+        lambda url: opened_urls.append(url) or True,
+    )
+
+    manager._open_wine_folder()
+
+    wine_folder = tmp_path / "data" / "dist"
+    assert wine_folder.is_dir()
+    assert opened_urls[0].toLocalFile() == str(wine_folder)

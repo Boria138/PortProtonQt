@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
     QStackedWidget, QPushButton
 )
-from PySide6.QtCore import QEvent, QMimeData, QObject, Qt, QTimer
-from PySide6.QtGui import QDragEnterEvent, QDropEvent, QGuiApplication
+from PySide6.QtCore import QEvent, QMimeData, QObject, Qt, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDropEvent, QGuiApplication
 from shiboken6 import isValid
 
 from portprotonqt.config import get_portproton_start_command, ui_config
@@ -262,11 +262,16 @@ class ProtonManager(DraggableDialog):
         self.clear_btn = QPushButton(_('Clear All'))
         self.clear_btn.clicked.connect(self.clear_selection)
         self.clear_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.open_folder_btn = QPushButton(_('Open Folder'))
+        self.open_folder_btn.clicked.connect(self._open_wine_folder)
+        self.open_folder_btn.setEnabled(bool(self.portproton_location))
+        self.open_folder_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_btn_dialog = QPushButton(_('Cancel'))
         self.cancel_btn_dialog.clicked.connect(self.reject)
         self.cancel_btn_dialog.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         button_layout.addWidget(self.download_btn)
         button_layout.addWidget(self.clear_btn)
+        button_layout.addWidget(self.open_folder_btn)
         button_layout.addWidget(self.cancel_btn_dialog)
         layout.addLayout(button_layout)
 
@@ -289,6 +294,18 @@ class ProtonManager(DraggableDialog):
                 self.hints_labels, self.main_window, self.input_manager,
                 theme_manager, self.current_theme_name
             )
+
+    def _open_wine_folder(self) -> None:
+        if not self.portproton_location:
+            return
+        wine_folder = os.path.join(self.portproton_location, "data", "dist")
+        try:
+            os.makedirs(wine_folder, exist_ok=True)
+        except OSError as error:
+            logger.warning("Failed to create Wine folder %s: %s", wine_folder, error)
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(wine_folder)):
+            logger.warning("Failed to open Wine folder %s", wine_folder)
 
     def start_loading_wine_data(self):
         self.wine_loading_thread = WineLoadingThread()
