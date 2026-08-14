@@ -7,15 +7,15 @@ SYSTEM_GAMEPAD_LIBRARY = Path(__file__).parent / GAMEPAD_LIBRARY_NAME
 DEV_GAMEPAD_LIBRARY = (
     Path(__file__).parent.parent / "build-aux" / "lib" / GAMEPAD_LIBRARY_NAME
 )
+GAMEPAD_LIBRARY_PATH = (
+    SYSTEM_GAMEPAD_LIBRARY
+    if SYSTEM_GAMEPAD_LIBRARY.is_file()
+    else DEV_GAMEPAD_LIBRARY
+)
 
 
 def _load_library() -> ctypes.CDLL:
-    library_path = (
-        SYSTEM_GAMEPAD_LIBRARY
-        if SYSTEM_GAMEPAD_LIBRARY.is_file()
-        else DEV_GAMEPAD_LIBRARY
-    )
-    return ctypes.CDLL(str(library_path))
+    return ctypes.CDLL(str(GAMEPAD_LIBRARY_PATH))
 
 
 _library = _load_library()
