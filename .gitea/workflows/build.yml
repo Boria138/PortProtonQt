@@ -119,7 +119,7 @@ jobs:
 
     strategy:
       matrix:
-        fedora_version: [42, 43, 44, rawhide]
+        fedora_version: [43, 44, rawhide]
 
     container:
       image: fedora:${{ matrix.fedora_version }}
@@ -128,9 +128,11 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y git rpmdevtools meson ninja-build python3-devel \
+          dnf upgrade -y --exclude=openh264,mozilla-openh264
+          dnf install -y --disablerepo=fedora-cisco-openh264 \
+                         git rpmdevtools meson ninja-build python3-devel \
                          systemd-rpm-macros vulkan-loader-devel redhat-rpm-config nodejs npm \
-                         gcc gettext
+                         gcc gettext 'pkgconfig(sdl3)'
 
       - name: Setup rpmbuild environment
         run: |
@@ -172,7 +174,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y build-essential debhelper dpkg-dev gettext git \
-                             libvulkan-dev meson ninja-build nodejs npm \
+                             libsdl3-dev libvulkan-dev meson ninja-build nodejs npm \
                              pkgconf python3
 
       - name: Checkout

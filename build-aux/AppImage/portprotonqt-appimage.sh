@@ -43,6 +43,7 @@ pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
 	/usr/bin/portprotonqt* \
 	/usr/bin/update-desktop-database \
 	/usr/bin/vk_gpu_info \
+	/usr/lib/portprotonqt/libportprotonqt_gamepad.so \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Multimedia.so* \

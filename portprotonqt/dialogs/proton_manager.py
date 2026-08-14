@@ -278,18 +278,12 @@ class ProtonManager(DraggableDialog):
         self.tab_widget.currentChanged.connect(self.tab_changed)
 
         if self.input_manager and self.main_window:
-            self.input_manager.button_event.connect(
-                lambda *args: update_dialog_hints(
+            def update_hints(*_args: object) -> None:
+                update_dialog_hints(
                     self.hints_labels, self.main_window, self.input_manager,
-                    theme_manager, self.current_theme_name
+                    theme_manager, self.current_theme_name,
                 )
-            )
-            self.input_manager.dpad_moved.connect(
-                lambda *args: update_dialog_hints(
-                    self.hints_labels, self.main_window, self.input_manager,
-                    theme_manager, self.current_theme_name
-                )
-            )
+            self.input_manager.connect_surface_updates('proton_manager_dialog', update_hints)
             update_dialog_hints(
                 self.hints_labels, self.main_window, self.input_manager,
                 theme_manager, self.current_theme_name

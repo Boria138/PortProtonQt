@@ -1,7 +1,6 @@
 # Install Python source files
 install_data(
   ['__init__.py',
-   'app.py',
    'appimage_integration.py',
    'appimage_updater.py',
    'cli.py',
@@ -12,13 +11,11 @@ install_data(
    'downloader.py',
   'compatibility_report.py',
   'game_card.py',
-  'gamepad_backend.py',
   'game_library_manager.py',
   'gog_api.py',
   'howlongtobeat_api.py',
   'image_utils.py',
   'icon_extractor.py',
-  'input_manager.py',
   'keyboard_layouts.py',
   'localization.py',
   'logger.py',
@@ -37,6 +34,48 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+install_data(
+  configure_file(
+    input: 'app.py',
+    output: 'app.py',
+    configuration: version_conf,
+  ),
+  install_dir: pythondir / meson.project_name(),
+)
+
+install_data(
+  configure_file(
+    input: 'native_gamepad.py',
+    output: 'native_gamepad.py',
+    configuration: conf,
+  ),
+  install_dir: pythondir / meson.project_name(),
+)
+
+install_data(
+  ['input_manager/__init__.py',
+   'input_manager/buttons.py',
+   'input_manager/constants.py',
+   'input_manager/dialog_modes.py',
+   'input_manager/dpad.py',
+   'input_manager/file_explorer.py',
+   'input_manager/keyboard.py',
+   'input_manager/mixin.py',
+   'input_manager/runtime.py',
+   'input_manager/settings.py',
+   'input_manager/settings_visual.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'input_manager',
+)
+
+shared_library(
+  'portprotonqt_gamepad',
+  'gamepad_backend.c',
+  dependencies: sdl3_dep,
+  install: true,
+  install_dir: libdir / meson.project_name(),
 )
 
 install_data(

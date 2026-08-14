@@ -928,7 +928,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         self.settingsDebounceTimer.start()
 
-        gamepad_connected = self.input_manager.find_gamepad() is not None
+        gamepad_connected = self.input_manager.gamepad is not None
         if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
             self.showFullScreen()
 

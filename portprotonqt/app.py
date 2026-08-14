@@ -1,7 +1,6 @@
 import argparse
 import sys
 import os
-import importlib
 import subprocess
 import threading
 import urllib.error
@@ -11,16 +10,6 @@ from logging import Logger
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-
-try:
-    version_module = importlib.import_module("portprotonqt._version")
-    APP_COMMIT = version_module.APP_COMMIT
-    APP_VERSION = version_module.APP_VERSION
-except ImportError:
-    APP_COMMIT = ""
-    APP_VERSION = "1.3.2"
-
-__app_version__ = os.environ.get("PORTPROTONQT_VERSION", APP_VERSION)
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
@@ -59,6 +48,14 @@ from portprotonqt.cli import (
     parse_resolution,
 )
 from portprotonqt.localization import _, get_steam_language
+
+APP_VERSION = "@APP_VERSION@"
+APP_COMMIT = "@APP_COMMIT@"
+if APP_VERSION == "@APP_VERSION@":
+    APP_COMMIT = ""
+    APP_VERSION = "1.3.2"
+
+__app_version__ = APP_VERSION
 
 COUNTER_DOWNLOAD_URL = "http://cloud.linux-gaming.ru:8081/api/download/{version}"
 
