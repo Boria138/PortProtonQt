@@ -51,9 +51,6 @@ from portprotonqt.localization import _, get_steam_language
 
 APP_VERSION = "@APP_VERSION@"
 APP_COMMIT = "@APP_COMMIT@"
-if APP_VERSION == "@APP_VERSION@":
-    APP_COMMIT = ""
-    APP_VERSION = "1.3.2"
 
 __app_version__ = APP_VERSION
 
