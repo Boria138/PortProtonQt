@@ -348,7 +348,7 @@ class DpadInputMixin(InputMixin):
             isinstance(focused, QListView)
             and self._find_parent_combo(focused) is not None
         )
-        if not isinstance(focused, GameCard) and not combo_popup:
+        if is_initial_press and not isinstance(focused, GameCard) and not combo_popup:
             SoundManager().play("navigate")
         if self._handle_dialog_dpad(active, code, value):
             return

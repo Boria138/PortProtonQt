@@ -380,6 +380,24 @@ def test_combo_gamepad_navigation_skips_navigate_sound(monkeypatch: MonkeyPatch)
     assert app is not None
 
 
+def test_repeated_dpad_navigation_skips_navigate_sound(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
+    active = QWidget()
+    focused = QPushButton(active)
+    manager: Any = InputManager.__new__(InputManager)
+    manager._handle_dialog_dpad = lambda *_args: True
+    monkeypatch.setattr(input_dpad.QApplication, "activeWindow", lambda: active)
+    monkeypatch.setattr(input_dpad.QApplication, "focusWidget", lambda: focused)
+    monkeypatch.setattr(input_dpad.QApplication, "activePopupWidget", lambda: None)
+    monkeypatch.setattr(input_dpad, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+
+    manager._route_dpad_navigation(PAD_DPAD_Y, 1, False)
+
+    assert played_events == []
+    assert app is not None
+
+
 def test_combo_show_does_not_play_open_sound(monkeypatch: MonkeyPatch) -> None:
     app = QApplication.instance() or QApplication([])
     played_events: list[str] = []
