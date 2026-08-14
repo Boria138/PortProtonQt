@@ -35,7 +35,6 @@ bindir = prefix / get_option('bindir')
 purelibdir_opt = get_option('python_purelibdir')
 pythondir = purelibdir_opt != '' ? purelibdir_opt: python3.get_install_dir(pure: true)
 pkgdatadir = pythondir / meson.project_name()
-conf.set('GAMEPAD_LIBRARY_DIR', pkgdatadir)
 
 # Native C build dependencies and sources
 cc = meson.get_compiler('c')

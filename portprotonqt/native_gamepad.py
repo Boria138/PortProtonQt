@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 GAMEPAD_LIBRARY_NAME = "libportprotonqt_gamepad.so"
-SYSTEM_GAMEPAD_LIBRARY = Path("@GAMEPAD_LIBRARY_DIR@") / GAMEPAD_LIBRARY_NAME
+SYSTEM_GAMEPAD_LIBRARY = Path(__file__).parent / GAMEPAD_LIBRARY_NAME
 DEV_GAMEPAD_LIBRARY = (
     Path(__file__).parent.parent / "build-aux" / "lib" / GAMEPAD_LIBRARY_NAME
 )

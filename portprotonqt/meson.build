@@ -46,11 +46,7 @@ install_data(
 )
 
 install_data(
-  configure_file(
-    input: 'native_gamepad.py',
-    output: 'native_gamepad.py',
-    configuration: conf,
-  ),
+  'native_gamepad.py',
   install_dir: pythondir / meson.project_name(),
 )
 
