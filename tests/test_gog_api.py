@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -5,7 +6,7 @@ from unittest.mock import Mock
 import orjson
 import pytest
 
-from portprotonqt.gog_api import GOGAPI, GOG_PRODUCT_LOCALES
+from portprotonqt.gog_api import GOGAPI, GOGDL_UPDATE_INTERVAL, GOG_PRODUCT_LOCALES
 from portprotonqt.localization import LOCALE_MAP
 
 
@@ -308,12 +309,61 @@ def test_update_gogdl_skips_current_release(tmp_path: Path, monkeypatch) -> None
     gogdl_path.touch()
     gogdl_path.chmod(0o755)
     api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
-    monkeypatch.setattr(api, "_get_latest_gogdl_release", lambda: ({}, "v1.2.1"))
+    latest_release = Mock(return_value=({}, "v1.2.1"))
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", latest_release)
     install = Mock()
     monkeypatch.setattr(api, "_install_gogdl_release", install)
 
     assert api.update_gogdl() == str(gogdl_path)
+    latest_release.assert_not_called()
     install.assert_not_called()
+
+
+def test_update_gogdl_checks_release_after_month(tmp_path: Path, monkeypatch) -> None:
+    api = GOGAPI()
+    api.data_dir = tmp_path
+    api.gogdl_version_path = tmp_path / "bin/gogdl.version"
+    gogdl_path = tmp_path / "bin/gogdl"
+    gogdl_path.parent.mkdir()
+    gogdl_path.touch()
+    gogdl_path.chmod(0o755)
+    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    os.utime(api.gogdl_version_path, (1, 1))
+    last_check = api.gogdl_version_path.stat().st_mtime
+    monkeypatch.setattr(
+        "portprotonqt.gog_api.time.time",
+        lambda: last_check + GOGDL_UPDATE_INTERVAL,
+    )
+    latest_release = Mock(return_value=({}, "v1.2.1"))
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", latest_release)
+
+    assert api.update_gogdl() == str(gogdl_path)
+    latest_release.assert_called_once_with()
+
+
+def test_update_gogdl_records_failed_monthly_check(tmp_path: Path, monkeypatch) -> None:
+    api = GOGAPI()
+    api.data_dir = tmp_path
+    api.gogdl_version_path = tmp_path / "bin/gogdl.version"
+    gogdl_path = tmp_path / "bin/gogdl"
+    gogdl_path.parent.mkdir()
+    gogdl_path.touch()
+    gogdl_path.chmod(0o755)
+    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    os.utime(api.gogdl_version_path, (1, 1))
+    last_check = api.gogdl_version_path.stat().st_mtime
+    monkeypatch.setattr(
+        "portprotonqt.gog_api.time.time",
+        lambda: last_check + GOGDL_UPDATE_INTERVAL,
+    )
+    monkeypatch.setattr(
+        api, "_get_latest_gogdl_release", Mock(side_effect=OSError("offline"))
+    )
+
+    with pytest.raises(OSError, match="offline"):
+        api.update_gogdl()
+
+    assert api.gogdl_version_path.stat().st_mtime > last_check
 
 
 def test_update_gogdl_installs_new_release(tmp_path: Path, monkeypatch) -> None:

@@ -6,6 +6,7 @@ import platform
 import re
 import shutil
 import subprocess
+import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -25,6 +26,7 @@ GOG_LOGIN_URL = (
 )
 GOGDL_RELEASE_URL = "https://api.github.com/repos/Heroic-Games-Launcher/heroic-gogdl/releases/latest"
 GOGDL_AUTH_TIMEOUT = 60
+GOGDL_UPDATE_INTERVAL = 30 * 24 * 60 * 60
 GOG_USER_TIMEOUT = 15
 GOG_METADATA_WORKERS = 4
 GOG_SETUP_MARKER_VERSION = 1
@@ -82,8 +84,16 @@ class GOGAPI:
 
     def update_gogdl(self) -> str:
         """Update the bundled gogdl binary to the latest official release."""
-        asset, release_tag = self._get_latest_gogdl_release()
         bundled = self.data_dir / "bin/gogdl"
+        if bundled.is_file() and os.access(bundled, os.X_OK):
+            try:
+                last_check = self.gogdl_version_path.stat().st_mtime
+            except OSError:
+                last_check = 0
+            if time.time() - last_check < GOGDL_UPDATE_INTERVAL:
+                return str(bundled)
+            self.gogdl_version_path.touch()
+        asset, release_tag = self._get_latest_gogdl_release()
         if (
             bundled.is_file()
             and os.access(bundled, os.X_OK)
