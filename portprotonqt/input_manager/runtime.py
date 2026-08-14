@@ -237,6 +237,8 @@ class GamepadRuntimeMixin(InputMixin):
                 self.click_left()
             elif button_code in BUTTONS['back']:
                 self.click_right()
+        if emulation_combo:
+            return
         if self._should_skip_regular_events():
             return
         self.button_event.emit(button_code, value)
