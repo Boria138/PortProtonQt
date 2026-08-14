@@ -9,17 +9,19 @@ from unittest.mock import Mock
 
 from PySide6.QtCore import QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QApplication, QComboBox, QMenu, QPushButton, QTabBar, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QListView, QMenu, QPushButton, QTabBar, QWidget
 from pytest import MonkeyPatch
 
 import portprotonqt.input_manager as input_manager
 import portprotonqt.input_manager.dialog_modes as input_dialog_modes
+import portprotonqt.input_manager.dpad as input_dpad
 import portprotonqt.input_manager.keyboard as input_keyboard
 import portprotonqt.input_manager.runtime as input_runtime
 import portprotonqt.main_window as main_window
 import portprotonqt.sound_manager as sound_manager
 import portprotonqt.tabs.system_tab as system_tab
 from portprotonqt.input_manager import InputManager
+from portprotonqt.input_manager.constants import PAD_DPAD_Y
 from portprotonqt.main_window import MainWindow
 from portprotonqt.sound_manager import SOUND_EVENTS, SoundManager, _SoundSlot
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
@@ -354,6 +356,27 @@ def test_combo_item_highlight_plays_toggle_sound(monkeypatch: MonkeyPatch) -> No
     combo.highlighted.emit(1)
 
     assert played_events == ["toggle"]
+    assert app is not None
+
+
+def test_combo_gamepad_navigation_skips_navigate_sound(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
+    active = QWidget()
+    combo = QComboBox(active)
+    view = cast(QListView, combo.view())
+    manager: Any = InputManager.__new__(InputManager)
+    manager._handle_dialog_dpad = lambda *_args: False
+    manager._handle_popup_dpad = lambda *_args: False
+    manager._handle_list_dpad = lambda *_args: True
+    monkeypatch.setattr(input_dpad.QApplication, "activeWindow", lambda: active)
+    monkeypatch.setattr(input_dpad.QApplication, "focusWidget", lambda: view)
+    monkeypatch.setattr(input_dpad.QApplication, "activePopupWidget", lambda: view)
+    monkeypatch.setattr(input_dpad, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+
+    manager._route_dpad_navigation(PAD_DPAD_Y, 1, True)
+
+    assert played_events == []
     assert app is not None
 
 

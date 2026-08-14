@@ -344,7 +344,11 @@ class DpadInputMixin(InputMixin):
         popup = QApplication.activePopupWidget()
         if not app or not active:
             return
-        if not isinstance(focused, GameCard):
+        combo_popup = (
+            isinstance(focused, QListView)
+            and self._find_parent_combo(focused) is not None
+        )
+        if not isinstance(focused, GameCard) and not combo_popup:
             SoundManager().play("navigate")
         if self._handle_dialog_dpad(active, code, value):
             return
