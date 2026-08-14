@@ -1034,6 +1034,7 @@ class MainWindow(
     def _load_gog_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
         api = getattr(self, "gog_api", None) or GOGAPI()
         installed = api.load_installed()
+        only_installed = game_config.get_only_installed()
         library = [game for game in api.load_library() if game.get("app_id")]
         if self._upgrade_legacy_gog_library(api, library, callback):
             return
@@ -1047,7 +1048,7 @@ class MainWindow(
             nonlocal processed_count
             app_id = str(game.get("app_id", ""))
             is_installed = api.is_game_installed(app_id, installed)
-            if game_config.get_display_filter() != "installed" or is_installed:
+            if not only_installed or is_installed:
                 action = "launch" if is_installed else "install"
                 games.append((
                     str(game.get("title", app_id)),

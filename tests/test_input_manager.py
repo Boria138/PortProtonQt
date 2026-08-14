@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from PySide6.QtCore import QEvent, QObject, QStringListModel, Qt
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QFrame, QLineEdit, QListView, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QLineEdit, QListView, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
 from pytest import MonkeyPatch, raises
 
 import portprotonqt.input_manager as input_manager
@@ -221,6 +221,33 @@ def test_library_toolbar_navigation_includes_delete_missing_button() -> None:
 
     assert handled is True
     assert QApplication.focusWidget() is widgets[4]
+
+
+def test_library_filter_navigation_includes_only_installed_checkbox() -> None:
+    app = QApplication.instance() or QApplication([])
+    controls = QWidget()
+    controls.show()
+    widgets = [
+        QComboBox(controls),
+        QComboBox(controls),
+        QCheckBox(controls),
+        QComboBox(controls),
+    ]
+    for widget in widgets:
+        widget.show()
+    app.processEvents()
+
+    parent = SimpleNamespace(
+        libraryControlsWidget=controls,
+        gamesSortCombo=widgets[0],
+        gamesDisplayCombo=widgets[1],
+        onlyInstalledCheckBox=widgets[2],
+        gamesBadgeViewCombo=widgets[3],
+    )
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, parent)
+
+    assert manager._get_library_filter_widgets() == widgets
 
 
 def test_library_size_adjustment_uses_original_step() -> None:

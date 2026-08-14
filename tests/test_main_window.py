@@ -60,6 +60,7 @@ TAB_METHODS = {
         "_create_library_combo",
         "_on_library_sort_changed",
         "_on_library_filter_changed",
+        "_on_only_installed_changed",
         "_on_library_badge_view_changed",
         "_toggle_library_controls",
         "_close_library_controls",
@@ -1258,6 +1259,7 @@ def test_load_gog_games_includes_compatibility_metadata(monkeypatch: MonkeyPatch
     monkeypatch.setattr(
         "portprotonqt.main_window.get_full_steam_game_info_async", get_steam_info
     )
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: False)
     results = []
 
     MainWindow._load_gog_games_async(window, results.append)
@@ -1312,7 +1314,7 @@ def test_installed_filter_excludes_uninstalled_gog_games(
         ],
         is_game_installed=lambda app_id, _installed: app_id == "installed",
     )
-    monkeypatch.setattr(game_config, "get_display_filter", lambda: "installed")
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: True)
     monkeypatch.setattr(
         "portprotonqt.main_window.get_steam_game_info_async",
         lambda _name, _uri, callback: callback({}),
@@ -1323,6 +1325,31 @@ def test_installed_filter_excludes_uninstalled_gog_games(
 
     assert [game[3] for game in results[0]] == ["installed"]
     assert results[0][0][5] == "gog://launch/installed"
+
+
+def test_installed_filter_disabled_includes_uninstalled_gog_games(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.gog_api = SimpleNamespace(
+        load_installed=lambda: {},
+        load_library=lambda: [
+            {"app_id": "uninstalled", "title": "Uninstalled", "steam_appid": ""},
+        ],
+        is_game_installed=lambda _app_id, _installed: False,
+    )
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: False)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_game_info_async",
+        lambda _name, _uri, callback: callback({}),
+    )
+    results = []
+
+    MainWindow._load_gog_games_async(window, results.append)
+
+    assert [game[3] for game in results[0]] == ["uninstalled"]
+    assert results[0][0][5] == "gog://install/uninstalled"
 
 
 def test_gog_metadata_search_ignores_uri_components(monkeypatch: MonkeyPatch) -> None:

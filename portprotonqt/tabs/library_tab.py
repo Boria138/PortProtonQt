@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from PySide6.QtCore import QAbstractAnimation, QPoint, QStandardPaths, Qt, QTimer, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialog,
     QHBoxLayout,
@@ -93,7 +94,19 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
     def _on_library_filter_changed(self, index: int) -> None:
         if index < 0 or index >= len(self.filter_keys):
             return
-        game_config.set_display_filter(self.filter_keys[index])
+        display_filter = self.filter_keys[index]
+        game_config.set_display_filter(display_filter)
+        self.onlyInstalledCheckBox.setVisible(
+            display_filter not in ("steam", "portproton")
+        )
+        self._position_library_controls_widget()
+        self.searchEdit.clear()
+        self.games = []
+        self._preserve_library_focus_after_load = True
+        self.loadGames(force_load=True)
+
+    def _on_only_installed_changed(self, checked: bool) -> None:
+        game_config.set_only_installed(checked)
         self.searchEdit.clear()
         self.games = []
         self._preserve_library_focus_after_load = True
@@ -279,12 +292,15 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addWidget(self.gamesSortCombo)
+        controls_layout.addWidget(
+            self.gamesSortCombo, alignment=Qt.AlignmentFlag.AlignTop
+        )
 
-        self.filter_keys = ["all", "installed", "steam", "gog", "portproton", "favorites"]
+        display_filter = game_config.get_display_filter()
+        only_installed = game_config.get_only_installed()
+        self.filter_keys = ["all", "steam", "gog", "portproton", "favorites"]
         self.filter_labels = [
             _("All"),
-            _("Only Installed"),
             "Steam",
             "GOG",
             "PortProton",
@@ -294,11 +310,25 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._set_combo_current_key(
             self.gamesDisplayCombo,
             self.filter_keys,
-            game_config.get_display_filter(),
+            display_filter,
         )
         self.gamesDisplayCombo.currentIndexChanged.connect(self._on_library_filter_changed)
         self.gamesDisplayCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addWidget(self.gamesDisplayCombo)
+
+        self.onlyInstalledCheckBox = QCheckBox(_("Only Installed"))
+        self.onlyInstalledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.onlyInstalledCheckBox.setChecked(only_installed)
+        self.onlyInstalledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self._register_gamepad_tooltip(self.onlyInstalledCheckBox, _("Only Installed"))
+        self.onlyInstalledCheckBox.toggled.connect(self._on_only_installed_changed)
+
+        display_filter_layout = QVBoxLayout()
+        display_filter_layout.addWidget(self.gamesDisplayCombo)
+        display_filter_layout.addWidget(self.onlyInstalledCheckBox)
+        controls_layout.addLayout(display_filter_layout)
+        self.onlyInstalledCheckBox.setVisible(
+            display_filter not in ("steam", "portproton")
+        )
 
         self.badge_view_keys = ["detailed", "compact", "hidden"]
         self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
@@ -313,7 +343,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             self.gamesBadgeViewCombo.setEnabled(False)
         self.gamesBadgeViewCombo.currentIndexChanged.connect(self._on_library_badge_view_changed)
         self.gamesBadgeViewCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addWidget(self.gamesBadgeViewCombo)
+        controls_layout.addWidget(
+            self.gamesBadgeViewCombo, alignment=Qt.AlignmentFlag.AlignTop
+        )
 
     def _delay_library_controls_hover_close(self, _index: int = -1) -> None:
         self._library_controls_hover_close_delayed = True
