@@ -14,7 +14,9 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QLabel, QMenu, QPushButton, QWidget
 
 import portprotonqt.scripts_utils.shortcut_tools as shortcut_tools
 import portprotonqt.steam_api.shortcuts as steam_shortcuts
@@ -25,6 +27,41 @@ from portprotonqt.config.portproton import (
     extract_exec_target_path,
     get_custom_data_dir_name,
 )
+
+
+def test_game_card_context_menu_does_not_block_gamepad_polling(monkeypatch) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    app = QApplication.instance() or QApplication([])
+    parent = QWidget()
+    card = SimpleNamespace(
+        game_source="portproton",
+        name="Missing Game",
+        exec_line="",
+        mapToGlobal=lambda position: position,
+    )
+    manager = ContextMenuManager.__new__(ContextMenuManager)
+    manager.parent = parent
+    manager.theme = SimpleNamespace(CONTEXT_MENU_STYLE="")
+    monkeypatch.setattr(
+        manager,
+        "_get_exec_line",
+        lambda game_name, exec_line: None,
+    )
+    monkeypatch.setattr(manager, "_get_safe_icon", lambda icon_name: QIcon())
+    popup_calls = []
+    monkeypatch.setattr(QMenu, "popup", lambda menu, pos: popup_calls.append((menu, pos)))
+    monkeypatch.setattr(
+        QMenu,
+        "exec",
+        lambda _menu, _pos: (_ for _ in ()).throw(AssertionError("blocking menu")),
+    )
+
+    manager.show_context_menu(card, QPoint())
+
+    assert len(popup_calls) == 1
+    assert popup_calls[0][0].testAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+    assert app is not None
 
 
 def test_add_to_steam_for_all_accounts(

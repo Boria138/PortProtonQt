@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from PySide6.QtCore import QEvent, QObject, QStringListModel, Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QLineEdit, QListView, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
 from pytest import MonkeyPatch, raises
 
 import portprotonqt.input_manager as input_manager
@@ -345,6 +345,23 @@ def test_context_menu_button_ignores_widget_without_custom_menu() -> None:
     context_button = next(iter(input_manager.BUTTONS["context_menu"]))
 
     assert not manager._open_focused_context_menu(widget, context_button)
+    assert app is not None
+
+
+def test_popup_menu_buttons_activate_and_close_menu() -> None:
+    app = QApplication.instance() or QApplication([])
+    menu = QMenu()
+    action = menu.addAction("Launch")
+    triggered = []
+    action.triggered.connect(lambda: triggered.append(True))
+    menu.setActiveAction(action)
+    manager = InputManager.__new__(InputManager)
+    confirm_button = next(iter(input_manager.BUTTONS["confirm"]))
+    back_button = next(iter(input_manager.BUTTONS["back"]))
+
+    assert manager._handle_popup_menu_button(menu, confirm_button)
+    assert manager._handle_popup_menu_button(menu, back_button)
+    assert triggered == [True]
     assert app is not None
 
 

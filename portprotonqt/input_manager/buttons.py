@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QLineEdit,
     QListView,
+    QMenu,
     QSlider,
     QStackedWidget,
     QTableWidget,
@@ -69,6 +70,9 @@ class ButtonInputMixin(InputMixin):
             if self._handle_list_view_button(focused, button_code):
                 return
 
+            if self._handle_popup_menu_button(QApplication.activePopupWidget(), button_code):
+                return
+
             if self._handle_active_window_button(active, button_code):
                 return
 
@@ -120,6 +124,20 @@ class ButtonInputMixin(InputMixin):
             return True
         if button_code in BUTTONS['back'] and focused.view().isVisible():
             focused.hidePopup()
+            return True
+        return False
+
+    def _handle_popup_menu_button(self, popup: QWidget | None, button_code: int) -> bool:
+        if not isinstance(popup, QMenu):
+            return False
+        if button_code in BUTTONS['confirm']:
+            action = popup.activeAction()
+            if action is not None and action.isEnabled():
+                action.trigger()
+                popup.close()
+            return True
+        if button_code in BUTTONS['back']:
+            popup.close()
             return True
         return False
 
