@@ -72,10 +72,10 @@ install_data(
 
 shared_library(
   'portprotonqt_gamepad',
-  'gamepad_backend.c',
+  gamepad_sources,
   dependencies: sdl3_dep,
   install: true,
-  install_dir: libdir / meson.project_name(),
+  install_dir: pkgdatadir,
 )
 
 install_data(
