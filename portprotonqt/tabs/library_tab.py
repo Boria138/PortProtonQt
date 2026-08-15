@@ -436,11 +436,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         if callable(source_refresh):
             source_refresh()
-            return
 
         if not callable(source_loader) and self.gog_api.auth_path.is_file():
             self._refresh_gog_library()
-            return
 
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh

@@ -320,6 +320,11 @@ def test_library_refresh_updates_connected_gog_library(
     auth_path = tmp_path / "auth.json"
     auth_path.touch()
     monkeypatch.setattr(game_config, "get_display_filter", lambda: "gog")
+    monkeypatch.setattr(
+        library_tab_module.QTimer,
+        "singleShot",
+        lambda _delay, callback: callback(),
+    )
     calls = []
     refresh_button = MagicMock()
     refresh_button.setEnabled.side_effect = lambda enabled: calls.append(enabled)
@@ -331,12 +336,19 @@ def test_library_refresh_updates_connected_gog_library(
         game_library_manager=None,
         gog_api=SimpleNamespace(auth_path=auth_path),
         gog_library_worker=None,
+        _load_gog_games_async=lambda callback: callback([]),
         _refresh_gog_library=lambda: calls.append("gog"),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
     )
 
     LibraryMixin.refreshGames(cast(Any, window))
 
-    assert calls == ["clear", False, "gog"]
+    assert calls == [
+        "clear",
+        False,
+        "gog",
+        ("load", {"force_load": True}),
+    ]
 
 
 def test_library_refresh_skips_gog_for_portproton_filter(
