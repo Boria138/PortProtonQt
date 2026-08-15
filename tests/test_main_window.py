@@ -313,9 +313,13 @@ def test_gog_library_refresh_restores_account_status() -> None:
     assert calls == ["account", ("load", {"force_load": True})]
 
 
-def test_library_refresh_updates_connected_gog_library(tmp_path: Path) -> None:
+def test_library_refresh_updates_connected_gog_library(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
     auth_path = tmp_path / "auth.json"
     auth_path.touch()
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "gog")
     calls = []
     refresh_button = MagicMock()
     refresh_button.setEnabled.side_effect = lambda enabled: calls.append(enabled)
@@ -333,6 +337,63 @@ def test_library_refresh_updates_connected_gog_library(tmp_path: Path) -> None:
     LibraryMixin.refreshGames(cast(Any, window))
 
     assert calls == ["clear", False, "gog"]
+
+
+def test_library_refresh_skips_gog_for_portproton_filter(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    auth_path = tmp_path / "auth.json"
+    auth_path.touch()
+    calls = []
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "portproton")
+    monkeypatch.setattr(
+        library_tab_module.QTimer,
+        "singleShot",
+        lambda _delay, callback: callback(),
+    )
+    window = SimpleNamespace(
+        _refresh_in_progress=False,
+        searchEdit=SimpleNamespace(clear=lambda: None),
+        refreshButton=MagicMock(),
+        _gamepad_tooltip_map={},
+        game_library_manager=None,
+        gog_api=SimpleNamespace(auth_path=auth_path),
+        gog_library_worker=None,
+        _load_portproton_games_async=lambda callback: callback([]),
+        _refresh_gog_library=lambda: calls.append("gog"),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
+    )
+
+    LibraryMixin.refreshGames(cast(Any, window))
+
+    assert calls == [("load", {"force_load": True})]
+
+
+def test_library_refresh_uses_selected_source_refresh(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    auth_path = tmp_path / "auth.json"
+    auth_path.touch()
+    calls = []
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "custom")
+    window = SimpleNamespace(
+        _refresh_in_progress=False,
+        searchEdit=SimpleNamespace(clear=lambda: None),
+        refreshButton=MagicMock(),
+        _gamepad_tooltip_map={},
+        game_library_manager=None,
+        gog_api=SimpleNamespace(auth_path=auth_path),
+        gog_library_worker=None,
+        _load_custom_games_async=lambda callback: callback([]),
+        _refresh_custom_library=lambda: calls.append("custom"),
+        _refresh_gog_library=lambda: calls.append("gog"),
+    )
+
+    LibraryMixin.refreshGames(cast(Any, window))
+
+    assert calls == ["custom"]
 
 
 def test_gog_library_refresh_failure_reloads_cached_games(

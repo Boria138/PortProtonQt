@@ -369,6 +369,9 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.gog_account_worker = None
 
     def _refresh_gog_library(self) -> None:
+        if not self.gog_api.auth_path.is_file():
+            self.loadGames(force_load=True)
+            return
         if getattr(self, "gog_library_worker", None) is not None:
             return
         self.gogAccountStatus.setText(_("Refreshing…"))

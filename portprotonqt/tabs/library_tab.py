@@ -427,10 +427,18 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 if hasattr(self.game_library_manager, 'gamesListLayout'):
                     self.game_library_manager.gamesListLayout.update()
 
-        if (
-            self.gog_api.auth_path.is_file()
-            and getattr(self, "gog_library_worker", None) is None
-        ):
+        display_filter = game_config.get_display_filter()
+        source_loader = getattr(
+            self, f"_load_{display_filter}_games_async", None
+        )
+        source_refresh = getattr(
+            self, f"_refresh_{display_filter}_library", None
+        )
+        if callable(source_refresh):
+            source_refresh()
+            return
+
+        if not callable(source_loader) and self.gog_api.auth_path.is_file():
             self._refresh_gog_library()
             return
 
