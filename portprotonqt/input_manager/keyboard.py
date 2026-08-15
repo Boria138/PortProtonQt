@@ -104,11 +104,11 @@ class KeyboardInputMixin(InputMixin):
                 parent = obj.parent()
                 while isinstance(parent, QObject):
                     if isinstance(parent, QComboBox):
-                        if not parent.property("_sound_highlight_connected"):
-                            parent.highlighted.connect(
+                        if not parent.property("_sound_activated_connected"):
+                            parent.activated.connect(
                                 lambda _index: SoundManager().play("toggle"),
                             )
-                            parent.setProperty("_sound_highlight_connected", True)
+                            parent.setProperty("_sound_activated_connected", True)
                         break
                     parent = parent.parent()
 
