@@ -30,17 +30,16 @@ endif
 prefix = get_option('prefix')
 datadir = prefix / get_option('datadir')
 bindir = prefix / get_option('bindir')
-libdir = prefix / get_option('libdir')
-conf.set('GAMEPAD_LIBRARY_DIR', libdir / meson.project_name())
 
 # Use custom purelibdir if specified, otherwise use default
 purelibdir_opt = get_option('python_purelibdir')
 pythondir = purelibdir_opt != '' ? purelibdir_opt: python3.get_install_dir(pure: true)
 pkgdatadir = pythondir / meson.project_name()
 
-# C compiler for vk_gpu_info
+# Native C build dependencies and sources
 cc = meson.get_compiler('c')
 sdl3_dep = dependency('sdl3', required: true)
+gamepad_sources = files('build-aux/src/gamepad_backend.c')
 
 # Install Python package
 subdir('portprotonqt')
@@ -59,7 +58,7 @@ install_data(configured_portprotonqt,
 )
 
 # Build and install vk_gpu_info executable
-vk_gpu_info_sources = files('build-aux/vk_gpu_info.c')
+vk_gpu_info_sources = files('build-aux/src/vk_gpu_info.c')
 vk_gpu_info_deps = [dependency('vulkan', required: true)]
 
 executable('vk_gpu_info',

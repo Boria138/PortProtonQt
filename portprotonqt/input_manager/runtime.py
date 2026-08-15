@@ -29,6 +29,7 @@ from portprotonqt.input_manager.constants import (
 from portprotonqt.input_manager.mixin import InputMixin
 from portprotonqt.logger import get_logger
 from portprotonqt.native_gamepad import (
+    GAMEPAD_LIBRARY_PATH,
     GamepadBackendError,
     SDLGamepad,
     find_gamepad,
@@ -49,7 +50,10 @@ class GamepadRuntimeMixin(InputMixin):
         self.gamepad_poll_timer.setInterval(10)
         self.gamepad_poll_timer.timeout.connect(self._poll_gamepad)
         self.gamepad_poll_timer.start()
-        logger.info("Gamepad support initialized with SDL3 events")
+        logger.info(
+            "Gamepad support initialized with SDL3 events (library: %s)",
+            GAMEPAD_LIBRARY_PATH,
+        )
 
     def _on_gamepad_hotplug(self, action: str) -> None:
         try:
@@ -233,6 +237,8 @@ class GamepadRuntimeMixin(InputMixin):
                 self.click_left()
             elif button_code in BUTTONS['back']:
                 self.click_right()
+        if emulation_combo:
+            return
         if self._should_skip_regular_events():
             return
         self.button_event.emit(button_code, value)

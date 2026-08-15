@@ -7,7 +7,7 @@ on:
       - main
       - scripts
     paths:
-      - 'build-aux/vk_gpu_info.c'
+      - 'build-aux/src/vk_gpu_info.c'
       - '.gitea/workflows/build-vk-gpu-info-debian.yml'
 
 jobs:
@@ -34,17 +34,16 @@ jobs:
 
       - name: Compile vk_gpu_info
         run: |
-          cd build-aux
-          gcc -o vk_gpu_info vk_gpu_info.c -lvulkan
+          mkdir -p build-aux/bin
+          gcc -o build-aux/bin/vk_gpu_info build-aux/src/vk_gpu_info.c -lvulkan
 
       - name: Test vk_gpu_info execution
         run: |
-          cd build-aux
           # Check if the executable was created
-          if [ -f "./vk_gpu_info" ]; then
+          if [ -f "build-aux/bin/vk_gpu_info" ]; then
             echo "vk_gpu_info executable created successfully"
             # Try to run it (may fail if no Vulkan devices present, but that's OK for build test)
-            timeout 10s ./vk_gpu_info || echo "vk_gpu_info ran but may have failed due to lack of Vulkan hardware (expected in CI)"
+            timeout 10s build-aux/bin/vk_gpu_info || echo "vk_gpu_info ran but may have failed due to lack of Vulkan hardware (expected in CI)"
           else
             echo "ERROR: vk_gpu_info executable was not created"
             exit 1
@@ -54,4 +53,4 @@ jobs:
         uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: vk_gpu_info-debian11-binary
-          path: build-aux/vk_gpu_info
+          path: build-aux/bin/vk_gpu_info

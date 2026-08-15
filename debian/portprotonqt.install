@@ -1,6 +1,5 @@
 usr/bin/portprotonqt
 usr/bin/vk_gpu_info
-usr/lib/portprotonqt/
 usr/lib/python3/dist-packages/portprotonqt/
 usr/lib/sysusers.d/portprotonqt.conf
 usr/lib/udev/rules.d/60-portprotonqt.rules

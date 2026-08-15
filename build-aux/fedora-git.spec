@@ -108,7 +108,6 @@ install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_d
 %files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
 %{_bindir}/vk_gpu_info
-%{_libdir}/%{pypi_name}/
 %{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml

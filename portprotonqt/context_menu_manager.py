@@ -456,6 +456,7 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        menu.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
         # For non-Steam games, check if exe exists
@@ -466,7 +467,7 @@ class ContextMenuManager:
                 # Show only "Delete from PortProton" if no valid exe
                 delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete from PortProton"))
                 delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
-                menu.exec(game_card.mapToGlobal(pos))
+                menu.popup(game_card.mapToGlobal(pos))
                 return
 
         # Normal menu for games with valid exe or from Steam
@@ -632,7 +633,7 @@ class ContextMenuManager:
         if actions:
             menu.setActiveAction(actions[0])
 
-            menu.exec(game_card.mapToGlobal(pos))
+            menu.popup(game_card.mapToGlobal(pos))
 
     def _launch_game(self, game_card):
         """

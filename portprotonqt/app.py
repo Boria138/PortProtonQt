@@ -51,9 +51,15 @@ from portprotonqt.localization import _, get_steam_language
 
 APP_VERSION = "@APP_VERSION@"
 APP_COMMIT = "@APP_COMMIT@"
-if APP_VERSION == "@APP_VERSION@":
-    APP_COMMIT = ""
+if APP_VERSION == "@APP" "_VERSION@":
     APP_VERSION = "1.3.2"
+    try:
+        APP_COMMIT = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+        ).decode("utf-8").strip()
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        APP_COMMIT = ""
 
 __app_version__ = APP_VERSION
 

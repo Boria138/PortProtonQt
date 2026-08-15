@@ -5,7 +5,6 @@
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-		-Dlibdir=/usr/lib \
 		-Dpython_purelibdir=/usr/lib/python3/dist-packages \
 		-Dudev_rulesdir=/usr/lib/udev/rules.d
 

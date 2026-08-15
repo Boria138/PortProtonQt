@@ -1,6 +1,6 @@
 """Game-related configuration settings."""
 from portprotonqt.config.base import BaseConfig
-from portprotonqt.config.validators import validate_string
+from portprotonqt.config.validators import validate_bool, validate_string
 
 
 class GameConfig(BaseConfig):
@@ -25,6 +25,15 @@ class GameConfig(BaseConfig):
         """Set game display filter."""
         validate_string(filter_value, "display_filter", min_len=1, max_len=50)
         self._save_value("display_filter", filter_value, "str")
+
+    def get_only_installed(self) -> bool:
+        """Get whether only installed games are displayed."""
+        return self._get_bool("only_installed", False)
+
+    def set_only_installed(self, enabled: bool) -> None:
+        """Set whether only installed games are displayed."""
+        validate_bool(enabled, "only_installed")
+        self._save_value("only_installed", enabled, "bool")
 
     def get_steam_account_id(self) -> str:
         """Get selected Steam account ID or automatic selection."""

@@ -39,11 +39,15 @@ pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
 
 # Deploy dependencies
 # Qt libs have to be passed manually due to the app being a python script
+GAMEPAD_LIBRARY=$(find /usr/lib -type f \
+	-path '*/site-packages/portprotonqt/libportprotonqt_gamepad.so' \
+	-print -quit)
+test -n "$GAMEPAD_LIBRARY"
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
 	/usr/bin/update-desktop-database \
 	/usr/bin/vk_gpu_info \
-	/usr/lib/portprotonqt/libportprotonqt_gamepad.so \
+	"$GAMEPAD_LIBRARY" \
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Multimedia.so* \

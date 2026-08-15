@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 from PySide6.QtCore import QEvent, QObject, QStringListModel, Qt
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QFrame, QLineEdit, QListView, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
 from pytest import MonkeyPatch, raises
 
 import portprotonqt.input_manager as input_manager
@@ -14,6 +14,8 @@ import portprotonqt.input_manager.runtime as input_runtime
 import portprotonqt.native_gamepad as native_gamepad
 from portprotonqt.input_manager.constants import (
     GamepadType,
+    PAD_BUTTON_SOUTH,
+    PAD_BUTTON_SELECT,
     SDL_GAMEPAD_TYPE_PS5,
     SDL_GAMEPAD_BUTTON_DPAD_DOWN,
     SDL_GAMEPAD_BUTTON_DPAD_UP,
@@ -125,6 +127,26 @@ def test_sdl_dpad_vertical_directions() -> None:
     assert emitted == [(PAD_DPAD_Y, -1, 1.0), (PAD_DPAD_Y, 1, 2.0)]
 
 
+def test_disabling_mouse_emulation_keeps_gamepad_events_working() -> None:
+    emitted: list[tuple[int, int]] = []
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    manager._button_states = {}
+    manager.mouse_emulation_enabled = True
+    manager.emulation_active = True
+    manager.emulation_triggered = True
+    manager.start_held = True
+    manager.select_held = False
+    manager.pending_menu_fullscreen_time = 0.0
+    manager.button_event.connect(lambda code, value: emitted.append((code, value)))
+
+    manager._handle_button_value(0, PAD_BUTTON_SELECT, 1, 1.0)
+    manager._handle_button_value(1, PAD_BUTTON_SOUTH, 1, 2.0)
+
+    assert manager.emulation_triggered is False
+    assert emitted == [(PAD_BUTTON_SOUTH, 1)]
+
+
 class DummyCard(QFrame):
     def __init__(self, parent: QWidget, x_pos: int) -> None:
         super().__init__(parent)
@@ -223,6 +245,33 @@ def test_library_toolbar_navigation_includes_delete_missing_button() -> None:
     assert QApplication.focusWidget() is widgets[4]
 
 
+def test_library_filter_navigation_includes_only_installed_checkbox() -> None:
+    app = QApplication.instance() or QApplication([])
+    controls = QWidget()
+    controls.show()
+    widgets = [
+        QComboBox(controls),
+        QComboBox(controls),
+        QCheckBox(controls),
+        QComboBox(controls),
+    ]
+    for widget in widgets:
+        widget.show()
+    app.processEvents()
+
+    parent = SimpleNamespace(
+        libraryControlsWidget=controls,
+        gamesSortCombo=widgets[0],
+        gamesDisplayCombo=widgets[1],
+        onlyInstalledCheckBox=widgets[2],
+        gamesBadgeViewCombo=widgets[3],
+    )
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, parent)
+
+    assert manager._get_library_filter_widgets() == widgets
+
+
 def test_library_size_adjustment_uses_original_step() -> None:
     app = QApplication.instance() or QApplication([])
     slider = QSlider()
@@ -296,6 +345,23 @@ def test_context_menu_button_ignores_widget_without_custom_menu() -> None:
     context_button = next(iter(input_manager.BUTTONS["context_menu"]))
 
     assert not manager._open_focused_context_menu(widget, context_button)
+    assert app is not None
+
+
+def test_popup_menu_buttons_activate_and_close_menu() -> None:
+    app = QApplication.instance() or QApplication([])
+    menu = QMenu()
+    action = menu.addAction("Launch")
+    triggered = []
+    action.triggered.connect(lambda: triggered.append(True))
+    menu.setActiveAction(action)
+    manager = InputManager.__new__(InputManager)
+    confirm_button = next(iter(input_manager.BUTTONS["confirm"]))
+    back_button = next(iter(input_manager.BUTTONS["back"]))
+
+    assert manager._handle_popup_menu_button(menu, confirm_button)
+    assert manager._handle_popup_menu_button(menu, back_button)
+    assert triggered == [True]
     assert app is not None
 
 

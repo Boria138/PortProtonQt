@@ -46,11 +46,7 @@ install_data(
 )
 
 install_data(
-  configure_file(
-    input: 'native_gamepad.py',
-    output: 'native_gamepad.py',
-    configuration: conf,
-  ),
+  'native_gamepad.py',
   install_dir: pythondir / meson.project_name(),
 )
 
@@ -72,10 +68,10 @@ install_data(
 
 shared_library(
   'portprotonqt_gamepad',
-  'gamepad_backend.c',
+  gamepad_sources,
   dependencies: sdl3_dep,
   install: true,
-  install_dir: libdir / meson.project_name(),
+  install_dir: pkgdatadir,
 )
 
 install_data(

@@ -2001,7 +2001,7 @@ pw_check_vulkan_extensions () {
     local vk_gpu_info_cmd
     ext_key="supports_$(echo "${ext_name}" | tr '[:upper:]' '[:lower:]')"
 
-    vk_gpu_info_from_repo="$(dirname "${BASH_SOURCE[0]}")/../../../../dev-scripts/vk_gpu_info"
+    vk_gpu_info_from_repo="$(dirname "${BASH_SOURCE[0]}")/../../../bin/vk_gpu_info"
     if [[ -x "${vk_gpu_info_from_repo}" ]] ; then
         vk_gpu_info_cmd="${vk_gpu_info_from_repo}"
     else
