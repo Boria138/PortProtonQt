@@ -36,7 +36,7 @@ from portprotonqt.config import (
     ui_config,
 )
 from portprotonqt.context_menu_manager import CustomLineEdit
-from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
+from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox, FlowLayout
 from portprotonqt.debug_utils import get_selectable_gpu_list
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -505,7 +505,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesCheckBox)
             auto_appimage_updates_layout.addWidget(self.autoAppImageUpdatesTitle)
             auto_appimage_updates_layout.addStretch()
-            self.integrateAppImageButton = AutoSizeButton(_("Integrate AppImage"))
+            self.integrateAppImageButton = AutoSizeButton(
+                _("Integrate AppImage"), icon=self.theme_manager.get_icon("desktop", as_path=True)
+            )
             self.integrateAppImageButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             self.integrateAppImageButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             self.integrateAppImageButton.clicked.connect(self.integrateAppImage)
@@ -645,8 +647,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         layout.addWidget(self.settingsScrollArea)
 
         # Buttons (outside scroll area, always visible)
-        buttonsLayout = QHBoxLayout()
-        buttonsLayout.setSpacing(10)
+        buttonsLayout = FlowLayout(center_rows=True)
+        buttonsLayout.setContentsMargins(0, 0, 0, 0)
+        buttonsLayout.setSpacing(self.theme.portProtonPageVerticalSpacing)
 
         self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", as_path=True))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
