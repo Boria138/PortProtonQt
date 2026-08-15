@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QComboBox, QHBoxLayout, QWidget
 
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.config import game_config
@@ -159,6 +160,48 @@ def test_main_window_inherits_all_tab_mixins() -> None:
 
     for mixin in expected_mixins:
         assert issubclass(MainWindow, mixin)
+
+
+def test_library_source_filter_stays_top_aligned_without_checkbox(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    _application = QApplication.instance() or QApplication([])
+    window = MainWindow.__new__(MainWindow)
+    test_window = cast(Any, window)
+    test_window.theme = SimpleNamespace(CHECKBOX_STYLE="")
+    test_window._create_library_combo = lambda labels, _tooltip: QComboBox()
+    test_window._set_combo_current_key = lambda *_args: None
+    test_window._register_gamepad_tooltip = lambda *_args: None
+    monkeypatch.setattr(game_config, "get_sort_method", lambda: "last_launch")
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "gog")
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: False)
+    monkeypatch.setattr(library_tab_module.ui_config, "get_badge_view_mode", lambda: "detailed")
+    monkeypatch.setattr(library_tab_module.ui_config, "get_economy_mode", lambda: False)
+    controls_widget = QWidget()
+    controls_layout = QHBoxLayout(controls_widget)
+
+    LibraryMixin._add_library_filter_controls(window, controls_layout)
+
+    display_filter_item = controls_layout.itemAt(1)
+    assert display_filter_item is not None
+    assert display_filter_item.alignment() == Qt.AlignmentFlag.AlignTop
+    controls_widget.show()
+    _application.processEvents()
+    expanded_height = controls_widget.sizeHint().height()
+    test_window.onlyInstalledCheckBox.hide()
+    position_target = SimpleNamespace(
+        libraryControlsWidget=controls_widget,
+        libraryControlsButton=SimpleNamespace(
+            height=lambda: 30,
+            width=lambda: 30,
+            mapTo=lambda _parent, point: point,
+        ),
+        width=lambda: 1000,
+    )
+
+    LibraryMixin._position_library_controls_widget(cast(Any, position_target))
+
+    assert controls_widget.height() < expanded_height
 
 
 def test_gog_account_state_detects_saved_auth(

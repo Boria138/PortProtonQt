@@ -149,6 +149,10 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         return controls_layout
 
     def _position_library_controls_widget(self) -> None:
+        controls_layout = self.libraryControlsWidget.layout()
+        if controls_layout is not None:
+            controls_layout.invalidate()
+            controls_layout.activate()
         size_hint = self.libraryControlsWidget.sizeHint()
         button_bottom = self.libraryControlsButton.mapTo(
             self,
@@ -326,6 +330,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         display_filter_layout.addWidget(self.gamesDisplayCombo)
         display_filter_layout.addWidget(self.onlyInstalledCheckBox)
         controls_layout.addLayout(display_filter_layout)
+        controls_layout.setAlignment(
+            display_filter_layout, Qt.AlignmentFlag.AlignTop
+        )
         self.onlyInstalledCheckBox.setVisible(
             display_filter not in ("steam", "portproton")
         )
