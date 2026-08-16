@@ -2150,11 +2150,11 @@ msgstr "Метод сортировки:"
 msgid "All"
 msgstr "Все"
 
-msgid "Only Installed"
-msgstr "Только Установленные"
-
 msgid "Display Filter:"
 msgstr "Фильтр:"
+
+msgid "Only Installed"
+msgstr "Только Установленные"
 
 msgid "Detailed"
 msgstr "Детальный"
@@ -2217,6 +2217,9 @@ msgstr "Запускать свёрнутым"
 
 msgid "Hide Auto-Install Tab"
 msgstr "Скрыть вкладку \"Автоустановка\""
+
+msgid "Hide Control Hints"
+msgstr ""
 
 msgid "Enable UI Sounds"
 msgstr "Включить звуки интерфейса"

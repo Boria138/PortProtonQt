@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 21:55+0500\n"
+"POT-Creation-Date: 2026-08-16 21:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2056,10 +2056,10 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-msgid "Only Installed"
+msgid "Display Filter:"
 msgstr ""
 
-msgid "Display Filter:"
+msgid "Only Installed"
 msgstr ""
 
 msgid "Detailed"
@@ -2120,6 +2120,9 @@ msgid "Start in tray"
 msgstr ""
 
 msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Hide Control Hints"
 msgstr ""
 
 msgid "Enable UI Sounds"

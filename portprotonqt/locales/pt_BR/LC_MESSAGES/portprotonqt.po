@@ -2155,12 +2155,12 @@ msgstr "Método de Ordenação:"
 msgid "All"
 msgstr "Todos"
 
+msgid "Display Filter:"
+msgstr "Filtro de Exibição:"
+
 #, fuzzy
 msgid "Only Installed"
 msgstr "Instalado"
-
-msgid "Display Filter:"
-msgstr "Filtro de Exibição:"
 
 msgid "Detailed"
 msgstr "Detalhado"
@@ -2223,6 +2223,9 @@ msgstr "Iniciar na bandeja"
 
 msgid "Hide Auto-Install Tab"
 msgstr "Ocultar Aba de Instalação Automática"
+
+msgid "Hide Control Hints"
+msgstr ""
 
 msgid "Enable UI Sounds"
 msgstr "Ativar sons da interface"

@@ -2160,11 +2160,11 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-msgid "Only Installed"
-msgstr "Solo instalados"
-
 msgid "Display Filter:"
 msgstr ""
+
+msgid "Only Installed"
+msgstr "Solo instalados"
 
 msgid "Detailed"
 msgstr ""
@@ -2226,6 +2226,9 @@ msgid "Start in tray"
 msgstr ""
 
 msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Hide Control Hints"
 msgstr ""
 
 msgid "Enable UI Sounds"

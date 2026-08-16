@@ -2112,12 +2112,12 @@ msgstr "游戏排序方式:"
 msgid "All"
 msgstr "全部"
 
+msgid "Display Filter:"
+msgstr "显示筛选："
+
 #, fuzzy
 msgid "Only Installed"
 msgstr "已安装"
-
-msgid "Display Filter:"
-msgstr "显示筛选："
 
 msgid "Detailed"
 msgstr "详细"
@@ -2181,6 +2181,9 @@ msgstr "启动时最小化到托盘"
 
 msgid "Hide Auto-Install Tab"
 msgstr "隐藏自动安装标签页"
+
+msgid "Hide Control Hints"
+msgstr ""
 
 msgid "Enable UI Sounds"
 msgstr "启用界面音效"
