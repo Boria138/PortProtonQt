@@ -344,6 +344,21 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        self.hideControlHintsCheckBox = QCheckBox()
+        self.hideControlHintsCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.hideControlHintsCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.hideControlHintsTitle = QLabel(_("Hide Control Hints"))
+        self.hideControlHintsTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.hideControlHintsTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.hideControlHintsTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.hideControlHintsCheckBox.setChecked(ui_config.get_hide_control_hints())
+        hide_control_hints_layout = QHBoxLayout()
+        hide_control_hints_layout.setContentsMargins(0, 0, 0, 0)
+        hide_control_hints_layout.addWidget(self.hideControlHintsCheckBox)
+        hide_control_hints_layout.addWidget(self.hideControlHintsTitle)
+        hide_control_hints_layout.addStretch()
+        uiForm.addRow(hide_control_hints_layout)
+
         self.soundsEnabledCheckBox = QCheckBox()
         self.soundsEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.soundsEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -856,6 +871,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         display_config.set_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+
+        hide_control_hints = self.hideControlHintsCheckBox.isChecked()
+        ui_config.set_hide_control_hints(hide_control_hints)
 
         gamepad_type_idx = self.gamepadTypeCombo.currentIndex()
         gamepad_type = self.gamepad_type_keys[gamepad_type_idx]

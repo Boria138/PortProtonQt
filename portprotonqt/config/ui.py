@@ -348,6 +348,15 @@ class UIConfig(BaseConfig):
         validate_bool(hide, "hide_autoinstall_tab")
         self._save_value("hide_autoinstall_tab", hide, "bool")
 
+    def get_hide_control_hints(self) -> bool:
+        """Get hide control hints setting."""
+        return self._get_bool("hide_control_hints", False)
+
+    def set_hide_control_hints(self, hide: bool) -> None:
+        """Set hide control hints setting."""
+        validate_bool(hide, "hide_control_hints")
+        self._save_value("hide_control_hints", hide, "bool")
+
     def get_badge_view_mode(self) -> str:
         """Get badge view mode ('detailed' or 'compact')."""
         mode = self._get_str("badge_view_mode", "detailed")
