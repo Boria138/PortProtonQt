@@ -118,7 +118,7 @@ def test_sound_manager_reuses_slot_for_same_event() -> None:
     assert manager._slot_index == 1
 
 
-def test_sound_slot_restarts_loaded_effect() -> None:
+def test_sound_slot_does_not_restart_playing_effect() -> None:
     slot: Any = object.__new__(_SoundSlot)
     slot._effect = Mock()
     slot._effect.isPlaying.return_value = True
@@ -126,8 +126,8 @@ def test_sound_slot_restarts_loaded_effect() -> None:
 
     slot.play("navigate", Mock())
 
-    slot._effect.stop.assert_called_once()
-    slot._effect.play.assert_called_once()
+    slot._effect.stop.assert_not_called()
+    slot._effect.play.assert_not_called()
 
 
 def test_sound_manager_skips_unsafe_sound_variant(tmp_path: Path) -> None:
@@ -341,7 +341,7 @@ def test_combo_popup_show_does_not_play_toggle_sound(monkeypatch: MonkeyPatch) -
     assert app is not None
 
 
-def test_combo_item_highlight_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
+def test_combo_item_activation_plays_toggle_sound(monkeypatch: MonkeyPatch) -> None:
     app = QApplication.instance() or QApplication([])
     played_events: list[str] = []
     manager = InputManager.__new__(InputManager)
@@ -353,9 +353,26 @@ def test_combo_item_highlight_plays_toggle_sound(monkeypatch: MonkeyPatch) -> No
     monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
 
     manager.eventFilter(popup, QEvent(QEvent.Type.Show))
-    combo.highlighted.emit(1)
+    combo.activated.emit(1)
 
     assert played_events == ["toggle"]
+    assert app is not None
+
+
+def test_combo_item_highlight_does_not_play_sound(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    played_events: list[str] = []
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    combo = QComboBox()
+    combo.addItems(["First", "Second"])
+    popup = QWidget(combo, Qt.WindowType.Popup)
+    monkeypatch.setattr(input_keyboard, "SoundManager", lambda: SimpleNamespace(play=played_events.append))
+
+    manager.eventFilter(popup, QEvent(QEvent.Type.Show))
+    combo.highlighted.emit(1)
+
+    assert played_events == []
     assert app is not None
 
 

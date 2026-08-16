@@ -149,6 +149,10 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         return controls_layout
 
     def _position_library_controls_widget(self) -> None:
+        controls_layout = self.libraryControlsWidget.layout()
+        if controls_layout is not None:
+            controls_layout.invalidate()
+            controls_layout.activate()
         size_hint = self.libraryControlsWidget.sizeHint()
         button_bottom = self.libraryControlsButton.mapTo(
             self,
@@ -326,6 +330,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         display_filter_layout.addWidget(self.gamesDisplayCombo)
         display_filter_layout.addWidget(self.onlyInstalledCheckBox)
         controls_layout.addLayout(display_filter_layout)
+        controls_layout.setAlignment(
+            display_filter_layout, Qt.AlignmentFlag.AlignTop
+        )
         self.onlyInstalledCheckBox.setVisible(
             display_filter not in ("steam", "portproton")
         )
@@ -420,12 +427,18 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 if hasattr(self.game_library_manager, 'gamesListLayout'):
                     self.game_library_manager.gamesListLayout.update()
 
-        if (
-            self.gog_api.auth_path.is_file()
-            and getattr(self, "gog_library_worker", None) is None
-        ):
+        display_filter = game_config.get_display_filter()
+        source_loader = getattr(
+            self, f"_load_{display_filter}_games_async", None
+        )
+        source_refresh = getattr(
+            self, f"_refresh_{display_filter}_library", None
+        )
+        if callable(source_refresh):
+            source_refresh()
+
+        if not callable(source_loader) and self.gog_api.auth_path.is_file():
             self._refresh_gog_library()
-            return
 
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh

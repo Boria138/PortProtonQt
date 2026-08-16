@@ -135,7 +135,7 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale, center_rows=True):
         y += int(row_max_height * global_scale) + spacing
         i = j
 
-    return result, y
+    return result, y - spacing
 
 
 class FlowLayout(QLayout):
@@ -160,7 +160,7 @@ class FlowLayout(QLayout):
 
         for i, item in enumerate(self.itemList):
             widget = item.widget()
-            if widget and widget.isVisible():
+            if widget and not widget.isHidden():
                 visible_items.append(item)
                 visible_indices.append(i)
                 s = item.sizeHint()
@@ -190,6 +190,11 @@ class FlowLayout(QLayout):
     def invalidate(self) -> None:
         self._invalidate_cache()
         super().invalidate()
+
+    def setSpacing(self, spacing: int) -> None:
+        self._spacing = spacing
+        self._invalidate_cache()
+        super().setSpacing(spacing)
 
     def count(self) -> int:
         return len(self.itemList)

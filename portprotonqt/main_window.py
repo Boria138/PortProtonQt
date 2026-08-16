@@ -944,12 +944,11 @@ class MainWindow(
         self.games = []
 
         def start_loading():
-            if display_filter == "steam":
-                self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
-            elif display_filter == "gog":
-                self._load_gog_games_async(lambda games: self.games_loaded.emit(games))
-            elif display_filter == "portproton":
-                self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
+            source_loader = getattr(
+                self, f"_load_{display_filter}_games_async", None
+            )
+            if callable(source_loader):
+                source_loader(lambda games: self.games_loaded.emit(games))
             elif display_filter == "favorites":
                 def on_all_games_favorites(portproton_games, steam_games, gog_games):
                     games = [game for game in portproton_games + steam_games + gog_games if game[0] in favorites]

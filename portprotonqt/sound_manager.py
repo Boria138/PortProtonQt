@@ -63,6 +63,8 @@ class _SoundSlot:
         self._loaded_event: str | None = None
 
     def play(self, event: str, url: QUrl) -> None:
+        if self._loaded_event == event and self._effect.isPlaying():
+            return
         if self._loaded_event != event:
             self._effect.setSource(url)
             self._loaded_event = event
