@@ -238,8 +238,14 @@ class InputManager(
         self.current_dpad_value = 0    # Tracks the current D-pad direction value (e.g., -1, 1)
 
         # Connect signals to slots
-        self.button_event.connect(self.handle_button_slot)
-        self.dpad_moved.connect(self.handle_dpad_slot)
+        self.button_event.connect(
+            self.handle_button_slot,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.dpad_moved.connect(
+            self.handle_dpad_slot,
+            Qt.ConnectionType.QueuedConnection,
+        )
         self.toggle_fullscreen.connect(self.handle_fullscreen_slot)
 
         # Install wheel event filter

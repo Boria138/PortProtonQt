@@ -601,6 +601,25 @@ def test_dialog_surface_receives_connected_input_signals() -> None:
     assert app is not None
 
 
+def test_gamepad_ui_events_are_queued_after_polling() -> None:
+    app = QApplication.instance() or QApplication([])
+    events: list[tuple[int, int]] = []
+    manager: Any = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    manager._input_surfaces = []
+    manager._handle_default_button = lambda code, value: events.append((code, value))
+    manager.button_event.connect(
+        manager.handle_button_slot,
+        Qt.ConnectionType.QueuedConnection,
+    )
+
+    manager.button_event.emit(1, 1)
+
+    assert events == []
+    app.processEvents()
+    assert events == [(1, 1)]
+
+
 def test_dialog_surface_disconnects_owned_callbacks() -> None:
     callback_events: list[tuple[int, ...]] = []
     manager: Any = InputManager.__new__(InputManager)
