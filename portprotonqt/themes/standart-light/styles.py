@@ -608,10 +608,13 @@ LIBRARY_WIDGET_STYLE = f"""
 """
 
 LIBRARY_CONTROL_STYLE = f"""
-    QWidget {{
+    QWidget#libraryControlsWidget {{
         background: {color_bg_darker};
         border: {border_thin} {color_accent};
         border-radius: {border_radius_small};
+    }}
+    QWidget#libraryControlsWidget QCheckBox {{
+        background: {color_transparent};
     }}
 """
 

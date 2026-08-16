@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QComboBox, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.config import game_config
@@ -178,13 +178,13 @@ def test_library_source_filter_stays_top_aligned_without_checkbox(
     monkeypatch.setattr(library_tab_module.ui_config, "get_badge_view_mode", lambda: "detailed")
     monkeypatch.setattr(library_tab_module.ui_config, "get_economy_mode", lambda: False)
     controls_widget = QWidget()
-    controls_layout = QHBoxLayout(controls_widget)
+    controls_layout = QGridLayout(controls_widget)
 
     LibraryMixin._add_library_filter_controls(window, controls_layout)
 
-    display_filter_item = controls_layout.itemAt(1)
+    display_filter_item = controls_layout.itemAtPosition(0, 1)
     assert display_filter_item is not None
-    assert display_filter_item.alignment() == Qt.AlignmentFlag.AlignTop
+    assert display_filter_item.widget() is test_window.gamesDisplayCombo
     controls_widget.show()
     _application.processEvents()
     expanded_height = controls_widget.sizeHint().height()
