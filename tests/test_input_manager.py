@@ -1,5 +1,6 @@
 """Tests for gamepad input navigation."""
 
+from inspect import signature
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -26,6 +27,12 @@ from portprotonqt.native_gamepad import GamepadBackendError, SDLGamepad
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+def test_dpad_first_repeat_uses_long_press_delay() -> None:
+    parameters = signature(InputManager).parameters
+
+    assert parameters["initial_axis_move_delay"].default == 0.5
 
 
 def test_native_gamepad_result_preserves_python_interface(monkeypatch: MonkeyPatch) -> None:

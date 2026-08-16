@@ -126,7 +126,7 @@ class InputManager(
         self,
         main_window: MainWindowProtocol,
         axis_deadzone: float = 0.5,
-        initial_axis_move_delay: float = 0.3,
+        initial_axis_move_delay: float = 0.5,
         repeat_axis_move_delay: float = 0.15
     ):
         super().__init__(cast(QObject, main_window))
