@@ -172,7 +172,7 @@ class TestParseArgs:
 
 
 def _run_async(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 def _make_reply(name="METHOD_RETURN", body=None):
