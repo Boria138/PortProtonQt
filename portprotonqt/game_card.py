@@ -262,9 +262,9 @@ class GameCard(QFrame):
         self.economy_mode = ui_config.get_economy_mode()
         self.missing_executable_path = self._get_missing_executable_path()
 
-        self.steam_visible = (str(game_source).lower() == "steam" and not self.economy_mode)
-        self.gog_visible = (str(game_source).lower() == "gog" and not self.economy_mode)
-        self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
+        self.steam_visible = str(game_source).lower() == "steam"
+        self.gog_visible = str(game_source).lower() == "gog"
+        self.portproton_visible = str(game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
         config_name = "GAME_CARD_LIST" if self.list_layout else "GAME_CARD_GRID"
@@ -350,8 +350,6 @@ class GameCard(QFrame):
             parent=self.coverWidget,
         )
         self.steamLabel.setVisible(self.steam_visible)
-        if self.economy_mode:
-            self.steamLabel.setVisible(False)
 
         gog_icon = self.theme_manager.get_icon("badge_gog", as_path=True)
         self.gogLabel = SourceCorner(
@@ -360,8 +358,6 @@ class GameCard(QFrame):
             parent=self.coverWidget,
         )
         self.gogLabel.setVisible(self.gog_visible)
-        if self.economy_mode:
-            self.gogLabel.setVisible(False)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = SourceCorner(
@@ -370,8 +366,6 @@ class GameCard(QFrame):
             parent=self.coverWidget,
         )
         self.portprotonLabel.setVisible(self.portproton_visible)
-        if self.economy_mode:
-            self.portprotonLabel.setVisible(False)
 
         if self.ppdb_visible:
             self.ppdbLabel = ClickableLabel(
@@ -597,7 +591,7 @@ class GameCard(QFrame):
         ]
 
         for is_visible, ribbon in source_ribbons:
-            if not is_visible or ribbon is None or hidden_badges:
+            if not is_visible or ribbon is None:
                 if ribbon is not None:
                     ribbon.setVisible(False)
                 continue
@@ -751,9 +745,9 @@ class GameCard(QFrame):
 
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
-        self.steam_visible = (str(self.game_source).lower() == "steam" and not self.economy_mode)
-        self.gog_visible = (str(self.game_source).lower() == "gog" and not self.economy_mode)
-        self.portproton_visible = (str(self.game_source).lower() == "portproton" and not self.economy_mode)
+        self.steam_visible = str(self.game_source).lower() == "steam"
+        self.gog_visible = str(self.game_source).lower() == "gog"
+        self.portproton_visible = str(self.game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
         protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
@@ -761,9 +755,9 @@ class GameCard(QFrame):
         hidden_badges = self.badge_view_mode == "hidden"
 
         try:
-            self.steamLabel.setVisible(self.steam_visible and not hidden_badges)
-            self.gogLabel.setVisible(self.gog_visible and not hidden_badges)
-            self.portprotonLabel.setVisible(self.portproton_visible and not hidden_badges)
+            self.steamLabel.setVisible(self.steam_visible)
+            self.gogLabel.setVisible(self.gog_visible)
+            self.portprotonLabel.setVisible(self.portproton_visible)
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)
