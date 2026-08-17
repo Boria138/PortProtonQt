@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLineEdit,
     QMessageBox,
@@ -140,9 +141,10 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         if controls_widget is not None:
             controls_widget.hide()
 
-    def _create_library_controls_widget(self) -> QHBoxLayout:
+    def _create_library_controls_widget(self) -> QGridLayout:
         self.libraryControlsWidget = QWidget(self)
-        controls_layout = QHBoxLayout(self.libraryControlsWidget)
+        self.libraryControlsWidget.setObjectName("libraryControlsWidget")
+        controls_layout = QGridLayout(self.libraryControlsWidget)
         controls_layout.setContentsMargins(5, 5, 5, 5)
         controls_layout.setSpacing(10)
         self.libraryControlsWidget.setStyleSheet(self.theme.LIBRARY_CONTROL_STYLE)
@@ -285,7 +287,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 button.setGeometry(x, y, size.width(), size.height())
                 return
 
-    def _add_library_filter_controls(self, controls_layout: QHBoxLayout) -> None:
+    def _add_library_filter_controls(self, controls_layout: QGridLayout) -> None:
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
         self.sort_labels = [_("Last launch"), _("Time spent"), _("Alphabetical")]
         self.gamesSortCombo = self._create_library_combo(self.sort_labels, _("Sort Method:"))
@@ -296,9 +298,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         )
         self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
         self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addWidget(
-            self.gamesSortCombo, alignment=Qt.AlignmentFlag.AlignTop
-        )
+        controls_layout.addWidget(self.gamesSortCombo, 0, 0)
 
         display_filter = game_config.get_display_filter()
         only_installed = game_config.get_only_installed()
@@ -326,13 +326,8 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         self._register_gamepad_tooltip(self.onlyInstalledCheckBox, _("Only Installed"))
         self.onlyInstalledCheckBox.toggled.connect(self._on_only_installed_changed)
 
-        display_filter_layout = QVBoxLayout()
-        display_filter_layout.addWidget(self.gamesDisplayCombo)
-        display_filter_layout.addWidget(self.onlyInstalledCheckBox)
-        controls_layout.addLayout(display_filter_layout)
-        controls_layout.setAlignment(
-            display_filter_layout, Qt.AlignmentFlag.AlignTop
-        )
+        controls_layout.addWidget(self.gamesDisplayCombo, 0, 1)
+        controls_layout.addWidget(self.onlyInstalledCheckBox, 1, 1, 1, 2)
         self.onlyInstalledCheckBox.setVisible(
             display_filter not in ("steam", "portproton")
         )
@@ -350,9 +345,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             self.gamesBadgeViewCombo.setEnabled(False)
         self.gamesBadgeViewCombo.currentIndexChanged.connect(self._on_library_badge_view_changed)
         self.gamesBadgeViewCombo.activated.connect(self._delay_library_controls_hover_close)
-        controls_layout.addWidget(
-            self.gamesBadgeViewCombo, alignment=Qt.AlignmentFlag.AlignTop
-        )
+        controls_layout.addWidget(self.gamesBadgeViewCombo, 0, 2)
 
     def _delay_library_controls_hover_close(self, _index: int = -1) -> None:
         self._library_controls_hover_close_delayed = True

@@ -1,13 +1,37 @@
 """Tests for AppImage self-update support."""
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
+from PySide6.QtWidgets import QApplication, QWidget
 
 from portprotonqt.config.ui import UIConfig
 from portprotonqt import appimage_updater
+from portprotonqt.dialogs.appimage_update import AppImageUpdateDialog
 
 FAKE_UPDATE_MARKER = "FAKE_UPDATE_APPLIED"
+
+
+def test_update_dialog_done_disables_input_mode() -> None:
+    app = QApplication.instance() or QApplication([])
+    parent: Any = QWidget()
+    disabled: list[bool] = []
+    parent.input_manager = type(
+        "InputManagerStub",
+        (),
+        {
+            "enable_appimage_update_mode": lambda _self, _dialog: None,
+            "disable_appimage_update_mode": lambda _self: disabled.append(True),
+        },
+    )()
+    dialog = AppImageUpdateDialog(parent=parent)
+
+    dialog.done(AppImageUpdateDialog.LATER)
+
+    assert disabled == [True]
+    assert dialog.result() == AppImageUpdateDialog.LATER
+    assert app is not None
 
 
 def test_auto_appimage_updates_config_roundtrip(tmp_path: Path) -> None:

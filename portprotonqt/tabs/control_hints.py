@@ -7,6 +7,7 @@ from PySide6.QtGui import QMouseEvent, QPainter, QPaintEvent, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
+from portprotonqt.config import ui_config
 from portprotonqt.custom_widgets import FlowLayout
 from portprotonqt.input_manager import BUTTONS, GamepadType
 from portprotonqt.localization import _
@@ -450,6 +451,12 @@ class MainWindowControlHintsMixin:
         """Update control hints based on gamepad connection status and type."""
         if not hasattr(self, "hintsLabels"):
             return
+        control_hints_widget = getattr(self, "controlHintsWidget", None)
+        hide_control_hints = ui_config.get_hide_control_hints()
+        if isinstance(control_hints_widget, QWidget):
+            control_hints_widget.setVisible(not hide_control_hints)
+        if hide_control_hints:
+            return
         force_update = bool(args and args[0] == "force")
         is_gamepad_connected = self.input_manager.gamepad is not None
         gtype = self.input_manager.gamepad_type
@@ -569,7 +576,6 @@ class MainWindowControlHintsMixin:
                 container.setVisible(not is_gamepad_connected and not on_system_tab)
 
         self._updateSystemGamepadHintTexts()
-        control_hints_widget = getattr(self, "controlHintsWidget", None)
         if isinstance(control_hints_widget, QWidget):
             control_hints_widget.updateGeometry()
             control_hints_widget.update()

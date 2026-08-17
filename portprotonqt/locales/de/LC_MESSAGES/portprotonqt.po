@@ -2157,12 +2157,12 @@ msgstr "Sortiermethode:"
 msgid "All"
 msgstr "Alle"
 
+msgid "Display Filter:"
+msgstr "Anzeigefilter:"
+
 #, fuzzy
 msgid "Only Installed"
 msgstr "Installiert"
-
-msgid "Display Filter:"
-msgstr "Anzeigefilter:"
 
 msgid "Detailed"
 msgstr "Detailliert"
@@ -2225,6 +2225,9 @@ msgstr "Minimiert im Tray starten"
 
 msgid "Hide Auto-Install Tab"
 msgstr "Tab „Automatische Installation“ ausblenden"
+
+msgid "Hide Control Hints"
+msgstr ""
 
 msgid "Enable UI Sounds"
 msgstr "Benutzeroberflächen-Sounds aktivieren"

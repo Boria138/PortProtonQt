@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-07-31 06:07+0000\n"
+"PO-Revision-Date: 2026-08-15 06:02+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 2026.7.1\n"
+"X-Generator: Weblate 2026.8.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -2150,12 +2150,11 @@ msgstr "Метод сортировки:"
 msgid "All"
 msgstr "Все"
 
-#, fuzzy
-msgid "Only Installed"
-msgstr "Установленные"
-
 msgid "Display Filter:"
 msgstr "Фильтр:"
+
+msgid "Only Installed"
+msgstr "Только Установленные"
 
 msgid "Detailed"
 msgstr "Детальный"
@@ -2218,6 +2217,9 @@ msgstr "Запускать свёрнутым"
 
 msgid "Hide Auto-Install Tab"
 msgstr "Скрыть вкладку \"Автоустановка\""
+
+msgid "Hide Control Hints"
+msgstr ""
 
 msgid "Enable UI Sounds"
 msgstr "Включить звуки интерфейса"

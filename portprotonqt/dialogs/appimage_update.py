@@ -79,6 +79,7 @@ class AppImageUpdateDialog(DraggableDialog):
 
         if self.input_manager:
             self.input_manager.enable_appimage_update_mode(self)
+            self.finished.connect(self.input_manager.disable_appimage_update_mode)
 
     def _make_button(self, text: str) -> AutoSizeButton:
         button = AutoSizeButton(text)

@@ -118,6 +118,14 @@ def test_crash_reports_config_defaults_to_enabled(tmp_path: Path):
     assert config.get_crash_reports_enabled() is False
 
 
+def test_control_hints_are_visible_by_default(tmp_path: Path):
+    config = UIConfig(config_file=tmp_path / "test.conf")
+
+    assert config.get_hide_control_hints() is False
+    config.set_hide_control_hints(True)
+    assert config.get_hide_control_hints() is True
+
+
 class TestUpdateAppVersion:
     def test_first_save_returns_true(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr("portprotonqt.config.base.CONFIG_FILE", tmp_path / "test.conf")

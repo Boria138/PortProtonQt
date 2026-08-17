@@ -1,5 +1,6 @@
 """Tests for gamepad input navigation."""
 
+from inspect import signature
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -26,6 +27,12 @@ from portprotonqt.native_gamepad import GamepadBackendError, SDLGamepad
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+def test_dpad_first_repeat_uses_long_press_delay() -> None:
+    parameters = signature(InputManager).parameters
+
+    assert parameters["initial_axis_move_delay"].default == 0.5
 
 
 def test_native_gamepad_result_preserves_python_interface(monkeypatch: MonkeyPatch) -> None:
@@ -592,6 +599,25 @@ def test_dialog_surface_receives_connected_input_signals() -> None:
     manager.button_event.emit(2, 1)
     assert default_events == [(2, 1)]
     assert app is not None
+
+
+def test_gamepad_ui_events_are_queued_after_polling() -> None:
+    app = QApplication.instance() or QApplication([])
+    events: list[tuple[int, int]] = []
+    manager: Any = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    manager._input_surfaces = []
+    manager._handle_default_button = lambda code, value: events.append((code, value))
+    manager.button_event.connect(
+        manager.handle_button_slot,
+        Qt.ConnectionType.QueuedConnection,
+    )
+
+    manager.button_event.emit(1, 1)
+
+    assert events == []
+    app.processEvents()
+    assert events == [(1, 1)]
 
 
 def test_dialog_surface_disconnects_owned_callbacks() -> None:
