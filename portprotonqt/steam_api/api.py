@@ -2,9 +2,11 @@
 
 import os
 import shlex
+import threading
 import time
 import urllib.parse
 from collections.abc import Callable
+from functools import lru_cache
 
 import orjson
 from PIL import Image, UnidentifiedImageError
@@ -39,6 +41,7 @@ downloader = Downloader()
 _STEAM_APPS_CACHE = CacheManager(name="steam_apps")
 _ANTICHEAT_CACHE = CacheManager(name="anticheat")
 _PPDB_CACHE = CacheManager(name="ppdb")
+_CACHED_INDEX_LOCK = threading.RLock()
 SGDB_CACHE_DURATION = 24 * 60 * 60
 STEAM_CLIENT_ICON_SIZES = (16, 32, 64, 128, 256)
 
@@ -341,6 +344,8 @@ def clear_steam_api_caches() -> None:
     _STEAM_APPS_CACHE.clear_memory_cache()
     _ANTICHEAT_CACHE.clear_memory_cache()
     _PPDB_CACHE.clear_memory_cache()
+    with _CACHED_INDEX_LOCK:
+        _load_cached_data_and_index.cache_clear()
     logger.info("Cleared Steam API in-memory caches")
 
 
@@ -469,6 +474,32 @@ def _read_cached_app_data(appid: int) -> dict:
     return cached
 
 
+@lru_cache(maxsize=4)
+def _load_cached_data_and_index(
+    cache_path: str,
+    cache_mtime_ns: int,
+    build_index_func: Callable[[list], dict],
+) -> tuple[list, dict]:
+    cached = _load_cached_json_file(cache_path)
+    if not isinstance(cached, list):
+        return [], {}
+    return cached, build_index_func(cached)
+
+
+def _get_cached_data_and_index(
+    cache_file: os.PathLike,
+    build_index_func: Callable[[list], dict],
+) -> tuple[list, dict]:
+    try:
+        cache_mtime_ns = os.stat(cache_file).st_mtime_ns
+    except OSError:
+        return [], {}
+    with _CACHED_INDEX_LOCK:
+        return _load_cached_data_and_index(
+            os.fspath(cache_file), cache_mtime_ns, build_index_func
+        )
+
+
 def _get_cached_steam_cover_path(appid: int) -> str:
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
@@ -490,20 +521,14 @@ def _read_cached_protondb_tier(appid: int) -> str:
 
 def _read_cached_ppdb_id(game_name: str) -> str:
     cache_file = CacheManager().cache_dir / "ppdb_games.json"
-    cached = _load_cached_json_file(str(cache_file))
-    if not isinstance(cached, list):
-        return ""
-    ppdb_index = build_ppdb_index(cached)
+    _, ppdb_index = _get_cached_data_and_index(cache_file, build_ppdb_index)
     entry = search_ppdb_entry(game_name, ppdb_index) or {}
     return str(entry.get("id", ""))
 
 
 def _read_cached_ppdb_rating(game_name: str) -> str:
     cache_file = CacheManager().cache_dir / "ppdb_games.json"
-    cached = _load_cached_json_file(str(cache_file))
-    if not isinstance(cached, list):
-        return ""
-    ppdb_index = build_ppdb_index(cached)
+    _, ppdb_index = _get_cached_data_and_index(cache_file, build_ppdb_index)
     entry = search_ppdb_entry(game_name, ppdb_index) or {}
     return str(entry.get("overall_rating", ""))
 
@@ -538,11 +563,10 @@ def get_cached_steam_game_info(desktop_name: str, exec_line: str) -> dict:
     folder_name = os.path.basename(os.path.dirname(game_exe)) if game_exe else ""
     candidates = remove_duplicates(filter_candidates([desktop_name, exe_name, folder_name]))
     apps_path = CacheManager().cache_dir / "steam_apps.json"
-    steam_apps = _load_cached_json_file(str(apps_path))
-    if not isinstance(steam_apps, list):
+    steam_apps, steam_apps_index = _get_cached_data_and_index(apps_path, build_index)
+    if not steam_apps:
         return {}
 
-    steam_apps_index = build_index(steam_apps)
     matching_app = None
     for candidate in sorted(candidates, key=lambda s: len(s.split()), reverse=True):
         matching_app = search_app(candidate, steam_apps_index)

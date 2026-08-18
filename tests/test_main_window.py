@@ -2,8 +2,10 @@
 
 import shlex
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from queue import Queue
+import threading
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.config import game_config
 from portprotonqt.detail_pages import DetailPageManager
+from portprotonqt.game_card import GameCard
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
@@ -23,6 +26,7 @@ import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
 import portprotonqt.tabs.gog_tab as gog_tab_module
 import portprotonqt.tabs.library_tab as library_tab_module
 import portprotonqt.tabs.system_tab as system_tab_module
+import portprotonqt.steam_api.api as steam_api_module
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
@@ -40,6 +44,70 @@ from portprotonqt.tabs.theme_tab import (
     MainWindowThemeTabMixin as ThemeMixin,
 )
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
+
+
+def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
+    card = MagicMock()
+    card.coverLabel = MagicMock()
+    card.game_source = "portproton"
+    card.ppdb_id = "report-id"
+    card.protondb_tier = "Platinum"
+    card.anticheat_status = "Supported"
+    card.badge_view_mode = "hidden"
+    card.coverWidget.width.return_value = 300
+    card.getAntiCheatText.return_value = "Supported"
+    card.parentWidget.return_value = None
+    monkeypatch.setattr("portprotonqt.game_card.ui_config.get_economy_mode", lambda: False)
+
+    GameCard.update_badge_visibility(card, "portproton")
+
+    card.portprotonLabel.setVisible.assert_called_with(True)
+    card.ppdbLabel.setVisible.assert_called_with(False)
+    card.protondbLabel.setVisible.assert_called_with(False)
+    card.anticheatLabel.setVisible.assert_called_with(False)
+
+
+def test_cached_metadata_index_is_reused(tmp_path: Path) -> None:
+    cache_file = tmp_path / "games.json"
+    cache_file.write_text('[{"normalized_name": "game"}]', encoding="utf-8")
+    build_index = MagicMock(return_value={"game": {"normalized_name": "game"}})
+    steam_api_module._load_cached_data_and_index.cache_clear()
+
+    first = steam_api_module._get_cached_data_and_index(cache_file, build_index)
+    second = steam_api_module._get_cached_data_and_index(cache_file, build_index)
+
+    assert first == second
+    build_index.assert_called_once_with([{"normalized_name": "game"}])
+
+
+def test_cached_metadata_index_is_built_once_concurrently(tmp_path: Path) -> None:
+    cache_file = tmp_path / "games.json"
+    cache_file.write_text('[{"normalized_name": "game"}]', encoding="utf-8")
+    build_barrier = threading.Barrier(5)
+
+    def build_index(data: list) -> dict:
+        try:
+            build_barrier.wait(timeout=0.05)
+        except threading.BrokenBarrierError:
+            pass
+        return {"game": data[0]}
+
+    build_index_mock = MagicMock(side_effect=build_index)
+    steam_api_module._load_cached_data_and_index.cache_clear()
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [
+            executor.submit(
+                steam_api_module._get_cached_data_and_index,
+                cache_file,
+                build_index_mock,
+            )
+            for _ in range(5)
+        ]
+        results = [future.result() for future in futures]
+
+    assert all(result == results[0] for result in results)
+    build_index_mock.assert_called_once_with([{"normalized_name": "game"}])
 
 
 TAB_METHODS = {
