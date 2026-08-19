@@ -230,6 +230,19 @@ def test_main_window_inherits_all_tab_mixins() -> None:
         assert issubclass(MainWindow, mixin)
 
 
+def test_live_theme_style_replacement_does_not_rewrite_new_paths() -> None:
+    mixin = MainWindowThemeTabMixin()
+    style = "url(/themes/standart/images/check.svg)"
+    replacements = [
+        ("/themes/standart/", "/themes/standart-light/"),
+        ("standart", "standart-light"),
+    ]
+
+    result = mixin._theme_style_replacer(replacements)(style)
+
+    assert result == "url(/themes/standart-light/images/check.svg)"
+
+
 def test_library_source_filter_stays_top_aligned_without_checkbox(
     monkeypatch: MonkeyPatch,
 ) -> None:
