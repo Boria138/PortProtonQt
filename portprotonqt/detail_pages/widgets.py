@@ -323,28 +323,6 @@ def create_protondb_badge(
     return badge, True
 
 
-def create_steam_badge(
-    parent: QWidget,
-    appid: str,
-    main_window,
-) -> ClickableLabel:
-    """Create Steam badge."""
-    steam_icon = main_window.theme_manager.get_icon("badge_steam", as_path=True)
-    badge = ClickableLabel(
-        "Steam",
-        icon=steam_icon,
-        parent=parent,
-        icon_size=getattr(main_window.theme, "BADGE", {}).get("icon_size", 16),
-        icon_space=5,
-    )
-    badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    _apply_badge_view_mode(badge, main_window.theme)
-    badge.clicked.connect(
-        lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}"))
-    )
-    return badge
-
-
 def create_portproton_badge(
     parent: QWidget,
     main_window,

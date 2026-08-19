@@ -8,13 +8,14 @@ from typing import Any, cast
 from unittest.mock import patch
 
 from PIL import Image
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch, raises
 
 import portprotonqt.game_card as game_card_module
 import portprotonqt.image_utils as image_utils
 from portprotonqt.game_card import GameCard
 from portprotonqt.icon_extractor import (
     IconExtractor,
+    IconExtractorError,
     generate_thumbnail,
     get_exe_icon_cache_path,
     RT_ICON,
@@ -238,6 +239,13 @@ class TestParseFile:
 
 
 class TestGetIcon:
+    def test_raises_extractor_error_for_unreadable_file(self, tmp_path):
+        missing_file = tmp_path / "missing.exe"
+        ext = IconExtractor(str(missing_file))
+
+        with raises(IconExtractorError, match="Failed to extract icon"):
+            ext.get_icon()
+
     def test_returns_none_for_non_mz(self, tmp_path):
         f = tmp_path / "not_exe.bin"
         f.write_bytes(b"\x00" * 100)
