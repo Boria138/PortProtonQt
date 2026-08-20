@@ -858,3 +858,25 @@ def test_page_vertical_dpad_moves_focus_forward() -> None:
 
     assert manager._handle_page_vertical_dpad(PAD_DPAD_Y, 1)
     assert QApplication.focusWidget() is second
+
+
+def test_settings_grid_vertical_navigation_does_not_wrap_columns() -> None:
+    _app = QApplication.instance() or QApplication([])
+    dialog = QWidget()
+    checkboxes: list[QWidget] = [QCheckBox(dialog) for _index in range(4)]
+    for checkbox, position in zip(
+        checkboxes, ((0, 0), (100, 0), (0, 40), (100, 40)), strict=True
+    ):
+        checkbox.move(*position)
+    manager = InputManager.__new__(InputManager)
+    manager.settings_dialog = dialog
+
+    assert manager._find_mangohud_vertical_grid_target(
+        checkboxes[0], 1, checkboxes
+    ) is checkboxes[2]
+    assert manager._find_mangohud_vertical_grid_target(
+        checkboxes[2], 1, checkboxes
+    ) is None
+    assert manager._find_mangohud_vertical_grid_target(
+        checkboxes[1], -1, checkboxes
+    ) is None

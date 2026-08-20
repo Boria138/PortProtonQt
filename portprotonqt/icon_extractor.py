@@ -90,13 +90,17 @@ def generate_thumbnail(inputfile: str, outfile: str, size: int = 128, force_resi
         im.save(outfile, "PNG")
         logger.info("Thumbnail successfully saved to %s", outfile)
         return True
-    except Exception as e:
-        logger.error("Error generating thumbnail: %s", e)
+    except IconExtractorError as error:
+        logger.warning("Icon extraction failed: %s", error)
+        return False
+    except Exception as error:
+        logger.error("Error generating thumbnail: %s", error)
         return False
 
 
 class IconExtractorError(Exception):
     """Base exception for icon extraction errors."""
+
 
 class IconExtractor:
     """Extracts icons from NE and PE files."""
@@ -107,7 +111,10 @@ class IconExtractor:
         self._groups = [] # List of group icon data
 
     def get_icon(self) -> io.BytesIO | None:
-        """Extract the best quality icon and return it as image data."""
+        """Extract the best quality icon and return it as image data.
+
+        Raises IconExtractorError when the source cannot be read or parsed.
+        """
         try:
             with open(self.file_path, "rb") as f:
                 if not self._parse_file(f):
@@ -121,9 +128,10 @@ class IconExtractor:
             if data is None:
                 return None
             return self._icon_data_to_image(data)
-        except Exception as e:
-            logger.warning("Failed to extract icon from %s: %s", self.file_path, e)
-            return None
+        except Exception as error:
+            raise IconExtractorError(
+                f"Failed to extract icon from {self.file_path}: {error}"
+            ) from error
 
     def _parse_file(self, f) -> bool:
         """Identify file type and call appropriate parser."""

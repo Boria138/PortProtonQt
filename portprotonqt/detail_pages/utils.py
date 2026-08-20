@@ -653,11 +653,6 @@ def _check_desktop_file(
     return autoinstall_exe.lower() in (exec_name, real_exec_name)
 
 
-def _get_autoinstall_exe_name(script_name: str) -> str:
-    autoinstall_exe, _autoinstall_path = _get_autoinstall_exe_target(script_name)
-    return autoinstall_exe
-
-
 def _get_autoinstall_exe_target(script_name: str) -> tuple[str, str]:
     script_path = script_name
     if not os.path.isfile(script_path):

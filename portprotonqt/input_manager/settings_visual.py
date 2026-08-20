@@ -450,7 +450,7 @@ class SettingsVisualNavigationMixin(InputMixin):
     def _find_mangohud_vertical_grid_target(
         self, focused: QWidget, direction: int, widgets: list[QWidget]
     ) -> QWidget | None:
-        """Find vertical target in grid columns with column-to-column wrap."""
+        """Find a vertical target in grid columns."""
         settings_dialog = self.settings_dialog
         if not settings_dialog:
             return None
@@ -487,14 +487,10 @@ class SettingsVisualNavigationMixin(InputMixin):
         if direction > 0:
             if row_idx + 1 < len(columns[col_idx]):
                 return columns[col_idx][row_idx + 1]
-            if col_idx + 1 < len(columns):
-                return columns[col_idx + 1][0]
             return None
 
         if direction < 0:
             if row_idx - 1 >= 0:
                 return columns[col_idx][row_idx - 1]
-            if col_idx - 1 >= 0:
-                return columns[col_idx - 1][-1]
             return None
         return None
