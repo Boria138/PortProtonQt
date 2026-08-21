@@ -783,6 +783,9 @@ msgstr "使用 PortProton 启动\"{name}\""
 msgid "Debug log mode was launched"
 msgstr "调试日志模式已启动"
 
+msgid "Error log creation instructions:"
+msgstr "错误日志创建说明："
+
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr "要诊断问题，请将完整日志复制到网站："
 

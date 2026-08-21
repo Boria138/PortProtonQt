@@ -824,6 +824,9 @@ msgstr "Ausführen \"{name}\" mit PortProton"
 msgid "Debug log mode was launched"
 msgstr "Der Debug-Protokollmodus wurde gestartet"
 
+msgid "Error log creation instructions:"
+msgstr "Anleitung zum Erstellen eines Fehlerprotokolls:"
+
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr ""
 "Für die Problembehandlung, teile das GESAMTE Protokoll auf der Website mit:"

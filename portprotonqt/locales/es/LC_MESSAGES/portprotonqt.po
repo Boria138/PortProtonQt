@@ -841,6 +841,9 @@ msgstr "Iniciar «{name}» con PortProton"
 msgid "Debug log mode was launched"
 msgstr "Se ha iniciado el modo de registro de depuración"
 
+msgid "Error log creation instructions:"
+msgstr "Instrucciones para crear un registro de errores:"
+
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr "Para diagnosticar el problema, copie el registro COMPLETO en:"
 

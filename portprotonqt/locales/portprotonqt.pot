@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-16 21:24+0500\n"
+"POT-Creation-Date: 2026-08-21 12:19+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -748,6 +748,9 @@ msgid "Launch \"{name}\" with PortProton"
 msgstr ""
 
 msgid "Debug log mode was launched"
+msgstr ""
+
+msgid "Error log creation instructions:"
 msgstr ""
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
