@@ -754,9 +754,6 @@ msgstr ""
 msgid "Debug log mode was launched"
 msgstr ""
 
-msgid "Error log creation instructions:"
-msgstr ""
-
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr ""
 

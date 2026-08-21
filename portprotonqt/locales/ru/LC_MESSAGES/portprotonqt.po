@@ -826,9 +826,6 @@ msgstr "Запустить \"{name}\" с помощью PortProton"
 msgid "Debug log mode was launched"
 msgstr "Запущен режим логирования"
 
-msgid "Error log creation instructions:"
-msgstr "Инструкция по созданию лога ошибки:"
-
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr "Для диагностики проблемы скопируйте ВЕСЬ журнал на сайт:"
 
