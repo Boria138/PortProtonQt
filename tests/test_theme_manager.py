@@ -2,6 +2,7 @@
 import ast
 import types
 from pathlib import Path
+from typing import Any
 import orjson
 import pytest
 from PySide6.QtSvg import QSvgRenderer
@@ -112,6 +113,25 @@ class TestIsValidThemeName:
     def test_non_string(self):
         assert not _is_valid_theme_name(123)  # type: ignore[arg-type]
         assert not _is_valid_theme_name(None)  # type: ignore[arg-type]
+
+
+def test_remove_custom_theme_only_removes_user_theme(tmp_path: Path, monkeypatch: Any) -> None:
+    custom_dir = tmp_path / "custom"
+    builtin_dir = tmp_path / "builtin"
+    custom_theme = custom_dir / "removable"
+    builtin_theme = builtin_dir / "protected"
+    custom_theme.mkdir(parents=True)
+    builtin_theme.mkdir(parents=True)
+    monkeypatch.setattr(
+        "portprotonqt.theme_manager.THEMES_DIRS",
+        [str(custom_dir), str(builtin_dir)],
+    )
+    manager = ThemeManager()
+
+    assert manager.remove_custom_theme("removable")
+    assert not custom_theme.exists()
+    assert not manager.remove_custom_theme("protected")
+    assert builtin_theme.exists()
 
 
 # === _get_parent_theme_name ===

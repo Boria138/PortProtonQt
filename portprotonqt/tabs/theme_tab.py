@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -134,6 +135,15 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
         self.applyButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.themeInfoLayout.addWidget(self.applyButton)
 
+        self.deleteThemeButton = AutoSizeButton(
+            _("Delete Theme"),
+            icon=self.theme_manager.get_icon("delete", as_path=True),
+        )
+        self.deleteThemeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.deleteThemeButton.setObjectName("themeDeleteButton")
+        self.deleteThemeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.themeInfoLayout.addWidget(self.deleteThemeButton)
+
         installedLayout.addLayout(self.themeInfoLayout)
         self.themeContentStack.addWidget(self.themeInstalledPage)
         self.themeStorePage = self._create_theme_store_page()
@@ -150,6 +160,8 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             base_theme = self.themesCombo.currentText()
             variant = self.themeVariantCombo.currentData() or "light"
             theme_name = ui_config.resolve_theme(base_theme, variant)
+            custom_themes = self._get_selected_custom_themes()
+            self.deleteThemeButton.setVisible(bool(custom_themes))
             meta = load_theme_metainfo(theme_name)
             link = meta.get("author_link", "")
             link_html = f'<a href="{link}">{link}</a>' if link else _("No link")
@@ -191,9 +203,49 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
                 )
 
         self.applyButton.clicked.connect(on_apply)
+        self.deleteThemeButton.clicked.connect(self._delete_selected_theme)
 
         # Add widget to stackedWidget
         self.theme_tab_index = self.stackedWidget.addWidget(self.themeTabWidget)
+
+    def _get_selected_custom_themes(self) -> list[str]:
+        base_theme = self.themesCombo.currentText()
+        variants = {
+            ui_config.resolve_theme(base_theme, "dark"),
+            ui_config.resolve_theme(base_theme, "light"),
+        }
+        return [name for name in variants if self.theme_manager.is_custom_theme(name)]
+
+    def _delete_selected_theme(self) -> None:
+        theme_names = self._get_selected_custom_themes()
+        if not theme_names:
+            return
+        message = _("Delete theme '{0}'?").format(self.themesCombo.currentText())
+        message_box = QMessageBox(self)
+        message_box.setIcon(QMessageBox.Icon.Question)
+        message_box.setWindowTitle(_("Confirm Deletion"))
+        message_box.setText(message)
+        message_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        message_box.setDefaultButton(QMessageBox.StandardButton.No)
+        message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        if message_box.exec() != QMessageBox.StandardButton.Yes:
+            return
+        removal_results = [
+            self.theme_manager.remove_custom_theme(name) for name in theme_names
+        ]
+        if not all(removal_results):
+            QMessageBox.warning(self, _("Error"), _("Failed to delete theme."))
+            return
+        active_theme_deleted = ui_config.get_theme_base() == self.themesCombo.currentText()
+        self._refresh_theme_combo("standart")
+        if active_theme_deleted:
+            self._apply_theme_and_restart("standart", self.themeVariantCombo.currentData() or "light")
+            return
+        self.themesCombo.setCurrentIndex(-1)
+        self.themesCombo.setCurrentIndex(0)
 
     def _refresh_theme_store_visibility(self) -> None:
         store_index = self.themesCombo.findData(THEME_STORE_ITEM)

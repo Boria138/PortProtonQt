@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import os
 import re
+import shutil
 import stat
 import xml.etree.ElementTree as ET
 import orjson
@@ -908,6 +909,25 @@ class ThemeManager:
     def get_available_themes(self) -> list:
         """Return list of available themes."""
         return list_themes()
+
+    def is_custom_theme(self, theme_name: str) -> bool:
+        """Return whether a theme is installed in the user theme directory."""
+        if not _is_valid_theme_name(theme_name):
+            return False
+        theme_path = os.path.join(THEMES_DIRS[0], theme_name)
+        return os.path.isdir(theme_path) and not os.path.islink(theme_path)
+
+    def remove_custom_theme(self, theme_name: str) -> bool:
+        """Remove a theme from the user theme directory."""
+        if not self.is_custom_theme(theme_name):
+            return False
+        theme_path = os.path.join(THEMES_DIRS[0], theme_name)
+        try:
+            shutil.rmtree(theme_path)
+        except OSError as e:
+            logger.warning("Failed to remove custom theme '%s': %s", theme_name, e)
+            return False
+        return True
 
     def apply_theme(self, theme_name: str):
         """
