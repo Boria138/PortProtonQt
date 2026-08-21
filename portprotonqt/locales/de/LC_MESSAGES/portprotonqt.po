@@ -2467,6 +2467,10 @@ msgstr "Theme auswählen:"
 msgid "Apply Theme"
 msgstr "Theme anwenden"
 
+#, fuzzy
+msgid "Delete Theme"
+msgstr "Theme auswählen:"
+
 msgid "No link"
 msgstr "Kein Link"
 
@@ -2478,6 +2482,14 @@ msgstr "Autor:"
 
 msgid "Link:"
 msgstr "Link:"
+
+#, fuzzy, python-brace-format
+msgid "Delete theme '{0}'?"
+msgstr "Theme auswählen:"
+
+#, fuzzy
+msgid "Failed to delete theme."
+msgstr "Laden der Themes fehlgeschlagen"
 
 msgid "Prefix:"
 msgstr "Prefix:"

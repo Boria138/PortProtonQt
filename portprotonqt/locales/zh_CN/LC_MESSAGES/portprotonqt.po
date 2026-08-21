@@ -2421,6 +2421,10 @@ msgstr "选择主题："
 msgid "Apply Theme"
 msgstr "应用主题"
 
+#, fuzzy
+msgid "Delete Theme"
+msgstr "选择主题："
+
 msgid "No link"
 msgstr "无链接"
 
@@ -2432,6 +2436,14 @@ msgstr "作者："
 
 msgid "Link:"
 msgstr "链接："
+
+#, fuzzy, python-brace-format
+msgid "Delete theme '{0}'?"
+msgstr "选择主题："
+
+#, fuzzy
+msgid "Failed to delete theme."
+msgstr "加载主题失败"
 
 msgid "Prefix:"
 msgstr "前缀："
