@@ -27,6 +27,7 @@
 - Добавлена кнопка удаления пользовательских тем
 
 ### Changed
+- GitHub-зеркала [PortProtonQt](https://github.com/linux-gaming-ru/PortProtonQt) и [метаданных WINE/Proton](https://github.com/linux-gaming-ru/PortProtonQt-Wine-Metadata) перенесены в организацию `linux-gaming-ru`
 - Иконки системных уведомлений перенесены в темы и теперь соответствуют выбранной теме
 - Выбранное зеркало теперь используется для загрузки метаданных WINE/Proton, проверки обновлений AppImage и получения списка изменений
 - Обновлена ссылка на раздел помощи в логе ошибки

@@ -4196,7 +4196,7 @@ gui_proton_downloader () {
     fi
 
     METADATA_CLOUD_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
-    METADATA_GITHUB_URL="https://raw.githubusercontent.com/Boria138/PortProton-Wine-Metadata/main/wine_metadata_all.json"
+    METADATA_GITHUB_URL="https://raw.githubusercontent.com/linux-gaming-ru/PortProtonQt-Wine-Metadata/main/wine_metadata_all.json"
     if [[ "${MIRROR}" == CLOUD ]] ; then
         METADATA=$(curl -fL -A 'PortProton' -s "$METADATA_CLOUD_URL")
     else

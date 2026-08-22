@@ -29,14 +29,14 @@ APPIMAGE_UPDATE_TIMEOUT = 900
 APPIMAGE_UPDATE_START_DELAY_MS = 5000
 EXECUTABLE_MODE = 0o755
 GITHUB_UPDATE_INFO = (
-    "gh-releases-zsync|Boria138|PortProtonQt|latest|*x86_64.AppImage.zsync"
+    "gh-releases-zsync|linux-gaming-ru|PortProtonQt|latest|*x86_64.AppImage.zsync"
 )
 CHANGELOG_URL = (
     "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/"
     "CHANGELOG.md"
 )
 CHANGELOG_GITHUB_URL = (
-    "https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/"
+    "https://raw.githubusercontent.com/linux-gaming-ru/PortProtonQt/refs/heads/main/"
     "CHANGELOG.md"
 )
 CHANGELOG_TIMEOUT = 10

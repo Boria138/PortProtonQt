@@ -92,7 +92,10 @@ class WineLoadingThread(QThread):
     def run(self):
         try:
             cloud_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
-            github_url = "https://raw.githubusercontent.com/Boria138/PortProton-Wine-Metadata/main/wine_metadata_all.json"
+            github_url = (
+                "https://raw.githubusercontent.com/linux-gaming-ru/"
+                "PortProtonQt-Wine-Metadata/main/wine_metadata_all.json"
+            )
             from portprotonqt.portproton_api import get_user_conf_setting
 
             json_url = (
