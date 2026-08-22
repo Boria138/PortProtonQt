@@ -352,6 +352,21 @@ class TestGetPlaytimeFor_exe:
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result == 1111
 
+    def test_exact_path_ignores_matching_sha_from_other_game(self, tmp_path):
+        exe = tmp_path / "game.exe"
+        exe.write_bytes(b"shared launcher")
+        import hashlib
+        sha = hashlib.sha256(b"shared launcher").hexdigest()
+        stats = tmp_path / "stats.txt"
+        stats.write_text(
+            f"/other/game.exe {sha} 360\n"
+            f"{exe} {sha} 120\n"
+        )
+
+        result = get_playtime_for_exe(str(stats), str(exe), exact_path=True)
+
+        assert result == 120
+
 
 # ── format_playtime ──────────────────────────────────────────────────────────
 

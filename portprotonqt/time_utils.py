@@ -140,7 +140,9 @@ def remove_last_launch(exe_name: str) -> None:
         logger.warning("Failed to remove last launch for %s: %s", exe_name, e)
 
 
-def save_playtime(exe_path: str, additional_seconds: int) -> None:
+def save_playtime(
+    exe_path: str, additional_seconds: int, exact_path: bool = False
+) -> None:
     """Save and accumulate playtime for the executable."""
     if not exe_path or additional_seconds <= 0 or "steamapps" in exe_path.lower():
         return
@@ -178,7 +180,8 @@ def save_playtime(exe_path: str, additional_seconds: int) -> None:
             continue
         stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
         stat_sha = parts[1] if len(parts[1]) == 64 else ""
-        if ((target_sha and stat_sha == target_sha) or stat_path == target_path) and not updated:
+        hash_matches = not exact_path and target_sha and stat_sha == target_sha
+        if (hash_matches or stat_path == target_path) and not updated:
             entries.append(f"{target_path.replace(' ', '#@_@#')} {target_sha or stat_sha} {seconds + additional_seconds}\n")
             updated = True
         else:
@@ -267,7 +270,9 @@ def parse_playtime_file(file_path):
     return playtime_data
 
 
-def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
+def get_playtime_for_exe(
+    file_path: str, exe_path: str, exact_path: bool = False
+) -> int | None:
     """Return playtime for the target executable from statistics file."""
     if not exe_path or not os.path.exists(file_path):
         return None
@@ -303,7 +308,7 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
             except ValueError:
                 continue
 
-            if target_sha and stat_sha == target_sha:
+            if not exact_path and target_sha and stat_sha == target_sha:
                 sha_seconds = seconds
                 continue
 
@@ -312,7 +317,7 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
                 continue
 
             stat_name = os.path.splitext(os.path.basename(stat_path))[0].lower()
-            if stat_name == target_name:
+            if not exact_path and stat_name == target_name:
                 fallback_seconds = seconds
 
     if sha_seconds is not None:

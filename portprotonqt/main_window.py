@@ -1041,6 +1041,8 @@ class MainWindow(
         if not library:
             callback(games)
             return
+        from portprotonqt.time_utils import get_statistics_path
+        statistics_file = get_statistics_path()
         processed_count = 0
 
         def on_game_info(game: dict, steam_info: dict) -> None:
@@ -1049,16 +1051,23 @@ class MainWindow(
             is_installed = api.is_game_installed(app_id, installed)
             if not only_installed or is_installed:
                 action = "launch" if is_installed else "install"
+                target = api.get_launch_target(app_id) if is_installed else None
+                playtime_seconds = get_playtime_for_exe(
+                    statistics_file, target, exact_path=True
+                ) if target else 0
+                playtime_seconds = playtime_seconds or 0
                 games.append((
                     str(game.get("title", app_id)),
                     str(game.get("description", "")), str(game.get("cover", "")),
                     app_id,
                     steam_info.get("controller_support", ""),
                     f"gog://{action}/{app_id}",
-                    _("Never"), format_playtime(0),
+                    get_last_launch(f"gog-{app_id}") if target else _("Never"),
+                    format_playtime(playtime_seconds),
                     steam_info.get("protondb_tier", ""),
                     steam_info.get("anticheat_status", ""),
-                    0, 0,
+                    get_last_launch_timestamp(f"gog-{app_id}") if target else 0,
+                    playtime_seconds,
                     "gog",
                     steam_info.get("anticheat_slug", ""),
                     steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
@@ -2005,10 +2014,12 @@ class MainWindow(
             elapsed = int((datetime.now() - start_time).total_seconds())
             if elapsed > 0:
                 from portprotonqt.time_utils import save_playtime
-                save_playtime(start_exe, elapsed)
+                exact_path = getattr(self, "game_start_exact_path", False)
+                save_playtime(start_exe, elapsed, exact_path=exact_path)
                 self._update_playtime_after_exit(start_exe, elapsed)
             self.game_start_time = None
             self.game_start_exe = None
+            self.game_start_exact_path = False
             self.game_launch_monotonic = None
             self.game_stopped_by_user = False
 
@@ -2029,7 +2040,7 @@ class MainWindow(
         updated_games = []
         changed = False
         for game in games:
-            game_exe = extract_exec_target_path(game[5]) if len(game) > 5 else ""
+            game_exe = self._get_game_executable(game[5]) if len(game) > 5 else ""
             if (
                 len(game) <= 11
                 or not game_exe
@@ -2058,7 +2069,7 @@ class MainWindow(
         )
 
         for card in self.game_library_manager.game_card_cache.values():
-            card_exe = extract_exec_target_path(card.exec_line) or ""
+            card_exe = self._get_game_executable(card.exec_line)
             if os.path.normpath(card_exe) != target_path:
                 continue
             card.playtime_seconds = (card.playtime_seconds or 0) + additional_seconds
@@ -2073,7 +2084,7 @@ class MainWindow(
         updated_games = []
         changed = False
         for game in games:
-            game_exe = extract_exec_target_path(game[5]) if len(game) > 5 else ""
+            game_exe = self._get_game_executable(game[5]) if len(game) > 5 else ""
             if (
                 len(game) <= 10
                 or not game_exe
@@ -2102,7 +2113,7 @@ class MainWindow(
         )
 
         for card in self.game_library_manager.game_card_cache.values():
-            card_exe = extract_exec_target_path(card.exec_line) or ""
+            card_exe = self._get_game_executable(card.exec_line)
             if os.path.normpath(card_exe) != target_path:
                 continue
             card.last_launch = format_last_launch(launch_time)
@@ -2110,6 +2121,13 @@ class MainWindow(
 
         self.game_library_manager.update_game_grid(focus_first_card=False)
         self._refresh_current_detail_time()
+
+    def _get_game_executable(self, exec_line: str) -> str:
+        """Resolve a library launch entry to its tracked executable."""
+        if exec_line.startswith("gog://launch/"):
+            app_id = exec_line.rsplit("/", 1)[-1]
+            return str(self.gog_api.get_launch_target(app_id) or "")
+        return extract_exec_target_path(exec_line) or ""
 
     def _has_running_game_process(self) -> bool:
         return any(proc.poll() is None for proc in self.game_processes)
@@ -2472,6 +2490,14 @@ class MainWindow(
         self.game_processes.append(process)
         self.target_exe = target
         self.current_running_button = button
+        launch_target = self.gog_api.get_launch_target(app_id)
+        if launch_target:
+            launch_time = datetime.now()
+            self.game_start_time = launch_time
+            self.game_start_exe = launch_target
+            self.game_start_exact_path = True
+            save_last_launch(f"gog-{app_id}", launch_time)
+            self._update_last_launch_after_start(launch_target, launch_time)
         self._start_launch_output_reader(process)
         self.input_manager.suspend_gamepad_polling()
         self.checkProcessTimer = QTimer(self)

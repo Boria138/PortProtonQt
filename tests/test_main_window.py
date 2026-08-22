@@ -560,6 +560,56 @@ def test_gog_support_uses_regular_launch_output_monitor(
     assert input_manager.suspended
 
 
+def test_gog_launch_starts_playtime_tracking(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    target = "/games/Bio Menace/game.exe"
+    saved = []
+    window: Any = MainWindow.__new__(MainWindow)
+    window.gog_api = SimpleNamespace(
+        ensure_launch_parameters=lambda _app_id: None,
+        get_installed_path=lambda _app_id: Path("/games/Bio Menace"),
+        get_launch_target=lambda _app_id: target,
+        needs_support_setup=lambda _app_id: False,
+        build_command=lambda arguments: arguments,
+        get_environment=lambda: {},
+    )
+    window.start_sh = ["start.sh"]
+    window.game_processes = []
+    window.input_manager = FakeInputManager()
+    window._start_launch_output_reader = lambda _process: None
+    window._update_last_launch_after_start = lambda *_args: None
+    monkeypatch.setattr(
+        "portprotonqt.main_window.subprocess.Popen",
+        lambda *_args, **_kwargs: object(),
+    )
+    monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.save_last_launch",
+        lambda *args: saved.append(args),
+    )
+
+    window._launch_gog_game("123", play_sound=False)
+
+    assert window.game_start_exe == target
+    assert window.game_start_time is not None
+    assert window.game_start_exact_path is True
+    assert saved == [("gog-123", window.game_start_time)]
+
+
+def test_gog_playtime_updates_live_by_launch_target() -> None:
+    target = "/games/Bio Menace/game.exe"
+    game = ("Bio Menace", "", "", "123", "", "gog://launch/123",
+            "Never", "0 sec.", "", "", 0, 0, "gog")
+    window: Any = MainWindow.__new__(MainWindow)
+    window.gog_api = SimpleNamespace(get_launch_target=lambda _app_id: target)
+
+    games, changed = window._update_game_list_playtime([game], target, 120)
+
+    assert changed
+    assert games[0][11] == 120
+
+
 def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:
     install_path = tmp_path / "Game"
     started: list[tuple] = []
@@ -1460,6 +1510,7 @@ def test_load_gog_games_includes_compatibility_metadata(monkeypatch: MonkeyPatch
             {"app_id": "gog-1", "title": "Game", "steam_appid": "123"}
         ],
         is_game_installed=lambda _app_id, _installed: True,
+        get_launch_target=lambda _app_id: "/games/Game/game.exe",
     )
     steam_info = {
         "appid": 123,
@@ -1530,6 +1581,7 @@ def test_installed_filter_excludes_uninstalled_gog_games(
             {"app_id": "uninstalled", "title": "Uninstalled", "steam_appid": ""},
         ],
         is_game_installed=lambda app_id, _installed: app_id == "installed",
+        get_launch_target=lambda app_id: f"/games/{app_id}/game.exe",
     )
     monkeypatch.setattr(game_config, "get_only_installed", lambda: True)
     monkeypatch.setattr(
