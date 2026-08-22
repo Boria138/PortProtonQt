@@ -2430,7 +2430,9 @@ class MainWindow(
         if game:
             self._install_gog_game(game)
 
-    def _launch_gog_game(self, app_id: str, button=None) -> None:
+    def _launch_gog_game(
+        self, app_id: str, button=None, play_sound: bool = True
+    ) -> None:
         self.gog_api.ensure_launch_parameters(app_id)
         discovered_path = self.gog_api.get_installed_path(app_id)
         install_path = str(discovered_path) if discovered_path else ""
@@ -2465,7 +2467,8 @@ class MainWindow(
             logger.error("Failed to launch GOG game %s: %s", app_id, error)
             QMessageBox.warning(self, _("Error"), str(error))
             return
-        SoundManager().play("game_launch")
+        if play_sound:
+            SoundManager().play("game_launch")
         self.game_processes.append(process)
         self.target_exe = target
         self.current_running_button = button

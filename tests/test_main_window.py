@@ -516,15 +516,48 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
 def test_gog_support_removes_finished_process_before_launching_game() -> None:
     process = SimpleNamespace(poll=lambda: 0)
     launches = []
+    timer = MagicMock()
     window = SimpleNamespace(
         game_processes=[process],
-        _launch_gog_game=lambda *args: launches.append(args),
+        checkProcessTimer=timer,
+        _launch_gog_game=lambda app_id, button, play_sound: launches.append(
+            (app_id, button, play_sound)
+        ),
     )
 
     GOGMixin._launch_after_gog_support(cast(Any, window), "123", "button")
 
     assert window.game_processes == []
-    assert launches == [("123", "button")]
+    assert launches == [("123", "button", False)]
+    timer.stop.assert_called_once_with()
+    timer.deleteLater.assert_called_once_with()
+    assert window.checkProcessTimer is None
+
+
+def test_gog_support_uses_regular_launch_output_monitor(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    process = SimpleNamespace()
+    readers = []
+    input_manager = FakeInputManager()
+    window = SimpleNamespace(
+        gog_api=SimpleNamespace(get_launch_target=lambda _app_id: "/game/Game.exe"),
+        game_processes=[],
+        current_running_button=None,
+        input_manager=input_manager,
+        _start_launch_output_reader=readers.append,
+        _set_running_button_stop=lambda: None,
+        checkTargetExe=lambda: None,
+    )
+    monkeypatch.setattr(gog_tab_module, "QTimer", FakeTimer)
+
+    GOGMixin._track_gog_support_process(
+        cast(Any, window), "123", cast(Any, process)
+    )
+
+    assert readers == [process]
+    assert window.checkProcessTimer.interval == 500
+    assert input_manager.suspended
 
 
 def test_repair_gog_game_uses_repair_command(tmp_path: Path) -> None:

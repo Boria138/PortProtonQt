@@ -31,6 +31,7 @@ from portprotonqt.gog_api import GOGAPI, GOG_LOGIN_URL
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
+from portprotonqt.sound_manager import SoundManager
 
 logger = get_logger(__name__)
 GOG_CANCEL_KILL_TIMEOUT_MS = 3000
@@ -736,6 +737,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         )
         worker.finished.connect(lambda: self._finish_gog_support_setup(worker))
         self.gog_support_workers.append(worker)
+        SoundManager().play("game_launch")
         worker.start()
 
     def _track_gog_support_process(
@@ -745,15 +747,24 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.game_processes.append(process)
         self.target_exe = os.path.basename(target or app_id)
         self.current_running_button = button
+        self._start_launch_output_reader(process)
         self.input_manager.suspend_gamepad_polling()
         self._set_running_button_stop()
+        self.checkProcessTimer = QTimer(self)
+        self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+        self.checkProcessTimer.start(500)
 
     def _launch_after_gog_support(self, app_id: str, button=None) -> None:
         self.game_processes = [
             process for process in self.game_processes
             if process.poll() is None
         ]
-        self._launch_gog_game(app_id, button)
+        timer = self.checkProcessTimer
+        if timer is not None:
+            timer.stop()
+            timer.deleteLater()
+        self.checkProcessTimer = None
+        self._launch_gog_game(app_id, button, play_sound=False)
 
     def _finish_gog_support_setup(self, worker: GOGSupportWorker) -> None:
         workers = getattr(self, "gog_support_workers", [])
