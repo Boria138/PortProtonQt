@@ -206,10 +206,18 @@ def main():
 
         setup_logger(parsed_args.debug_level)
         try:
-            integrate_appimage()
+            destination = integrate_appimage()
+            restart_env = os.environ.copy()
+            restart_env.pop("PORTPROTONQT_INTEGRATE_APPIMAGE", None)
+            subprocess.Popen(
+                [str(destination), *sys.argv[1:]],
+                env=restart_env,
+                start_new_session=True,
+            )
         except (OSError, subprocess.SubprocessError, KeyError) as error:
             get_logger(__name__).error("Failed to integrate AppImage: %s", error)
             return 1
+        return 0
 
     # Handle --reinstall-steam-compat-tool flag
     if parsed_args.reinstall_steam_compat_tool:

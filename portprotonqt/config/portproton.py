@@ -223,7 +223,16 @@ def _extract_launcher_tail(parts: list[str]) -> list[str] | None:
         return None
 
     command_name = os.path.basename(parts[0])
-    if parts[0].lower().endswith(".appimage") or command_name == "portprotonqt" or command_name == "start.sh":
+    appimage_name = command_name.casefold()
+    is_portproton_appimage = re.fullmatch(
+        r"portproton(?:qt)?(?:[-_.].*)?\.appimage",
+        appimage_name,
+    ) is not None
+    if (
+        is_portproton_appimage
+        or command_name == "portprotonqt"
+        or command_name == "start.sh"
+    ):
         tail = parts[1:]
         if tail[:1] == ["--silent"]:
             tail = tail[1:]
@@ -274,7 +283,11 @@ def _get_desktop_paths(desktop_dir: str | None) -> tuple[str, ...]:
     return (os.path.join(os.path.expanduser("~"), "Desktop"),)
 
 
-def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None) -> int:
+def migrate_legacy_shortcut(
+    portproton_path: str,
+    desktop_dir: str | None = None,
+    launcher_command: list[str] | None = None,
+) -> int:
     """Migrate legacy PortProton shortcuts in known desktop directories."""
     flatpak_id = os.getenv("FLATPAK_ID", "").strip()
     user_home = os.path.expanduser("~")
@@ -293,7 +306,8 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
         except OSError as error:
             logger.warning("Failed to read legacy PortProton config %s: %s", PORTPROTON_CONFIG_FILE, error)
 
-    launcher_command = _get_current_launcher_command()
+    if launcher_command is None:
+        launcher_command = _get_current_launcher_command()
     desktop_paths = (
         portproton_path,
         os.path.join(user_home, ".local", "share", "applications"),

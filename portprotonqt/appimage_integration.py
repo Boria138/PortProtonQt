@@ -8,6 +8,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths, QThread, Signal
 
+from portprotonqt.config import get_portproton_location, migrate_legacy_shortcut
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -159,8 +160,15 @@ def integrate_appimage() -> Path:
     destination = appimages_dir / "portprotonqt.appimage"
     resolved_icon = icon_source.resolve()
     icon = icon_dir / f"{APP_ID}.svg"
-    _remove_existing_integration(applications_dir, icon_dir)
     _copy_appimage(source, destination)
+    legacy_appimage = Path.home() / "Applications/PortProtonQt.AppImage"
+    if legacy_appimage.resolve() != destination.resolve():
+        portproton_location = get_portproton_location()
+        migrate_legacy_shortcut(
+            portproton_location or "",
+            launcher_command=[str(destination), "--silent"],
+        )
+    _remove_existing_integration(applications_dir, icon_dir)
     shutil.copy2(resolved_icon, icon)
     _install_desktop_files(desktop_source, applications_dir, destination)
     _set_default_mime_handlers()
@@ -172,6 +180,8 @@ def integrate_appimage() -> Path:
         )
     except (FileNotFoundError, subprocess.SubprocessError) as error:
         logger.warning("Failed to update desktop database: %s", error)
+    if legacy_appimage.resolve() != destination.resolve():
+        legacy_appimage.unlink(missing_ok=True)
     return destination
 
 
