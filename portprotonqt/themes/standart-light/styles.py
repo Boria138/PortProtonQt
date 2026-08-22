@@ -485,7 +485,8 @@ THEME_TAB_FOCUS_STYLE = f"""
         border: {border_thin} {color_text_dark};
         background-color: {color_accent};
     }}
-    QPushButton#themeApplyButton:focus {{
+    QPushButton#themeApplyButton:focus,
+    QPushButton#themeDeleteButton:focus {{
         border: {border_thin} {color_text_dark};
     }}
     QGraphicsView#themeScreenshotsCarousel,

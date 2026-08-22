@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-16 21:24+0500\n"
+"POT-Creation-Date: 2026-08-21 21:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2359,6 +2359,9 @@ msgstr ""
 msgid "Apply Theme"
 msgstr ""
 
+msgid "Delete Theme"
+msgstr ""
+
 msgid "No link"
 msgstr ""
 
@@ -2369,6 +2372,13 @@ msgid "Author:"
 msgstr ""
 
 msgid "Link:"
+msgstr ""
+
+#, python-brace-format
+msgid "Delete theme '{0}'?"
+msgstr ""
+
+msgid "Failed to delete theme."
 msgstr ""
 
 msgid "Prefix:"

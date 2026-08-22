@@ -35,6 +35,24 @@ def test_dpad_first_repeat_uses_long_press_delay() -> None:
     assert parameters["initial_axis_move_delay"].default == 0.5
 
 
+def test_theme_tab_focusables_include_delete_button(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    manager = InputManager.__new__(InputManager)
+    widgets = [QWidget() for _index in range(5)]
+    cast(Any, manager)._parent = SimpleNamespace(
+        themesCombo=widgets[0],
+        themeVariantCombo=widgets[1],
+        screenshotsCarousel=widgets[2],
+        applyButton=widgets[3],
+        deleteThemeButton=widgets[4],
+    )
+    monkeypatch.setattr(manager, "_is_theme_store_visible", lambda: False)
+    monkeypatch.setattr(manager, "_is_visible_enabled_widget", lambda _widget: True)
+
+    assert manager._get_theme_tab_focusables() == widgets
+    assert app is not None
+
+
 def test_native_gamepad_result_preserves_python_interface(monkeypatch: MonkeyPatch) -> None:
     controller = 42
     monkeypatch.setattr(native_gamepad._library, "portproton_gamepad_find", lambda: controller)

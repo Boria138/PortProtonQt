@@ -45,7 +45,6 @@ GAMEPAD_LIBRARY=$(find /usr/lib -type f \
 test -n "$GAMEPAD_LIBRARY"
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
-	/usr/bin/7z \
 	/usr/bin/update-desktop-database \
 	/usr/bin/vk_gpu_info \
 	"$GAMEPAD_LIBRARY" \
@@ -53,7 +52,8 @@ test -n "$GAMEPAD_LIBRARY"
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Multimedia.so* \
 	/usr/lib/libQt6Network.so* \
-	/usr/lib/qt6/plugins/imageformats/libqwebp.so
+	/usr/lib/qt6/plugins/imageformats/libqwebp.so \
+	/usr/lib/7zip/7z*
 
 # DEPLOY_PYTHON copies the distro's complete Python installation. Remove
 # build/development content and PySide bindings not imported by PortProtonQt.

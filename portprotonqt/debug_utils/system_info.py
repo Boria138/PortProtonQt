@@ -322,7 +322,7 @@ def generate_system_info(
     lines.append(_("Debug log mode was launched"))
     lines.append(
         _("To diagnose the problem, copy the ENTIRE log to the site:") +
-        " https://linux-gaming.ru/t/opisanie-kategorii-portproton-pomoshh/1642"
+        " https://linux-gaming.ru/forum/help/portprotonqt-pomosch"
     )
     lines.append("-" * 61)
 

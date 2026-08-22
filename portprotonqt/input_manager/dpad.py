@@ -47,7 +47,13 @@ class DpadInputMixin(InputMixin):
             return self._get_theme_store_focusables()
 
         widgets = []
-        for attr_name in ("themesCombo", "themeVariantCombo", "screenshotsCarousel", "applyButton"):
+        for attr_name in (
+            "themesCombo",
+            "themeVariantCombo",
+            "screenshotsCarousel",
+            "applyButton",
+            "deleteThemeButton",
+        ):
             widget = getattr(self._parent, attr_name, None)
             if self._is_visible_enabled_widget(widget):
                 widgets.append(widget)

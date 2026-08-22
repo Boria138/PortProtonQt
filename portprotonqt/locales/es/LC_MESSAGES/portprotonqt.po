@@ -2464,6 +2464,10 @@ msgstr ""
 msgid "Apply Theme"
 msgstr ""
 
+#, fuzzy
+msgid "Delete Theme"
+msgstr "Borrar el archivo"
+
 msgid "No link"
 msgstr ""
 
@@ -2475,6 +2479,14 @@ msgstr ""
 
 msgid "Link:"
 msgstr ""
+
+#, python-brace-format
+msgid "Delete theme '{0}'?"
+msgstr ""
+
+#, fuzzy
+msgid "Failed to delete theme."
+msgstr "Error al cargar los temas"
 
 msgid "Prefix:"
 msgstr "Prefijo:"
