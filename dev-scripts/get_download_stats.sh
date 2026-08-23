@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-GITHUB_REPO="linux-gaming-ru/PortProtonQt"
+GITHUB_REPOS=("Boria138/PortProtonQt" "linux-gaming-ru/PortProtonQt")
 GITEA_REPO="Linux-Gaming/PortProtonQt"
 GITEA_URL="https://git.linux-gaming.ru"
 
@@ -10,8 +10,10 @@ jq_total='[.[].assets[] | select(.name | test("\\.(zsync|sha256)$|steam-compat")
 echo "=== PortProtonQt Download Stats ==="
 echo
 
-echo "--- GitHub (${GITHUB_REPO}) ---"
-GH_RAW=$(curl -sf "https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100")
+echo "--- GitHub (${GITHUB_REPOS[*]}) ---"
+GH_RAW=$(for repo in "${GITHUB_REPOS[@]}"; do
+    curl -sf "https://api.github.com/repos/${repo}/releases?per_page=100"
+done | jq -s 'add')
 GH_COUNT=$(echo "$GH_RAW" | jq "$jq_total")
 GH_RELEASES=$(echo "$GH_RAW" | jq 'length')
 echo "Releases: $GH_RELEASES"
