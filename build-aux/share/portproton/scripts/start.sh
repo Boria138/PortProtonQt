@@ -19,7 +19,6 @@ else
     PORT_SCRIPTS_PATH="$(dirname "$(realpath "$0")")"
 fi
 
-PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 PORT_CONF_PATH="$(dirname "$PORT_SCRIPTS_PATH")/conf"
 
 if [[ -z "$PORT_DATA_PATH" ]] ; then
@@ -55,7 +54,7 @@ else
     export PW_FIND_PPDB=1
 fi
 
-export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH PORT_CONF_PATH
+export PORT_SCRIPTS_PATH PORT_DATA_PATH PORT_CONF_PATH
 export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
 # shellcheck source=/dev/null
@@ -148,7 +147,7 @@ create_new_dir "${PORT_DATA_PATH}/data/prefixes/DEFAULT"
 create_new_dir "${PORT_DATA_PATH}/data/prefixes/DOTNET"
 try_force_link_dir "${PORT_DATA_PATH}/data/prefixes" "${PORT_DATA_PATH}"
 
-pushd "${PORT_DATA_PATH}/data/prefixes/" 1>/dev/null || fatal
+pushd "${PORT_DATA_PATH}/data/prefixes/" 1>/dev/null || fatal "Failed to enter prefixes directory"
 for pfx_dir in ./* ; do
     [[ -d "$pfx_dir" ]] || continue
     pfx_dir_new="${pfx_dir//[[:blank:]]/_}"
@@ -156,7 +155,7 @@ for pfx_dir in ./* ; do
         mv -- "${PORT_DATA_PATH}/data/prefixes/$pfx_dir" "${PORT_DATA_PATH}/data/prefixes/${pfx_dir_new^^}"
     fi
 done
-popd 1>/dev/null || fatal
+popd 1>/dev/null || fatal "Failed to return from prefixes directory"
 
 create_new_dir "${PORT_WINE_TMP_PATH}"/gecko
 create_new_dir "${PORT_WINE_TMP_PATH}"/mono
@@ -164,12 +163,12 @@ create_new_dir "${PORT_WINE_TMP_PATH}"/mono
 export PW_VULKAN_DIR="${PORT_WINE_TMP_PATH}/VULKAN"
 create_new_dir "${PW_VULKAN_DIR}"
 
-cd "${PORT_SCRIPTS_PATH}" || fatal
+cd "${PORT_SCRIPTS_PATH}" || fatal "Scripts directory not found: ${PORT_SCRIPTS_PATH}"
 
 # shellcheck source=/dev/null
 source "${PORT_SCRIPTS_PATH}/var"
 # HACK: Avoid inheriting a system scripts cwd in pressure-vessel.
-cd "${XDG_DATA_HOME:-$HOME}" || fatal
+cd "${XDG_DATA_HOME:-$HOME}" || fatal "Data directory not found: ${XDG_DATA_HOME:-$HOME}"
 
 [[ ! -f "$VKBASALT_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/vkBasalt.conf" "$VKBASALT_CONFIG_FILE"
 [[ ! -f "$DXVK_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/dxvk.conf" "$DXVK_CONFIG_FILE"
@@ -472,7 +471,7 @@ Usage examples:
     --winecmd)
         get_wine_and_pfx "$2" "$3"
         start_portproton
-        cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
+        cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal "Prefix drive_c directory not found"
         PW_USE_TERMINAL=1 pw_run cmd
         stop_portproton
         ;;

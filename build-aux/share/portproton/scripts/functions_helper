@@ -135,8 +135,10 @@ rm_from_array () {
 }
 
 fatal () {
-    #TODO
-    pw_notify_send -i error "$@"
+    if [[ -z "$*" ]] ; then
+        set -- "Fatal error"
+    fi
+    python_module dbus_tools notify -i error "$@" &>/dev/null
     print_error "$@"
     stop_portproton
     exit 1
@@ -459,6 +461,26 @@ try_download () {
                 no_mirror=true
     esac
 
+    local curl_proxy_args=()
+    local _pp_conf=""
+    if [[ -n "${XDG_CONFIG_HOME:-}" ]] \
+    && [[ -f "$XDG_CONFIG_HOME/PortProtonQt.conf" ]] ; then
+        _pp_conf="$XDG_CONFIG_HOME/PortProtonQt.conf"
+    elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] ; then
+        _pp_conf="$HOME/.config/PortProtonQt.conf"
+    fi
+    local _pp_url="" _pp_user="" _pp_pass=""
+    if [[ -n "$_pp_conf" ]] ; then
+        _pp_url="$(grep "proxy_url" "$_pp_conf" | awk -F"= " '{print $2}')"
+        if [[ -n "$_pp_url" ]] ; then
+            curl_proxy_args=(-x "$_pp_url")
+            _pp_user="$(grep "proxy_user" "$_pp_conf" | awk -F"= " '{print $2}')"
+            _pp_pass="$(grep "proxy_password" "$_pp_conf" | awk -F"= " '{print $2}')"
+            [[ -n "$_pp_user" && -n "$_pp_pass" ]] \
+                && curl_proxy_args+=(-u "$_pp_user:$_pp_pass")
+        fi
+    fi
+
     local filename
     if [[ -n "${PW_AUTOINSTALL_EXE}" ]] \
     && [[ "$no_mirror" == "true" ]]
@@ -482,7 +504,7 @@ try_download () {
     if check_gamescope_session ; then
         $PW_TERM "echo ; echo ; echo \"Downloading: $filename. Please wait...\" \
         ; curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
-        -H 'Pragma: no-cache' -L ${FIRST_URL[*]} -o \"$dest\""
+        -H 'Pragma: no-cache' -L ${FIRST_URL[*]} -o \"$dest\" ${curl_proxy_args[*]}"
 
 
         [[ "$?" != 0 ]] && return 1 || return 0
@@ -491,10 +513,10 @@ try_download () {
     # Normal download
     print_info "Download $filename from ${FIRST_URL[0]}..."
     if [[ "$silent" == "true" ]] ; then
-        curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
+        curl "${curl_proxy_args[@]}" -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1
     else
-        curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
+        curl "${curl_proxy_args[@]}" -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1 \
         | tr '\r' '\n' | sed -ur 's|[# ]+||g;s|100||g;s|0-||g;s|.*=.*||g'
 
@@ -542,48 +564,6 @@ var_ld_library_path_update () {
     else export LD_LIBRARY_PATH="${1}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     fi
 }
-
-# GUI NOTIFY SEND
-pw_notify_send () {
-    local icon title body app timeout OPTIND
-    app="ru.linux_gaming.PortProtonQt"
-    timeout="5000"
-    OPTIND="1"
-    while getopts a:i:t: opt ; do
-        case "$opt" in
-            a)
-                app=$OPTARG
-                ;;
-            i)
-                case "$OPTARG" in
-                    info) local OPTARG="${PORT_IMG_PATH}/notify/info.svg";;
-                    warning) local OPTARG="${PORT_IMG_PATH}/notify/warning.svg";;
-                    error) local OPTARG="${PORT_IMG_PATH}/notify/error.svg";;
-                esac
-                icon=$OPTARG
-                ;;
-            t)
-                timeout=$OPTARG
-                ;;
-            *)
-                echo "usage: $0
-                [-a] name application (PortProtonQt default)
-                [-i] info, warning, error (none default)
-                [-t] timeout in ms (5000 default)" >&2
-                return 1
-                ;;
-        esac
-    done
-    shift $(( OPTIND - 1 ))
-    [[ "$1" == "--" ]] && shift
-    title="$1" ; shift
-    body="$*"
-
-    python_module dbus_tools notify \
-        -a "$app" -i "$icon" -t "$timeout" -- "$title" "$body" &>/dev/null
-    return 0
-}
-export -f pw_notify_send
 
 check_gamescope_session () {
     if [[ -n "$GAMESCOPE_IN_USE" ]]
@@ -2311,7 +2291,7 @@ pw_create_gui_png () {
 pw_create_unique_exe () {
     BASEDIR_GAME="$(dirname "$PW_EXE_FILE")"
     if [[ -d "$BASEDIR_GAME" ]] ; then
-        pushd "$BASEDIR_GAME" || fatal
+        pushd "$BASEDIR_GAME" || fatal "Failed to enter game directory: $BASEDIR_GAME"
         BASENAME_GAME_EXE="$(basename "$PW_EXE_FILE")"
         if [[ -n "$1" ]] ; then
             BASENAME_GAME="$(basename "$1" .exe).exe"
@@ -2324,7 +2304,7 @@ pw_create_unique_exe () {
             print_warning "There are no arguments for creating a symbolic link! Skip it..."
         fi
         try_remove_file "${PW_EXE_FILE}.ppdb"
-        popd || fatal
+        popd || fatal "Failed to return from game directory: $BASEDIR_GAME"
     fi
 }
 
@@ -4215,8 +4195,13 @@ gui_proton_downloader () {
         return 0
     fi
 
-    METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
-    METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
+    METADATA_CLOUD_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata_all.json"
+    METADATA_GITHUB_URL="https://raw.githubusercontent.com/linux-gaming-ru/PortProtonQt-Wine-Metadata/main/wine_metadata_all.json"
+    if [[ "${MIRROR}" == CLOUD ]] ; then
+        METADATA=$(curl -fL -A 'PortProton' -s "$METADATA_CLOUD_URL")
+    else
+        METADATA=$(curl -fL -s "$METADATA_GITHUB_URL")
+    fi
     if [[ -z "$METADATA" ]] ; then
         fatal "failed to fetch metadata"
     fi

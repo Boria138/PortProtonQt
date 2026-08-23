@@ -118,7 +118,6 @@ install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_d
 %{_datadir}/mime/packages/ru.linux_gaming.PortProtonQt.xml
 %{_datadir}/portproton/scripts/
 %{_datadir}/portproton/conf/
-%{_datadir}/portproton/img/
 %{bash_completions_dir}/portprotonqt
 %{fish_completions_dir}/portprotonqt.fish
 %{zsh_completions_dir}/_portprotonqt

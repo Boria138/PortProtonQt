@@ -4,7 +4,7 @@ set -eu
 
 REPOSITORY="Linux-Gaming/PortProtonQt"
 SERVER="https://git.linux-gaming.ru"
-GITHUB_REPOSITORY="Boria138/PortProtonQt"
+GITHUB_REPOSITORY="linux-gaming-ru/PortProtonQt"
 
 command -v curl >/dev/null 2>&1 || {
     echo "PortProtonQt installer requires curl." >&2

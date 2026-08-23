@@ -28,15 +28,15 @@ APPIMAGE_UPDATE_CHECK_TIMEOUT = 120
 APPIMAGE_UPDATE_TIMEOUT = 900
 APPIMAGE_UPDATE_START_DELAY_MS = 5000
 EXECUTABLE_MODE = 0o755
-FALLBACK_UPDATE_INFO = (
-    "gh-releases-zsync|Boria138|PortProtonQt|latest|*x86_64.AppImage.zsync"
+GITHUB_UPDATE_INFO = (
+    "gh-releases-zsync|linux-gaming-ru|PortProtonQt|latest|*x86_64.AppImage.zsync"
 )
 CHANGELOG_URL = (
     "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/"
     "CHANGELOG.md"
 )
-CHANGELOG_FALLBACK_URL = (
-    "https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/"
+CHANGELOG_GITHUB_URL = (
+    "https://raw.githubusercontent.com/linux-gaming-ru/PortProtonQt/refs/heads/main/"
     "CHANGELOG.md"
 )
 CHANGELOG_TIMEOUT = 10
@@ -129,16 +129,22 @@ def _run_appimageupdatetool(
 
 
 def _download_changelog() -> str:
+    from portprotonqt.portproton_api import get_user_conf_setting
+
     session = get_requests_session()
-    for url in (CHANGELOG_URL, CHANGELOG_FALLBACK_URL):
-        try:
-            with session.get(url, timeout=CHANGELOG_TIMEOUT) as response:
-                response.raise_for_status()
-                data = response.content[:CHANGELOG_MAX_CHARS]
-                return data.decode("utf-8", errors="replace")
-        except (OSError, requests.RequestException) as error:
-            logger.debug("Failed to download changelog from %s: %s", url, error)
-    return ""
+    url = (
+        CHANGELOG_URL
+        if get_user_conf_setting("MIRROR") == "CLOUD"
+        else CHANGELOG_GITHUB_URL
+    )
+    try:
+        with session.get(url, timeout=CHANGELOG_TIMEOUT) as response:
+            response.raise_for_status()
+            data = response.content[:CHANGELOG_MAX_CHARS]
+            return data.decode("utf-8", errors="replace")
+    except (OSError, requests.RequestException) as error:
+        logger.debug("Failed to download changelog from %s: %s", url, error)
+        return ""
 
 
 def _extract_latest_version_changelog(changelog: str, current_version: str = "") -> str:
@@ -306,15 +312,9 @@ class AppImageUpdateWorker(QThread):
         self.update_info = previous_info
         return result
 
-    def _is_check_failure(self, result: subprocess.CompletedProcess[str] | None) -> bool:
-        if result is None:
-            return True
-        if result.returncode not in (0, 1):
-            return True
-        output = f"{result.stdout}\n{result.stderr}"
-        return " Error:" in output or "Failed to fetch" in output
-
     def run(self) -> None:
+        from portprotonqt.portproton_api import get_user_conf_setting
+
         appimage_path = _appimage_path()
         if not ui_config.get_auto_appimage_updates() or not appimage_path:
             return
@@ -330,14 +330,10 @@ class AppImageUpdateWorker(QThread):
             self._run_update(tool_path, appimage_path)
             return
 
-        update_infos = ["", FALLBACK_UPDATE_INFO]
-        check_code = None
-        selected_info = ""
-        for update_info in update_infos:
-            check_code = self._check_for_update(tool_path, appimage_path, update_info)
-            if not self._is_check_failure(check_code):
-                selected_info = update_info
-                break
+        selected_info = (
+            "" if get_user_conf_setting("MIRROR") == "CLOUD" else GITHUB_UPDATE_INFO
+        )
+        check_code = self._check_for_update(tool_path, appimage_path, selected_info)
 
         if check_code is None or check_code.returncode != 1:
             return

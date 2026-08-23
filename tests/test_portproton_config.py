@@ -96,12 +96,12 @@ class TestSanitizeIconName:
 
 class TestExtractLauncherTail:
     def test_appimage_silent(self):
-        parts = ["/path/to/app.AppImage", "--silent", "/tmp/game.exe"]
+        parts = ["/path/to/PortProtonQt.AppImage", "--silent", "/tmp/game.exe"]
         result = _extract_launcher_tail(parts)
         assert result == ["/tmp/game.exe"]
 
     def test_appimage_no_silent(self):
-        parts = ["/path/to/app.AppImage", "/tmp/game.exe"]
+        parts = ["/path/to/PortProtonQt.AppImage", "/tmp/game.exe"]
         result = _extract_launcher_tail(parts)
         assert result == ["/tmp/game.exe"]
 

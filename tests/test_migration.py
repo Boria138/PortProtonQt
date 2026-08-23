@@ -94,11 +94,11 @@ class TestGetCurrentLauncherCommand:
 
 class TestExtractLauncherTail:
     def test_appimage_with_silent(self):
-        parts = ["/path/app.AppImage", "--silent", "/game.exe"]
+        parts = ["/path/PortProtonQt.AppImage", "--silent", "/game.exe"]
         assert _extract_launcher_tail(parts) == ["/game.exe"]
 
     def test_appimage_without_silent(self):
-        parts = ["/path/app.AppImage", "/game.exe"]
+        parts = ["/path/PortProtonQt.AppImage", "/game.exe"]
         assert _extract_launcher_tail(parts) == ["/game.exe"]
 
     def test_portprotonqt_with_silent(self):
@@ -440,6 +440,16 @@ class TestExecLineMigrationIntegration:
         parts = shlex.split(exec_line)
         tail = _extract_launcher_tail(parts)
         assert tail == ["/game.exe"]
+
+    def test_versioned_appimage_exec_extracted(self):
+        parts = shlex.split(
+            '/opt/PortProtonQt-1.3.2-anylinux-x86_64.AppImage "/game.exe"'
+        )
+        assert _extract_launcher_tail(parts) == ["/game.exe"]
+
+    def test_unrelated_appimage_exec_ignored(self):
+        parts = shlex.split('/opt/OtherGame.AppImage "/game.exe"')
+        assert _extract_launcher_tail(parts) is None
 
     def test_migrate_to_appimage(self, monkeypatch):
         monkeypatch.setattr(

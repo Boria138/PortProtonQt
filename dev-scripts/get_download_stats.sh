@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-GITHUB_REPO="Boria138/PortProtonQt"
+GITHUB_REPO="linux-gaming-ru/PortProtonQt"
 GITEA_REPO="Linux-Gaming/PortProtonQt"
 GITEA_URL="https://git.linux-gaming.ru"
 

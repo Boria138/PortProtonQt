@@ -495,6 +495,8 @@ class GOGAPI:
         """Run GOG setup and expose its process for UI cancellation."""
         process = subprocess.Popen(
             command, cwd=install_path, start_new_session=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, errors="replace", bufsize=1,
         )
         if process_callback:
             process_callback(process)
