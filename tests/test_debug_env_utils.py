@@ -1,9 +1,25 @@
 """Tests for debug environment helpers."""
 
+import subprocess
 from typing import Any
 
 from portprotonqt.debug_utils import env_utils
 from portprotonqt.debug_utils import gpu_info
+
+
+def test_get_cached_vk_gpu_info_uses_build_aux_binary(monkeypatch: Any) -> None:
+    calls = []
+    result = subprocess.CompletedProcess([], 0, stdout="GPU #0:\n", stderr="")
+
+    def run(command: list[str], **_kwargs: Any) -> subprocess.CompletedProcess:
+        calls.append(command)
+        return result
+
+    monkeypatch.setattr(gpu_info.subprocess, "run", run)
+    monkeypatch.setattr(gpu_info, "_vk_gpu_info_output", None)
+
+    assert gpu_info.get_cached_vk_gpu_info() == "GPU #0:\n"
+    assert calls[0][0].endswith("build-aux/bin/vk_gpu_info")
 
 
 def test_get_runtime_status_enabled(monkeypatch: Any) -> None:

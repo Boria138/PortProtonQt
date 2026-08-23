@@ -19,15 +19,16 @@ def get_cached_vk_gpu_info() -> str:
 
     if _vk_gpu_info_output is None:
         try:
-            dev_scripts_path = os.path.join(
+            vk_gpu_info_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                "dev-scripts",
+                "build-aux",
+                "bin",
                 "vk_gpu_info"
             )
 
-            if os.path.exists(dev_scripts_path):
+            if os.path.exists(vk_gpu_info_path):
                 result = subprocess.run(
-                    [dev_scripts_path],
+                    [vk_gpu_info_path],
                     capture_output=True,
                     text=True,
                     timeout=10,

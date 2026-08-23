@@ -191,3 +191,12 @@ def test_game_launch_marker_is_emitted_for_wine_and_proton() -> None:
 
     marker = "printf '%s\\n' 'PORTPROTONQT_GAME_LAUNCH_STARTED'"
     assert helper.count(marker) == 2
+
+
+def test_vk_gpu_info_uses_build_aux_binary() -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
+        encoding="utf-8",
+    )
+
+    assert '/../../../bin/vk_gpu_info"' in helper
+    assert "dev-scripts/vk_gpu_info" not in helper
