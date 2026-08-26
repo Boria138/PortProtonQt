@@ -318,7 +318,14 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             for path, icon_name in old_icon_paths.items()
             if path in combined_styles
         }
-        replacements = self._theme_style_replacements(old_theme, theme_module)
+        replacement_cache = getattr(self, "_theme_replacement_cache", {})
+        replacement_key = (id(old_theme), id(theme_module))
+        replacements = replacement_cache.get(replacement_key)
+        if replacements is None:
+            replacements = self._theme_style_replacements(old_theme, theme_module)
+            replacement_cache[replacement_key] = replacements
+            self._theme_replacement_cache = replacement_cache
+        replacements = list(replacements)
         icon_replacements = self._theme_icon_path_replacements(
             theme_name, style_icon_paths
         )
@@ -492,7 +499,8 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             control_hints.setStyleSheet(hint_bar_style)
         hints_label_style = getattr(theme_module, "HINTS_LABEL_STYLE", "")
         for label in getattr(self, "hintTextLabels", ()):
-            label.setStyleSheet(hints_label_style)
+            if isinstance(label, QWidget):
+                label.setStyleSheet(hints_label_style)
         tray_manager = getattr(self, "tray_manager", None)
         if tray_manager is not None:
             tray_icon = self.theme_manager.get_icon("tray_portproton", theme_name)

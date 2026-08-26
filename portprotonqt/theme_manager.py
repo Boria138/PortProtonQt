@@ -989,12 +989,16 @@ class ThemeManager:
     Implement Singleton pattern for single instance.
     """
     _instance = None
+    current_theme_name: str | None
+    current_theme_module: object | None
+    _theme_module_cache: dict[str, object]
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.current_theme_name = None
             cls._instance.current_theme_module = None
+            cls._instance._theme_module_cache = {}
         return cls._instance
 
     def get_available_themes(self) -> list:
@@ -1018,7 +1022,15 @@ class ThemeManager:
         except OSError as e:
             logger.warning("Failed to remove custom theme '%s': %s", theme_name, e)
             return False
+        self.invalidate_theme(theme_name)
         return True
+
+    def invalidate_theme(self, theme_name: str) -> None:
+        """Discard a cached theme after its files change."""
+        self._theme_module_cache.pop(theme_name, None)
+        if self.current_theme_name == theme_name:
+            self.current_theme_name = None
+            self.current_theme_module = None
 
     def get_cached_icon_names(self, theme_name: str) -> tuple[dict[int, str], dict[str, str]]:
         """Return cached icon identifiers before a live theme change."""
@@ -1044,13 +1056,18 @@ class ThemeManager:
         if self.current_theme_name == theme_name and self.current_theme_module is not None:
             return self.current_theme_module
 
-        try:
-            theme_module = load_theme(theme_name)
-        except FileNotFoundError:
-            logger.warning(f"Theme '{theme_name}' not found or unsafe, applying standard theme 'standart'")
-            theme_module = load_theme("standart")
-            theme_name = "standart"
-            ui_config.set_theme("standart")
+        theme_module = self._theme_module_cache.get(theme_name)
+        if theme_module is None:
+            try:
+                theme_module = load_theme(theme_name)
+            except FileNotFoundError:
+                logger.warning(f"Theme '{theme_name}' not found or unsafe, applying standard theme 'standart'")
+                theme_name = "standart"
+                theme_module = self._theme_module_cache.get(theme_name)
+                if theme_module is None:
+                    theme_module = load_theme(theme_name)
+                ui_config.set_theme(theme_name)
+            self._theme_module_cache[theme_name] = theme_module
 
         load_theme_fonts(theme_name)
 

@@ -682,6 +682,8 @@ class ThemeStoreMixin:
             self.themeStoreStatusLabel.show()
             self.themeStoreStatusLabel.setText(_("Failed to install theme"))
             return
+        for installed_theme in theme_names:
+            self.theme_manager.invalidate_theme(installed_theme)
         variant = getattr(self, "themeStorePreviewVariant", "dark")
         theme_name = ui_config.resolve_theme(theme_names[0], variant)
         if theme_name not in theme_names:
