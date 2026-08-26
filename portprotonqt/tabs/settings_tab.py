@@ -66,6 +66,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
     def createPortProtonTab(self):
         """PortProton Settings tab."""
         self.portProtonWidget = QWidget()
+        self.portProtonWidget.setProperty("theme_style_name", "OTHER_PAGES_WIDGET_STYLE")
         self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.portProtonWidget.setObjectName("otherPage")
         layout = QVBoxLayout(self.portProtonWidget)
@@ -99,6 +100,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         def create_section(title_text, theme):
             section_frame = QFrame()
             section_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            section_frame.setProperty("theme_style_name", "SETTINGS_FRAME_STYLE")
             section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
             section_layout = QVBoxLayout(section_frame)
             section_layout.setContentsMargins(*theme.portProtonPageMargins)
@@ -154,6 +156,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.gogLoginButton = AutoSizeButton(_("Open login page"))
+        self.gogLoginButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.gogLoginButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.gogLoginButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gogLoginButton.clicked.connect(self._handle_gog_account_action)
@@ -523,6 +526,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             self.integrateAppImageButton = AutoSizeButton(
                 _("Integrate AppImage"), icon=self.theme_manager.get_icon("desktop", as_path=True)
             )
+            self.integrateAppImageButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
             self.integrateAppImageButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             self.integrateAppImageButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             self.integrateAppImageButton.clicked.connect(self.integrateAppImage)
@@ -623,6 +627,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.proxyUrlEdit.setProperty("theme_style_name", "LINE_EDIT_STYLE")
         self.proxyUrlEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUrlTitle = QLabel(_("Proxy URL:"))
@@ -637,6 +642,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.proxyUserEdit.setProperty("theme_style_name", "LINE_EDIT_STYLE")
         self.proxyUserEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUserTitle = QLabel(_("Proxy Username:"))
@@ -649,6 +655,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.proxyPasswordEdit.setProperty("theme_style_name", "LINE_EDIT_STYLE")
         self.proxyPasswordEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyPasswordEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
@@ -667,18 +674,21 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         buttonsLayout.setSpacing(self.theme.portProtonPageVerticalSpacing)
 
         self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", as_path=True))
+        self.saveButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
         buttonsLayout.addWidget(self.saveButton)
 
         self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.resetSettingsButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.resetSettingsButton.clicked.connect(self.resetSettings)
         buttonsLayout.addWidget(self.resetSettingsButton)
 
         self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.migrateShortcutsButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.migrateShortcutsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
@@ -688,6 +698,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             buttonsLayout.addWidget(self.integrateAppImageButton)
 
         self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.clearCacheButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.clearCacheButton.clicked.connect(self.clearCache)

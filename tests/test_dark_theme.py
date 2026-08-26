@@ -6,6 +6,7 @@ from portprotonqt.config.ui import (
     _is_gsettings_dark_theme,
     THEME_VARIANTS,
 )
+from portprotonqt.theme_manager import SystemThemeWatcher
 
 
 class TestIsGsettingsDarkTheme:
@@ -176,3 +177,31 @@ class TestThemeVariants:
             assert config.get_theme() == "classic"
 
         assert resolve.call_count == 2
+
+
+def test_system_theme_watcher_emits_change(monkeypatch):
+    watcher = SystemThemeWatcher(initial_light=False)
+    detected = []
+    watcher.theme_changed.connect(detected.append)
+    interruptions = iter((False, True))
+    monkeypatch.setattr(watcher, "isInterruptionRequested", lambda: next(interruptions))
+    monkeypatch.setattr(watcher, "msleep", lambda _milliseconds: None)
+    monkeypatch.setattr("portprotonqt.theme_manager._is_system_light_theme", lambda: True)
+
+    watcher._poll_system_theme()
+
+    assert detected == [True]
+
+
+def test_system_theme_watcher_emits_portal_change() -> None:
+    watcher = SystemThemeWatcher(initial_light=False)
+    detected = []
+    watcher.theme_changed.connect(detected.append)
+
+    watcher._on_portal_setting_changed(
+        "org.freedesktop.appearance",
+        "color-scheme",
+        2,
+    )
+
+    assert detected == [True]

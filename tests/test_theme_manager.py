@@ -10,6 +10,7 @@ from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.theme_manager import (
     DMS_COLOR_ROLES,
     ThemeManager,
+    ThemeWrapper,
     _get_parent_theme_name,
     _inject_ast_constants,
     _inject_parent_theme_constants,
@@ -17,6 +18,20 @@ from portprotonqt.theme_manager import (
     _read_theme_parent_name,
     load_dms_palette,
 )
+
+
+def test_theme_wrapper_loads_screenshots_lazily(monkeypatch) -> None:
+    loaded_themes = []
+    monkeypatch.setattr(
+        "portprotonqt.theme_manager.load_theme_screenshots",
+        lambda theme_name: loaded_themes.append(theme_name) or [],
+    )
+    wrapper = ThemeWrapper(types.ModuleType("preview_theme"))
+
+    assert loaded_themes == []
+    assert wrapper.screenshots == []
+    assert wrapper.screenshots == []
+    assert loaded_themes == ["preview_theme"]
 
 
 # === load_dms_palette ===

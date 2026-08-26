@@ -165,6 +165,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def createSystemTab(self) -> None:
         """System settings tab."""
         self.systemWidget = QWidget()
+        self.systemWidget.setProperty("theme_style_name", "OTHER_PAGES_WIDGET_STYLE")
         self.systemWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.systemWidget.setObjectName("otherPage")
         layout = QVBoxLayout(self.systemWidget)
@@ -263,6 +264,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         for index, section_title in enumerate(section_titles):
             button = AutoSizeButton(section_title)
             button.setCheckable(True)
+            button.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setProperty("sound_event", False)
@@ -404,6 +406,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
 
     def _createSystemSection(self, title_text: str) -> tuple[QFrame, QVBoxLayout]:
         section_frame = QFrame()
+        section_frame.setProperty("theme_style_name", "SETTINGS_FRAME_STYLE")
         section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
         section_layout = QVBoxLayout(section_frame)
         section_layout.setContentsMargins(15, 15, 15, 15)
@@ -468,6 +471,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         buttons_layout = QHBoxLayout(self.networkActionButtonsWidget)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         self.systemRefreshButton = AutoSizeButton(_("Refresh"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.systemRefreshButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemRefreshButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemRefreshButton.clicked.connect(self.loadSystemNetworks)
         buttons_layout.addWidget(self.systemRefreshButton)
@@ -514,6 +518,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.vpnDisconnectButton = AutoSizeButton(_("Disconnect"), icon=self.theme_manager.get_icon("stop", as_path=True))
 
         self.vpnAddButton = AutoSizeButton(_("Add"), icon=self.theme_manager.get_icon("folder", as_path=True))
+        self.vpnAddButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.vpnAddButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.vpnAddButton.clicked.connect(self.addVpnProfile)
         vpn_layout.addWidget(self.vpnAddButton)
@@ -584,11 +589,13 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _setupSystemBluetoothActionButtons(self, layout) -> None:
         buttons_layout = QHBoxLayout()
         self.bluetoothRefreshButton = AutoSizeButton(_("Refresh"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.bluetoothRefreshButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.bluetoothRefreshButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.bluetoothRefreshButton.clicked.connect(self.loadSystemBluetoothDevices)
         buttons_layout.addWidget(self.bluetoothRefreshButton)
 
         self.bluetoothScanButton = AutoSizeButton(_("Scan"), icon=self.theme_manager.get_icon("search", as_path=True))
+        self.bluetoothScanButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.bluetoothScanButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.bluetoothScanButton.clicked.connect(self.scanSystemBluetoothDevices)
         buttons_layout.addWidget(self.bluetoothScanButton)
@@ -638,6 +645,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _setupSystemStorageActionButtons(self, layout) -> None:
         buttons_layout = QHBoxLayout()
         self.storageRefreshButton = AutoSizeButton(_("Refresh"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.storageRefreshButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.storageRefreshButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.storageRefreshButton.clicked.connect(self.loadSystemStorageDevices)
         buttons_layout.addWidget(self.storageRefreshButton)
@@ -710,11 +718,13 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _setupSystemAudioActionButtons(self, layout) -> None:
         buttons_layout = QHBoxLayout()
         self.audioRefreshButton = AutoSizeButton(_("Refresh"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.audioRefreshButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.audioRefreshButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.audioRefreshButton.clicked.connect(self.loadSystemAudioDevices)
         buttons_layout.addWidget(self.audioRefreshButton)
 
         self.audioSetOutputButton = AutoSizeButton(_("Set output"), icon=self.theme_manager.get_icon("login", as_path=True))
+        self.audioSetOutputButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.audioSetOutputButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.audioSetOutputButton.clicked.connect(self.setSelectedAudioSinkDefault)
         buttons_layout.addWidget(self.audioSetOutputButton)
@@ -874,21 +884,25 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         buttons_layout = QHBoxLayout()
 
         self.systemLogoutButton = AutoSizeButton(_("Logout"), icon=self.theme_manager.get_icon("exit", as_path=True))
+        self.systemLogoutButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemLogoutButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemLogoutButton.clicked.connect(self.logoutSystem)
         buttons_layout.addWidget(self.systemLogoutButton)
 
         self.systemRebootButton = AutoSizeButton(_("Reboot"), icon=self.theme_manager.get_icon("reboot", as_path=True))
+        self.systemRebootButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemRebootButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemRebootButton.clicked.connect(self.rebootSystem)
         buttons_layout.addWidget(self.systemRebootButton)
 
         self.systemShutdownButton = AutoSizeButton(_("Shutdown"), icon=self.theme_manager.get_icon("shutdown", as_path=True))
+        self.systemShutdownButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemShutdownButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemShutdownButton.clicked.connect(self.shutdownSystem)
         buttons_layout.addWidget(self.systemShutdownButton)
 
         self.systemSuspendButton = AutoSizeButton(_("Suspend"), icon=self.theme_manager.get_icon("suspend", as_path=True))
+        self.systemSuspendButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemSuspendButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemSuspendButton.clicked.connect(self.suspendSystem)
         buttons_layout.addWidget(self.systemSuspendButton)

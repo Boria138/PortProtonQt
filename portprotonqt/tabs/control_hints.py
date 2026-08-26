@@ -234,6 +234,7 @@ class MainWindowControlHintsMixin:
         ]
 
         self.hintsLabels = []
+        self.hintTextLabels = []
         self.gamepadHintTextLabels = {}
         self.gamepadHintDefaultTexts = {}
         self.gamepadHintContainers = {}
@@ -266,7 +267,9 @@ class MainWindowControlHintsMixin:
             layout.addWidget(icon_label)
 
             text_label = QLabel(action_text)
+            text_label.setProperty("theme_style_name", "HINTS_LABEL_STYLE")
             text_label.setStyleSheet(self.theme.HINTS_LABEL_STYLE)
+            self.hintTextLabels.append(text_label)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(text_label)
 
@@ -358,7 +361,9 @@ class MainWindowControlHintsMixin:
                 icon.clicked.connect(lambda hint_action=action: self._triggerControlHintAction(hint_action))
 
             text_label = QLabel(action_text)
+            text_label.setProperty("theme_style_name", "HINTS_LABEL_STYLE")
             text_label.setStyleSheet(self.theme.HINTS_LABEL_STYLE)
+            self.hintTextLabels.append(text_label)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(text_label)
 

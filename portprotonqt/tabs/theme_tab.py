@@ -1,8 +1,12 @@
 import os
+import re
+import time
 from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
+    QAbstractButton,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -10,8 +14,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtGui import QAction
+from shiboken6 import isValid
 
 from portprotonqt.config import load_theme_metainfo, ui_config, window_config
+from portprotonqt.config.ui import _is_system_light_theme
 from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox
 from portprotonqt.image_utils import ImageCarousel
 from portprotonqt.localization import _
@@ -21,6 +28,7 @@ from portprotonqt.theme_manager import load_theme_screenshots
 from portprotonqt.tray_manager import restart_application_process
 
 logger = get_logger(__name__)
+THEME_STYLE_BATCH_SIZE = 24
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
@@ -37,6 +45,10 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
     def createThemeTab(self):
         """Themes tab"""
         self.themeTabWidget = QWidget()
+        self.themeTabWidget.setProperty(
+            "theme_style_names",
+            ("OTHER_PAGES_WIDGET_STYLE", "THEME_TAB_FOCUS_STYLE"),
+        )
         self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE + self.theme.THEME_TAB_FOCUS_STYLE)
         self.themeTabWidget.setObjectName("otherPage")
         mainLayout = QVBoxLayout(self.themeTabWidget)
@@ -130,6 +142,7 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
         self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply", as_path=True))
+        self.applyButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("themeApplyButton")
         self.applyButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -139,6 +152,7 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             _("Delete Theme"),
             icon=self.theme_manager.get_icon("delete", as_path=True),
         )
+        self.deleteThemeButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.deleteThemeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.deleteThemeButton.setObjectName("themeDeleteButton")
         self.deleteThemeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -280,13 +294,294 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
         self.themesCombo.blockSignals(False)
 
     def _apply_theme_and_restart(self, theme_name: str, variant: str) -> None:
+        base_theme = ui_config.get_theme_bases([theme_name])[0]
+        ui_config.set_theme(theme_name)
+        ui_config.set_theme_variant(variant)
+        self._apply_theme_live(theme_name)
+        if variant == "auto":
+            ui_config.set_theme(base_theme)
+            ui_config.set_theme_variant(variant)
+
+    def _apply_theme_live(self, theme_name: str) -> None:
+        old_theme = self.theme
+        old_qicons, old_icon_paths = self.theme_manager.get_cached_icon_names(
+            self.current_theme_name
+        )
         theme_module = self.theme_manager.apply_theme(theme_name)
         if not theme_module:
             return
-        ui_config.set_theme(theme_name)
-        ui_config.set_theme_variant(variant)
-        self._save_theme_tab_state()
-        QTimer.singleShot(500, lambda: self.restart_application())
+        widgets = [self, *self.findChildren(QWidget)]
+        widget_styles = {widget.styleSheet() for widget in widgets}
+        combined_styles = "".join(widget_styles)
+        style_icon_paths = {
+            path: icon_name
+            for path, icon_name in old_icon_paths.items()
+            if path in combined_styles
+        }
+        replacements = self._theme_style_replacements(old_theme, theme_module)
+        icon_replacements = self._theme_icon_path_replacements(
+            theme_name, style_icon_paths
+        )
+        replacements.extend(icon_replacements)
+        replace_style = self._theme_style_replacer(replacements, widget_styles)
+        self.theme = theme_module
+        self.current_theme_name = theme_name
+        self._theme_change_in_progress = True
+        self.setUpdatesEnabled(False)
+        try:
+            style_cache: dict[str, str] = {}
+            style_updates = 0
+            refresh_time = 0.0
+            stylesheet_time = 0.0
+            slow_updates: list[tuple[float, str]] = []
+            deferred_updates: list[
+                tuple[QWidget, str, Callable[[object], object] | None]
+            ] = []
+            for widget in widgets:
+                if hasattr(widget, "theme"):
+                    widget.theme = theme_module
+                if hasattr(widget, "current_theme_name"):
+                    widget.current_theme_name = theme_name
+                refresh_theme = getattr(widget, "refresh_theme", None)
+                visible = widget is self or widget.isVisible()
+                if callable(refresh_theme) and visible:
+                    refresh_started = time.perf_counter()
+                    refresh_theme(theme_module)
+                    refresh_time += time.perf_counter() - refresh_started
+                style = widget.styleSheet()
+                named_style = self._get_named_theme_style(widget, theme_module)
+                if isinstance(named_style, str):
+                    new_style = named_style
+                elif style in style_cache:
+                    new_style = style_cache[style]
+                else:
+                    new_style = replace_style(style)
+                    style_cache[style] = new_style
+                if not visible:
+                    deferred_updates.append((widget, new_style, refresh_theme))
+                elif new_style != style:
+                    stylesheet_started = time.perf_counter()
+                    widget.setStyleSheet(new_style)
+                    update_time = time.perf_counter() - stylesheet_started
+                    stylesheet_time += update_time
+                    if update_time >= 0.005:
+                        widget_name = widget.objectName() or type(widget).__name__
+                        slow_updates.append((update_time, widget_name))
+                    style_updates += 1
+            self._update_theme_components(theme_module, theme_name)
+            if old_qicons or old_icon_paths:
+                self._refresh_theme_icons(theme_name, old_qicons, old_icon_paths)
+            self._refresh_theme_library_layout(old_theme, theme_module)
+            self._refresh_open_detail_page()
+        finally:
+            self.setUpdatesEnabled(True)
+            self.update()
+            self._theme_change_in_progress = False
+        generation = getattr(self, "_theme_update_generation", 0) + 1
+        self._theme_update_generation = generation
+        if deferred_updates:
+            QTimer.singleShot(
+                0,
+                lambda: self._apply_deferred_theme_updates(
+                    deferred_updates, theme_module, generation
+                ),
+            )
+        self.updateControlHints("force")
+
+    def _apply_deferred_theme_updates(
+        self,
+        updates: list[tuple[QWidget, str, Callable[[object], object] | None]],
+        theme: object,
+        generation: int,
+    ) -> None:
+        if generation != getattr(self, "_theme_update_generation", 0):
+            return
+        batch = updates[:THEME_STYLE_BATCH_SIZE]
+        del updates[:THEME_STYLE_BATCH_SIZE]
+        for widget, new_style, refresh_theme in batch:
+            if not isValid(widget):
+                continue
+            if callable(refresh_theme):
+                refresh_theme(theme)
+            if new_style != widget.styleSheet():
+                widget.setStyleSheet(new_style)
+        if updates:
+            QTimer.singleShot(
+                0,
+                lambda: self._apply_deferred_theme_updates(
+                    updates, theme, generation
+                ),
+            )
+
+    def _get_named_theme_style(self, widget: QWidget, theme: object) -> str | None:
+        style_names = widget.property("theme_style_names")
+        if not isinstance(style_names, (list, tuple)):
+            style_name = widget.property("theme_style_name")
+            style_names = (style_name,) if isinstance(style_name, str) else ()
+        styles = [getattr(theme, name, None) for name in style_names]
+        if not styles or not all(isinstance(style, str) for style in styles):
+            return None
+        return "".join(style for style in styles if isinstance(style, str))
+
+    def _refresh_theme_library_layout(
+        self, old_theme: object, new_theme: object
+    ) -> None:
+        old_mode = getattr(old_theme, "LIBRARY_LAYOUT_MODE", "grid")
+        new_mode = getattr(new_theme, "LIBRARY_LAYOUT_MODE", "grid")
+        if old_mode == new_mode:
+            return
+        manager = getattr(self, "game_library_manager", None)
+        layout = getattr(manager, "gamesListLayout", None)
+        if manager is None or layout is None:
+            return
+        manager.clear_layout(layout)
+        manager.set_games(manager.games, focus_first_card=False)
+
+    def _refresh_open_detail_page(self) -> None:
+        manager = getattr(self, "detail_page_manager", None)
+        if manager is None or not manager._can_rebuild_after_resize():
+            return
+        manager._reopen_current_detail_page()
+
+    def _theme_style_replacer(
+        self, replacements: list[tuple[str, str]], styles: set[str] | None = None
+    ) -> Callable[[str], str]:
+        replacement_map = {old: new for old, new in replacements if old}
+        if not replacement_map:
+            return lambda style: style
+        partial_values = [
+            old_value
+            for old_value in replacement_map
+            if styles is None
+            or any(old_value in style and old_value != style for style in styles)
+        ]
+        if not partial_values:
+            return lambda style: replacement_map.get(style, style)
+        partial_values.sort(key=len, reverse=True)
+        pattern = re.compile("|".join(re.escape(value) for value in partial_values))
+
+        def replace_style(style: str) -> str:
+            if not style:
+                return style
+            exact_style = replacement_map.get(style)
+            if exact_style is not None:
+                return exact_style
+            return pattern.sub(lambda match: replacement_map[match.group(0)], style)
+
+        return replace_style
+
+    def _theme_icon_path_replacements(
+        self, theme_name: str, old_paths: dict[str, str]
+    ) -> list[tuple[str, str]]:
+        replacements = []
+        for old_path, icon_name in old_paths.items():
+            new_path = self.theme_manager.get_icon(icon_name, theme_name, as_path=True)
+            if isinstance(new_path, str) and old_path != new_path:
+                replacements.append((old_path, new_path))
+        return replacements
+
+    def _update_theme_components(self, theme_module: object, theme_name: str) -> None:
+        for component in vars(self).values():
+            if hasattr(component, "theme"):
+                component.theme = theme_module
+            if hasattr(component, "current_theme_name"):
+                component.current_theme_name = theme_name
+        control_hints = getattr(self, "controlHintsWidget", None)
+        hint_bar_style = getattr(theme_module, "HINT_BAR_STYLE", "")
+        if isinstance(control_hints, QWidget):
+            control_hints.setStyleSheet(hint_bar_style)
+        hints_label_style = getattr(theme_module, "HINTS_LABEL_STYLE", "")
+        for label in getattr(self, "hintTextLabels", ()):
+            label.setStyleSheet(hints_label_style)
+        tray_manager = getattr(self, "tray_manager", None)
+        if tray_manager is not None:
+            tray_icon = self.theme_manager.get_icon("tray_portproton", theme_name)
+            tray_manager.tray_icon.setIcon(tray_icon)
+
+    def _refresh_theme_icons(
+        self, theme_name: str, qicons: dict[int, str], paths: dict[str, str]
+    ) -> None:
+        for widget in self.findChildren(QWidget):
+            control_hint_path = getattr(widget, "_icon_path", None)
+            if isinstance(control_hint_path, str) and control_hint_path:
+                icon_name = paths.get(control_hint_path)
+                if icon_name:
+                    new_path = self.theme_manager.get_icon(
+                        icon_name, theme_name, as_path=True
+                    )
+                    set_paths = getattr(widget, "set_icon_paths", None)
+                    if isinstance(new_path, str) and callable(set_paths):
+                        set_paths((new_path,))
+            icon_path = getattr(widget, "_icon", None)
+            icon_name = paths.get(icon_path) if isinstance(icon_path, str) else None
+            icon_setter = getattr(widget, "setIcon", None)
+            if icon_name and callable(icon_setter):
+                icon_setter(self.theme_manager.get_icon(icon_name, theme_name, as_path=True))
+            if isinstance(widget, QAbstractButton):
+                icon_name = qicons.get(widget.icon().cacheKey())
+                if icon_name:
+                    widget.setIcon(self.theme_manager.get_icon(icon_name, theme_name))
+        for action in self.findChildren(QAction):
+            icon_name = qicons.get(action.icon().cacheKey())
+            if icon_name:
+                action.setIcon(self.theme_manager.get_icon(icon_name, theme_name))
+
+    def _theme_style_replacements(self, old_theme: object, new_theme: object) -> list[tuple[str, str]]:
+        names = self._theme_attribute_names(old_theme) | self._theme_attribute_names(new_theme)
+        candidates: dict[str, set[str]] = {}
+        for name in sorted(names):
+            if not name.endswith("_STYLE"):
+                continue
+            old_value = getattr(old_theme, name, None)
+            new_value = getattr(new_theme, name, None)
+            if isinstance(old_value, str) and isinstance(new_value, str) and old_value != new_value:
+                candidates.setdefault(old_value, set()).add(new_value)
+        replacements = [
+            (old_value, next(iter(new_values)))
+            for old_value, new_values in candidates.items()
+            if len(new_values) == 1
+        ]
+        return sorted(replacements, key=lambda pair: len(pair[0]), reverse=True)
+
+    def _theme_attribute_names(self, theme: object) -> set[str]:
+        names = {name for name in vars(theme) if name.isupper()}
+        custom_theme = getattr(theme, "custom_theme", None)
+        if custom_theme is not None:
+            names.update(name for name in vars(custom_theme) if name.isupper())
+        generated = getattr(theme, "_generated_styles", None)
+        if generated:
+            names.update(name for name in generated if name.isupper())
+        parent = getattr(theme, "_default_theme", None)
+        if parent is not None:
+            names.update(self._theme_attribute_names(parent))
+        return names
+
+    def _on_system_theme_detected(self, is_light: bool) -> None:
+        if ui_config.get_theme_variant() != "auto":
+            return
+        self._apply_system_theme_variant("light" if is_light else "dark")
+
+    def _on_qt_color_scheme_changed(self, color_scheme: Qt.ColorScheme) -> None:
+        if getattr(self, "_theme_change_in_progress", False):
+            return
+        if ui_config.get_theme_variant() != "auto":
+            return
+        is_light = color_scheme == Qt.ColorScheme.Light
+        if _is_system_light_theme() != is_light:
+            return
+        watcher = getattr(self, "system_theme_watcher", None)
+        if watcher is not None:
+            watcher._last_light = is_light
+        self._on_system_theme_detected(is_light)
+
+    def _apply_system_theme_variant(self, variant: str) -> None:
+        base_theme = ui_config.get_theme_base()
+        theme_name = ui_config.resolve_theme(base_theme, variant)
+        if theme_name == self.current_theme_name:
+            return
+        self._apply_theme_live(theme_name)
+        ui_config.set_theme(base_theme)
+        ui_config.set_theme_variant("auto")
 
     def _save_theme_tab_state(self) -> None:
         xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))

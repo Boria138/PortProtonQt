@@ -1,6 +1,7 @@
 import os
 import re
 import shlex
+from typing import Any
 
 from PySide6.QtGui import (
     QPainter,
@@ -199,6 +200,14 @@ class SourceCorner(QWidget):
         self._visible = visible
         super().setVisible(visible)
 
+    def refresh_source_theme(self, config: dict, icon: str | QIcon | None) -> None:
+        """Refresh source-corner visuals for a live theme change."""
+        self._cfg = config
+        self._icon = icon
+        self._color = QColor(config.get("ribbon_color", "#3f424d"))
+        self._fold_color = QColor(config.get("ribbon_fold_color", "#00000096"))
+        self.update()
+
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
@@ -272,6 +281,7 @@ class GameCard(QFrame):
         default_margin = 8 if self.list_layout else 20
         self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setProperty("theme_style_name", "GAME_CARD_WINDOW_STYLE")
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
         self._borderWidth = self.theme.GAME_CARD_ANIMATION["default_border_width"]
@@ -301,6 +311,7 @@ class GameCard(QFrame):
 
         self.coverWidget = QWidget()
         if self.list_layout:
+            self.coverWidget.setProperty("theme_style_name", "COVER_WIDGET_STYLE")
             self.coverWidget.setStyleSheet(self.theme.COVER_WIDGET_STYLE)
         coverLayout = QStackedLayout(self.coverWidget)
         coverLayout.setContentsMargins(0, 0, 0, 0)
@@ -429,6 +440,65 @@ class GameCard(QFrame):
             if layout:
                 layout.invalidate()
             parent.updateGeometry()
+
+    def refresh_theme(self, theme: Any) -> None:
+        """Refresh cached card visuals after a live theme change."""
+        old_theme = self.theme
+        old_layout_cfg = self.card_layout_cfg
+        self.theme = theme
+        config_name = "GAME_CARD_LIST" if self.list_layout else "GAME_CARD_GRID"
+        self.card_layout_cfg = getattr(theme, config_name, {})
+        default_margin = 8 if self.list_layout else 20
+        self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
+        spacing = self.card_layout_cfg.get("spacing", 12 if self.list_layout else 5)
+        self.layout_.setSpacing(spacing)
+        margin = self.base_extra_margin // 2
+        self.layout_.setContentsMargins(margin, margin, margin, margin)
+        self.shadow.setBlurRadius(theme.shadow_blur_radius)
+        self.shadow.setColor(QColor(theme.color_shadow_card))
+        self.shadow.setOffset(*theme.shadow_offset)
+        if hasattr(self, "coverOpacity"):
+            self.coverOpacity.setOpacity(theme.missing_exe_cover_opacity)
+        if is_valid_protondb_tier(self.protondb_tier):
+            self.protondbLabel.setStyleSheet(
+                theme.get_protondb_badge_style(self.protondb_tier)
+            )
+        if self.ppdb_id:
+            ppdb_style = (
+                theme.get_ppdb_badge_style(self.ppdb_rating)
+                if self.ppdb_rating
+                else theme.STEAM_BADGE_STYLE
+            )
+            self.ppdbLabel.setStyleSheet(ppdb_style)
+        if self.getAntiCheatText(self.anticheat_status):
+            self.anticheatLabel.setStyleSheet(
+                theme.get_anticheat_badge_style(self.anticheat_status)
+            )
+        corner_config = theme.get_source_corner_config()
+        for label, icon_name in (
+            (self.steamLabel, "badge_steam"),
+            (self.gogLabel, "badge_gog"),
+            (self.portprotonLabel, "badge_portproton"),
+        ):
+            icon = self.theme_manager.get_icon(
+                icon_name, self.current_theme_name, as_path=True
+            )
+            label.refresh_source_theme(corner_config, icon)
+        if old_theme.GAME_CARD_ANIMATION != theme.GAME_CARD_ANIMATION:
+            self.animations.refresh_theme(theme)
+        else:
+            self.animations.theme = theme
+        self.update_favorite_icon()
+        layout_changed = (
+            old_layout_cfg != self.card_layout_cfg
+            or old_theme.COMPACT_CARD != theme.COMPACT_CARD
+            or old_theme.favoriteLabelSize != theme.favoriteLabelSize
+            or old_theme.favoriteLabelIconSize != theme.favoriteLabelIconSize
+        )
+        if layout_changed:
+            self.update_scale()
+        else:
+            self.update()
 
     def on_cover_loaded(self, pixmap):
         self.animated_cover_path = ""

@@ -1,4 +1,5 @@
 import ast
+import asyncio
 import hashlib
 import importlib.util
 import os
@@ -6,17 +7,21 @@ import re
 import shutil
 import stat
 import xml.etree.ElementTree as ET
+from typing import Any, cast
 import orjson
+from dbus_fast import BusType
+from dbus_fast.aio import MessageBus
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_security import (
     check_theme_directory_safety,
     is_safe_font_file,
     is_safe_image_file,
 )
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QRectF, Qt, QThread, Signal
 from PySide6.QtGui import QIcon, QFontDatabase, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.config import CACHE_DIR, ui_config, load_theme_metainfo
+from portprotonqt.config.ui import _is_system_light_theme, _unwrap_variant
 from portprotonqt.qt_utils import get_device_pixel_ratio
 
 # Icon caching for performance optimization
@@ -71,6 +76,10 @@ SVG_KEEP_PAINT_VALUES = {"none", "transparent", "inherit", "initial", "unset", "
 SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 SVG_CACHE_VERSION = 2
 NON_INHERITED_THEME_CONSTANTS = {"ICON_COLORS"}
+SYSTEM_THEME_POLL_INTERVAL_MS = 200
+SYSTEM_THEME_POLL_STEP_MS = 200
+PORTAL_APPEARANCE_NAMESPACE = "org.freedesktop.appearance"
+PORTAL_COLOR_SCHEME_KEY = "color-scheme"
 
 ET.register_namespace("", SVG_NAMESPACE)
 
@@ -81,6 +90,7 @@ THEMES_DIRS = [
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 _loaded_theme = None
+_loaded_font_signature = None
 
 
 def _read_dms_color_file(colors_file: str) -> bytes | None:
@@ -548,20 +558,14 @@ def load_theme_fonts(theme_name):
     """
     Load all fonts from selected theme if not already loaded.
     """
-    global _loaded_theme
+    global _loaded_theme, _loaded_font_signature
     if _loaded_theme == theme_name:
         logger.debug(f"Fonts for theme '{theme_name}' already loaded, skipping")
         return
 
     def load_fonts_delayed():
-        global _loaded_theme
+        global _loaded_theme, _loaded_font_signature
         try:
-            # Only remove fonts if this is a theme change (not initial load)
-            current_loaded_theme = _loaded_theme  # Capture the current value
-            if current_loaded_theme is not None and current_loaded_theme != theme_name:
-                # Run font removal in the GUI thread with delay
-                QFontDatabase.removeAllApplicationFonts()
-
             import time
             import os
             start_time = time.time()
@@ -591,7 +595,21 @@ def load_theme_fonts(theme_name):
                         logger.warning("Skipping unsafe font file: %s", font_path)
 
             # Limit number of fonts loaded to prevent too much blocking
-            font_files = font_files[:10]  # Only load first 10 fonts to prevent too much blocking
+            font_files = sorted(font_files)[:10]
+            font_signature_parts = []
+            for filename in font_files:
+                with open(os.path.join(fonts_folder, filename), "rb") as font_file:
+                    digest = hashlib.sha256(font_file.read()).hexdigest()
+                font_signature_parts.append((filename, digest))
+            font_signature = tuple(font_signature_parts)
+            if _loaded_font_signature == font_signature:
+                _loaded_theme = theme_name
+                logger.debug("Fonts for theme '%s' already loaded, skipping", theme_name)
+                return
+
+            # Remove fonts only when the selected files changed.
+            if _loaded_theme is not None:
+                QFontDatabase.removeAllApplicationFonts()
 
             for filename in font_files:
                 if time.time() - start_time > timeout:
@@ -608,6 +626,7 @@ def load_theme_fonts(theme_name):
 
             # Update the global variable in the main thread
             _loaded_theme = theme_name
+            _loaded_font_signature = font_signature
         except Exception as e:
             logger.error(f"Error loading fonts for theme '{theme_name}': {e}")
 
@@ -624,15 +643,20 @@ class ThemeWrapper:
     def __init__(self, custom_theme, metainfo=None, inherit_chain=None):
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
-        self.screenshots = load_theme_screenshots(
-            self.metainfo.get("name")
-            or custom_theme.__name__.split(".")[-1]
-        )
+        self._theme_name = custom_theme.__name__.split(".")[-1]
+        self._screenshots = None
         parent_name = getattr(custom_theme, "THEME_INHERITS", "standart")
         self.parent_theme_name = _get_parent_theme_name(custom_theme.__name__.split(".")[-1], parent_name)
         self._inherit_chain = inherit_chain or []
         self._default_theme = None  # Lazy-loaded default theme
         self._generated_styles = None  # Lazy-generated standard styles with custom constants
+
+    @property
+    def screenshots(self) -> list[tuple[QPixmap, str]]:
+        """Load theme preview screenshots on first access."""
+        if self._screenshots is None:
+            self._screenshots = load_theme_screenshots(self._theme_name)
+        return self._screenshots
 
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
@@ -887,10 +911,77 @@ def load_theme(theme_name, inherit_chain=None):
             if theme_name == "standart":
                 return custom_theme
             meta = load_theme_metainfo(theme_name)
-            wrapper = ThemeWrapper(custom_theme, metainfo=meta, inherit_chain=next_inherit_chain)
-            wrapper.screenshots = load_theme_screenshots(theme_name)
-            return wrapper
+            return ThemeWrapper(custom_theme, metainfo=meta, inherit_chain=next_inherit_chain)
     raise FileNotFoundError(f"Styles file not found for theme '{theme_name}'")
+
+class SystemThemeWatcher(QThread):
+    """Watch desktop color scheme without blocking the UI thread."""
+
+    theme_changed = Signal(bool)
+
+    def __init__(self, initial_light: bool, parent=None) -> None:
+        super().__init__(parent)
+        self._last_light = initial_light
+
+    def run(self) -> None:
+        try:
+            asyncio.run(self._watch_portal())
+            return
+        except Exception as e:
+            logger.debug("Portal theme watcher unavailable: %s", e)
+        self._poll_system_theme()
+
+    async def _watch_portal(self) -> None:
+        bus = await MessageBus(bus_type=BusType.SESSION).connect()
+        try:
+            introspection = await bus.introspect(
+                "org.freedesktop.portal.Desktop",
+                "/org/freedesktop/portal/desktop",
+            )
+            proxy = bus.get_proxy_object(
+                "org.freedesktop.portal.Desktop",
+                "/org/freedesktop/portal/desktop",
+                introspection,
+            )
+            interface = cast(Any, proxy.get_interface("org.freedesktop.portal.Settings"))
+            value = await interface.call_read(
+                PORTAL_APPEARANCE_NAMESPACE,
+                PORTAL_COLOR_SCHEME_KEY,
+            )
+            if int(_unwrap_variant(value)) == 0:
+                raise RuntimeError("Portal does not provide a color scheme")
+            self._emit_portal_theme(value)
+            interface.on_setting_changed(self._on_portal_setting_changed)
+            while not self.isInterruptionRequested():
+                await asyncio.sleep(SYSTEM_THEME_POLL_STEP_MS / 1000)
+        finally:
+            bus.disconnect()
+
+    def _on_portal_setting_changed(self, namespace: str, key: str, value: object) -> None:
+        if namespace == PORTAL_APPEARANCE_NAMESPACE and key == PORTAL_COLOR_SCHEME_KEY:
+            self._emit_portal_theme(value)
+
+    def _emit_portal_theme(self, value: object) -> None:
+        color_scheme = int(_unwrap_variant(value))
+        if color_scheme not in (1, 2):
+            return
+        is_light = color_scheme == 2
+        if is_light != self._last_light:
+            self._last_light = is_light
+            self.theme_changed.emit(is_light)
+
+    def _poll_system_theme(self) -> None:
+        elapsed_ms = SYSTEM_THEME_POLL_INTERVAL_MS
+        while not self.isInterruptionRequested():
+            if elapsed_ms >= SYSTEM_THEME_POLL_INTERVAL_MS:
+                is_light = _is_system_light_theme()
+                if is_light != self._last_light:
+                    self._last_light = is_light
+                    self.theme_changed.emit(is_light)
+                elapsed_ms = 0
+            self.msleep(SYSTEM_THEME_POLL_STEP_MS)
+            elapsed_ms += SYSTEM_THEME_POLL_STEP_MS
+
 
 class ThemeManager:
     """
@@ -929,6 +1020,22 @@ class ThemeManager:
             return False
         return True
 
+    def get_cached_icon_names(self, theme_name: str) -> tuple[dict[int, str], dict[str, str]]:
+        """Return cached icon identifiers before a live theme change."""
+        marker = f"_{theme_name}_"
+        qicons = {}
+        paths = {}
+        for cache_key, icon in _icon_cache.items():
+            marker_index = cache_key.rfind(marker)
+            if marker_index < 0:
+                continue
+            icon_name = cache_key[:marker_index]
+            if isinstance(icon, QIcon) and not icon.isNull():
+                qicons[icon.cacheKey()] = icon_name
+            elif isinstance(icon, str):
+                paths[icon] = icon_name
+        return qicons, paths
+
     def apply_theme(self, theme_name: str):
         """
         Apply selected theme if not already applied.
@@ -947,12 +1054,6 @@ class ThemeManager:
 
         load_theme_fonts(theme_name)
 
-        # Clear icon cache when theme changes to rebuild it for the new theme
-        if self.current_theme_name != theme_name:
-            global _icon_dirs_cache
-            if theme_name in _icon_dirs_cache:
-                del _icon_dirs_cache[theme_name]
-
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
         ui_config.set_theme(theme_name)
@@ -960,7 +1061,7 @@ class ThemeManager:
         from portprotonqt.sound_manager import SoundManager
         SoundManager().set_sounds_dirs(_resolve_sound_dirs(theme_name))
 
-        logger.info(f"Theme '{theme_name}' successfully applied")
+        logger.info("Theme '%s' successfully applied", theme_name)
         return theme_module
 
     def _get_theme_icon_colors(self, theme: object) -> dict:

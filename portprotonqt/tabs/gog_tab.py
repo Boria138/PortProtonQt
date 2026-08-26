@@ -139,6 +139,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.gog_support_workers = []
         self.downloadTableHeadings = {}
         page = QWidget()
+        page.setProperty("theme_style_name", "OTHER_PAGES_WIDGET_STYLE")
         page.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QVBoxLayout(page)
         layout.setSpacing(self.theme.downloadsSectionSpacing)
@@ -150,6 +151,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         completed_header = QHBoxLayout()
         completed_header.addWidget(QLabel(_("Completed")))
         clear_button = QPushButton(_("Clear List"))
+        clear_button.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         clear_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         clear_button.clicked.connect(self._clear_completed_downloads)
         completed_header.addWidget(clear_button)
@@ -193,6 +195,7 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         header.addWidget(self.downloadActiveTitle)
         header.addStretch()
         self.downloadCancelButton = QPushButton(_("Cancel"))
+        self.downloadCancelButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.downloadCancelButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.downloadCancelButton.clicked.connect(self._cancel_gog_download)
         header.addWidget(self.downloadCancelButton)
