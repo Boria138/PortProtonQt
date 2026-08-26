@@ -15,6 +15,18 @@
 
 ---
 
+## [1.4.1] - 2026-08-26
+
+### Changed
+- Обновлён перевод на Русский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/ru/`
+
+### Fixed
+- Произведён откат Steam Runtime Sniper до версии V3 из-за несовместимости GStreamer внутри Proton 10.x с SLR 4
+
+### Contributors
+
+---
+
 ## [1.4.0] - 2026-08-23
 
 ### Added
