@@ -990,8 +990,8 @@ class ThemeManager:
     """
     _instance = None
     current_theme_name: str | None
-    current_theme_module: object | None
-    _theme_module_cache: dict[str, object]
+    current_theme_module: Any | None
+    _theme_module_cache: dict[str, Any]
 
     def __new__(cls):
         if cls._instance is None:
