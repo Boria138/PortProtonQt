@@ -200,3 +200,15 @@ def test_vk_gpu_info_uses_build_aux_binary() -> None:
 
     assert '/../../../bin/vk_gpu_info"' in helper
     assert "dev-scripts/vk_gpu_info" not in helper
+
+
+def test_nvidia_defaults_are_applied_after_gpu_detection() -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
+        encoding="utf-8",
+    )
+
+    gpu_detection = "pw_skip_get_info"
+    nvidia_default = '[[ -z "${PW_USE_NVAPI_AND_DLSS:-}" ]]'
+    start = helper.index("start_portproton ()")
+    assert helper.index(gpu_detection, start) < helper.index(nvidia_default, start)
+    assert 'if [[ $(check_vendor_gpu) != "nvidia" ]]' in helper
