@@ -40,6 +40,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
 
     def createAutoInstallTab(self):
         autoInstallPage = QWidget()
+        autoInstallPage.setProperty("theme_style_name", "LIBRARY_WIDGET_STYLE")
         autoInstallPage.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         autoInstallLayout = QVBoxLayout(autoInstallPage)
         autoInstallLayout.setSpacing(15)

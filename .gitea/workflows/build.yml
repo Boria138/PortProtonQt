@@ -17,7 +17,7 @@ on:
 
 env:
   # Common version, will be used for tagging the release
-  VERSION: 1.4.0
+  VERSION: 1.4.1
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
   GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
@@ -119,7 +119,7 @@ jobs:
 
     strategy:
       matrix:
-        fedora_version: [43, 44, rawhide]
+        fedora_version: [43, 44, 45, rawhide]
 
     container:
       image: fedora:${{ matrix.fedora_version }}

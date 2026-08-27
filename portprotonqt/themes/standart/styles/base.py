@@ -107,6 +107,7 @@ STATUS_BAR_STYLE = f"""
 # HINT BAR STYLE
 HINT_BAR_STYLE = f"""
     QWidget {{
+        background: {color_transparent};
         max-height: 82px;
     }}
 """

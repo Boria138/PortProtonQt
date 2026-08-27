@@ -11,13 +11,14 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 
 from portprotonqt.animations.library_controls import _animation_duration
+from portprotonqt.animations.game_card import GameCardAnimations
 from portprotonqt.config import game_config
 from portprotonqt.detail_pages import DetailPageManager
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import GameCard, SourceCorner
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
@@ -228,6 +229,271 @@ def test_main_window_inherits_all_tab_mixins() -> None:
 
     for mixin in expected_mixins:
         assert issubclass(MainWindow, mixin)
+
+
+def test_live_theme_style_replacement_does_not_rewrite_new_paths() -> None:
+    mixin = MainWindowThemeTabMixin()
+    style = "url(/themes/standart/images/check.svg)"
+    replacements = [
+        ("/themes/standart/", "/themes/standart-light/"),
+        ("standart", "standart-light"),
+    ]
+
+    result = mixin._theme_style_replacer(replacements, {style})(style)
+
+    assert result == "url(/themes/standart-light/images/check.svg)"
+
+
+def test_live_theme_style_replacement_handles_exact_styles() -> None:
+    mixin = MainWindowThemeTabMixin()
+    style = "QWidget { color: #ffffff; }"
+    replacements = [(style, "QWidget { color: #000000; }")]
+
+    result = mixin._theme_style_replacer(replacements, {style})(style)
+
+    assert result == "QWidget { color: #000000; }"
+
+
+def test_live_theme_style_replacements_skip_ambiguous_values() -> None:
+    mixin = MainWindowThemeTabMixin()
+    old_theme = SimpleNamespace(FIRST_STYLE="same", SECOND_STYLE="same")
+    new_theme = SimpleNamespace(FIRST_STYLE="first", SECOND_STYLE="second")
+
+    replacements = mixin._theme_style_replacements(old_theme, new_theme)
+
+    assert replacements == []
+
+
+def test_live_theme_joins_named_composite_styles() -> None:
+    mixin = MainWindowThemeTabMixin()
+    widget = SimpleNamespace(
+        property=lambda name: (
+            ("OTHER_PAGES_WIDGET_STYLE", "THEME_TAB_FOCUS_STYLE")
+            if name == "theme_style_names"
+            else None
+        )
+    )
+    theme = SimpleNamespace(
+        OTHER_PAGES_WIDGET_STYLE="page",
+        THEME_TAB_FOCUS_STYLE="focus",
+    )
+
+    style = mixin._get_named_theme_style(cast(Any, widget), theme)
+
+    assert style == "pagefocus"
+
+
+def test_live_theme_rebuilds_library_when_layout_mode_changes() -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    layout = object()
+    manager = SimpleNamespace(
+        gamesListLayout=layout,
+        games=[("Game",)],
+        clear_layout=MagicMock(),
+        set_games=MagicMock(),
+    )
+    mixin.game_library_manager = manager
+
+    mixin._refresh_theme_library_layout(
+        SimpleNamespace(LIBRARY_LAYOUT_MODE="list"),
+        SimpleNamespace(LIBRARY_LAYOUT_MODE="grid"),
+    )
+
+    manager.clear_layout.assert_called_once_with(layout)
+    manager.set_games.assert_called_once_with(manager.games, focus_first_card=False)
+
+
+def test_live_theme_reopens_visible_detail_page() -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    manager = SimpleNamespace(
+        _can_rebuild_after_resize=lambda: True,
+        _reopen_current_detail_page=MagicMock(),
+    )
+    mixin.detail_page_manager = manager
+
+    mixin._refresh_open_detail_page()
+
+    manager._reopen_current_detail_page.assert_called_once_with()
+
+
+def test_qt_color_scheme_change_applies_confirmed_system_theme(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    mixin.system_theme_watcher = SimpleNamespace(_last_light=False)
+    mixin._on_system_theme_detected = MagicMock()
+    monkeypatch.setattr(
+        "portprotonqt.tabs.theme_tab.ui_config.get_theme_variant", lambda: "auto"
+    )
+    monkeypatch.setattr(
+        "portprotonqt.tabs.theme_tab._is_system_light_theme", lambda: True
+    )
+
+    mixin._on_qt_color_scheme_changed(Qt.ColorScheme.Light)
+
+    assert mixin.system_theme_watcher._last_light is True
+    mixin._on_system_theme_detected.assert_called_once_with(True)
+
+
+def test_qt_color_scheme_change_ignores_theme_repolish(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    mixin._theme_change_in_progress = True
+    mixin._on_system_theme_detected = MagicMock()
+    monkeypatch.setattr(
+        "portprotonqt.tabs.theme_tab.ui_config.get_theme_variant", lambda: "auto"
+    )
+
+    mixin._on_qt_color_scheme_changed(Qt.ColorScheme.Light)
+
+    mixin._on_system_theme_detected.assert_not_called()
+
+
+def test_deferred_theme_update_applies_current_generation(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    mixin._theme_update_generation = 2
+    widget = MagicMock()
+    widget.styleSheet.return_value = "old"
+    refresh_theme = MagicMock()
+    theme = object()
+    monkeypatch.setattr("portprotonqt.tabs.theme_tab.isValid", lambda _widget: True)
+
+    mixin._apply_deferred_theme_updates(
+        [(widget, "new", refresh_theme)], theme, 2
+    )
+
+    refresh_theme.assert_called_once_with(theme)
+    widget.setStyleSheet.assert_called_once_with("new")
+
+
+def test_deferred_theme_update_ignores_old_generation() -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    mixin._theme_update_generation = 2
+    widget = MagicMock()
+
+    mixin._apply_deferred_theme_updates([(widget, "new", None)], object(), 1)
+
+    widget.setStyleSheet.assert_not_called()
+
+
+def test_deferred_theme_update_skips_deleted_widget(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    mixin = cast(Any, MainWindowThemeTabMixin())
+    mixin._theme_update_generation = 1
+    widget = MagicMock()
+    refresh_theme = MagicMock()
+    monkeypatch.setattr("portprotonqt.tabs.theme_tab.isValid", lambda _widget: False)
+
+    mixin._apply_deferred_theme_updates(
+        [(widget, "new", refresh_theme)], object(), 1
+    )
+
+    refresh_theme.assert_not_called()
+    widget.setStyleSheet.assert_not_called()
+
+
+def test_game_card_animation_refresh_supports_all_modes() -> None:
+    config = {
+        "default_border_width": 1,
+        "hover_border_width": 4,
+        "focus_border_width": 6,
+        "pulse_min_border_width": 3,
+        "pulse_max_border_width": 5,
+        "thickness_anim_duration": 10,
+        "pulse_anim_duration": 10,
+        "gradient_anim_duration": 10,
+        "gradient_start_angle": 360,
+        "gradient_end_angle": 0,
+        "default_scale": 1.0,
+        "hover_scale": 1.1,
+        "focus_scale": 1.05,
+        "scale_anim_duration": 10,
+    }
+    card = cast(Any, QObject())
+    card._hovered = True
+    card._focused = False
+    card.update = MagicMock()
+    animations = GameCardAnimations(card, SimpleNamespace(GAME_CARD_ANIMATION=config))
+
+    for animation_type in ("gradient", "glow", "fill", "stripe", "scale", "scale_fill"):
+        theme = SimpleNamespace(
+            GAME_CARD_ANIMATION={**config, "card_animation_type": animation_type}
+        )
+        animations.refresh_theme(theme)
+        expected_scale = 1.1 if animation_type in {"scale", "scale_fill"} else 1.0
+        assert card._scale == expected_scale
+        assert animations.theme is theme
+
+    animations.cleanup()
+
+
+def test_game_card_theme_refresh_updates_hidden_badge_styles() -> None:
+    card = MagicMock()
+    card.list_layout = False
+    card.protondb_tier = "gold"
+    card.ppdb_id = "report"
+    card.ppdb_rating = "Platinum"
+    card.anticheat_status = "Supported"
+    card.getAntiCheatText.return_value = "Supported"
+    card.current_theme_name = "new-theme"
+    animation_config = {"card_animation_type": "gradient"}
+    card.theme = SimpleNamespace(
+        GAME_CARD_ANIMATION=animation_config,
+        COMPACT_CARD={},
+        favoriteLabelSize=(24, 24),
+        favoriteLabelIconSize=18,
+    )
+    card.card_layout_cfg = {}
+    theme = SimpleNamespace(
+        GAME_CARD_GRID={},
+        GAME_CARD_ANIMATION=animation_config,
+        COMPACT_CARD={},
+        favoriteLabelSize=(24, 24),
+        favoriteLabelIconSize=18,
+        shadow_blur_radius=10,
+        color_shadow_card="#000000",
+        shadow_offset=(0, 1),
+        GAME_CARD_WINDOW_STYLE="card",
+        COVER_LABEL_STYLE="cover",
+        GAME_CARD_NAME_LABEL_STYLE="name",
+        STEAM_BADGE_STYLE="steam",
+        missing_exe_cover_opacity=0.5,
+        get_protondb_badge_style=lambda _tier: "protondb",
+        get_ppdb_badge_style=lambda _rating: "ppdb",
+        get_anticheat_badge_style=lambda _status: "anticheat",
+        get_source_corner_config=lambda: {},
+    )
+
+    GameCard.refresh_theme(card, theme)
+
+    card.protondbLabel.setStyleSheet.assert_called_once_with("protondb")
+    card.ppdbLabel.setStyleSheet.assert_called_once_with("ppdb")
+    card.anticheatLabel.setStyleSheet.assert_called_once_with("anticheat")
+    card.animations.refresh_theme.assert_not_called()
+    card.update_scale.assert_not_called()
+
+
+def test_source_corner_does_not_shadow_generic_theme_refresh() -> None:
+    assert hasattr(SourceCorner, "refresh_source_theme")
+    assert not hasattr(SourceCorner, "refresh_theme")
+
+
+def test_source_corner_refresh_updates_ribbon_colors() -> None:
+    _application = QApplication.instance() or QApplication([])
+    corner = SourceCorner(
+        config={"ribbon_color": "#111111", "ribbon_fold_color": "#222222"}
+    )
+
+    corner.refresh_source_theme(
+        {"ribbon_color": "#eeeeee", "ribbon_fold_color": "#dddddd"}, None
+    )
+
+    assert corner._color.name() == "#eeeeee"
+    assert corner._fold_color.name() == "#dddddd"
 
 
 def test_library_source_filter_stays_top_aligned_without_checkbox(

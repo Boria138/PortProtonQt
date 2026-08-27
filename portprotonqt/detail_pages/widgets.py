@@ -84,6 +84,7 @@ def create_content_frame(
 ) -> tuple[QFrame, QBoxLayout]:
     """Create content frame."""
     content_frame = QFrame()
+    content_frame.setProperty("theme_style_name", "DETAIL_CONTENT_FRAME_STYLE")
     content_frame.setStyleSheet(theme.DETAIL_CONTENT_FRAME_STYLE)
     content_frame_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight, content_frame)
     content_frame_layout.setContentsMargins(20, 20, 20, 20)
@@ -182,6 +183,7 @@ def create_compact_detail_header(
     header_widget.setFixedHeight(cover_frame.height())
 
     title_frame = QFrame(header_widget)
+    title_frame.setProperty("theme_style_name", "COMPACT_DETAILS_WIDGET_STYLE")
     title_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     title_frame.setMaximumHeight(cover_frame.height())
     title_frame.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
@@ -192,6 +194,7 @@ def create_compact_detail_header(
     title_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
     title_label = QLabel(title)
     title_label.setWordWrap(True)
+    title_label.setProperty("theme_style_name", "COMPACT_DETAIL_PAGE_TITLE_STYLE")
     title_label.setStyleSheet(theme.COMPACT_DETAIL_PAGE_TITLE_STYLE)
     title_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignVCenter)
     header_layout.addWidget(title_frame, stretch=1)
@@ -201,6 +204,7 @@ def create_compact_detail_header(
 def create_compact_layout_panel(parent: QWidget, theme, content_layout: QLayout) -> QWidget:
     """Create compact panel for an existing layout."""
     panel = QWidget(parent)
+    panel.setProperty("theme_style_name", "COMPACT_PLAYTIME_WIDGET_STYLE")
     panel.setStyleSheet(theme.COMPACT_PLAYTIME_WIDGET_STYLE)
     panel.setLayout(content_layout)
     content_layout.setContentsMargins(
@@ -218,6 +222,7 @@ def create_compact_description_panel(
 ) -> QWidget:
     """Create compact description block."""
     desc_widget = QWidget(parent)
+    desc_widget.setProperty("theme_style_name", "COMPACT_DETAILS_WIDGET_STYLE")
     desc_widget.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
     desc_layout = QVBoxLayout(desc_widget)
     desc_layout.setContentsMargins(
@@ -397,6 +402,7 @@ def create_details_widget(
 ) -> QWidget:
     """Create details widget with title, description, and optional content."""
     details_widget = QWidget()
+    details_widget.setProperty("theme_style_name", "DETAILS_WIDGET_STYLE")
     details_widget.setStyleSheet(main_window.theme.DETAILS_WIDGET_STYLE)
 
     details_layout = QVBoxLayout(details_widget)
@@ -439,6 +445,7 @@ def create_details_widget(
 def _add_details_header(layout: QVBoxLayout, theme, title: str) -> None:
     """Add title and divider line to details layout."""
     title_label = QLabel(title)
+    title_label.setProperty("theme_style_name", "DETAIL_PAGE_TITLE_STYLE")
     title_label.setStyleSheet(theme.DETAIL_PAGE_TITLE_STYLE)
     layout.addWidget(title_label)
 

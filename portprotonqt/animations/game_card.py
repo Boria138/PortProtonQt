@@ -1,4 +1,5 @@
 from math import radians, sin
+from typing import Any
 import warnings
 
 from PySide6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt
@@ -88,6 +89,36 @@ class GameCardAnimations:
         self._stop_animation("scale_anim")
         self._stop_animation("pulse_anim")
         self._isPulseAnimationConnected = False
+
+    def refresh_theme(self, theme: Any) -> None:
+        """Recreate animation state for a live theme change."""
+        self.cleanup()
+        self.theme = theme
+        config = self.theme.GAME_CARD_ANIMATION
+        animation_type = config.get("card_animation_type", "gradient")
+        self.game_card._gradientAngle = config["gradient_start_angle"]
+        if self.game_card._hovered:
+            self.game_card._borderWidth = config["hover_border_width"]
+            active_scale = config["hover_scale"]
+        elif self.game_card._focused:
+            self.game_card._borderWidth = config["focus_border_width"]
+            active_scale = config["focus_scale"]
+        else:
+            self.game_card._borderWidth = config["default_border_width"]
+            active_scale = config["default_scale"]
+        self.game_card._scale = (
+            active_scale
+            if animation_type in {"scale", "scale_fill"}
+            else config["default_scale"]
+        )
+        self.setup_animations()
+        if (self.game_card._hovered or self.game_card._focused) and animation_type in {
+            "gradient", "glow",
+        }:
+            self._restart_gradient_animation()
+        if self.game_card._hovered or self.game_card._focused:
+            self.start_pulse_animation()
+        self.game_card.update()
 
     def setup_animations(self):
         """Initialize animation properties based on theme."""

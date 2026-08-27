@@ -10,6 +10,7 @@ from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.theme_manager import (
     DMS_COLOR_ROLES,
     ThemeManager,
+    ThemeWrapper,
     _get_parent_theme_name,
     _inject_ast_constants,
     _inject_parent_theme_constants,
@@ -17,6 +18,42 @@ from portprotonqt.theme_manager import (
     _read_theme_parent_name,
     load_dms_palette,
 )
+
+
+def test_theme_wrapper_loads_screenshots_lazily(monkeypatch) -> None:
+    loaded_themes = []
+    monkeypatch.setattr(
+        "portprotonqt.theme_manager.load_theme_screenshots",
+        lambda theme_name: loaded_themes.append(theme_name) or [],
+    )
+    wrapper = ThemeWrapper(types.ModuleType("preview_theme"))
+
+    assert loaded_themes == []
+    assert wrapper.screenshots == []
+    assert wrapper.screenshots == []
+    assert loaded_themes == ["preview_theme"]
+
+
+def test_theme_manager_reuses_loaded_theme(monkeypatch) -> None:
+    manager = ThemeManager()
+    manager.current_theme_name = "previous"
+    manager.current_theme_module = types.SimpleNamespace()
+    manager._theme_module_cache = {}
+    loaded_themes = []
+    monkeypatch.setattr(
+        "portprotonqt.theme_manager.load_theme",
+        lambda name: loaded_themes.append(name) or types.SimpleNamespace(),
+    )
+    monkeypatch.setattr("portprotonqt.theme_manager.load_theme_fonts", lambda name: None)
+    monkeypatch.setattr("portprotonqt.config.ui.UIConfig.set_theme", lambda self, name: None)
+    monkeypatch.setattr("portprotonqt.sound_manager.SoundManager.set_sounds_dirs", lambda self, dirs: None)
+
+    first = manager.apply_theme("first")
+    manager.apply_theme("second")
+    repeated = manager.apply_theme("first")
+
+    assert repeated is first
+    assert loaded_themes == ["first", "second"]
 
 
 # === load_dms_palette ===

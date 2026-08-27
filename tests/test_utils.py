@@ -122,6 +122,18 @@ def test_search_index_ignores_descriptions() -> None:
     assert search_index(optimizer, "копайте") == []
 
 
+def test_is_portrait_image_rejects_oversized_png_metadata(
+    tmp_path: Path,
+) -> None:
+    cover = tmp_path / "logo.png"
+    cover.touch()
+    with patch(
+        "portprotonqt.steam_api.utils.Image.open",
+        side_effect=ValueError("Decompressed data too large"),
+    ):
+        assert not _is_portrait_image(cover)
+
+
 def _write_appinfo(path: Path, apps: list[tuple[int, str, str]]) -> None:
     strings = ["appinfo", "common", "type", "oslist"]
     entries = bytearray()

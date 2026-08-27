@@ -430,7 +430,7 @@ class UIConfig(BaseConfig):
 
     def get_auto_download_ppdb(self) -> bool:
         """Get PPDB auto-download setting."""
-        return self._get_download_bool("auto_download_ppdb", True)
+        return self._get_download_bool("auto_download_ppdb", False)
 
     def set_auto_download_ppdb(self, enabled: bool) -> None:
         """Set PPDB auto-download setting."""

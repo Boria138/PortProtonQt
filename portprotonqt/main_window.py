@@ -32,7 +32,7 @@ from portprotonqt.image_utils import (
     set_all_animated_covers_suspended,
 )
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, fetch_sgdb_cover_async, get_steam_launch_commands
-from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.theme_manager import SystemThemeWatcher, ThemeManager
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config import (
     get_portproton_location,
@@ -419,6 +419,7 @@ class MainWindow(
 
         # 2. NAVIGATION (TAB BUTTONS)
         self.navWidget = QWidget()
+        self.navWidget.setProperty("theme_style_name", "NAV_WIDGET_STYLE")
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         navLayout = QHBoxLayout(self.navWidget)
         navLayout.setContentsMargins(10, 0, 10, 0)
@@ -510,6 +511,9 @@ class MainWindow(
         self.createGOGDownloadsTab()
 
         self.controlHintsWidget = self.createControlHintsWidget()
+        self.controlHintsWidget.setProperty(
+            "theme_style_name", "HINT_BAR_STYLE"
+        )
         self.controlHintsWidget.setStyleSheet(self.theme.HINT_BAR_STYLE)
         mainLayout.addWidget(self.controlHintsWidget)
 
@@ -524,6 +528,13 @@ class MainWindow(
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.applicationStateChanged.connect(self._on_application_state_changed)
+            is_light = app.styleHints().colorScheme() == Qt.ColorScheme.Light
+            self.system_theme_watcher = SystemThemeWatcher(is_light, self)
+            self.system_theme_watcher.theme_changed.connect(self._on_system_theme_detected)
+            app.styleHints().colorSchemeChanged.connect(
+                self._on_qt_color_scheme_changed
+            )
+            self.system_theme_watcher.start()
 
         auto_fullscreen_gamepad = (
             display_config.get_auto_fullscreen_gamepad()
@@ -2640,6 +2651,11 @@ class MainWindow(
 
         # Full application close
         event.accept()
+
+        watcher = getattr(self, "system_theme_watcher", None)
+        if watcher is not None:
+            watcher.requestInterruption()
+            watcher.wait()
 
         # Hide and remove tray icon
         if hasattr(self, "tray_manager"):

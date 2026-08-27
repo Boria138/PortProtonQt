@@ -219,6 +219,7 @@ class ThemeStoreMixin:
     def _create_theme_store_detail_header(self) -> QHBoxLayout:
         header = QHBoxLayout()
         self.themeStoreBackButton = AutoSizeButton(_("Back"))
+        self.themeStoreBackButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.themeStoreBackButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeStoreBackButton.setProperty("sound_event", "back")
         self.themeStoreBackButton.clicked.connect(self._show_theme_store_list)
@@ -229,6 +230,7 @@ class ThemeStoreMixin:
         header.addWidget(self.themeStoreDetailTitle)
         header.addStretch(1)
         self.themeStoreDownloadButton = AutoSizeButton(_("Download"))
+        self.themeStoreDownloadButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.themeStoreDownloadButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeStoreDownloadButton.clicked.connect(self._download_current_store_theme)
         header.addWidget(self.themeStoreDownloadButton)
@@ -266,10 +268,12 @@ class ThemeStoreMixin:
     def _add_theme_store_variant_buttons(self, scrollLayout: QVBoxLayout) -> None:
         variantLayout = QHBoxLayout()
         self.themeStoreDarkButton = AutoSizeButton(_("Dark"))
+        self.themeStoreDarkButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.themeStoreDarkButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeStoreDarkButton.clicked.connect(lambda: self._set_theme_store_preview_variant("dark"))
         variantLayout.addWidget(self.themeStoreDarkButton)
         self.themeStoreLightButton = AutoSizeButton(_("Light"))
+        self.themeStoreLightButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.themeStoreLightButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeStoreLightButton.clicked.connect(lambda: self._set_theme_store_preview_variant("light"))
         variantLayout.addWidget(self.themeStoreLightButton)
@@ -578,6 +582,14 @@ class ThemeStoreMixin:
     def _set_theme_store_preview_variant(self, variant: str) -> None:
         self.themeStorePreviewVariant = variant
         active_style = getattr(self.theme, "ACTION_BUTTON_ACTIVE_STYLE", self.theme.ACTION_BUTTON_STYLE)
+        self.themeStoreDarkButton.setProperty(
+            "theme_style_name",
+            "ACTION_BUTTON_ACTIVE_STYLE" if variant == "dark" else "ACTION_BUTTON_STYLE",
+        )
+        self.themeStoreLightButton.setProperty(
+            "theme_style_name",
+            "ACTION_BUTTON_ACTIVE_STYLE" if variant == "light" else "ACTION_BUTTON_STYLE",
+        )
         self.themeStoreDarkButton.setStyleSheet(
             active_style if variant == "dark" else self.theme.ACTION_BUTTON_STYLE
         )
@@ -670,6 +682,8 @@ class ThemeStoreMixin:
             self.themeStoreStatusLabel.show()
             self.themeStoreStatusLabel.setText(_("Failed to install theme"))
             return
+        for installed_theme in theme_names:
+            self.theme_manager.invalidate_theme(installed_theme)
         variant = getattr(self, "themeStorePreviewVariant", "dark")
         theme_name = ui_config.resolve_theme(theme_names[0], variant)
         if theme_name not in theme_names:

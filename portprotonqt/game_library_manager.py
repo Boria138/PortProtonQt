@@ -69,6 +69,7 @@ class GameLibraryManager:
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
         self.gamesLibraryWidget = QWidget()
+        self.gamesLibraryWidget.setProperty("theme_style_name", "LIBRARY_WIDGET_STYLE")
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
@@ -79,11 +80,13 @@ class GameLibraryManager:
 
         # Scroll area for game grid
         scrollArea = AutoHideScrollArea(theme=self.theme)
+        scrollArea.setProperty("theme_style_name", "TRANSPARENT_BACKGROUND_STYLE")
         self.gamesScrollArea = scrollArea
         scrollArea.setWidgetResizable(True)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()
+        self.gamesListWidget.setProperty("theme_style_name", "LIST_WIDGET_STYLE")
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
         self.gamesListLayout = FlowLayout(self.gamesListWidget)
         self.gamesListWidget.setLayout(self.gamesListLayout)

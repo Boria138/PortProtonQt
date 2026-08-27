@@ -45,6 +45,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
     def createWineTab(self):
         """Wine Settings tab."""
         self.wineWidget = QWidget()
+        self.wineWidget.setProperty("theme_style_name", "OTHER_PAGES_WIDGET_STYLE")
         self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QVBoxLayout(self.wineWidget)
         layout.setContentsMargins(10, 18, 10, 10)
@@ -169,6 +170,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
             row = i // 3
             col = i % 3
             btn = AutoSizeButton(tool_name, update_size=False)
+            btn.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             if tool_cmd == "default":
@@ -199,6 +201,7 @@ class MainWindowWineTabMixin(_MainWindowTypingBase):
             row = i // 2
             col = i % 2
             btn = AutoSizeButton(text, update_size=False)
+            btn.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             if callback:

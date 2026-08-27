@@ -89,6 +89,12 @@ class VirtualKeyboard(QFrame):
 
         self.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_STYLE)
 
+    def refresh_theme(self, theme: Any) -> None:
+        """Refresh keyboard styling and animation settings."""
+        self.theme = theme
+        self.keyboard_animations.theme = theme
+        self.setStyleSheet(theme.VIRTUAL_KEYBOARD_STYLE)
+
     def set_slide_animation_enabled(self, enabled: bool) -> None:
         """Enable or disable slide animation for show/hide."""
         self.enable_slide_animation = enabled

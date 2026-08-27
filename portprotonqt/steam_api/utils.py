@@ -143,6 +143,9 @@ def _is_portrait_image(path: Path) -> bool:
     except (OSError, UnidentifiedImageError) as e:
         logger.debug("Failed to read Steam cover dimensions %s: %s", path, e)
         return False
+    except ValueError as e:
+        logger.debug("Rejected unsafe Steam cover metadata %s: %s", path, e)
+        return False
     return height > width
 
 
