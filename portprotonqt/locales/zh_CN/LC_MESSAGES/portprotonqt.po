@@ -1157,8 +1157,8 @@ msgstr "值"
 msgid "Description"
 msgstr "描述"
 
-msgid "Open PPDB"
-msgstr "打开 PPDB"
+msgid "Edit PPDB"
+msgstr "编辑 PPDB"
 
 msgid "Clear PPDB"
 msgstr "清除 PPDB"

@@ -1201,8 +1201,8 @@ msgstr "Значение"
 msgid "Description"
 msgstr "Описание"
 
-msgid "Open PPDB"
-msgstr "Открыть PPDB"
+msgid "Edit PPDB"
+msgstr "Редактировать PPDB"
 
 msgid "Clear PPDB"
 msgstr "Очистить PPDB"

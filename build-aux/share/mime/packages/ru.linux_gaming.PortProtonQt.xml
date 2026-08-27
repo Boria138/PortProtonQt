@@ -10,4 +10,10 @@
     <comment xml:lang="ru">Скрипт автоустановки PortProton</comment>
     <glob pattern="*.ppai"/>
   </mime-type>
+  <mime-type type="application/x-portproton-ppdb">
+    <comment>PortProton configuration</comment>
+    <comment xml:lang="ru">Конфигурация PortProton</comment>
+    <sub-class-of type="text/plain"/>
+    <glob pattern="*.ppdb" weight="100"/>
+  </mime-type>
 </mime-info>

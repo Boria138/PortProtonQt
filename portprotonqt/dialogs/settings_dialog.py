@@ -443,7 +443,7 @@ class ExeSettingsDialog(
         button_layout = QHBoxLayout()
         self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply", as_path=True))
         self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel", as_path=True))
-        self.open_ppdb_button = AutoSizeButton(_("Open PPDB"), icon=ThemeManager().get_icon("folder", as_path=True))
+        self.open_ppdb_button = AutoSizeButton(_("Edit PPDB"), icon=ThemeManager().get_icon("folder", as_path=True))
         self.clear_ppdb_button = AutoSizeButton(_("Clear PPDB"), icon=ThemeManager().get_icon("delete", as_path=True))
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
