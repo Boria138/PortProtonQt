@@ -471,12 +471,12 @@ class ContextMenuManager:
                 return
 
         # Normal menu for games with valid exe or from Steam
-        is_uninstalled_gog = (
-            game_card.game_source == "gog"
-            and game_card.exec_line.startswith("gog://install/")
+        is_uninstalled_store_game = (
+            game_card.game_source in ("gog", "egs")
+            and game_card.exec_line.startswith(("gog://install/", "egs://install/"))
         )
         is_running = self._is_game_running(game_card)
-        if not is_uninstalled_gog:
+        if not is_uninstalled_store_game:
             action_text = _("Stop Game") if is_running else _("Launch Game")
             action_icon = "stop" if is_running else "play"
             launch_action = menu.addAction(self._get_safe_icon(action_icon), action_text)
@@ -543,6 +543,44 @@ class ContextMenuManager:
                 )
                 import_action.triggered.connect(
                     lambda: self.parent._import_gog_game(game)
+                )
+
+        if game_card.game_source == "egs":
+            app_id = str(game_card.appid)
+            if game_card.exec_line.startswith("egs://launch/"):
+                update_action = menu.addAction(
+                    self._get_safe_icon("update"), _("Update")
+                )
+                update_action.triggered.connect(
+                    lambda: self.parent._update_egs_game(app_id)
+                )
+                repair_action = menu.addAction(
+                    self._get_safe_icon("update"), _("Repair")
+                )
+                repair_action.triggered.connect(
+                    lambda: self.parent._repair_egs_game(app_id)
+                )
+                eos_enabled = self.parent._is_egs_overlay_enabled(app_id)
+                eos_action = menu.addAction(
+                    self._get_safe_icon("update"),
+                    _("Disable EOS Overlay")
+                    if eos_enabled else _("Enable EOS Overlay"),
+                )
+                eos_action.triggered.connect(
+                    lambda: self.parent._enable_egs_overlay(app_id)
+                )
+                delete_action = menu.addAction(
+                    self._get_safe_icon("delete"), _("Delete")
+                )
+                delete_action.triggered.connect(
+                    lambda: self.parent._delete_egs_game(app_id)
+                )
+            else:
+                import_action = menu.addAction(
+                    self._get_safe_icon("folder"), _("Import")
+                )
+                import_action.triggered.connect(
+                    lambda: self.parent._import_egs_game(app_id)
                 )
 
         if game_card.game_source == "steam":

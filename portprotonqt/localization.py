@@ -36,6 +36,8 @@ LOCALE_MAP = {
     'el': 'greek',
 }
 
+STORE_CONTENT_LOCALES = {'es': 'es-ES', 'pt': 'pt-BR', 'zh': 'zh-CN'}
+
 # Try local locale directory first, fallback to system for development
 _local_localedir = Path(__file__).parent / "locales"
 _system_prefix = "/app" if os.getenv("FLATPAK_ID") else os.getenv("SHARUN_DIR", "/usr")
@@ -86,6 +88,23 @@ def get_metadata_language() -> str:
         logger.warning("Failed to detect locale: %s", e)
 
     return 'en'
+
+def get_store_content_languages() -> tuple[str, ...]:
+    """Return preferred store content locales with English fallback."""
+    language = get_metadata_language().lower().split('_', 1)[0] or 'en'
+    system_locale = get_system_locale().lower().replace('-', '_')
+    if language == 'zh' and any(
+        variant in system_locale for variant in ('hant', '_tw', '_hk', '_mo')
+    ):
+        preferred = 'zh-TW'
+    else:
+        preferred = STORE_CONTENT_LOCALES.get(language, language)
+    languages = [preferred]
+    if language not in languages:
+        languages.append(language)
+    if 'en-US' not in languages:
+        languages.append('en-US')
+    return tuple(languages)
 
 def read_metadata_translations(metadata_file, language_code):
     """

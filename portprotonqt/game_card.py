@@ -273,6 +273,7 @@ class GameCard(QFrame):
 
         self.steam_visible = str(game_source).lower() == "steam"
         self.gog_visible = str(game_source).lower() == "gog"
+        self.egs_visible = str(game_source).lower() == "egs"
         self.portproton_visible = str(game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
@@ -321,8 +322,8 @@ class GameCard(QFrame):
         self.coverLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         if self.missing_executable_path or (
-            str(self.game_source).lower() == "gog"
-            and self.exec_line.startswith("gog://install/")
+            str(self.game_source).lower() in ("gog", "egs")
+            and self.exec_line.startswith(("gog://install/", "egs://install/"))
         ):
             self.coverOpacity = QGraphicsOpacityEffect(self.coverLabel)
             self.coverOpacity.setOpacity(self.theme.missing_exe_cover_opacity)
@@ -369,6 +370,14 @@ class GameCard(QFrame):
             parent=self.coverWidget,
         )
         self.gogLabel.setVisible(self.gog_visible)
+
+        egs_icon = self.theme_manager.get_icon("badge_egs", as_path=True)
+        self.egsLabel = SourceCorner(
+            icon=egs_icon,
+            config=corner_config,
+            parent=self.coverWidget,
+        )
+        self.egsLabel.setVisible(self.egs_visible)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = SourceCorner(
@@ -478,6 +487,7 @@ class GameCard(QFrame):
         for label, icon_name in (
             (self.steamLabel, "badge_steam"),
             (self.gogLabel, "badge_gog"),
+            (self.egsLabel, "badge_egs"),
             (self.portprotonLabel, "badge_portproton"),
         ):
             icon = self.theme_manager.get_icon(
@@ -657,6 +667,7 @@ class GameCard(QFrame):
         source_ribbons = [
             (self.steam_visible, self.steamLabel),
             (self.gog_visible, self.gogLabel),
+            (self.egs_visible, self.egsLabel),
             (self.portproton_visible, self.portprotonLabel),
         ]
 
@@ -679,6 +690,7 @@ class GameCard(QFrame):
             self.protondbLabel.raise_()
             self.portprotonLabel.raise_()
             self.gogLabel.raise_()
+            self.egsLabel.raise_()
             self.steamLabel.raise_()
         except RuntimeError:
             pass
@@ -817,6 +829,7 @@ class GameCard(QFrame):
         self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = str(self.game_source).lower() == "steam"
         self.gog_visible = str(self.game_source).lower() == "gog"
+        self.egs_visible = str(self.game_source).lower() == "egs"
         self.portproton_visible = str(self.game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
         protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
@@ -827,6 +840,7 @@ class GameCard(QFrame):
         try:
             self.steamLabel.setVisible(self.steam_visible)
             self.gogLabel.setVisible(self.gog_visible)
+            self.egsLabel.setVisible(self.egs_visible)
             self.portprotonLabel.setVisible(self.portproton_visible)
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)

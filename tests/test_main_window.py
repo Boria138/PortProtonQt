@@ -3,6 +3,7 @@
 import shlex
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from pathlib import Path
 from queue import Queue
 import threading
@@ -10,7 +11,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch, mark
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 
@@ -18,16 +19,19 @@ from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.animations.game_card import GameCardAnimations
 from portprotonqt.config import game_config
 from portprotonqt.detail_pages import DetailPageManager
+from portprotonqt.egs_api import EGSAPI
+from portprotonqt.tabs.download_tab import MainWindowDownloadTabMixin
 from portprotonqt.game_card import GameCard, SourceCorner
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
-import portprotonqt.tabs.gog_tab as gog_tab_module
+import portprotonqt.tabs.download_tab as download_tab_module
 import portprotonqt.tabs.library_tab as library_tab_module
 import portprotonqt.tabs.system_tab as system_tab_module
 import portprotonqt.steam_api.api as steam_api_module
+import portprotonqt.main_window as main_window_module
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
@@ -37,7 +41,7 @@ from portprotonqt.tabs import (
     MainWindowWineTabMixin,
 )
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin as AutoInstallMixin
-from portprotonqt.tabs.gog_tab import MainWindowGOGTabMixin as GOGMixin
+from portprotonqt.tabs.download_tab import MainWindowDownloadTabMixin as GOGMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin as LibraryMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin as SettingsMixin
 from portprotonqt.tabs.theme_store import THEME_STORE_ITEM, ThemeStoreMixin
@@ -562,7 +566,7 @@ def test_gog_account_state_detects_saved_auth(
         gogAccountStatus=Control(),
         gogLoginButton=Control(),
     )
-    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
 
     GOGMixin._update_gog_account_state(cast(Any, window))
 
@@ -598,7 +602,7 @@ def test_gog_account_action_logs_out_and_reloads_library(
     window._update_gog_account_state = lambda: GOGMixin._update_gog_account_state(
         cast(Any, window)
     )
-    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
 
     GOGMixin._handle_gog_account_action(cast(Any, window))
 
@@ -750,7 +754,7 @@ def test_gog_library_refresh_failure_reloads_cached_games(
         gogAccountStatus=SimpleNamespace(setText=lambda text: calls.append(text)),
         loadGames=lambda **kwargs: calls.append(kwargs),
     )
-    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
 
     GOGMixin._on_gog_library_failed(cast(Any, window), "network error")
 
@@ -768,7 +772,7 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
         loadGames=lambda **kwargs: calls.append(("load", kwargs)),
         _refresh_gog_library=lambda: calls.append("refresh"),
     )
-    monkeypatch.setattr(gog_tab_module, "_", lambda text: text)
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
 
     GOGMixin._on_gog_authenticated(cast(Any, window), True, "")
 
@@ -815,7 +819,7 @@ def test_gog_support_uses_regular_launch_output_monitor(
         _set_running_button_stop=lambda: None,
         checkTargetExe=lambda: None,
     )
-    monkeypatch.setattr(gog_tab_module, "QTimer", FakeTimer)
+    monkeypatch.setattr(download_tab_module, "QTimer", FakeTimer)
 
     GOGMixin._track_gog_support_process(
         cast(Any, window), "123", cast(Any, process)
@@ -909,7 +913,7 @@ def test_install_gog_game_uses_support_path(
     explorer.file_signal.file_selected.connect.side_effect = (
         lambda callback: callback(str(selected_path))
     )
-    monkeypatch.setattr(gog_tab_module, "FileExplorer", lambda *_args, **_kwargs: explorer)
+    monkeypatch.setattr(download_tab_module, "FileExplorer", lambda *_args, **_kwargs: explorer)
     api = SimpleNamespace(
         config_dir=tmp_path / "gogdl",
         get_install_path=lambda _app_id, _title: selected_path,
@@ -930,11 +934,43 @@ def test_install_gog_game_uses_support_path(
     ]
 
 
+def test_install_egs_game_selects_path_and_opens_download(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    selected_path = tmp_path / "Epic"
+    started: list[tuple] = []
+    explorer = MagicMock()
+    explorer.file_signal.file_selected.connect.side_effect = (
+        lambda callback: callback(str(selected_path))
+    )
+    monkeypatch.setattr(download_tab_module, "FileExplorer", lambda *_args, **_kwargs: explorer)
+    game = {"app_id": "doom64", "title": "DOOM 64", "cover": "cover"}
+    api = SimpleNamespace(
+        games_dir=tmp_path / "Games", load_library=lambda: [game],
+        build_command=lambda arguments: ["legendary", *arguments],
+    )
+    window = SimpleNamespace(
+        gog_process=None, egs_process=None, theme=object(), egs_api=api,
+        _start_egs_download=lambda *arguments: started.append(arguments),
+        egsAccountStatus=SimpleNamespace(setText=MagicMock()),
+    )
+
+    GOGMixin._install_egs_download(cast(Any, window), "doom64")
+
+    assert started[0] == (
+        game, selected_path,
+        [
+            "legendary", "install", "doom64", "--base-path", str(selected_path),
+            "--platform", "Windows", "--skip-sdl", "--skip-dlcs", "-y",
+        ],
+    )
+
+
 def test_cancel_gog_download_terminates_then_kills(monkeypatch: MonkeyPatch) -> None:
     process = SimpleNamespace(
         terminate=MagicMock(),
         kill=MagicMock(),
-        state=lambda: gog_tab_module.QProcess.ProcessState.Running,
+        state=lambda: download_tab_module.QProcess.ProcessState.Running,
     )
     window = SimpleNamespace(
         gog_process=process,
@@ -944,7 +980,7 @@ def test_cancel_gog_download_terminates_then_kills(monkeypatch: MonkeyPatch) -> 
             cast(Any, window), active
         ),
     )
-    monkeypatch.setattr(gog_tab_module.QTimer, "singleShot", lambda _delay, callback: callback())
+    monkeypatch.setattr(download_tab_module.QTimer, "singleShot", lambda _delay, callback: callback())
 
     GOGMixin._cancel_gog_download(cast(Any, window))
 
@@ -986,7 +1022,7 @@ def test_import_gog_game_saves_selected_installation(
         gogAccountStatus=SimpleNamespace(setText=lambda _text: None),
         loadGames=lambda **_kwargs: None,
     )
-    monkeypatch.setattr(gog_tab_module, "FileExplorer", Explorer)
+    monkeypatch.setattr(download_tab_module, "FileExplorer", Explorer)
 
     GOGMixin._import_gog_game(cast(Any, window), {"app_id": "123", "title": "Game"})
 
@@ -1887,7 +1923,16 @@ def test_installed_filter_disabled_includes_uninstalled_gog_games(
     assert results[0][0][5] == "gog://install/uninstalled"
 
 
-def test_gog_metadata_search_ignores_uri_components(monkeypatch: MonkeyPatch) -> None:
+@mark.parametrize(
+    ("game_name", "launch_uri"),
+    (
+        ("Unknown GOG Game", "gog://launch/123"),
+        ("Unknown Epic Game", "egs://launch/Fortnite"),
+    ),
+)
+def test_store_metadata_search_ignores_uri_components(
+    monkeypatch: MonkeyPatch, game_name: str, launch_uri: str
+) -> None:
     from portprotonqt.steam_api import get_steam_game_info_async
 
     searched_candidates = []
@@ -1916,11 +1961,199 @@ def test_gog_metadata_search_ignores_uri_components(monkeypatch: MonkeyPatch) ->
     )
     results = []
 
-    get_steam_game_info_async("Unknown GOG Game", "gog://launch/123", results.append)
+    get_steam_game_info_async(game_name, launch_uri, results.append)
 
-    assert searched_candidates == ["Unknown GOG Game"]
+    assert searched_candidates == [game_name]
     assert len(results) == 1
     fetch_sgdb_cover.assert_not_called()
+
+
+def test_egs_refresh_reopens_current_detail_with_new_description() -> None:
+    source_data = {
+        "appid": "AmongUs",
+        "game_source": "egs",
+        "description": "Old description",
+        "cover_path": "old.jpg",
+    }
+    manager = SimpleNamespace(
+        _current_detail_source=("game", source_data),
+        _detail_page_active=True,
+        _reopen_current_detail_page=MagicMock(),
+    )
+    window = cast(MainWindowDownloadTabMixin, SimpleNamespace(
+        detail_page_manager=manager,
+        _update_egs_account_state=MagicMock(),
+        loadGames=MagicMock(),
+    ))
+
+    MainWindowDownloadTabMixin._on_egs_library_loaded(window, [{
+        "app_id": "AmongUs",
+        "description": "Новое описание",
+        "cover": "new.jpg",
+    }])
+
+    assert source_data["description"] == "Новое описание"
+    assert source_data["cover_path"] == "new.jpg"
+    manager._reopen_current_detail_page.assert_called_once_with()
+    window.loadGames.assert_called_once_with(force_load=True)
+
+
+def test_egs_library_uses_steam_description_when_epic_has_title_only(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    game = {"app_id": "WitchIt", "title": "Witch It", "description": "Witch It"}
+    api = SimpleNamespace(
+        load_library=lambda: [game],
+        is_game_installed=lambda _app_id: False,
+    )
+    results = []
+    window = cast(MainWindow, SimpleNamespace(
+        egs_api=api, games=[],
+    ))
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: False)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_game_info_async",
+        lambda _name, _uri, callback: callback({
+            "description": "Witch It — игра в прятки по сети.",
+        }),
+    )
+
+    MainWindow._load_egs_games_async(window, results.append)
+
+    assert results[0][0][1] == "Witch It — игра в прятки по сети."
+
+
+def test_egs_maintenance_uses_legendary_commands() -> None:
+    start_operation = MagicMock()
+    window = cast(MainWindow, SimpleNamespace(_start_egs_operation=start_operation))
+
+    MainWindow._repair_egs_game(window, "Game")
+    MainWindow._update_egs_game(window, "Game")
+    MainWindow._delete_egs_game(window, "Game")
+
+    calls = start_operation.call_args_list
+    assert calls[0].args[1] == ["repair", "Game", "--skip-sdl", "-y"]
+    assert calls[1].args[1] == [
+        "update", "Game", "--platform", "Windows", "--skip-sdl", "-y",
+    ]
+    assert calls[2].args[1] == ["uninstall", "Game", "-y"]
+
+
+def test_egs_operation_is_sent_to_visible_downloads() -> None:
+    game = {"app_id": "Game", "title": "Epic Game", "cover": "cover"}
+    visible_operation = MagicMock()
+    api = SimpleNamespace(
+        build_command=lambda arguments: ["legendary", *arguments],
+        load_library=lambda: [game],
+    )
+    window = cast(MainWindow, SimpleNamespace(
+        egs_process=None, egs_api=api,
+        _start_egs_visible_operation=visible_operation,
+    ))
+
+    MainWindow._start_egs_operation(window, "Game", ["repair", "Game"], "Repair")
+
+    visible_operation.assert_called_once_with(
+        game, ["legendary", "repair", "Game"], "Repair"
+    )
+
+
+def test_detached_store_game_keeps_running_state(monkeypatch: MonkeyPatch) -> None:
+    dead_launcher = SimpleNamespace(poll=lambda: 0)
+    game_process = SimpleNamespace(info={"name": "DOOM64_x64.exe"})
+    monkeypatch.setattr(
+        main_window_module.psutil, "process_iter", lambda attrs: [game_process]
+    )
+    window = cast(MainWindow, SimpleNamespace(
+        game_processes=[dead_launcher], target_exe="DOOM64_x64.exe",
+        game_start_time=datetime.now() - timedelta(minutes=1),
+    ))
+
+    assert MainWindow._has_running_game_process(window)
+
+
+def test_store_launch_grace_prevents_early_button_reset(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(main_window_module.psutil, "process_iter", lambda attrs: [])
+    window = cast(MainWindow, SimpleNamespace(
+        game_processes=[], target_exe="DOOM64_x64.exe",
+        game_start_time=datetime.now(),
+    ))
+
+    assert MainWindow._has_running_game_process(window)
+
+
+def test_egs_verification_uses_total_progress_format() -> None:
+    import re
+
+    output = "Verification progress: 37/142 (26.4%) [132.7 MiB/s]"
+    match = re.findall(
+        r"Verification progress:\s*\d+/\d+\s+\(([\d.]+)%\)"
+        r"(?:\s+\[([\d.]+)\s+MiB/s\])?",
+        output,
+    )
+
+    assert match == [("26.4", "132.7")]
+
+
+def test_egs_overlay_enable_uses_game_prefix(tmp_path: Path) -> None:
+    prefix_path = tmp_path / "data/prefixes/DEFAULT"
+    prefix_path.mkdir(parents=True)
+    (prefix_path / "user.reg").touch()
+    config_dir = tmp_path / "legendary"
+    config_dir.mkdir()
+    (config_dir / "overlay_install.json").touch()
+    api = SimpleNamespace(
+        config_dir=config_dir,
+        data_dir=tmp_path / "egs",
+        get_launch_target=MagicMock(return_value="/games/Game.exe"),
+        is_eos_overlay_enabled=EGSAPI.is_eos_overlay_enabled,
+    )
+    start_operation = MagicMock()
+    window = cast(MainWindow, SimpleNamespace(
+        egs_api=api,
+        portproton_location=str(tmp_path),
+        _start_egs_operation=start_operation,
+    ))
+
+    MainWindow._enable_egs_overlay(window, "Game")
+
+    arguments = start_operation.call_args.args[1]
+    assert arguments == [
+        "eos-overlay", "enable", "--prefix", str(prefix_path),
+    ]
+
+
+def test_egs_overlay_disable_uses_game_prefix(tmp_path: Path) -> None:
+    prefix_path = tmp_path / "data/prefixes/DEFAULT"
+    prefix_path.mkdir(parents=True)
+    (prefix_path / "user.reg").write_text(
+        '[Software\\\\Epic Games\\\\EOS]\n"OverlayPath"="Z:/overlay"\n',
+        encoding="utf-8",
+    )
+    config_dir = tmp_path / "legendary"
+    config_dir.mkdir()
+    (config_dir / "overlay_install.json").touch()
+    api = SimpleNamespace(
+        config_dir=config_dir,
+        data_dir=tmp_path / "egs",
+        get_launch_target=MagicMock(return_value="/games/Game.exe"),
+        is_eos_overlay_enabled=EGSAPI.is_eos_overlay_enabled,
+    )
+    start_operation = MagicMock()
+    window = cast(MainWindow, SimpleNamespace(
+        egs_api=api,
+        portproton_location=str(tmp_path),
+        _start_egs_operation=start_operation,
+    ))
+
+    MainWindow._enable_egs_overlay(window, "Game")
+
+    arguments = start_operation.call_args.args[1]
+    assert arguments == [
+        "eos-overlay", "disable", "--prefix", str(prefix_path),
+    ]
 
 
 def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path) -> None:

@@ -167,6 +167,23 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         gog_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         gogForm.addRow(gog_account_title, gog_buttons)
         self._update_gog_account_state()
+        self.egsAccountStatus = QLabel()
+        self.egsAccountStatus.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.egsAccountStatus.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        self.egsLoginButton = AutoSizeButton(_("Open login page"))
+        self.egsLoginButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
+        self.egsLoginButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.egsLoginButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.egsLoginButton.clicked.connect(self._handle_egs_account_action)
+        egs_buttons = QHBoxLayout()
+        egs_buttons.addWidget(self.egsAccountStatus)
+        egs_buttons.addWidget(self.egsLoginButton)
+        egs_account_title = QLabel(_("Account") + " Epic Games:")
+        egs_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(egs_account_title, egs_buttons)
+        self._update_egs_account_state()
 
         self.timeDetailCombo = CustomComboBox(theme=self.theme)
         self.timeDetailCombo.view().window().setWindowFlags(
@@ -224,7 +241,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
         self.setTabOrder(self.timeDetailCombo, self.steamAccountCombo)
         self.setTabOrder(self.steamAccountCombo, self.gogLoginButton)
-        self.setTabOrder(self.gogLoginButton, self.trayMenuModeCombo)
+        self.setTabOrder(self.gogLoginButton, self.egsLoginButton)
+        self.setTabOrder(self.egsLoginButton, self.trayMenuModeCombo)
 
         self.gamepad_type_keys = ["auto", "xbox", "playstation"]
         self.gamepad_type_labels = [_("Auto"), "Xbox", "PlayStation"]
@@ -758,6 +776,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()
             self.gog_api.clear_library_cache()
+            self.egs_api.clear_library_cache()
 
     def integrateAppImage(self) -> None:
         """Install the running AppImage in the user application menu."""

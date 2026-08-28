@@ -1,4 +1,4 @@
-"""Shared download manager with GOG download support."""
+"""Store account actions and shared game download manager."""
 
 import os
 import re
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.dialogs.file_explorer import FileExplorer
+from portprotonqt.egs_api import EGSAPI, EGS_LOGIN_URL
 from portprotonqt.gog_api import GOGAPI, GOG_LOGIN_URL
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.localization import _
@@ -36,6 +37,7 @@ from portprotonqt.sound_manager import SoundManager
 logger = get_logger(__name__)
 GOG_CANCEL_KILL_TIMEOUT_MS = 3000
 GOG_LOGIN_TIMEOUT_MS = 300000
+EGS_LOGIN_TIMEOUT_MS = 300000
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
@@ -62,6 +64,42 @@ class GOGLibraryWorker(QThread):
         except Exception as error:
             logger.exception("Failed to refresh GOG library")
             self.failed.emit(str(error))
+
+
+class EGSLibraryWorker(QThread):
+    """Refresh the Epic library outside the UI thread."""
+
+    loaded = Signal(list)
+    failed = Signal(str)
+
+    def __init__(self, api: EGSAPI) -> None:
+        super().__init__()
+        self.api = api
+
+    def run(self) -> None:
+        try:
+            self.loaded.emit(self.api.refresh_library())
+        except Exception as error:
+            logger.exception("Failed to refresh Epic library")
+            self.failed.emit(str(error))
+
+
+class EGSAuthWorker(QThread):
+    """Authenticate an Epic account outside the UI thread."""
+
+    authenticated = Signal(bool, str)
+
+    def __init__(self, api: EGSAPI, code: str) -> None:
+        super().__init__()
+        self.api = api
+        self.code = code
+
+    def run(self) -> None:
+        try:
+            self.authenticated.emit(*self.api.authenticate(self.code))
+        except Exception as error:
+            logger.exception("Failed to authenticate with Epic")
+            self.authenticated.emit(False, str(error))
 
 
 class GOGAuthWorker(QThread):
@@ -126,7 +164,7 @@ class GOGSupportWorker(QThread):
             self.failed.emit(self.error)
 
 
-class MainWindowGOGTabMixin(_MainWindowTypingBase):
+class MainWindowDownloadTabMixin(_MainWindowTypingBase):
     """Add account actions and the shared downloads page."""
 
     if TYPE_CHECKING:
@@ -134,8 +172,11 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
 
     def createGOGDownloadsTab(self) -> None:
         self.gog_process = None
+        self.egs_process = None
         self.gog_download_queue = []
         self.gog_download_output = ""
+        self.egs_download_output = ""
+        self.egs_download_total = 0.0
         self.gog_support_workers = []
         self.downloadTableHeadings = {}
         page = QWidget()
@@ -402,6 +443,124 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
     def _on_gog_library_worker_finished(self) -> None:
         self.gog_library_worker = None
 
+    def _handle_egs_account_action(self) -> None:
+        if not self.egs_api.user_path.is_file():
+            self._start_egs_login()
+            return
+        if not self.egs_api.logout():
+            self.egsAccountStatus.setText(_("Failed to log out of Epic account"))
+            return
+        self._update_egs_account_state()
+        self.loadGames(force_load=True)
+
+    def _start_egs_login(self) -> None:
+        if getattr(self, "egs_auth_worker", None) is not None:
+            return
+        clipboard = QApplication.clipboard()
+        if not getattr(self, "egs_auth_clipboard_connected", False):
+            clipboard.dataChanged.connect(self._check_egs_login_clipboard)
+            self.egs_auth_clipboard_connected = True
+        self.egs_auth_timer = QTimer(self)
+        self.egs_auth_timer.setSingleShot(True)
+        self.egs_auth_timer.timeout.connect(self._cancel_egs_login)
+        self.egs_auth_timer.start(EGS_LOGIN_TIMEOUT_MS)
+        self.egsLoginButton.setEnabled(False)
+        self.egsAccountStatus.setText(_("Copy the authorization code to clipboard"))
+        if not QDesktopServices.openUrl(QUrl(EGS_LOGIN_URL)):
+            self._cancel_egs_login()
+
+    def _check_egs_login_clipboard(self) -> None:
+        code = self.egs_api.extract_auth_code(QApplication.clipboard().text())
+        if len(code) < 16:
+            return
+        self._stop_egs_login_clipboard()
+        self.egsAccountStatus.setText(_("Refreshing…"))
+        worker = EGSAuthWorker(self.egs_api, code)
+        worker.authenticated.connect(self._on_egs_authenticated)
+        worker.finished.connect(self._on_egs_auth_worker_finished)
+        self.egs_auth_worker = worker
+        worker.start()
+
+    def _stop_egs_login_clipboard(self) -> None:
+        timer = getattr(self, "egs_auth_timer", None)
+        if timer is not None:
+            timer.stop()
+            timer.deleteLater()
+            self.egs_auth_timer = None
+        if getattr(self, "egs_auth_clipboard_connected", False):
+            QApplication.clipboard().dataChanged.disconnect(
+                self._check_egs_login_clipboard
+            )
+            self.egs_auth_clipboard_connected = False
+
+    def _cancel_egs_login(self) -> None:
+        self._stop_egs_login_clipboard()
+        self.egsLoginButton.setEnabled(True)
+        self._update_egs_account_state()
+
+    def _on_egs_authenticated(self, authenticated: bool, error: str) -> None:
+        if not authenticated:
+            self.egsAccountStatus.setText(
+                _("Epic login failed: {0}").format(error or _("Unknown error"))
+            )
+            return
+        self._update_egs_account_state()
+        self._refresh_egs_library()
+
+    def _on_egs_auth_worker_finished(self) -> None:
+        self.egsLoginButton.setEnabled(True)
+        self.egs_auth_worker = None
+
+    def _update_egs_account_state(self) -> None:
+        connected = self.egs_api.user_path.is_file()
+        account_name = self.egs_api.get_account_name() if connected else ""
+        self.egsAccountStatus.setText(
+            account_name or (_("Epic account connected") if connected
+                             else _("Epic account not connected"))
+        )
+        self.egsLoginButton.setText(_("Log out") if connected else _("Open login page"))
+        self.egsLoginButton.setEnabled(True)
+
+    def _refresh_egs_library(self) -> None:
+        if not self.egs_api.user_path.is_file():
+            return
+        if getattr(self, "egs_library_worker", None) is not None:
+            return
+        self.egsAccountStatus.setText(_("Refreshing…"))
+        worker = EGSLibraryWorker(self.egs_api)
+        worker.loaded.connect(self._on_egs_library_loaded)
+        worker.failed.connect(self._on_egs_library_failed)
+        worker.finished.connect(self._on_egs_library_worker_finished)
+        self.egs_library_worker = worker
+        worker.start()
+
+    def _on_egs_library_loaded(self, games: list) -> None:
+        self._update_egs_account_state()
+        manager = self.detail_page_manager
+        source = manager._current_detail_source
+        if source and source[0] == "game":
+            source_data = source[1]
+            if str(source_data.get("game_source", "")).lower() == "egs":
+                app_id = str(source_data.get("appid", ""))
+                game = next(
+                    (item for item in games if str(item.get("app_id", "")) == app_id),
+                    None,
+                )
+                if game:
+                    source_data["description"] = str(game.get("description", ""))
+                    source_data["cover_path"] = str(game.get("cover", ""))
+                    if manager._detail_page_active:
+                        manager._reopen_current_detail_page()
+        self.loadGames(force_load=True)
+
+    def _on_egs_library_failed(self, error: str) -> None:
+        self.egsAccountStatus.setText(
+            _("Failed to refresh Epic library: {0}").format(error)
+        )
+
+    def _on_egs_library_worker_finished(self) -> None:
+        self.egs_library_worker = None
+
     def _install_gog_game(self, game: dict) -> None:
         if self.gog_process is not None:
             self.gog_download_queue.append(game)
@@ -448,6 +607,36 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             self.gogAccountStatus.setText(str(error))
             return
         self._start_gog_download(game, install_path, command, _("Install"))
+
+    def _install_egs_download(self, app_id: str) -> None:
+        if self.gog_process is not None or self.egs_process is not None:
+            QMessageBox.warning(self, _("Error"), _("Another download is running"))
+            return
+        game = next(
+            (item for item in self.egs_api.load_library()
+             if str(item.get("app_id", "")) == app_id),
+            {"app_id": app_id, "title": app_id, "cover": ""},
+        )
+        selected_paths: list[str] = []
+        explorer = FileExplorer(
+            self, theme=self.theme, initial_path=str(self.egs_api.games_dir),
+            directory_only=True,
+        )
+        explorer.setWindowTitle(_("Select installation folder"))
+        explorer.file_signal.file_selected.connect(selected_paths.append)
+        explorer.exec()
+        if not selected_paths:
+            return
+        install_path = Path(selected_paths[0])
+        try:
+            command = self.egs_api.build_command([
+                "install", app_id, "--base-path", str(install_path),
+                "--platform", "Windows", "--skip-sdl", "--skip-dlcs", "-y",
+            ])
+        except OSError as error:
+            self.egsAccountStatus.setText(str(error))
+            return
+        self._start_egs_download(game, install_path, command)
 
     def _repair_gog_game(self, game: dict) -> None:
         if self.gog_process is not None:
@@ -567,10 +756,78 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         self.switchTab(6)
         process.start()
 
+    def _start_egs_download(
+        self, game: dict, install_path: Path, command: list[str]
+    ) -> None:
+        app_id = str(game["app_id"])
+        self.downloadActiveTitle.setText(str(game["title"]))
+        self.downloadActiveDetails.setText(_("Starting"))
+        cover_width, cover_height = self.theme.downloadsActiveCoverSize
+        load_pixmap_async(
+            str(game.get("cover", "")), cover_width, cover_height,
+            self.downloadActiveCover.setPixmap,
+            app_name=f"download-active-{app_id}",
+        )
+        self.downloadActiveHeading.setVisible(True)
+        self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
+        process = QProcess(self)
+        process.setProgram(command[0])
+        process.setArguments(command[1:])
+        process.setProcessEnvironment(self._egs_process_environment())
+        process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        process.readyReadStandardOutput.connect(self._read_egs_download_output)
+        process.finished.connect(self._on_egs_download_finished)
+        self.egs_process = process
+        self.egs_active_game = game
+        self.egs_active_install_path = install_path
+        self.egs_download_output = ""
+        self.egs_download_total = 0.0
+        self.downloadOverallProgress.setValue(0)
+        self.downloadCancelButton.setEnabled(True)
+        self.switchTab(6)
+        process.start()
+
+    def _start_egs_visible_operation(
+        self, game: dict, command: list[str], action: str
+    ) -> None:
+        app_id = str(game["app_id"])
+        display_action = "EOS Overlay" if action.startswith("eos-") else action
+        self.downloadActiveTitle.setText(str(game["title"]))
+        self.downloadActiveDetails.setText(display_action)
+        cover_width, cover_height = self.theme.downloadsActiveCoverSize
+        load_pixmap_async(
+            str(game.get("cover", "")), cover_width, cover_height,
+            self.downloadActiveCover.setPixmap,
+            app_name=f"download-active-{app_id}",
+        )
+        self.downloadActiveHeading.setVisible(True)
+        self.downloadActiveCard.setVisible(True)
+        self._update_downloads_tab_visibility()
+        process = QProcess(self)
+        process.setProgram(command[0])
+        process.setArguments(command[1:])
+        process.setProcessEnvironment(self._egs_process_environment())
+        process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        process.readyReadStandardOutput.connect(self._read_egs_download_output)
+        process.finished.connect(
+            lambda code, _status: self._on_egs_operation_finished(
+                app_id, action, code
+            )
+        )
+        self.egs_process = process
+        self.egs_active_game = game
+        self.egs_download_output = ""
+        self.egs_download_total = 0.0
+        self.downloadOverallProgress.setValue(0)
+        self.downloadCancelButton.setEnabled(True)
+        self.switchTab(6)
+        process.start()
+
     def _cancel_gog_download(self) -> None:
-        if self.gog_process is None:
+        process = self.gog_process or self.egs_process
+        if process is None:
             return
-        process = self.gog_process
         self.downloadCancelButton.setEnabled(False)
         self.downloadActiveDetails.setText(_("Cancel"))
         process.terminate()
@@ -585,13 +842,13 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             process.kill()
 
     def _append_download_row(
-        self, table: QTableWidget, game: dict, action: str
+        self, table: QTableWidget, game: dict, action: str, store: str = "GOG"
     ) -> tuple[int, QLabel]:
         row = table.rowCount()
         table.insertRow(row)
         game_cell, details_label = self._create_download_game_cell(game)
         table.setCellWidget(row, 0, game_cell)
-        values = (datetime.now().strftime("%H:%M:%S"), action, "GOG")
+        values = (datetime.now().strftime("%H:%M:%S"), action, store)
         for column, value in enumerate(values, 1):
             table.setItem(row, column, QTableWidgetItem(value))
         table.setRowHeight(row, self.theme.downloadsTableRowHeight)
@@ -670,6 +927,57 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         if details:
             self._update_active_download_details(details)
 
+    def _read_egs_download_output(self) -> None:
+        if self.egs_process is None:
+            return
+        output = bytes(
+            self.egs_process.readAllStandardOutput().data()
+        ).decode(errors="replace")
+        self.egs_download_output = (self.egs_download_output + output)[-4096:]
+        total = re.findall(r"Download size:\s+([\d.]+)\s+MiB", output)
+        if total:
+            self.egs_download_total = float(total[-1])
+        verification = re.findall(
+            r"Verification progress:\s*\d+/\d+\s+\(([\d.]+)%\)"
+            r"(?:\s+\[([\d.]+)\s+MiB/s\])?",
+            self.egs_download_output,
+        )
+        if verification:
+            percent, speed = verification[-1]
+            self.downloadOverallProgress.setValue(min(100, int(float(percent))))
+            details = [f"{percent}%"]
+            if speed:
+                details.append(f"{speed} MiB/s")
+            self._update_active_download_details(details)
+        downloaded = re.findall(
+            r"Downloaded:\s+([\d.]+)\s+MiB", self.egs_download_output
+        )
+        if downloaded and self.egs_download_total > 0:
+            progress = float(downloaded[-1]) / self.egs_download_total * 100
+            self.downloadOverallProgress.setValue(min(100, int(progress)))
+        download_speeds = re.findall(
+            r"Download\t-\s+(\S+)\s+MiB", self.egs_download_output
+        )
+        disk_speeds = re.findall(
+            r"Disk\t-\s+(\S+)\s+MiB", self.egs_download_output
+        )
+        eta = re.findall(r"ETA:\s+(\d{2}:\d{2}:\d{2})", self.egs_download_output)
+        if download_speeds:
+            self.downloadSpeedLabel.setText(
+                _("Download: {0} MiB/s").format(download_speeds[-1])
+            )
+        if disk_speeds:
+            self.diskSpeedLabel.setText(
+                _("Disk: {0} MiB/s").format(disk_speeds[-1])
+            )
+        details = [f"{downloaded[-1]} MiB"] if downloaded else []
+        if eta:
+            details.append(_("ETA: {0}").format(eta[-1]))
+        if details:
+            self._update_active_download_details(details)
+        elif output.strip():
+            self.downloadActiveDetails.setText(output.strip().splitlines()[-1])
+
     def _update_active_download_details(self, details: list[str]) -> None:
         self.downloadActiveDetails.setText("  ·  ".join(details))
 
@@ -712,6 +1020,49 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
             self.downloadQueuedTable.removeRow(0)
             self._update_download_table_height(self.downloadQueuedTable)
             self._install_gog_game(next_game)
+
+    def _on_egs_download_finished(
+        self, code: int, _status: QProcess.ExitStatus
+    ) -> None:
+        game = self.egs_active_game
+        app_id = str(game["app_id"])
+        self.downloadActiveHeading.setVisible(False)
+        self.downloadActiveCard.setVisible(False)
+        completed_action = _("Installed") if code == 0 else _("Failed")
+        _row, completed_details = self._append_download_row(
+            self.downloadCompletedTable, game, completed_action, "Epic Games"
+        )
+        if code == 0:
+            self._update_installed_egs_detail(app_id)
+            self.loadGames(force_load=True)
+        else:
+            error = self._get_egs_download_error()
+            completed_details.setText(error)
+            logger.error("Epic download failed for %s: %s", app_id, error)
+        process = self.egs_process
+        self.egs_process = None
+        if process is not None:
+            process.deleteLater()
+        self.downloadOverallProgress.setValue(0)
+        self.downloadSpeedLabel.setText(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel.setText(_("Disk: ") + "\u2014")
+
+    def _finish_egs_visible_operation(self, action: str, success: bool) -> None:
+        game = self.egs_active_game
+        display_action = "EOS Overlay" if action.startswith("eos-") else action
+        self.downloadActiveHeading.setVisible(False)
+        self.downloadActiveCard.setVisible(False)
+        _row, details = self._append_download_row(
+            self.downloadCompletedTable, game, display_action, "Epic Games"
+        )
+        details.setText(_("Completed") if success else self._get_egs_download_error())
+        process = self.egs_process
+        self.egs_process = None
+        if process is not None:
+            process.deleteLater()
+        self.downloadOverallProgress.setValue(0)
+        self.downloadSpeedLabel.setText(_("Downloading: ") + "\u2014")
+        self.diskSpeedLabel.setText(_("Disk: ") + "\u2014")
 
     def _start_gog_support_setup(self, app_id: str, button=None) -> None:
         if getattr(self, "gog_support_workers", []):
@@ -792,6 +1143,14 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         useful = [line for line in lines if line and "[PROGRESS]" not in line]
         return useful[-1] if useful else _("Download process failed")
 
+    def _get_egs_download_error(self) -> str:
+        lines = [line.strip() for line in self.egs_download_output.splitlines()]
+        errors = [line for line in lines if "ERROR" in line.upper()]
+        if errors:
+            return errors[-1]
+        useful = [line for line in lines if line]
+        return useful[-1] if useful else _("Download process failed")
+
     def _update_installed_gog_detail(self, app_id: str) -> None:
         install_uri = f"gog://install/{app_id}"
         if self.current_exec_line != install_uri:
@@ -802,5 +1161,18 @@ class MainWindowGOGTabMixin(_MainWindowTypingBase):
         if source is None or source[0] != "game":
             return
         source[1]["exec_line"] = f"gog://launch/{app_id}"
+        self.current_exec_line = source[1]["exec_line"]
+        self.detail_page_manager._reopen_current_detail_page()
+
+    def _update_installed_egs_detail(self, app_id: str) -> None:
+        install_uri = f"egs://install/{app_id}"
+        if self.current_exec_line != install_uri:
+            return
+        if self.stackedWidget.currentWidget() is not self.currentDetailPage:
+            return
+        source = self.detail_page_manager._current_detail_source
+        if source is None or source[0] != "game":
+            return
+        source[1]["exec_line"] = f"egs://launch/{app_id}"
         self.current_exec_line = source[1]["exec_line"]
         self.detail_page_manager._reopen_current_detail_page()
