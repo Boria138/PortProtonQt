@@ -7,9 +7,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"Report-Msgid-Bugs-To: support@linux-gaming.ru\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-08-16 16:24+0000\n"
+"PO-Revision-Date: 2026-08-28 22:26+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -2226,7 +2226,7 @@ msgid "Hide Auto-Install Tab"
 msgstr "Tab „Automatische Installation“ ausblenden"
 
 msgid "Hide Control Hints"
-msgstr ""
+msgstr "Steuerungshinweise ausblenden"
 
 msgid "Enable UI Sounds"
 msgstr "Benutzeroberflächen-Sounds aktivieren"
@@ -2464,9 +2464,8 @@ msgstr "Theme auswählen:"
 msgid "Apply Theme"
 msgstr "Theme anwenden"
 
-#, fuzzy
 msgid "Delete Theme"
-msgstr "Theme auswählen:"
+msgstr "Theme löschen"
 
 msgid "No link"
 msgstr "Kein Link"
@@ -2480,13 +2479,12 @@ msgstr "Autor:"
 msgid "Link:"
 msgstr "Link:"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Delete theme '{0}'?"
-msgstr "Theme auswählen:"
+msgstr "Theme '{0}' löschen?"
 
-#, fuzzy
 msgid "Failed to delete theme."
-msgstr "Laden der Themes fehlgeschlagen"
+msgstr "Das Theme konnte nicht gelöscht werden."
 
 msgid "Prefix:"
 msgstr "Prefix:"
