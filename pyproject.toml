@@ -26,17 +26,17 @@ dependencies = [
     "babel>=2.18.0",
     "evdev>=1.9.3",
     "libarchive-c>=5.3",
-    "orjson>=3.11.8",
-    "pillow>=12.2.0",
+    "orjson>=3.12.0",
+    "pillow>=12.3.0",
     "psutil>=7.2.2",
-    "pyside6>=6.11.0",
+    "pyside6>=6.11.2",
     "rapidfuzz>=3.14.5",
     "qrcode>=8.2",
-    "requests>=2.33.1",
-    "tqdm>=4.67.3",
+    "requests>=2.34.2",
+    "tqdm>=4.70.0",
     "vdf>=3.4",
     "websocket-client>=1.9.0",
-    "dbus-fast>=5.0.4",
+    "dbus-fast>=5.0.22",
     "pefile>=2024.8.26",
 ]
 
@@ -51,10 +51,10 @@ package = true
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.5.1",
-    "pyright>=1.1.408",
-    "pytest>=8.0.0",
-    "pytest-mock>=3.14.0",
+    "pre-commit>=4.6.2",
+    "pyright>=1.1.411",
+    "pytest>=8.4.2",
+    "pytest-mock>=3.15.1",
 ]
 
 [tool.ruff.lint]
