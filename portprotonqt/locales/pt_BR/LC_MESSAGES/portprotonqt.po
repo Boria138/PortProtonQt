@@ -1201,8 +1201,8 @@ msgstr "Valor"
 msgid "Description"
 msgstr "Descrição"
 
-msgid "Open PPDB"
-msgstr "Abrir PPDB"
+msgid "Edit PPDB"
+msgstr "Editar PPDB"
 
 msgid "Clear PPDB"
 msgstr "Limpar PPDB"

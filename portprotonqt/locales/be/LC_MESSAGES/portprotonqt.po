@@ -1122,7 +1122,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-msgid "Open PPDB"
+msgid "Edit PPDB"
 msgstr ""
 
 msgid "Clear PPDB"

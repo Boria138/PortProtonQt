@@ -33,6 +33,11 @@ cp /usr/lib/udev/rules.d/60-portprotonqt.rules ./AppDir/etc/udev/rules.d
 mkdir -p ./AppDir/share
 cp -r /usr/share/portproton ./AppDir/share
 
+# Add MIME definitions for user-level AppImage integration
+mkdir -p ./AppDir/share/mime/packages
+cp /usr/share/mime/packages/ru.linux_gaming.PortProtonQt.xml \
+	./AppDir/share/mime/packages
+
 # QSoundEffect only needs PCM WAV and PulseAudio. Remove the optional native
 # PipeWire path and FFmpeg media backend before quick-sharun scans Qt plugins.
 pacman -Rdd --noconfirm libpipewire qt6-multimedia-ffmpeg
@@ -46,6 +51,7 @@ test -n "$GAMEPAD_LIBRARY"
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
 	/usr/bin/update-desktop-database \
+	/usr/bin/update-mime-database \
 	/usr/bin/vk_gpu_info \
 	"$GAMEPAD_LIBRARY" \
 	/usr/lib/libQt6Core.so* \

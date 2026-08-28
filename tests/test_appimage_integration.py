@@ -28,6 +28,12 @@ def test_integrate_appimage_installs_handlers(
         f"Icon={appimage_integration.APP_ID}\n",
         encoding="utf-8",
     )
+    mime_source = appdir / "share/mime/packages"
+    mime_source.mkdir(parents=True)
+    (mime_source / appimage_integration.MIME_PACKAGE_NAME).write_text(
+        "<mime-info/>",
+        encoding="utf-8",
+    )
     monkeypatch.setenv("APPIMAGE", str(source))
     monkeypatch.setenv("APPDIR", str(appdir))
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -143,7 +149,13 @@ def test_integrate_appimage_installs_handlers(
         ]
         for mime_type in appimage_integration.WINDOWS_MIME_TYPES.rstrip(";").split(";")
     ]
-    assert commands == mime_commands + [
+    installed_mime = (
+        tmp_path / "data/mime/packages" / appimage_integration.MIME_PACKAGE_NAME
+    )
+    assert installed_mime.read_text(encoding="utf-8") == "<mime-info/>"
+    assert commands == [
+        ["update-mime-database", str(tmp_path / "data/mime")],
+    ] + mime_commands + [
         ["update-desktop-database", str(applications)]
     ]
 

@@ -26,7 +26,7 @@ jobs:
       arch:     ${{ steps.check.outputs.arch }}
       debian:   ${{ steps.check.outputs.debian }}
     steps:
-      - uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
@@ -80,7 +80,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.appimage == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: archlinux:base-devel@sha256:212b1e518e94ee9c52be55e8a32da75fcf11e7b5610b80b49479e67880102406
+      image: archlinux:base-devel@sha256:68bfc3b0d277b08a99101dc9b94aaa03e5ae70cf1b4fb965c03b2b87b915760d
       options: --privileged --device /dev/fuse
     steps:
       - name: Prepare container
@@ -89,10 +89,10 @@ jobs:
           pacman -Sy --noconfirm archlinux-keyring
           pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync patchelf
 
-      - uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'pull_request'
 
-      - uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -149,11 +149,11 @@ jobs:
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
       - name: Checkout PR
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -185,7 +185,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.arch == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: archlinux:base-devel@sha256:212b1e518e94ee9c52be55e8a32da75fcf11e7b5610b80b49479e67880102406
+      image: archlinux:base-devel@sha256:68bfc3b0d277b08a99101dc9b94aaa03e5ae70cf1b4fb965c03b2b87b915760d
 
     steps:
       - name: Prepare container
@@ -213,11 +213,11 @@ jobs:
           chown user -R ..
 
       - name: Checkout PR
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -251,7 +251,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.debian == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a
+      image: debian:trixie-20260824@sha256:f324c7ff54321e8d9c588493a20244965938ce0aa50bbd1022d38010e9ffc4b1
       options: --privileged
 
     steps:
@@ -263,11 +263,11 @@ jobs:
                              pkgconf python3
 
       - name: Checkout PR
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}

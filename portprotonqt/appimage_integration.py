@@ -15,6 +15,7 @@ from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 
 APP_ID = "ru.linux_gaming.PortProtonQt"
+MIME_PACKAGE_NAME = f"{APP_ID}.xml"
 DESKTOP_DATABASE_TIMEOUT = 10
 EXECUTABLE_MODE = 0o755
 WINDOWS_MIME_TYPES = (
@@ -141,6 +142,27 @@ def _get_appimage_metadata(appdir: Path) -> tuple[Path, Path]:
     return desktop, icon
 
 
+def _install_mime_package(appdir: Path, data_home: Path) -> None:
+    source = _find_appimage_asset(
+        appdir,
+        (
+            f"share/mime/packages/{MIME_PACKAGE_NAME}",
+            f"usr/share/mime/packages/{MIME_PACKAGE_NAME}",
+        ),
+    )
+    if not source:
+        raise FileNotFoundError("AppImage MIME metadata is incomplete")
+    mime_dir = data_home / "mime"
+    packages_dir = mime_dir / "packages"
+    packages_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, packages_dir / MIME_PACKAGE_NAME)
+    subprocess.run(
+        ["update-mime-database", str(mime_dir)],
+        check=True,
+        timeout=DESKTOP_DATABASE_TIMEOUT,
+    )
+
+
 def integrate_appimage() -> Path:
     """Install the running AppImage and its desktop handlers for this user."""
     source = Path(os.environ["APPIMAGE"]).expanduser()
@@ -171,6 +193,7 @@ def integrate_appimage() -> Path:
     _remove_existing_integration(applications_dir, icon_dir)
     shutil.copy2(resolved_icon, icon)
     _install_desktop_files(desktop_source, applications_dir, destination)
+    _install_mime_package(appdir, data_home)
     _set_default_mime_handlers()
     try:
         subprocess.run(

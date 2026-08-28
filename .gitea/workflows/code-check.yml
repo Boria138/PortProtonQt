@@ -22,7 +22,7 @@ jobs:
     name: Check code
     runs-on: ubuntu-latest
     container:
-      image: archlinux:base-devel@sha256:212b1e518e94ee9c52be55e8a32da75fcf11e7b5610b80b49479e67880102406
+      image: archlinux:base-devel@sha256:68bfc3b0d277b08a99101dc9b94aaa03e5ae70cf1b4fb965c03b2b87b915760d
     steps:
       - name: Install system dependencies
         run: |
@@ -30,7 +30,7 @@ jobs:
           pacman -S --noconfirm --needed git nodejs npm mesa libarchive sdl3 pyside6 qt6-svg qt6-imageformats uv
           pacman -Scc --noconfirm
 
-      - uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Sync dependencies into venv
         run: uv sync --all-extras --dev
