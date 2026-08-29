@@ -167,6 +167,25 @@ def test_extract_auth_code_accepts_legendary_response() -> None:
     assert EGSAPI.extract_auth_code("https://example.com") == ""
 
 
+def test_description_enrichment_reports_library_progress(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    api = EGSAPI()
+    games = [
+        {"app_id": "one", "title": "One", "namespace": "one"},
+        {"app_id": "two", "title": "Two", "namespace": "two"},
+    ]
+    progress = []
+    monkeypatch.setattr(api, "load_library", lambda: [])
+    monkeypatch.setattr(api, "_get_store_description", lambda _game: ("About", "en-US"))
+
+    api._enrich_descriptions(games, lambda completed, total: progress.append(
+        (completed, total)
+    ))
+
+    assert progress == [(1, 2), (2, 2)]
+
+
 def test_get_launch_target_uses_legendary_install_record(tmp_path: Path) -> None:
     api = EGSAPI()
     api.config_dir = tmp_path / "legendary"

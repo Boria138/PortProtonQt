@@ -783,6 +783,18 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
     ]
 
 
+def test_egs_library_progress_shows_game_count(monkeypatch: MonkeyPatch) -> None:
+    values = []
+    window = SimpleNamespace(
+        egsAccountStatus=SimpleNamespace(setText=values.append),
+    )
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
+
+    GOGMixin._on_egs_library_progress(cast(Any, window), 7, 12)
+
+    assert values == ["Refreshing Epic library… 7/12"]
+
+
 def test_gog_support_removes_finished_process_before_launching_game() -> None:
     process = SimpleNamespace(poll=lambda: 0)
     launches = []
