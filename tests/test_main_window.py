@@ -500,6 +500,39 @@ def test_source_corner_refresh_updates_ribbon_colors() -> None:
     assert corner._fold_color.name() == "#dddddd"
 
 
+def test_installed_filter_reuses_loaded_store_games(monkeypatch: MonkeyPatch) -> None:
+    installed = ("Installed", "", "", "1", "", "egs://launch/1")
+    uninstalled = ("Uninstalled", "", "", "2", "", "egs://install/2")
+    manager = SimpleNamespace(
+        games=[], filtered_games=[], _build_search_indices=MagicMock(),
+        update_game_grid=MagicMock(),
+    )
+    window = cast(Any, SimpleNamespace(
+        searchEdit=SimpleNamespace(clear=MagicMock()),
+        games=[installed, uninstalled],
+        game_library_manager=manager,
+        _loaded_library_cache={"egs": [installed, uninstalled]},
+        loadGames=MagicMock(),
+    ))
+    monkeypatch.setattr(game_config, "set_only_installed", lambda _checked: None)
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "egs")
+
+    LibraryMixin._on_only_installed_changed(window, True)
+
+    assert manager.games == [installed]
+    assert manager.filtered_games == [installed]
+    manager._build_search_indices.assert_called_once_with([installed])
+    manager.update_game_grid.assert_called_once_with(
+        is_filter=True, focus_first_card=False
+    )
+
+    LibraryMixin._on_only_installed_changed(window, False)
+
+    assert manager.games == [installed, uninstalled]
+    assert manager.filtered_games == [installed, uninstalled]
+    window.loadGames.assert_not_called()
+
+
 def test_library_source_filter_stays_top_aligned_without_checkbox(
     monkeypatch: MonkeyPatch,
 ) -> None:
