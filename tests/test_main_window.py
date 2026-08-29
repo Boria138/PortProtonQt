@@ -2280,6 +2280,50 @@ def test_system_action_uses_loginctl_with_elogind(monkeypatch: MonkeyPatch) -> N
     assert calls == [("loginctl", ["suspend"])]
 
 
+@mark.parametrize(
+    ("command", "expected"),
+    [
+        (
+            "/path/return script --user player",
+            ("/path/return", ["script", "--user", "player"]),
+        ),
+        (
+            '"/usr/bin/scripts/return to desktop" --user player',
+            ("/usr/bin/scripts/return to desktop", ["--user", "player"]),
+        ),
+        (
+            'python "/usr/bin/scripts/return to desktop.py" --user player',
+            ("python", ["/usr/bin/scripts/return to desktop.py", "--user", "player"]),
+        ),
+    ],
+)
+def test_return_to_desktop_runs_configured_command(
+    monkeypatch: MonkeyPatch,
+    command: str,
+    expected: tuple[str, list[str]],
+) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setenv("PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT", command)
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.returnToDesktop(window)
+
+    assert calls == [expected]
+
+
+def test_return_to_desktop_rejects_invalid_command(monkeypatch: MonkeyPatch) -> None:
+    process = SimpleNamespace(startDetached=MagicMock())
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setenv("PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT", 'bash "unterminated')
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.returnToDesktop(window)
+
+    process.startDetached.assert_not_called()
+
+
 def test_logout_uses_current_session_id(monkeypatch: MonkeyPatch) -> None:
     calls: list[tuple[str, list[str]]] = []
     process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
