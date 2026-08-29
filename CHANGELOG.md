@@ -14,6 +14,9 @@
 - Добавлена сборка Fedora 45
 - Автоматическая загрузка PPDB с linux-gaming.ru теперь отключена по умолчанию
 - Кнопка «Открыть PPDB» переименована в «Редактировать PPDB», чтобы не путать открытие файла с его запуском
+- Обновлён перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
+- Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
+- Обновлён перевод на Русский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/ru/`
 
 ### Fixed
 
@@ -21,6 +24,9 @@
 - Исправлено открытие `.ppdb` на разделах с битом исполнения у всех файлов
 
 ### Contributors
+- @rogerio-mattos
+- @Rubin13
+- @adem4ik
 
 ---
 
