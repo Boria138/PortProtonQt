@@ -70,6 +70,34 @@ def test_normalize_game_uses_epic_metadata() -> None:
     }
 
 
+def test_refresh_library_skips_mobile_only_games(
+    tmp_path: Path, monkeypatch: MonkeyPatch,
+) -> None:
+    api = EGSAPI()
+    api.library_path = tmp_path / "library.json"
+    games = [
+        {
+            "app_name": "MobileGame",
+            "app_title": "Mobile Game",
+            "metadata": {"releaseInfo": [{"platform": ["Android", "iOS"]}]},
+        },
+        {
+            "app_name": "DesktopGame",
+            "app_title": "Desktop Game",
+            "metadata": {"releaseInfo": [{"platform": ["Windows"]}]},
+        },
+    ]
+    result = SimpleNamespace(returncode=0, stdout=orjson.dumps(games), stderr=b"")
+    monkeypatch.setattr(api, "update_legendary", lambda: "/bin/legendary")
+    monkeypatch.setattr(api, "build_command", lambda args: ["legendary", *args])
+    monkeypatch.setattr("portprotonqt.egs_api.subprocess.run", lambda *args, **kwargs: result)
+    monkeypatch.setattr(api, "_enrich_descriptions", lambda *_args: None)
+
+    library = api.refresh_library()
+
+    assert [game["app_id"] for game in library] == ["DesktopGame"]
+
+
 def test_store_description_uses_epic_product_page(monkeypatch: MonkeyPatch) -> None:
     api = EGSAPI()
     graphql_response = SimpleNamespace(

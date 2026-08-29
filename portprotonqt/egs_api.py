@@ -215,7 +215,18 @@ class EGSAPI:
         raw_games = orjson.loads(result.stdout)
         if not isinstance(raw_games, list):
             raise OSError("Legendary returned an invalid Epic library")
-        games = [self._normalize_game(game) for game in raw_games]
+        games = []
+        for game in raw_games:
+            metadata = game.get("metadata", {})
+            release_info = metadata.get("releaseInfo", [])
+            mobile_only = bool(release_info) and all(
+                info.get("platform")
+                and all(platform in {"Android", "iOS"}
+                        for platform in info["platform"])
+                for info in release_info
+            )
+            if not mobile_only:
+                games.append(self._normalize_game(game))
         games = [game for game in games if game.get("app_id")]
         self._enrich_descriptions(games, progress_callback)
         self._save_json(self.library_path, games)
