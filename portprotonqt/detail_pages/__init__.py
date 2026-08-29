@@ -86,6 +86,9 @@ class DetailPageManager:
         self._gog_size_requests: dict[
             str, tuple[QProcess, list[list[Callable[[], QLabel | None]]]]
         ] = {}
+        self._egs_size_requests: dict[
+            str, tuple[QProcess, list[list[Callable[[], QLabel | None]]]]
+        ] = {}
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
@@ -310,6 +313,7 @@ class DetailPageManager:
             game_info_layout.addLayout(first_row)
 
         self._setup_gog_size_data(game_data, game_info_layout)
+        self._setup_egs_size_data(game_data, game_info_layout)
 
         hltb_layout = QHBoxLayout()
         hltb_layout.setSpacing(10)
@@ -364,6 +368,75 @@ class DetailPageManager:
             lambda code, _status: self._finish_gog_size_request(app_id, code)
         )
         process.start()
+
+    def _setup_egs_size_data(
+        self, game_data: dict, game_info_layout: QVBoxLayout
+    ) -> None:
+        exec_line = str(game_data.get("exec_line", ""))
+        if str(game_data.get("game_source", "")).lower() != "egs":
+            return
+        if not exec_line.startswith("egs://install/"):
+            return
+        row = QHBoxLayout()
+        values = []
+        for title_text in (_("Download"), _("Size")):
+            title = QLabel(title_text.upper())
+            title.setStyleSheet(self.main_window.theme.LAST_LAUNCH_TITLE_STYLE)
+            value = QLabel("—")
+            value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
+            row.addWidget(title)
+            row.addWidget(value)
+            row.addSpacing(30)
+            values.append(weakref.ref(value))
+        game_info_layout.addLayout(row)
+        app_id = exec_line.rsplit("/", 1)[-1]
+        api = self.main_window.egs_api
+        cached = api.get_cached_download_sizes(app_id)
+        if cached is not None:
+            self._set_gog_size_values(values, cached)
+            return
+        request = self._egs_size_requests.get(app_id)
+        if request is not None:
+            request[1].append(values)
+            return
+        try:
+            command = api.build_command(["info", app_id, "--json", "--platform", "Windows"])
+        except (FileNotFoundError, OSError) as error:
+            logger.warning("Failed to get EGS download size: %s", error)
+            return
+        process = QProcess(self.main_window)
+        process.setProgram(command[0])
+        process.setArguments(command[1:])
+        environment = QProcessEnvironment.systemEnvironment()
+        environment.insert("LEGENDARY_CONFIG_PATH", str(api.config_dir))
+        process.setProcessEnvironment(environment)
+        self._egs_size_requests[app_id] = (process, [values])
+        process.finished.connect(
+            lambda code, _status: self._finish_egs_size_request(app_id, code)
+        )
+        process.start()
+
+    def _finish_egs_size_request(self, app_id: str, code: int) -> None:
+        request = self._egs_size_requests.pop(app_id, None)
+        if request is None:
+            return
+        process, value_groups = request
+        if code != 0:
+            logger.warning("legendary info exited with code %s", code)
+            process.deleteLater()
+            return
+        try:
+            sizes = self.main_window.egs_api.parse_download_sizes(
+                bytes(process.readAllStandardOutput().data())
+            )
+        except (ValueError, TypeError) as error:
+            logger.warning("Failed to parse EGS download size: %s", error)
+            process.deleteLater()
+            return
+        self.main_window.egs_api.save_download_sizes(app_id, sizes)
+        for value_refs in value_groups:
+            self._set_gog_size_values(value_refs, sizes)
+        process.deleteLater()
 
     def _finish_gog_size_request(self, app_id: str, code: int) -> None:
         request = self._gog_size_requests.pop(app_id, None)
@@ -531,7 +604,9 @@ class DetailPageManager:
 
         current_exe = self._get_current_exe(exec_line)
         play_button = self._create_play_button(exec_line, current_exe)
-        if str(game_source).lower() == "gog" and exec_line.startswith("gog://install/"):
+        source = str(game_source).lower()
+        install_uri = exec_line.startswith(f"{source}://install/")
+        if source in {"gog", "egs"} and install_uri:
             play_button.setText(_("Install"))
             play_button.setIcon(
                 self.main_window.theme_manager.get_icon("update", as_path=True)
@@ -570,7 +645,7 @@ class DetailPageManager:
             )
             buttons_layout.addWidget(open_folder_button)
         elif (
-            str(game_source).lower() != "gog"
+            str(game_source).lower() not in {"gog", "egs"}
             and not self._has_game_shortcut(game_name)
         ):
             add_button = self._make_action_button(
@@ -588,21 +663,26 @@ class DetailPageManager:
         if str(game_source).lower() == "portproton":
             self._add_portproton_buttons(buttons_layout, exec_line)
         elif (
-            str(game_source).lower() == "gog"
+            source in {"gog", "egs"}
             and appid
-            and exec_line.startswith("gog://launch/")
+            and exec_line.startswith(f"{source}://launch/")
         ):
-            gog_exe = self.main_window.gog_api.get_launch_target(str(appid))
-            if not gog_exe:
+            store_api = (
+                self.main_window.gog_api if source == "gog"
+                else self.main_window.egs_api
+            )
+            store_exe = store_api.get_launch_target(str(appid))
+            if not store_exe:
                 return buttons_layout
-            self.main_window.gog_api.ensure_launch_parameters(str(appid))
+            if source == "gog":
+                store_api.ensure_launch_parameters(str(appid))
             settings_button = self._make_action_button(
                 _("Settings"),
                 self.main_window.theme_manager.get_icon("settings", as_path=True),
             )
             settings_button.clicked.connect(
                 lambda: self.main_window.open_exe_settings(
-                    gog_exe, game_source="gog",
+                    store_exe, game_source=source,
                 )
             )
             buttons_layout.addWidget(settings_button)
@@ -610,7 +690,9 @@ class DetailPageManager:
                 _("Create Log"),
                 self.main_window.theme_manager.get_icon("edit", as_path=True),
             )
-            log_button.clicked.connect(lambda: self.toggleDebugLog(gog_exe, log_button))
+            log_button.clicked.connect(
+                lambda: self.toggleDebugLog(store_exe, log_button)
+            )
             buttons_layout.addWidget(log_button)
             self._debug_log_button = log_button
             folder_button = self._make_action_button(
@@ -618,7 +700,7 @@ class DetailPageManager:
                 self.main_window.theme_manager.get_icon("search", as_path=True),
             )
             folder_button.clicked.connect(
-                lambda: self._open_executable_folder(gog_exe)
+                lambda: self._open_executable_folder(store_exe)
             )
             buttons_layout.addWidget(folder_button)
         elif str(game_source).lower() == "steam" and appid:

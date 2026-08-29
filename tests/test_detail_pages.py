@@ -574,6 +574,36 @@ def test_non_steam_without_shortcut_shows_add_not_edit(monkeypatch) -> None:
     assert add_count == 1
 
 
+def test_egs_install_detail_shows_install_button(monkeypatch) -> None:
+    monkeypatch.setattr("portprotonqt.detail_pages._", lambda text: text)
+    manager = _make_manager_with_shortcut_mock(has_shortcut=False, monkeypatch=monkeypatch)
+    play_button = cast(Any, manager._create_play_button).return_value
+
+    manager._create_game_buttons_layout({
+        "game_source": "egs",
+        "exec_line": "egs://install/doom64",
+        "appid": "doom64",
+        "name": "DOOM 64",
+    })
+
+    play_button.setText.assert_called_once_with("Install")
+
+
+def test_installed_egs_detail_shows_store_controls(monkeypatch) -> None:
+    monkeypatch.setattr("portprotonqt.detail_pages._", lambda text: text)
+    manager = _make_manager_with_shortcut_mock(has_shortcut=False, monkeypatch=monkeypatch)
+    manager.main_window.egs_api.get_launch_target.return_value = "/games/DOOM64.exe"
+
+    manager._create_game_buttons_layout({
+        "game_source": "egs",
+        "exec_line": "egs://launch/doom64",
+        "appid": "doom64",
+        "name": "DOOM 64",
+    })
+
+    assert _get_added_buttons(manager) == ["Settings", "Create Log", "Open Folder"]
+
+
 def test_steam_with_appid_shows_edit_not_add(monkeypatch) -> None:
     manager = _make_manager_with_shortcut_mock(has_shortcut=False, monkeypatch=monkeypatch)
     manager._create_game_buttons_layout({

@@ -8,9 +8,14 @@ import subprocess
 import tempfile
 import re
 import time
+from datetime import datetime
+from pathlib import Path
 from queue import Empty, Queue
 from threading import Thread
 from typing import TYPE_CHECKING
+
+import psutil
+
 from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail, get_exe_icon_cache_path
 from portprotonqt.dialogs import FileExplorer, ExeSettingsDialog
@@ -21,6 +26,7 @@ from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, remove_empty_custom_data_dirs
 from portprotonqt.gog_api import GOGAPI
+from portprotonqt.egs_api import EGSAPI
 from portprotonqt.debug_utils import get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager
@@ -67,7 +73,7 @@ from portprotonqt.sound_manager import SoundManager
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin
-from portprotonqt.tabs.gog_tab import GOGLibraryWorker, MainWindowGOGTabMixin
+from portprotonqt.tabs.download_tab import GOGLibraryWorker, MainWindowDownloadTabMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.theme_tab import MainWindowThemeTabMixin
@@ -76,12 +82,13 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QMessageBox, QApplication, QPushButton, QCheckBox)
-from PySide6.QtCore import Qt, QEvent, QEventLoop, QUrl, Signal, QTimer, Slot, QProcess, QThread, QFileSystemWatcher, QObject
+from PySide6.QtCore import Qt, QEvent, QEventLoop, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QThread, QFileSystemWatcher, QObject
 from PySide6.QtGui import QColor, QDesktopServices, QHideEvent, QShowEvent, QGuiApplication
 from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+
+STORE_LAUNCH_GRACE_SECONDS = 10
 
 if TYPE_CHECKING:
     from portprotonqt.appimage_updater import AppImageUpdateWorker
@@ -144,7 +151,7 @@ class MainWindow(
     MainWindowControlHintsMixin,
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
-    MainWindowGOGTabMixin,
+    MainWindowDownloadTabMixin,
     MainWindowSettingsTabMixin,
     MainWindowSystemTabMixin,
     MainWindowThemeTabMixin,
@@ -375,6 +382,7 @@ class MainWindow(
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
         self.downloader = Downloader(max_workers=4)
         self.gog_api = GOGAPI()
+        self.egs_api = EGSAPI()
         self.portproton_api = PortProtonAPI(self.downloader)
         self.autoInstallCustomDataThread = None
 
@@ -961,18 +969,21 @@ class MainWindow(
             if callable(source_loader):
                 source_loader(lambda games: self.games_loaded.emit(games))
             elif display_filter == "favorites":
-                def on_all_games_favorites(portproton_games, steam_games, gog_games):
-                    games = [game for game in portproton_games + steam_games + gog_games if game[0] in favorites]
+                def on_all_games_favorites():
+                    games = [
+                        game for source in results.values() for game in source
+                        if game[0] in favorites
+                    ]
                     self.games_loaded.emit(games)
 
                 # Load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'gog': []}
-                completed = {'portproton': False, 'steam': False, 'gog': False}
+                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': []}
+                completed = dict.fromkeys(results, False)
 
                 def check_completion():
                     if all(completed.values()):
                         QApplication.processEvents()  # Keep UI responsive
-                        on_all_games_favorites(results['portproton'], results['steam'], results['gog'])
+                        on_all_games_favorites()
 
                 def portproton_callback(games):
                     results['portproton'] = games
@@ -991,23 +1002,30 @@ class MainWindow(
                     completed['gog'] = True
                     check_completion()
 
+                def egs_callback(games):
+                    results['egs'] = games
+                    completed['egs'] = True
+                    check_completion()
+
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
                 self._load_gog_games_async(gog_callback)
+                self._load_egs_games_async(egs_callback)
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'gog': []}
-                completed = {'portproton': False, 'steam': False, 'gog': False}
+                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': []}
+                completed = dict.fromkeys(results, False)
 
                 def on_all_games():
                     seen = set()
                     games = []
-                    for game in results['portproton'] + results['steam'] + results['gog']:
+                    for source_games in results.values():
+                        for game in source_games:
                         # Unique key: name + exec_line
-                        key = (game[0], game[5])
-                        if key not in seen:
-                            seen.add(key)
-                            games.append(game)
+                            key = (game[0], game[5])
+                            if key not in seen:
+                                seen.add(key)
+                                games.append(game)
                     QApplication.processEvents()  # Keep UI responsive
                     self.games_loaded.emit(games)
 
@@ -1033,10 +1051,16 @@ class MainWindow(
                     completed['gog'] = True
                     check_completion()
 
+                def egs_callback(games):
+                    results['egs'] = games
+                    completed['egs'] = True
+                    check_completion()
+
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
                 self._load_gog_games_async(gog_callback)
+                self._load_egs_games_async(egs_callback)
 
         # Run loading immediately to show status without delay
         start_loading()
@@ -1101,6 +1125,54 @@ class MainWindow(
             get_steam_game_info_async(
                 str(game.get("title", app_id)),
                 f"gog://launch/{app_id}",
+                lambda info, current_game=game: on_game_info(current_game, info),
+            )
+
+    def _load_egs_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
+        library = [game for game in self.egs_api.load_library() if game.get("app_id")]
+        only_installed = game_config.get_only_installed()
+        games = []
+        if not library:
+            callback(games)
+            return
+        from portprotonqt.time_utils import get_statistics_path
+        statistics_file = get_statistics_path()
+        processed_count = 0
+
+        def on_game_info(game: dict, steam_info: dict) -> None:
+            nonlocal processed_count
+            app_id = str(game["app_id"])
+            installed = self.egs_api.is_game_installed(app_id)
+            if not only_installed or installed:
+                target = self.egs_api.get_launch_target(app_id) if installed else None
+                description = str(game.get("description", ""))
+                if not description or description == str(game.get("title", "")):
+                    description = str(steam_info.get("description", ""))
+                playtime = get_playtime_for_exe(
+                    statistics_file, target, exact_path=True
+                ) if target else 0
+                playtime = playtime or 0
+                games.append((
+                    str(game.get("title", app_id)), description,
+                    str(game.get("cover", "")), app_id,
+                    steam_info.get("controller_support", ""),
+                    f"egs://{'launch' if installed else 'install'}/{app_id}",
+                    get_last_launch(f"egs-{app_id}") if target else _("Never"),
+                    format_playtime(playtime), steam_info.get("protondb_tier", ""),
+                    steam_info.get("anticheat_status", ""),
+                    get_last_launch_timestamp(f"egs-{app_id}") if target else 0,
+                    playtime, "egs", steam_info.get("anticheat_slug", ""),
+                    steam_info.get("ppdb_id", ""), steam_info.get("ppdb_rating", ""),
+                    steam_info.get("appid", ""),
+                ))
+            processed_count += 1
+            if processed_count == len(library):
+                callback(games)
+
+        for game in library:
+            get_steam_game_info_async(
+                str(game.get("title", game["app_id"])),
+                f"egs://launch/{game['app_id']}",
                 lambda info, current_game=game: on_game_info(current_game, info),
             )
 
@@ -1593,6 +1665,14 @@ class MainWindow(
             ):
                 game_data = dict(game_data)
                 game_data["exec_line"] = f"gog://launch/{app_id}"
+        if str(game_data.get("game_source", "")).lower() == "egs":
+            app_id = str(game_data.get("appid", ""))
+            if (
+                exec_line.startswith("egs://install/")
+                and self.egs_api.is_game_installed(app_id)
+            ):
+                game_data = dict(game_data)
+                game_data["exec_line"] = f"egs://launch/{app_id}"
         logger.debug(
             "Opening detail page for %s from stacked index %d",
             game_data.get("name", ""),
@@ -2138,10 +2218,26 @@ class MainWindow(
         if exec_line.startswith("gog://launch/"):
             app_id = exec_line.rsplit("/", 1)[-1]
             return str(self.gog_api.get_launch_target(app_id) or "")
+        if exec_line.startswith("egs://launch/"):
+            app_id = exec_line.rsplit("/", 1)[-1]
+            return str(self.egs_api.get_launch_target(app_id) or "")
         return extract_exec_target_path(exec_line) or ""
 
     def _has_running_game_process(self) -> bool:
-        return any(proc.poll() is None for proc in self.game_processes)
+        if any(proc.poll() is None for proc in self.game_processes):
+            return True
+        target = str(self.target_exe or "").lower()
+        if target:
+            for process in psutil.process_iter(attrs=["name"]):
+                try:
+                    if str(process.info.get("name") or "").lower() == target:
+                        return True
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        started = getattr(self, "game_start_time", None)
+        if started is None:
+            return False
+        return (datetime.now() - started).total_seconds() < STORE_LAUNCH_GRACE_SECONDS
 
     def _start_launch_output_reader(self, process: subprocess.Popen[str]) -> None:
         """Start background reader for PortProton launch output."""
@@ -2459,6 +2555,169 @@ class MainWindow(
         if game:
             self._install_gog_game(game)
 
+    def _handle_egs_game(self, exec_line: str, button=None) -> None:
+        action, app_id = exec_line.removeprefix("egs://").split("/", 1)
+        if action == "install" and self.egs_api.is_game_installed(app_id):
+            action = "launch"
+        if action == "launch":
+            self._launch_egs_game(app_id, button)
+            return
+        self._install_egs_game(app_id)
+
+    def _install_egs_game(self, app_id: str) -> None:
+        self._install_egs_download(app_id)
+
+    def _repair_egs_game(self, app_id: str) -> None:
+        self._start_egs_operation(
+            app_id, ["repair", app_id, "--skip-sdl", "-y"], _("Repair")
+        )
+
+    def _update_egs_game(self, app_id: str) -> None:
+        self._start_egs_operation(
+            app_id, ["update", app_id, "--platform", "Windows", "--skip-sdl", "-y"],
+            _("Update")
+        )
+
+    def _delete_egs_game(self, app_id: str) -> None:
+        self._start_egs_operation(
+            app_id, ["uninstall", app_id, "-y"], _("Delete")
+        )
+
+    def _import_egs_game(self, app_id: str) -> None:
+        selected_paths: list[str] = []
+        explorer = FileExplorer(
+            self, theme=self.theme, initial_path=str(Path.home() / "Games"),
+            directory_only=True,
+        )
+        explorer.setWindowTitle(_("Select Epic game folder"))
+        explorer.file_signal.file_selected.connect(selected_paths.append)
+        explorer.exec()
+        if selected_paths:
+            self._start_egs_operation(app_id, [
+                "import", app_id, selected_paths[0], "--with-dlcs",
+                "--platform", "Windows", "-y",
+            ], _("Import"))
+
+    def _start_egs_operation(
+        self, app_id: str, arguments: list[str], action: str
+    ) -> None:
+        if getattr(self, "egs_process", None) is not None:
+            QMessageBox.warning(self, _("Error"), _("Another Epic operation is running"))
+            return
+        try:
+            command = self.egs_api.build_command(arguments)
+        except OSError as error:
+            QMessageBox.warning(self, _("Error"), str(error))
+            return
+        game = next(
+            (item for item in self.egs_api.load_library()
+             if str(item.get("app_id", "")) == app_id),
+            {"app_id": app_id, "title": app_id, "cover": ""},
+        )
+        self._start_egs_visible_operation(game, command, action)
+
+    def _egs_process_environment(self) -> QProcessEnvironment:
+        environment = QProcessEnvironment.systemEnvironment()
+        environment.insert("LEGENDARY_CONFIG_PATH", str(self.egs_api.config_dir))
+        return environment
+
+    def _on_egs_operation_finished(
+        self, app_id: str, action: str, exit_code: int
+    ) -> None:
+        self._finish_egs_visible_operation(action, exit_code == 0)
+        if exit_code != 0:
+            logger.error(
+                "Epic %s failed for %s with code %s", action, app_id, exit_code
+            )
+            return
+        if action == "eos-install":
+            self._enable_egs_overlay(app_id)
+            return
+        self.loadGames(force_load=True)
+
+    def _enable_egs_overlay(self, app_id: str) -> None:
+        overlay_path = self.egs_api.data_dir / "eos_overlay"
+        install_record = self.egs_api.config_dir / "overlay_install.json"
+        if not install_record.is_file():
+            self._start_egs_operation(app_id, [
+                "eos-overlay", "install", "--path", str(overlay_path), "-y",
+            ], "eos-install")
+            return
+        target = self.egs_api.get_launch_target(app_id)
+        prefix_name = get_prefix_name(target)
+        if not self.portproton_location:
+            QMessageBox.warning(self, _("Error"), _("PortProton directory not found"))
+            return
+        prefix_path = Path(self.portproton_location) / "data/prefixes" / prefix_name
+        if not (prefix_path / "user.reg").is_file():
+            QMessageBox.warning(self, _("Error"), _("Wine prefix not found"))
+            return
+        action = (
+            "disable"
+            if self.egs_api.is_eos_overlay_enabled(prefix_path)
+            else "enable"
+        )
+        self._start_egs_operation(app_id, [
+            "eos-overlay", action, "--prefix", str(prefix_path),
+        ], f"eos-{action}")
+
+    def _is_egs_overlay_enabled(self, app_id: str) -> bool:
+        target = self.egs_api.get_launch_target(app_id)
+        if not target or not self.portproton_location:
+            return False
+        prefix_name = get_prefix_name(target)
+        prefix_path = Path(self.portproton_location) / "data/prefixes" / prefix_name
+        return self.egs_api.is_eos_overlay_enabled(prefix_path)
+
+    def _launch_egs_game(self, app_id: str, button=None) -> None:
+        target = self.egs_api.get_launch_target(app_id)
+        if not target:
+            QMessageBox.warning(self, _("Error"), _("Game not found."))
+            return
+        if not self.start_sh:
+            QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
+            return
+        target_name = os.path.basename(target)
+        if self.game_processes and self.target_exe == target_name:
+            self.stop_running_game(button)
+            return
+        if self.game_processes:
+            QMessageBox.warning(
+                self, _("Error"), _("Cannot launch game while another game is running")
+            )
+            return
+        try:
+            command = self.egs_api.build_command([
+                "launch", app_id, "--wine", self.start_sh[0],
+            ])
+            process = subprocess.Popen(
+                command, env=self.egs_api.get_environment(), shell=False,
+                preexec_fn=os.setsid, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True, errors="replace",
+            )
+        except OSError as error:
+            logger.error("Failed to launch Epic game %s: %s", app_id, error)
+            QMessageBox.warning(self, _("Error"), str(error))
+            return
+        SoundManager().play("game_launch")
+        self.game_processes.append(process)
+        self.target_exe = target_name
+        self.current_running_button = button
+        launch_time = datetime.now()
+        self.game_start_time = launch_time
+        self.game_start_exe = target
+        self.game_start_exact_path = True
+        save_last_launch(f"egs-{app_id}", launch_time)
+        self._update_last_launch_after_start(target, launch_time)
+        self._start_launch_output_reader(process)
+        self.input_manager.suspend_gamepad_polling()
+        self.checkProcessTimer = QTimer(self)
+        self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+        self.checkProcessTimer.start(500)
+        if button is not None:
+            button.setText(_("Stop"))
+            button.setIcon(self.theme_manager.get_icon("stop", as_path=True))
+
     def _launch_gog_game(
         self, app_id: str, button=None, play_sound: bool = True
     ) -> None:
@@ -2526,6 +2785,10 @@ class MainWindow(
 
         if exec_line.startswith("gog://"):
             self._handle_gog_game(exec_line, button)
+            return
+
+        if exec_line.startswith("egs://"):
+            self._handle_egs_game(exec_line, button)
             return
 
         # Handle PortProton games

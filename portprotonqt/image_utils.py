@@ -23,6 +23,7 @@ downloader = Downloader()
 logger = get_logger(__name__)
 COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl", ".svg")
 DEFAULT_ANIMATION_DELAY_MS = 100
+REMOTE_COVER_DOWNLOAD_TIMEOUT = 15
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
@@ -489,7 +490,11 @@ def load_pixmap_async(
                         finish_with(pixmap)
 
                     finish_with(load_fallback_pixmap())
-                    downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                    downloader.download_async(
+                        cover, local_path,
+                        timeout=REMOTE_COVER_DOWNLOAD_TIMEOUT,
+                        callback=on_downloaded,
+                    )
                     return
             except Exception as e:
                 logger.error(f"URL processing error {cover}: {e}")
@@ -524,7 +529,11 @@ def load_pixmap_async(
 
                 logger.info("Downloading SGDB cover for %s -> %s", app_name or "unknown", filename)
                 finish_with(load_fallback_pixmap())
-                downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                downloader.download_async(
+                    cover, local_path,
+                    timeout=REMOTE_COVER_DOWNLOAD_TIMEOUT,
+                    callback=on_downloaded,
+                )
                 return
 
             except Exception as e:
@@ -555,7 +564,11 @@ def load_pixmap_async(
                     finish_with(pixmap)
 
                 finish_with(load_fallback_pixmap())
-                downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                downloader.download_async(
+                    cover, local_path,
+                    timeout=REMOTE_COVER_DOWNLOAD_TIMEOUT,
+                    callback=on_downloaded,
+                )
                 return
             except Exception as e:
                 logger.error("Error processing remote image URL %s: %s", cover, str(e))

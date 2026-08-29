@@ -342,6 +342,10 @@ def main():
         if app_id.isdigit():
             gog_launch_uri = args.file_or_url
             ipc_message = f"gog:{app_id}"
+    elif args.file_or_url and args.file_or_url.startswith("egs://launch/"):
+        app_id = args.file_or_url.removeprefix("egs://launch/")
+        if app_id and "/" not in app_id:
+            ipc_message = f"egs:{app_id}"
     elif args.file_or_url:
         theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
         if theme_store_id is not None:
@@ -582,6 +586,12 @@ def main():
                                 window.toggleGame(f"gog://launch/{app_id}")
                             else:
                                 logger.warning("Invalid GOG app id via IPC: %s", app_id)
+                        elif msg.startswith("egs:"):
+                            app_id = msg[4:].strip()
+                            if app_id and "/" not in app_id:
+                                window.toggleGame(f"egs://launch/{app_id}")
+                            else:
+                                logger.warning("Invalid Epic app id via IPC: %s", app_id)
                         elif msg.startswith("backup:"):
                             parts = msg.split(":", 2)
                             if len(parts) == 3:

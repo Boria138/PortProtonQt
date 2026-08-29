@@ -302,11 +302,12 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
         display_filter = game_config.get_display_filter()
         only_installed = game_config.get_only_installed()
-        self.filter_keys = ["all", "steam", "gog", "portproton", "favorites"]
+        self.filter_keys = ["all", "steam", "gog", "egs", "portproton", "favorites"]
         self.filter_labels = [
             _("All"),
             "Steam",
             "GOG",
+            "Epic Games",
             "PortProton",
             _("Favorites"),
         ]
