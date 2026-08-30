@@ -31,6 +31,20 @@ from portprotonqt.dialogs.settings_vkbasalt import VkBasaltSettingsMixin
 _application = QApplication.instance() or QApplication([])
 
 
+def test_mangohud_search_ignores_unavailable_categories() -> None:
+    settings = MangoHudSettingsMixin()
+    settings.mangohud_category_groups = {}
+
+    settings._filter_mangohud_settings("fps")
+
+
+def test_gamescope_search_ignores_unavailable_categories() -> None:
+    settings = GamescopeSettingsMixin()
+    settings.gamescope_category_groups = {}
+
+    settings._filter_gamescope_settings("fullscreen")
+
+
 def test_vkbasalt_search_filters_and_moves_matching_shader_first() -> None:
     settings = VkBasaltSettingsMixin()
     settings.theme = SimpleNamespace(mangoHudSwitchesColumns=2)
