@@ -722,6 +722,43 @@ def test_library_refresh_updates_connected_gog_library(
     ]
 
 
+def test_library_refresh_updates_connected_stores_for_all_filter(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    gog_auth_path = tmp_path / "gog_auth.json"
+    egs_user_path = tmp_path / "egs_user.json"
+    gog_auth_path.touch()
+    egs_user_path.touch()
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "all")
+    monkeypatch.setattr(
+        library_tab_module.QTimer,
+        "singleShot",
+        lambda _delay, callback: callback(),
+    )
+    calls = []
+    window = SimpleNamespace(
+        _refresh_in_progress=False,
+        searchEdit=SimpleNamespace(clear=lambda: None),
+        refreshButton=MagicMock(),
+        _gamepad_tooltip_map={},
+        game_library_manager=None,
+        gog_api=SimpleNamespace(auth_path=gog_auth_path),
+        egs_api=SimpleNamespace(user_path=egs_user_path),
+        _refresh_gog_library=lambda: calls.append("gog"),
+        _refresh_egs_library=lambda: calls.append("egs"),
+        loadGames=lambda **kwargs: calls.append(("load", kwargs)),
+    )
+
+    LibraryMixin.refreshGames(cast(Any, window))
+
+    assert calls == [
+        "gog",
+        "egs",
+        ("load", {"force_load": True}),
+    ]
+
+
 def test_library_refresh_skips_gog_for_portproton_filter(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
