@@ -40,6 +40,10 @@ def search_index(
         prefix_results = optimizer.prefix_search(search_text)
         return _unique_search_results([payload for _match_text, payload in prefix_results])
 
+    substring_results = optimizer.substring_search(search_text)
+    if substring_results:
+        return _unique_search_results([payload for _match_text, payload in substring_results])
+
     exact_result = optimizer.exact_search(search_text)
     if exact_result:
         return [exact_result]
@@ -178,6 +182,13 @@ class SearchOptimizer:
         """Perform prefix search using Trie."""
         with self._lock:
             return self.trie_index.search_prefix(prefix)
+
+    def substring_search(self, query: str) -> list[tuple[str, Any]]:
+        """Find all indexed names containing the query."""
+        with self._lock:
+            query = query.lower()
+            items = self.fuzzy_index.items if self.fuzzy_index else []
+            return [(key, value) for key, value in items if query in key]
 
     def fuzzy_search(self, query: str, limit: int = 5, min_score: float = 60.0) -> list[tuple[str, Any, float]]:
         """Perform fuzzy search."""

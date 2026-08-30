@@ -931,6 +931,11 @@ class MainWindow(
     def on_games_loaded(self, games: list[tuple]):
         self._loading_games = False
         self.games = games
+        if not game_config.get_only_installed():
+            display_filter = game_config.get_display_filter()
+            library_cache = getattr(self, "_loaded_library_cache", {})
+            library_cache[display_filter] = games
+            self._loaded_library_cache = library_cache
         focus_first_card = not getattr(self, "_preserve_library_focus_after_load", False)
         self._preserve_library_focus_after_load = False
         self.game_library_manager.set_games(games, focus_first_card=focus_first_card)

@@ -500,6 +500,39 @@ def test_source_corner_refresh_updates_ribbon_colors() -> None:
     assert corner._fold_color.name() == "#dddddd"
 
 
+def test_installed_filter_reuses_loaded_store_games(monkeypatch: MonkeyPatch) -> None:
+    installed = ("Installed", "", "", "1", "", "egs://launch/1")
+    uninstalled = ("Uninstalled", "", "", "2", "", "egs://install/2")
+    manager = SimpleNamespace(
+        games=[], filtered_games=[], _build_search_indices=MagicMock(),
+        update_game_grid=MagicMock(),
+    )
+    window = cast(Any, SimpleNamespace(
+        searchEdit=SimpleNamespace(clear=MagicMock()),
+        games=[installed, uninstalled],
+        game_library_manager=manager,
+        _loaded_library_cache={"egs": [installed, uninstalled]},
+        loadGames=MagicMock(),
+    ))
+    monkeypatch.setattr(game_config, "set_only_installed", lambda _checked: None)
+    monkeypatch.setattr(game_config, "get_display_filter", lambda: "egs")
+
+    LibraryMixin._on_only_installed_changed(window, True)
+
+    assert manager.games == [installed]
+    assert manager.filtered_games == [installed]
+    manager._build_search_indices.assert_called_once_with([installed])
+    manager.update_game_grid.assert_called_once_with(
+        is_filter=True, focus_first_card=False
+    )
+
+    LibraryMixin._on_only_installed_changed(window, False)
+
+    assert manager.games == [installed, uninstalled]
+    assert manager.filtered_games == [installed, uninstalled]
+    window.loadGames.assert_not_called()
+
+
 def test_library_source_filter_stays_top_aligned_without_checkbox(
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -781,6 +814,18 @@ def test_gog_login_shows_cached_games_before_refresh(monkeypatch: MonkeyPatch) -
         ("load", {"force_load": True}),
         "refresh",
     ]
+
+
+def test_egs_library_progress_shows_game_count(monkeypatch: MonkeyPatch) -> None:
+    values = []
+    window = SimpleNamespace(
+        egsAccountStatus=SimpleNamespace(setText=values.append),
+    )
+    monkeypatch.setattr(download_tab_module, "_", lambda text: text)
+
+    GOGMixin._on_egs_library_progress(cast(Any, window), 7, 12)
+
+    assert values == ["Refreshing Epic library… 7/12"]
 
 
 def test_gog_support_removes_finished_process_before_launching_game() -> None:
@@ -2266,6 +2311,50 @@ def test_system_action_uses_loginctl_with_elogind(monkeypatch: MonkeyPatch) -> N
     MainWindowSystemTabMixin._runSystemAction(window, "suspend")
 
     assert calls == [("loginctl", ["suspend"])]
+
+
+@mark.parametrize(
+    ("command", "expected"),
+    [
+        (
+            "/path/return script --user player",
+            ("/path/return", ["script", "--user", "player"]),
+        ),
+        (
+            '"/usr/bin/scripts/return to desktop" --user player',
+            ("/usr/bin/scripts/return to desktop", ["--user", "player"]),
+        ),
+        (
+            'python "/usr/bin/scripts/return to desktop.py" --user player',
+            ("python", ["/usr/bin/scripts/return to desktop.py", "--user", "player"]),
+        ),
+    ],
+)
+def test_return_to_desktop_runs_configured_command(
+    monkeypatch: MonkeyPatch,
+    command: str,
+    expected: tuple[str, list[str]],
+) -> None:
+    calls: list[tuple[str, list[str]]] = []
+    process = SimpleNamespace(startDetached=lambda *args: calls.append(args) or True)
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setenv("PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT", command)
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.returnToDesktop(window)
+
+    assert calls == [expected]
+
+
+def test_return_to_desktop_rejects_invalid_command(monkeypatch: MonkeyPatch) -> None:
+    process = SimpleNamespace(startDetached=MagicMock())
+    window = cast(MainWindowSystemTabMixin, SimpleNamespace())
+    monkeypatch.setenv("PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT", 'bash "unterminated')
+    monkeypatch.setattr(system_tab_module, "QProcess", process)
+
+    MainWindowSystemTabMixin.returnToDesktop(window)
+
+    process.startDetached.assert_not_called()
 
 
 def test_logout_uses_current_session_id(monkeypatch: MonkeyPatch) -> None:

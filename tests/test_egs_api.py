@@ -70,6 +70,34 @@ def test_normalize_game_uses_epic_metadata() -> None:
     }
 
 
+def test_refresh_library_skips_mobile_only_games(
+    tmp_path: Path, monkeypatch: MonkeyPatch,
+) -> None:
+    api = EGSAPI()
+    api.library_path = tmp_path / "library.json"
+    games = [
+        {
+            "app_name": "MobileGame",
+            "app_title": "Mobile Game",
+            "metadata": {"releaseInfo": [{"platform": ["Android", "iOS"]}]},
+        },
+        {
+            "app_name": "DesktopGame",
+            "app_title": "Desktop Game",
+            "metadata": {"releaseInfo": [{"platform": ["Windows"]}]},
+        },
+    ]
+    result = SimpleNamespace(returncode=0, stdout=orjson.dumps(games), stderr=b"")
+    monkeypatch.setattr(api, "update_legendary", lambda: "/bin/legendary")
+    monkeypatch.setattr(api, "build_command", lambda args: ["legendary", *args])
+    monkeypatch.setattr("portprotonqt.egs_api.subprocess.run", lambda *args, **kwargs: result)
+    monkeypatch.setattr(api, "_enrich_descriptions", lambda *_args: None)
+
+    library = api.refresh_library()
+
+    assert [game["app_id"] for game in library] == ["DesktopGame"]
+
+
 def test_store_description_uses_epic_product_page(monkeypatch: MonkeyPatch) -> None:
     api = EGSAPI()
     graphql_response = SimpleNamespace(
@@ -165,6 +193,25 @@ def test_extract_auth_code_accepts_legendary_response() -> None:
     assert EGSAPI.extract_auth_code(response) == "epic-authorization-code"
     assert EGSAPI.extract_auth_code("direct-code") == "direct-code"
     assert EGSAPI.extract_auth_code("https://example.com") == ""
+
+
+def test_description_enrichment_reports_library_progress(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    api = EGSAPI()
+    games = [
+        {"app_id": "one", "title": "One", "namespace": "one"},
+        {"app_id": "two", "title": "Two", "namespace": "two"},
+    ]
+    progress = []
+    monkeypatch.setattr(api, "load_library", lambda: [])
+    monkeypatch.setattr(api, "_get_store_description", lambda _game: ("About", "en-US"))
+
+    api._enrich_descriptions(games, lambda completed, total: progress.append(
+        (completed, total)
+    ))
+
+    assert progress == [(1, 2), (2, 2)]
 
 
 def test_get_launch_target_uses_legendary_install_record(tmp_path: Path) -> None:

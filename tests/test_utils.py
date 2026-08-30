@@ -122,6 +122,22 @@ def test_search_index_ignores_descriptions() -> None:
     assert search_index(optimizer, "копайте") == []
 
 
+def test_search_index_finds_all_names_containing_query() -> None:
+    games = [("DOOM 64", ""), ("Akalabeth: World of Doom", "")]
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items(games, lambda item: item[0]))
+
+    assert search_index(optimizer, "doom") == games
+
+
+def test_search_index_keeps_same_name_from_different_sources() -> None:
+    games = [("Control", "egs"), ("Control", "portproton")]
+    optimizer = SearchOptimizer()
+    optimizer.build_indices(build_search_items(games, lambda item: item[0]))
+
+    assert search_index(optimizer, "control") == games
+
+
 def test_is_portrait_image_rejects_oversized_png_metadata(
     tmp_path: Path,
 ) -> None:

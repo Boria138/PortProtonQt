@@ -109,9 +109,27 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
     def _on_only_installed_changed(self, checked: bool) -> None:
         game_config.set_only_installed(checked)
         self.searchEdit.clear()
-        self.games = []
         self._preserve_library_focus_after_load = True
-        self.loadGames(force_load=True)
+        display_filter = game_config.get_display_filter()
+        cached_games = getattr(self, "_loaded_library_cache", {}).get(display_filter)
+        if cached_games is None:
+            self.games = []
+            self.loadGames(force_load=True)
+            return
+        games = cached_games
+        if checked:
+            games = [
+                game for game in games
+                if not game[5].startswith(("gog://install/", "egs://install/"))
+            ]
+        self.games = games
+        self._preserve_library_focus_after_load = False
+        self.game_library_manager.games = games
+        self.game_library_manager.filtered_games = games
+        self.game_library_manager._build_search_indices(games)
+        self.game_library_manager.update_game_grid(
+            is_filter=True, focus_first_card=False
+        )
 
     def _on_library_badge_view_changed(self, index: int) -> None:
         if index < 0 or index >= len(self.badge_view_keys):
@@ -390,6 +408,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
         # Mark that a refresh is in progress
         self._refresh_in_progress = True
+        self._loaded_library_cache = {}
 
         # Clear the search field to ensure all games are shown after refresh
         self.searchEdit.clear()

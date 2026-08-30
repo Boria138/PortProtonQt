@@ -71,6 +71,7 @@ class EGSLibraryWorker(QThread):
 
     loaded = Signal(list)
     failed = Signal(str)
+    progress = Signal(int, int)
 
     def __init__(self, api: EGSAPI) -> None:
         super().__init__()
@@ -78,7 +79,7 @@ class EGSLibraryWorker(QThread):
 
     def run(self) -> None:
         try:
-            self.loaded.emit(self.api.refresh_library())
+            self.loaded.emit(self.api.refresh_library(self.progress.emit))
         except Exception as error:
             logger.exception("Failed to refresh Epic library")
             self.failed.emit(str(error))
@@ -474,7 +475,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         if len(code) < 16:
             return
         self._stop_egs_login_clipboard()
-        self.egsAccountStatus.setText(_("Refreshing…"))
+        self.egsAccountStatus.setText(_("Epic authorization…"))
         worker = EGSAuthWorker(self.egs_api, code)
         worker.authenticated.connect(self._on_egs_authenticated)
         worker.finished.connect(self._on_egs_auth_worker_finished)
@@ -504,7 +505,6 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
                 _("Epic login failed: {0}").format(error or _("Unknown error"))
             )
             return
-        self._update_egs_account_state()
         self._refresh_egs_library()
 
     def _on_egs_auth_worker_finished(self) -> None:
@@ -526,13 +526,18 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
             return
         if getattr(self, "egs_library_worker", None) is not None:
             return
-        self.egsAccountStatus.setText(_("Refreshing…"))
         worker = EGSLibraryWorker(self.egs_api)
         worker.loaded.connect(self._on_egs_library_loaded)
         worker.failed.connect(self._on_egs_library_failed)
+        worker.progress.connect(self._on_egs_library_progress)
         worker.finished.connect(self._on_egs_library_worker_finished)
         self.egs_library_worker = worker
         worker.start()
+
+    def _on_egs_library_progress(self, completed: int, total: int) -> None:
+        self.egsAccountStatus.setText(
+            _("Refreshing Epic library… {0}/{1}").format(completed, total)
+        )
 
     def _on_egs_library_loaded(self, games: list) -> None:
         self._update_egs_account_state()

@@ -78,6 +78,31 @@ Example:
 
 ---
 
+## Commit Classification
+
+Use Conventional Commit prefixes according to the primary purpose of the change:
+
+| Prefix | Use for |
+|--------|---------|
+| `feat` | A new user-facing capability or supported workflow |
+| `fix` | A correction for a confirmed defect or regression in existing behavior |
+| `chore` | Maintenance, integration adjustments, filtering, metadata, or routine upkeep that is neither a feature nor a confirmed bug fix |
+| `refactor` | Internal restructuring with no intended behavior change |
+| `perf` | A measurable performance improvement |
+| `test` | Test-only changes |
+| `docs` | Documentation-only changes |
+| `build` | Build system or dependency changes |
+| `ci` | CI or automation configuration changes |
+| `style` | Formatting-only changes with no behavior change |
+| `revert` | Reverting an earlier commit |
+
+- Classify by intent, not merely by whether code behavior changed.
+- Do not default to `fix` for every behavioral correction or edge-case filter.
+- Use `fix` only when the task identifies a bug/regression or the defect is clearly demonstrated.
+- If `feat`, `fix`, and `chore` are ambiguous, prefer `chore` unless the task clearly establishes a new capability or confirmed defect.
+
+---
+
 ## Forbidden Patterns
 
 ```python

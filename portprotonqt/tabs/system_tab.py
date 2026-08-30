@@ -1,4 +1,5 @@
 import os
+import shlex
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
@@ -45,6 +46,7 @@ from portprotonqt.system_manager import (
 logger = get_logger(__name__)
 
 AUDIO_MAX_VOLUME = 150
+RETURN_TO_DESKTOP_ENV = "PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT"
 
 
 if TYPE_CHECKING:
@@ -883,6 +885,16 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _setupSystemPowerActionButtons(self, layout) -> None:
         buttons_layout = QHBoxLayout()
 
+        return_command = os.getenv(RETURN_TO_DESKTOP_ENV, "").strip()
+        if return_command:
+            self.systemReturnToDesktopButton = AutoSizeButton(
+                _("Return to desktop"), icon=self.theme_manager.get_icon("exit", as_path=True)
+            )
+            self.systemReturnToDesktopButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
+            self.systemReturnToDesktopButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            self.systemReturnToDesktopButton.clicked.connect(self.returnToDesktop)
+            buttons_layout.addWidget(self.systemReturnToDesktopButton)
+
         self.systemLogoutButton = AutoSizeButton(_("Logout"), icon=self.theme_manager.get_icon("exit", as_path=True))
         self.systemLogoutButton.setProperty("theme_style_name", "ACTION_BUTTON_STYLE")
         self.systemLogoutButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
@@ -916,6 +928,20 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         if QProcess.startDetached(command, [action]):
             return
         logger.error("Failed to execute %s %s", command, action)
+
+    def returnToDesktop(self) -> None:
+        command_text = os.getenv(RETURN_TO_DESKTOP_ENV, "").strip()
+        try:
+            command = shlex.split(command_text)
+        except ValueError as error:
+            logger.error("Invalid return-to-desktop command: %s", error)
+            return
+        if not command:
+            logger.error("Cannot return to desktop: %s is empty", RETURN_TO_DESKTOP_ENV)
+            return
+        if QProcess.startDetached(command[0], command[1:]):
+            return
+        logger.error("Failed to execute return-to-desktop command: %s", command_text)
 
     def rebootSystem(self) -> None:
         self._runSystemAction("reboot")

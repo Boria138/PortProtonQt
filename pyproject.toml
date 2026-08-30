@@ -35,7 +35,7 @@ dependencies = [
     "requests>=2.34.2",
     "tqdm>=4.70.0",
     "vdf>=3.4",
-    "websocket-client>=1.9.0",
+    "websocket-client>=1.9.1",
     "dbus-fast>=5.0.22",
     "pefile>=2024.8.26",
 ]
@@ -53,7 +53,7 @@ package = true
 dev = [
     "pre-commit>=4.6.2",
     "pyright>=1.1.411",
-    "pytest>=8.4.2",
+    "pytest>=9.1.1",
     "pytest-mock>=3.15.1",
 ]
 

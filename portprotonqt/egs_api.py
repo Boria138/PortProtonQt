@@ -6,6 +6,7 @@ import platform
 import shutil
 import subprocess
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -198,7 +199,9 @@ class EGSAPI:
         user = self._load_json(self.user_path, {})
         return str(user.get("displayName", "")) if isinstance(user, dict) else ""
 
-    def refresh_library(self) -> list[dict]:
+    def refresh_library(
+        self, progress_callback: Callable[[int, int], None] | None = None
+    ) -> list[dict]:
         """Refresh and cache the Epic library through Legendary."""
         self.update_legendary()
         result = subprocess.run(
@@ -212,9 +215,20 @@ class EGSAPI:
         raw_games = orjson.loads(result.stdout)
         if not isinstance(raw_games, list):
             raise OSError("Legendary returned an invalid Epic library")
-        games = [self._normalize_game(game) for game in raw_games]
+        games = []
+        for game in raw_games:
+            metadata = game.get("metadata", {})
+            release_info = metadata.get("releaseInfo", [])
+            mobile_only = bool(release_info) and all(
+                info.get("platform")
+                and all(platform in {"Android", "iOS"}
+                        for platform in info["platform"])
+                for info in release_info
+            )
+            if not mobile_only:
+                games.append(self._normalize_game(game))
         games = [game for game in games if game.get("app_id")]
-        self._enrich_descriptions(games)
+        self._enrich_descriptions(games, progress_callback)
         self._save_json(self.library_path, games)
         return games
 
@@ -303,9 +317,14 @@ class EGSAPI:
         install_size = values.get("install_size") or values.get("disk_size", 0)
         return values.get("download_size", 0), install_size
 
-    def _enrich_descriptions(self, games: list[dict]) -> None:
+    def _enrich_descriptions(
+        self, games: list[dict],
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> None:
         cached = {str(game.get("app_id")): game for game in self.load_library()}
         pending = []
+        completed = 0
+        total = len(games)
         preferred_locale = get_store_content_languages()[0]
         for game in games:
             old_game = cached.get(game["app_id"], {})
@@ -321,6 +340,9 @@ class EGSAPI:
                 game["description_locale"] = str(old_game.get("description_locale", ""))
                 game["description_preference"] = preferred_locale
                 game["description_cache_version"] = EGS_DESCRIPTION_CACHE_VERSION
+                completed += 1
+                if progress_callback:
+                    progress_callback(completed, total)
             else:
                 pending.append(game)
         if not pending:
@@ -335,6 +357,9 @@ class EGSAPI:
                     game["description_locale"] = description_locale
                     game["description_preference"] = preferred_locale
                     game["description_cache_version"] = EGS_DESCRIPTION_CACHE_VERSION
+                completed += 1
+                if progress_callback:
+                    progress_callback(completed, total)
 
     def _get_store_description(self, game: dict) -> tuple[str, str]:
         slug = self._get_product_slug(str(game.get("namespace", "")), game["title"])
