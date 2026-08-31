@@ -175,6 +175,17 @@ msgstr "Удалить"
 msgid "Import"
 msgstr "Импорт"
 
+msgid "Update"
+msgstr "Обновить"
+
+#, fuzzy
+msgid "Disable EOS Overlay"
+msgstr "Включить наложение mangoapp"
+
+#, fuzzy
+msgid "Enable EOS Overlay"
+msgstr "Включить наложение mangoapp"
+
 msgid "Open Game Folder"
 msgstr "Открыть папку с игрой"
 
@@ -442,6 +453,18 @@ msgstr "Установить зависимости"
 
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "Отсутствуют 32-битные зависимости. Установить их сейчас?"
+
+#, fuzzy
+msgid "Select Epic game folder"
+msgstr "Выберите папку игры GOG"
+
+#, fuzzy
+msgid "Another Epic operation is running"
+msgstr "Другая операция GOG уже выполняется"
+
+#, fuzzy
+msgid "Wine prefix not found"
+msgstr "Префикс не найден"
 
 msgid "Game not found."
 msgstr "Игра не найдена."
@@ -904,9 +927,6 @@ msgstr "Доступно обновление"
 
 msgid "A new AppImage update is available."
 msgstr "Доступно новое обновление AppImage."
-
-msgid "Update"
-msgstr "Обновить"
 
 msgid "Later"
 msgstr "Позже"
@@ -2085,8 +2105,43 @@ msgstr "Обновление библиотеки GOG… {0}/{1}"
 msgid "Failed to refresh GOG library: {0}"
 msgstr "Не удалось обновить библиотеку GOG: {0}"
 
+#, fuzzy
+msgid "Failed to log out of Epic account"
+msgstr "Не удалось выйти из аккаунта GOG"
+
+#, fuzzy
+msgid "Copy the authorization code to clipboard"
+msgstr "Скопировать ссылку в буфер обмена"
+
+msgid "Epic authorization…"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Epic login failed: {0}"
+msgstr "Ошибка входа в GOG: {0}"
+
+#, fuzzy
+msgid "Epic account connected"
+msgstr "Аккаунт GOG подключён"
+
+#, fuzzy
+msgid "Epic account not connected"
+msgstr "Аккаунт GOG не подключён"
+
+#, fuzzy, python-brace-format
+msgid "Refreshing Epic library… {0}/{1}"
+msgstr "Обновление библиотеки GOG… {0}/{1}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to refresh Epic library: {0}"
+msgstr "Не удалось обновить библиотеку GOG: {0}"
+
 msgid "Select installation folder"
 msgstr "Выберите папку установки"
+
+#, fuzzy
+msgid "Another download is running"
+msgstr "Сейчас загружается"
 
 msgid "Another GOG operation is already running"
 msgstr "Другая операция GOG уже выполняется"
@@ -2386,6 +2441,10 @@ msgstr "Устройства воспроизведения"
 
 msgid "Output"
 msgstr "Вывод"
+
+#, fuzzy
+msgid "Return to desktop"
+msgstr "Добавить на рабочий стол"
 
 msgid "Logout"
 msgstr "Выйти"

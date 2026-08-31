@@ -176,6 +176,15 @@ msgstr "Borrar"
 msgid "Import"
 msgstr "Importar"
 
+msgid "Update"
+msgstr "Actualizar"
+
+msgid "Disable EOS Overlay"
+msgstr ""
+
+msgid "Enable EOS Overlay"
+msgstr ""
+
 msgid "Open Game Folder"
 msgstr "Abrir la carpeta del juego"
 
@@ -446,6 +455,17 @@ msgstr "Instalar las dependencias"
 
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "Faltan algunas dependencias de 32 bits. ¿Las instalas ahora?"
+
+#, fuzzy
+msgid "Select Epic game folder"
+msgstr "Borrar la carpeta"
+
+msgid "Another Epic operation is running"
+msgstr ""
+
+#, fuzzy
+msgid "Wine prefix not found"
+msgstr "Prefijo no encontrado"
 
 msgid "Game not found."
 msgstr "Juego no encontrado."
@@ -919,9 +939,6 @@ msgstr "Actualización disponible"
 
 msgid "A new AppImage update is available."
 msgstr "Hay una nueva actualización de AppImage disponible."
-
-msgid "Update"
-msgstr "Actualizar"
 
 msgid "Later"
 msgstr "Más tarde"
@@ -2089,8 +2106,39 @@ msgstr ""
 msgid "Failed to refresh GOG library: {0}"
 msgstr "Error al iniciar el juego: {0}"
 
+msgid "Failed to log out of Epic account"
+msgstr ""
+
+msgid "Copy the authorization code to clipboard"
+msgstr ""
+
+msgid "Epic authorization…"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Epic login failed: {0}"
+msgstr "Archivo: {0}"
+
+msgid "Epic account connected"
+msgstr ""
+
+msgid "Epic account not connected"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Refreshing Epic library… {0}/{1}"
+msgstr "Error al iniciar el juego: {0}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to refresh Epic library: {0}"
+msgstr "Error al iniciar el juego: {0}"
+
 msgid "Select installation folder"
 msgstr ""
+
+#, fuzzy
+msgid "Another download is running"
+msgstr "Descargando"
 
 msgid "Another GOG operation is already running"
 msgstr ""
@@ -2396,6 +2444,10 @@ msgstr ""
 
 msgid "Output"
 msgstr ""
+
+#, fuzzy
+msgid "Return to desktop"
+msgstr "Añadir al escritorio"
 
 msgid "Logout"
 msgstr ""

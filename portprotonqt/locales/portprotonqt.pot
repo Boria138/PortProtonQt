@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-27 21:08+0500\n"
+"POT-Creation-Date: 2026-08-31 11:07+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -163,6 +163,15 @@ msgid "Delete"
 msgstr ""
 
 msgid "Import"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Disable EOS Overlay"
+msgstr ""
+
+msgid "Enable EOS Overlay"
 msgstr ""
 
 msgid "Open Game Folder"
@@ -428,6 +437,15 @@ msgid "Install dependencies"
 msgstr ""
 
 msgid "32-bit dependencies are missing. Install them now?"
+msgstr ""
+
+msgid "Select Epic game folder"
+msgstr ""
+
+msgid "Another Epic operation is running"
+msgstr ""
+
+msgid "Wine prefix not found"
 msgstr ""
 
 msgid "Game not found."
@@ -827,9 +845,6 @@ msgid "Update available"
 msgstr ""
 
 msgid "A new AppImage update is available."
-msgstr ""
-
-msgid "Update"
 msgstr ""
 
 msgid "Later"
@@ -1989,7 +2004,37 @@ msgstr ""
 msgid "Failed to refresh GOG library: {0}"
 msgstr ""
 
+msgid "Failed to log out of Epic account"
+msgstr ""
+
+msgid "Copy the authorization code to clipboard"
+msgstr ""
+
+msgid "Epic authorization…"
+msgstr ""
+
+#, python-brace-format
+msgid "Epic login failed: {0}"
+msgstr ""
+
+msgid "Epic account connected"
+msgstr ""
+
+msgid "Epic account not connected"
+msgstr ""
+
+#, python-brace-format
+msgid "Refreshing Epic library… {0}/{1}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to refresh Epic library: {0}"
+msgstr ""
+
 msgid "Select installation folder"
+msgstr ""
+
+msgid "Another download is running"
 msgstr ""
 
 msgid "Another GOG operation is already running"
@@ -2289,6 +2334,9 @@ msgid "Playback devices"
 msgstr ""
 
 msgid "Output"
+msgstr ""
+
+msgid "Return to desktop"
 msgstr ""
 
 msgid "Logout"

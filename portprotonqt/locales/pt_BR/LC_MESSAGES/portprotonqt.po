@@ -174,6 +174,17 @@ msgstr "Excluir"
 msgid "Import"
 msgstr "Importar"
 
+msgid "Update"
+msgstr "Atualizar"
+
+#, fuzzy
+msgid "Disable EOS Overlay"
+msgstr "Ativar overlay mangoapp"
+
+#, fuzzy
+msgid "Enable EOS Overlay"
+msgstr "Ativar overlay mangoapp"
+
 msgid "Open Game Folder"
 msgstr "Abrir Pasta do Jogo"
 
@@ -443,6 +454,18 @@ msgstr "Instalar dependências"
 
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "As dependências de 32 bits estão faltando. Instalá-las agora?"
+
+#, fuzzy
+msgid "Select Epic game folder"
+msgstr "Selecionar pasta do jogo da GOG"
+
+#, fuzzy
+msgid "Another Epic operation is running"
+msgstr "Outra operação da GOG já está em execução"
+
+#, fuzzy
+msgid "Wine prefix not found"
+msgstr "Prefixo não encontrado"
 
 msgid "Game not found."
 msgstr "Jogo não encontrado."
@@ -904,9 +927,6 @@ msgstr "Atualização disponível"
 
 msgid "A new AppImage update is available."
 msgstr "Uma nova atualização do AppImage está disponível."
-
-msgid "Update"
-msgstr "Atualizar"
 
 msgid "Later"
 msgstr "Mais tarde"
@@ -2088,8 +2108,43 @@ msgstr "Atualizando biblioteca da GOG… {0}/{1}"
 msgid "Failed to refresh GOG library: {0}"
 msgstr "Falha ao atualizar a biblioteca da GOG: {0}"
 
+#, fuzzy
+msgid "Failed to log out of Epic account"
+msgstr "Falha ao sair da conta GOG"
+
+#, fuzzy
+msgid "Copy the authorization code to clipboard"
+msgstr "Copiar o link para a área de transferência"
+
+msgid "Epic authorization…"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Epic login failed: {0}"
+msgstr "Falha no login da GOG: {0}"
+
+#, fuzzy
+msgid "Epic account connected"
+msgstr "Conta GOG conectada"
+
+#, fuzzy
+msgid "Epic account not connected"
+msgstr "Conta GOG não conectada"
+
+#, fuzzy, python-brace-format
+msgid "Refreshing Epic library… {0}/{1}"
+msgstr "Atualizando biblioteca da GOG… {0}/{1}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to refresh Epic library: {0}"
+msgstr "Falha ao atualizar a biblioteca da GOG: {0}"
+
 msgid "Select installation folder"
 msgstr "Selecionar pasta de instalação"
+
+#, fuzzy
+msgid "Another download is running"
+msgstr "Baixando agora"
 
 msgid "Another GOG operation is already running"
 msgstr "Outra operação da GOG já está em execução"
@@ -2392,6 +2447,10 @@ msgstr "Dispositivos de reprodução"
 
 msgid "Output"
 msgstr "Saída"
+
+#, fuzzy
+msgid "Return to desktop"
+msgstr "Adicionar à Área de Trabalho"
 
 msgid "Logout"
 msgstr "Encerrar sessão"
