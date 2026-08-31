@@ -14,6 +14,7 @@
 - [Detail Page Layout Mode](#detail-page-layout-mode)
 - [Detail Page Background Mode](#detail-page-background-mode)
   - [Background Configuration](#background-configuration)
+- [Library Background](#library-background)
 - [Preloader](#preloader)
 - [Source Corner (Ribbon)](#source-corner-ribbon)
 - [Terminal Color Schemes](#terminal-color-schemes)
@@ -234,14 +235,34 @@ NAV_BUTTON_STYLE = f"""
 You can control the game library card layout directly from the theme via `styles.py`:
 
 ```python
-# "grid" (default) or "list"
+# "grid", "list", "horizontal", or "horizontal_top"
 LIBRARY_LAYOUT_MODE = "grid"
 ```
 
 - `grid`: multi-column card grid (classic behavior).
 - `list`: horizontal row-style cards (launcher-style list).
+- `horizontal`: one horizontally scrolling row containing every game.
+- `horizontal_top`: the first `horizontalTopGameLimit` games from the current
+  filter and sort order, followed by a tile composed from the next games that
+  opens the complete grid.
 
-Card geometry is controlled by `GAME_CARD_LIST` and `GAME_CARD_GRID`:
+The `horizontal_top` preview tile is configured with theme-level constants:
+
+```python
+horizontalTopGameLimit = 10       # Games shown before the tile.
+fullLibraryTileGameCount = 4      # Cover images shown in the tile.
+fullLibraryTileSize = (180, 180)   # Tile width and height.
+fullLibraryTileColumns = 2        # Cover columns inside the tile.
+fullLibraryTileRows = 2           # Cover rows inside the tile.
+fullLibraryTileRadius = 10        # Tile corner radius in pixels.
+```
+
+`fullLibraryTileColumns * fullLibraryTileRows` should be at least
+`fullLibraryTileGameCount`. The tile opens the complete library grid when
+activated.
+
+Card geometry is controlled by `GAME_CARD_LIST`, `GAME_CARD_GRID`, and
+`GAME_CARD_HORIZONTAL`:
 
 ```python
 GAME_CARD_LIST = {
@@ -258,6 +279,7 @@ GAME_CARD_LIST = {
 }
 
 GAME_CARD_GRID = {
+    "card_animation_type": "gradient",
     "extra_margin": 20,
     "spacing": 5,
     "cover_aspect_ratio": 1.5,
@@ -265,11 +287,42 @@ GAME_CARD_GRID = {
     "cover_radius": 15,
     "border_radius": 18,
 }
+
+GAME_CARD_HORIZONTAL = {
+    "card_animation_type": "scale",
+    "extra_margin": 20,
+    "spacing": 5,
+    "cover_aspect_ratio": 0.56,
+    "card_height_ratio": 0.78,
+    "cover_radius": 15,
+    "layout_margins": (20, 20, 20, 20),
+    "layout_spacing": 20,
+}
 ```
 
 Values are logical pixels. `cover_radius` applies to static and animated covers;
 `border_radius` applies to the painted focus and hover border. Grid cover width
 continues to follow the library card-size setting.
+
+Card animation keys can be overridden independently in `GAME_CARD_LIST`,
+`GAME_CARD_GRID`, or `GAME_CARD_HORIZONTAL`: `card_animation_type`, border
+widths, pulse settings, gradient angles and colors, fill/stripe/glow colors and
+opacity, scale values, animation durations, and easing curves. For example,
+`horizontal_top` can define its own `scale` type, scale values, duration, and
+easing while the complete grid uses separately configured `gradient` values.
+Keys omitted from a layout continue to use `GAME_CARD_ANIMATION` as fallback.
+
+```python
+GAME_CARD_HORIZONTAL = {
+    "card_animation_type": "scale",
+    "default_scale": 1.0,
+    "hover_scale": 1.055,
+    "focus_scale": 1.075,
+    "scale_anim_duration": 135,
+    "scale_easing_curve": "OutCubic",
+    "scale_easing_curve_out": "InOutCubic",
+}
+```
 
 Card shadows use the shared `shadow_blur_radius` and `shadow_offset` theme
 constants in both grid and list layouts.
@@ -451,6 +504,53 @@ Existing themes may continue using `DETAIL_PAGE_GRADIENT`,
 `DETAIL_PAGE_GRADIENT_TYPE`, `DETAIL_PAGE_GRADIENT_X1` through
 `DETAIL_PAGE_GRADIENT_FY`, and `DETAIL_PAGE_WAVES`. Legacy values override the
 corresponding nested settings.
+
+## Library Background
+
+The library can use the cover of the currently hovered or focused card as its
+background. This feature is opt-in: if `LIBRARY_BACKGROUND` is not defined, the
+library keeps the theme's regular background unchanged.
+
+`LIBRARY_BACKGROUND` selects the effect and can override detail-page
+background settings locally. Its `backgrounds` dictionary is merged with
+`DETAIL_PAGE_BACKGROUNDS`, so only the values that should differ need to be
+specified:
+
+```python
+LIBRARY_BACKGROUND = {
+    "margins": (0, 0, 0, 0),
+    "mode": "waves",  # gradient, blur, waves, aurora, metaballs, leaf, veins, diagnostics
+    "backgrounds": {
+        "animation_interval_ms": 30,
+        "animation_speed": 0.03,
+        "blur": {
+            "render_resolution": (1280, 720),
+            "radius": 64,
+        },
+        "gradient": {
+            "stops": None,
+            "type": "linear",
+            "x1": 0, "y1": 0, "x2": 1, "y2": 1,
+        },
+        "waves": {
+            "layer_count": 4,
+            "wave_amplitude_ratio": 0.06,
+            "wave_frequency": 2.0,
+            "layer_spacing_ratio": 0.04,
+            "base_opacity": 0.45,
+            "opacity_decay": 0.85,
+            "animation_speed": 0.03,
+            "animation_interval_ms": 30,
+        },
+    },
+}
+```
+
+The `blur` settings control the intermediate image size and blur radius.
+`margins` are applied to the background layer layout. Animated modes use the
+same effect-specific dictionaries documented in `DETAIL_PAGE_BACKGROUNDS`;
+copy the corresponding dictionary there when overriding `aurora`, `leaf`,
+`metaballs`, `veins`, or `diagnostics`.
 
 ---
 

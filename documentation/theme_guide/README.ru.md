@@ -14,6 +14,7 @@
 - [Режим отображения детальной страницы](#режим-отображения-детальной-страницы)
 - [Режим фона детальной страницы](#режим-фона-детальной-страницы)
   - [Настройка фона](#настройка-фона)
+- [Фон библиотеки](#фон-библиотеки)
 - [Прелоадер](#прелоадер)
 - [Уголок источника (Лента)](#уголок-источника-лента)
 - [Цветовые схемы терминала](#цветовые-схемы-терминала)
@@ -234,14 +235,34 @@ NAV_BUTTON_STYLE = f"""
 Вы можете управлять типом отображения карточек библиотеки прямо из темы через `styles.py`:
 
 ```python
-# "grid" (по умолчанию) или "list"
+# "grid", "list", "horizontal" или "horizontal_top"
 LIBRARY_LAYOUT_MODE = "grid"
 ```
 
 - `grid`: многоколоночная сетка карточек (классическое поведение).
 - `list`: горизонтальные карточки-строки (формат лаунчера).
+- `horizontal`: одна горизонтально прокручиваемая лента со всеми играми,
+- `horizontal_top`: первые `horizontalTopGameLimit` игр из текущих результатов
+  фильтрации и сортировки, затем плитка из следующих игр для открытия полной
+  сетки.
 
-Геометрия карточек управляется через `GAME_CARD_LIST` и `GAME_CARD_GRID`:
+Плитка перехода в режиме `horizontal_top` настраивается константами темы:
+
+```python
+horizontalTopGameLimit = 10       # Игр показывается до плитки.
+fullLibraryTileGameCount = 4      # Обложек показывается в плитке.
+fullLibraryTileSize = (180, 180)   # Ширина и высота плитки.
+fullLibraryTileColumns = 2        # Столбцов обложек внутри плитки.
+fullLibraryTileRows = 2           # Строк обложек внутри плитки.
+fullLibraryTileRadius = 10        # Радиус скругления плитки в пикселях.
+```
+
+Произведение `fullLibraryTileColumns * fullLibraryTileRows` должно быть не
+меньше `fullLibraryTileGameCount`. При активации плитка открывает полную сетку
+библиотеки.
+
+Геометрия карточек управляется через `GAME_CARD_LIST`, `GAME_CARD_GRID` и
+`GAME_CARD_HORIZONTAL`:
 
 ```python
 GAME_CARD_LIST = {
@@ -258,6 +279,7 @@ GAME_CARD_LIST = {
 }
 
 GAME_CARD_GRID = {
+    "card_animation_type": "gradient",
     "extra_margin": 20,
     "spacing": 5,
     "cover_aspect_ratio": 1.5,
@@ -265,12 +287,43 @@ GAME_CARD_GRID = {
     "cover_radius": 15,
     "border_radius": 18,
 }
+
+GAME_CARD_HORIZONTAL = {
+    "card_animation_type": "scale",
+    "extra_margin": 20,
+    "spacing": 5,
+    "cover_aspect_ratio": 0.56,
+    "card_height_ratio": 0.78,
+    "cover_radius": 15,
+    "layout_margins": (20, 20, 20, 20),
+    "layout_spacing": 20,
+}
 ```
 
 Значения задаются в логических пикселях. `cover_radius` применяется к
 статическим и анимированным обложкам, а `border_radius` — к отрисовываемой
 обводке при фокусе и наведении. Ширина обложки в сеточном режиме по-прежнему
 определяется настройкой размера карточек библиотеки.
+
+Параметры анимации карточек можно отдельно переопределить в
+`GAME_CARD_LIST`, `GAME_CARD_GRID` или `GAME_CARD_HORIZONTAL`: тип анимации,
+ширину обводки, pulse, углы и цвета градиента, цвета и прозрачность
+fill/stripe/glow, масштаб, длительности и easing-кривые. Например,
+`horizontal_top` может задавать собственные тип `scale`, значения масштаба,
+длительность и easing, а полная сетка — отдельные параметры `gradient`.
+Отсутствующие в режиме параметры берутся из `GAME_CARD_ANIMATION`.
+
+```python
+GAME_CARD_HORIZONTAL = {
+    "card_animation_type": "scale",
+    "default_scale": 1.0,
+    "hover_scale": 1.055,
+    "focus_scale": 1.075,
+    "scale_anim_duration": 135,
+    "scale_easing_curve": "OutCubic",
+    "scale_easing_curve_out": "InOutCubic",
+}
+```
 
 Тень карточек использует общие константы темы `shadow_blur_radius` и
 `shadow_offset` как в сеточном, так и в списочном режиме.
@@ -451,6 +504,54 @@ DETAIL_PAGE_BACKGROUNDS = {
 `DETAIL_PAGE_GRADIENT_TYPE`, переменные от `DETAIL_PAGE_GRADIENT_X1` до
 `DETAIL_PAGE_GRADIENT_FY` и `DETAIL_PAGE_WAVES`. Старые значения
 переопределяют соответствующие вложенные настройки.
+
+## Фон библиотеки
+
+Библиотека может использовать обложку карточки, на которой находится курсор
+или фокус, как фон. Функция включается только при наличии
+`LIBRARY_BACKGROUND`; если словарь не определён, обычный фон темы библиотеки
+остаётся без изменений.
+
+`LIBRARY_BACKGROUND` выбирает эффект и может локально переопределять настройки
+фона детальной страницы. Словарь `backgrounds` объединяется с
+`DETAIL_PAGE_BACKGROUNDS`, поэтому достаточно указать только отличающиеся
+значения:
+
+```python
+LIBRARY_BACKGROUND = {
+    "margins": (0, 0, 0, 0),
+    "mode": "waves",  # gradient, blur, waves, aurora, metaballs, leaf, veins, diagnostics
+    "backgrounds": {
+        "animation_interval_ms": 30,
+        "animation_speed": 0.03,
+        "blur": {
+            "render_resolution": (1280, 720),
+            "radius": 64,
+        },
+        "gradient": {
+            "stops": None,
+            "type": "linear",
+            "x1": 0, "y1": 0, "x2": 1, "y2": 1,
+        },
+        "waves": {
+            "layer_count": 4,
+            "wave_amplitude_ratio": 0.06,
+            "wave_frequency": 2.0,
+            "layer_spacing_ratio": 0.04,
+            "base_opacity": 0.45,
+            "opacity_decay": 0.85,
+            "animation_speed": 0.03,
+            "animation_interval_ms": 30,
+        },
+    },
+}
+```
+
+Настройки `blur` задают размер промежуточного изображения и радиус размытия.
+`margins` применяются к слою фона. Анимированные режимы используют те же
+словаря эффектов, что и `DETAIL_PAGE_BACKGROUNDS`; для переопределения
+`aurora`, `leaf`, `metaballs`, `veins` или `diagnostics` скопируйте нужный
+словарь из описания выше.
 
 ---
 

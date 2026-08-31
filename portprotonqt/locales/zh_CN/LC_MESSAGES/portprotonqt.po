@@ -169,6 +169,17 @@ msgstr "删除"
 msgid "Import"
 msgstr ""
 
+msgid "Update"
+msgstr "更新"
+
+#, fuzzy
+msgid "Disable EOS Overlay"
+msgstr "启用 mangoapp 叠加层"
+
+#, fuzzy
+msgid "Enable EOS Overlay"
+msgstr "启用 mangoapp 叠加层"
+
 msgid "Open Game Folder"
 msgstr "打开游戏文件夹"
 
@@ -431,6 +442,17 @@ msgstr "安装依赖"
 
 msgid "32-bit dependencies are missing. Install them now?"
 msgstr "缺少 32 位依赖项。现在安装吗?"
+
+#, fuzzy
+msgid "Select Epic game folder"
+msgstr "删除文件夹"
+
+msgid "Another Epic operation is running"
+msgstr ""
+
+#, fuzzy
+msgid "Wine prefix not found"
+msgstr "未找到前缀"
 
 msgid "Game not found."
 msgstr "未找到游戏。"
@@ -861,9 +883,6 @@ msgstr "有可用更新"
 
 msgid "A new AppImage update is available."
 msgstr "有新的 AppImage 更新可用。"
-
-msgid "Update"
-msgstr "更新"
 
 msgid "Later"
 msgstr "稍后"
@@ -2040,8 +2059,41 @@ msgstr ""
 msgid "Failed to refresh GOG library: {0}"
 msgstr "启动游戏失败：{0}"
 
+msgid "Failed to log out of Epic account"
+msgstr ""
+
+msgid "Copy the authorization code to clipboard"
+msgstr ""
+
+msgid "Epic authorization…"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Epic login failed: {0}"
+msgstr "文件：{0}"
+
+#, fuzzy
+msgid "Epic account connected"
+msgstr "已连接"
+
+#, fuzzy
+msgid "Epic account not connected"
+msgstr "已连接"
+
+#, fuzzy, python-brace-format
+msgid "Refreshing Epic library… {0}/{1}"
+msgstr "启动游戏失败：{0}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to refresh Epic library: {0}"
+msgstr "启动游戏失败：{0}"
+
 msgid "Select installation folder"
 msgstr ""
+
+#, fuzzy
+msgid "Another download is running"
+msgstr "正在下载"
 
 msgid "Another GOG operation is already running"
 msgstr ""
@@ -2350,6 +2402,10 @@ msgstr "播放设备"
 
 msgid "Output"
 msgstr "输出"
+
+#, fuzzy
+msgid "Return to desktop"
+msgstr "添加到桌面"
 
 msgid "Logout"
 msgstr "注销"

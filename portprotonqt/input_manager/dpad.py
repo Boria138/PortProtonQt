@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 
 from portprotonqt.custom_widgets import AutoSizeButton, NavLabel
 from portprotonqt.dialogs import AddGameDialog
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import AnimatedCard
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.input_manager.constants import (
     PAD_AXIS_LEFT_X,
@@ -267,7 +267,7 @@ class DpadInputMixin(InputMixin):
         current_index = self._parent.stackedWidget.currentIndex()
         if code != PAD_DPAD_Y or value >= 0 or current_index not in (0, 1):
             return False
-        if not isinstance(focused, GameCard):
+        if not isinstance(focused, AnimatedCard):
             return False
         if current_index == 0:
             container = self._parent.gamesListWidget
@@ -279,7 +279,7 @@ class DpadInputMixin(InputMixin):
         if container is None or focus_target is None:
             return False
         cards: list[QWidget] = [
-            card for card in container.findChildren(GameCard)
+            card for card in container.findChildren(AnimatedCard)
             if card.isVisible() and card.isEnabled()
         ]
         if not cards or focused not in self._get_card_grid_rows(cards)[0]:
@@ -354,7 +354,7 @@ class DpadInputMixin(InputMixin):
             isinstance(focused, QListView)
             and self._find_parent_combo(focused) is not None
         )
-        if is_initial_press and not isinstance(focused, GameCard) and not combo_popup:
+        if is_initial_press and not isinstance(focused, AnimatedCard) and not combo_popup:
             SoundManager().play("navigate")
         if self._handle_dialog_dpad(active, code, value):
             return

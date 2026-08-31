@@ -1232,6 +1232,8 @@ class MangoHudSettingsMixin:
 
     def _filter_mangohud_settings(self, search_text):
         """Filter MangoHud groups based on search text."""
+        if not self.mangohud_category_groups:
+            return
         config_visible = self.current_settings.get('PW_MANGOHUD') == '1' \
             and self.current_settings.get('PW_MANGOHUD_USER_CONF') != '1'
         for checkbox in self.mangohud_toggle_widgets.values():

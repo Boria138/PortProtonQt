@@ -3,9 +3,10 @@
 from inspect import signature
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import MagicMock
 
 from PySide6.QtCore import QEvent, QObject, QStringListModel, Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
 from pytest import MonkeyPatch, raises
 
 import portprotonqt.input_manager as input_manager
@@ -15,6 +16,7 @@ import portprotonqt.input_manager.runtime as input_runtime
 import portprotonqt.native_gamepad as native_gamepad
 from portprotonqt.input_manager.constants import (
     GamepadType,
+    KEY_LEFT,
     PAD_BUTTON_SOUTH,
     PAD_BUTTON_SELECT,
     SDL_GAMEPAD_TYPE_PS5,
@@ -22,11 +24,24 @@ from portprotonqt.input_manager.constants import (
     SDL_GAMEPAD_BUTTON_DPAD_UP,
 )
 from portprotonqt.input_manager import InputManager, MainWindowProtocol, PAD_DPAD_X, PAD_DPAD_Y
+from portprotonqt.game_library_manager import FullLibraryTile
 from portprotonqt.native_gamepad import GamepadBackendError, SDLGamepad
+from portprotonqt.themes.standart.styles.constants import GAME_CARD_ANIMATION
 
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+def _tile_theme() -> Any:
+    return SimpleNamespace(
+        fullLibraryTileSize=(180, 180),
+        fullLibraryTileColumns=2,
+        fullLibraryTileRows=2,
+        fullLibraryTileRadius=10,
+        GAME_CARD_HORIZONTAL={},
+        GAME_CARD_ANIMATION=GAME_CARD_ANIMATION,
+    )
 
 
 def test_dpad_first_repeat_uses_long_press_delay() -> None:
@@ -192,8 +207,8 @@ def test_game_card_navigation_skips_hidden_cards(monkeypatch: MonkeyPatch) -> No
     next_card.show()
     app.processEvents()
 
-    monkeypatch.setattr(input_manager, "GameCard", DummyCard)
-    monkeypatch.setattr(input_dpad, "GameCard", DummyCard)
+    monkeypatch.setattr(input_manager, "AnimatedCard", DummyCard)
+    monkeypatch.setattr(input_dpad, "AnimatedCard", DummyCard)
     manager = InputManager.__new__(InputManager)
     manager._parent = cast(MainWindowProtocol, SimpleNamespace(tabButtons={0: QWidget()}))
 
@@ -234,6 +249,82 @@ def test_card_grid_navigation_uses_visual_rows() -> None:
         [bottom_right, top_left, bottom_left, top_right], PAD_DPAD_Y, 1
     )
     assert QApplication.focusWidget() is bottom_right
+
+
+def test_horizontal_library_navigation_wraps_at_both_ends() -> None:
+    app = QApplication.instance() or QApplication([])
+    container = QWidget()
+    layout = QHBoxLayout(container)
+    cards: list[QWidget] = [QPushButton() for _index in range(3)]
+    for card in cards:
+        layout.addWidget(card)
+        card.show()
+    container.show()
+    app.processEvents()
+
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(
+        MainWindowProtocol,
+        SimpleNamespace(
+            game_library_manager=SimpleNamespace(
+                layout_mode="horizontal",
+                gamesListLayout=layout,
+            )
+        ),
+    )
+    cards[-1].setFocus(Qt.FocusReason.OtherFocusReason)
+
+    assert manager._navigate_horizontal_library(cards, PAD_DPAD_X, 1)
+    assert QApplication.focusWidget() is cards[0]
+
+    assert manager._navigate_horizontal_library(cards, PAD_DPAD_X, -1)
+    assert QApplication.focusWidget() is cards[-1]
+
+    tile = FullLibraryTile(_tile_theme())
+    tile.setParent(container)
+    layout.addWidget(tile)
+    tile.show()
+    manager._parent.game_library_manager.layout_mode = "horizontal_top"
+    manager._parent.game_library_manager.fullLibraryTile = tile
+    navigable_cards = [*cards, tile]
+    assert manager._navigate_horizontal_library(navigable_cards, PAD_DPAD_X, 1)
+    assert QApplication.focusWidget() is tile
+
+    assert manager._navigate_horizontal_library(navigable_cards, PAD_DPAD_X, -1)
+    assert QApplication.focusWidget() is cards[-1]
+
+    assert manager._navigate_horizontal_library(navigable_cards, PAD_DPAD_X, 1)
+    assert QApplication.focusWidget() is tile
+
+    assert manager._navigate_horizontal_library(navigable_cards, PAD_DPAD_X, 1)
+    assert QApplication.focusWidget() is cards[0]
+
+
+def test_full_library_tile_arrow_does_not_switch_tabs() -> None:
+    app = QApplication.instance() or QApplication([])
+    tile = FullLibraryTile(_tile_theme())
+    tile.show()
+    tile.setFocus(Qt.FocusReason.OtherFocusReason)
+    app.processEvents()
+    manager = InputManager.__new__(InputManager)
+    manager.file_explorer = None
+    switch_tab = MagicMock()
+    manager._parent = cast(
+        MainWindowProtocol,
+        SimpleNamespace(switchTab=switch_tab),
+    )
+
+    assert not manager._handle_input_tab_key(KEY_LEFT)
+    switch_tab.assert_not_called()
+
+
+def test_backspace_uses_standard_back_navigation() -> None:
+    manager = InputManager.__new__(InputManager)
+    standard_back = MagicMock()
+    cast(Any, manager)._handle_standard_back = standard_back
+
+    assert manager._handle_input_back_key(QWidget())
+    standard_back.assert_called_once_with()
 
 
 def test_library_toolbar_navigation_includes_delete_missing_button() -> None:
@@ -782,8 +873,8 @@ def test_first_card_row_moves_focus_to_toolbar(monkeypatch: MonkeyPatch) -> None
     card.show()
     app.processEvents()
     card.setFocus(Qt.FocusReason.OtherFocusReason)
-    monkeypatch.setattr(input_manager, "GameCard", DummyCard)
-    monkeypatch.setattr(input_dpad, "GameCard", DummyCard)
+    monkeypatch.setattr(input_manager, "AnimatedCard", DummyCard)
+    monkeypatch.setattr(input_dpad, "AnimatedCard", DummyCard)
     parent = SimpleNamespace(
         stackedWidget=SimpleNamespace(currentIndex=lambda: 0),
         gamesListWidget=container,

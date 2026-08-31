@@ -17,6 +17,7 @@ from portprotonqt.detail_pages.utils import (
     _setup_wave_background,
     _remove_wave_background,
     _wave_states,
+    remove_cover_background,
 )
 
 
@@ -450,8 +451,8 @@ class TestDetailBackgroundAnimations:
     def test_supports_all_omikuji_backgrounds_in_static_mode(self):
         manager = DetailBackgroundAnimations()
         page = MagicMock()
-        config = {}
         for effect in manager.effects:
+            config = {effect: {}}
             theme = SimpleNamespace(
                 DETAIL_PAGE_BG_MODE=f"static_{effect}",
                 DETAIL_PAGE_BACKGROUNDS=config,
@@ -473,12 +474,24 @@ class TestDetailBackgroundAnimations:
             DETAIL_PAGE_BACKGROUNDS={
                 "animation_interval_ms": 40,
                 "animation_speed": 0.02,
+                "aurora": {},
             },
         )
         assert manager.setup(page, _make_palette(["#111"]), theme)
         timer.setInterval.assert_called_once_with(40)
         timer.start.assert_called_once()
         assert manager._states[page]["timer"] is timer
+
+    def test_incomplete_effect_config_is_not_installed(self):
+        manager = DetailBackgroundAnimations()
+        page = MagicMock()
+        theme = SimpleNamespace(
+            DETAIL_PAGE_BG_MODE="leaf",
+            DETAIL_PAGE_BACKGROUNDS={"animation_interval_ms": 30},
+        )
+
+        assert not manager.setup(page, _make_palette(["#111"]), theme)
+        assert page not in manager._states
 
     def test_wave_mode_is_not_claimed(self):
         manager = DetailBackgroundAnimations()
@@ -488,6 +501,22 @@ class TestDetailBackgroundAnimations:
         assert page not in manager._states
 
 # === _remove_wave_background ===
+
+
+def test_remove_cover_background_stops_procedural_effect() -> None:
+    page = MagicMock()
+    timer = MagicMock()
+    original_paint = MagicMock()
+    detail_utils._detail_backgrounds._states[page] = {
+        "timer": timer,
+        "original_paint": original_paint,
+    }
+
+    remove_cover_background(page)
+
+    timer.stop.assert_called_once()
+    timer.deleteLater.assert_called_once()
+    assert page.paintEvent is original_paint
 
 
 class TestRemoveWaveBackground:

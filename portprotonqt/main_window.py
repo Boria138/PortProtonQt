@@ -1995,25 +1995,6 @@ class MainWindow(
             focused_widget.selectAll()
         elif isinstance(focused_widget, QCheckBox):
             focused_widget.setChecked(not focused_widget.isChecked())
-        elif isinstance(focused_widget, GameCard):
-            game_data = {
-                "name": focused_widget.name,
-                "description": focused_widget.description,
-                "cover_path": focused_widget.cover_path,
-                "appid": focused_widget.appid,
-                "controller_support": focused_widget.controller_support,
-                "exec_line": focused_widget.exec_line,
-                "last_launch": focused_widget.last_launch,
-                "formatted_playtime": focused_widget.formatted_playtime,
-                "playtime_seconds": focused_widget.playtime_seconds,
-                "protondb_tier": focused_widget.protondb_tier,
-                "anticheat_status": focused_widget.anticheat_status,
-                "game_source": focused_widget.game_source,
-                "anticheat_slug": focused_widget.anticheat_slug,
-                "ppdb_id": focused_widget.ppdb_id,
-                "ppdb_rating": focused_widget.ppdb_rating,
-            }
-            focused_widget.select_callback(game_data)
         parent = focused_widget.parent()
         while parent:
             if isinstance(parent, FileExplorer):
@@ -2932,9 +2913,14 @@ class MainWindow(
         # Save card sizes only for grid layouts.
         layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         size_slider = getattr(self.game_library_manager, 'sizeSlider', None)
-        if size_slider is None or layout_mode != "list":
+        if size_slider is None or layout_mode not in {
+            "list", "horizontal", "horizontal_top"
+        }:
             ui_config.set_card_width(self.card_width)
-        if hasattr(self, 'auto_size_slider') and layout_mode != "list":
+        if (
+            hasattr(self, 'auto_size_slider')
+            and layout_mode not in {"list", "horizontal", "horizontal_top"}
+        ):
             ui_config.set_auto_card_width(self.auto_card_width)
 
         # Save window sizes (if not in fullscreen mode)

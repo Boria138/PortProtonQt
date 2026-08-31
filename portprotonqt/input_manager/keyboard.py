@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.custom_widgets import AutoSizeButton
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import AnimatedCard, GameCard
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.input_manager.constants import (
     BUTTONS,
@@ -406,7 +406,7 @@ class KeyboardInputMixin(InputMixin):
         active = QApplication.activeWindow()
         if self.file_explorer or isinstance(active, QMessageBox | QDialog):
             return False
-        if isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox):
+        if isinstance(focused, AnimatedCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox):
             return False
         return self._switch_visible_tab(-1 if key == KEY_LEFT else 1)
 
@@ -474,7 +474,7 @@ class KeyboardInputMixin(InputMixin):
     def _focus_first_game_card(self, container: QWidget | None) -> bool:
         if container is None:
             return False
-        for card in container.findChildren(GameCard):
+        for card in container.findChildren(AnimatedCard):
             if card.isVisible() and card.isEnabled():
                 card.setFocus(Qt.FocusReason.OtherFocusReason)
                 scroll_area = container.parentWidget()
@@ -598,7 +598,7 @@ class KeyboardInputMixin(InputMixin):
     def _handle_input_back_key(self, focused: QWidget | None) -> bool:
         if isinstance(focused, QLineEdit) or self._focused_editable_combo(focused):
             return False
-        self._parent.goBackDetailPage(self._parent.currentDetailPage)
+        self._handle_standard_back()
         return True
 
     def _handle_input_key_release(self, key: int) -> bool:

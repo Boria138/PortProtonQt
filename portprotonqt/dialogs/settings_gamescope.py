@@ -1027,6 +1027,8 @@ class GamescopeSettingsMixin:
 
     def _filter_gamescope_settings(self, search_text):
         """Filter Gamescope groups based on search text."""
+        if not self.gamescope_category_groups:
+            return
         gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
         for checkbox in self.gamescope_toggle_widgets.values():
             layout = checkbox.parentWidget().layout()

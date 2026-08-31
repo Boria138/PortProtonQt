@@ -276,6 +276,10 @@ class ButtonInputMixin(InputMixin):
 
     def _handle_standard_back(self) -> None:
         SoundManager().play("back")
+        manager = getattr(self._parent, "game_library_manager", None)
+        close_full_library = getattr(manager, "close_full_library", None)
+        if callable(close_full_library) and close_full_library():
+            return
         if self._is_theme_store_visible():
             store_stack = getattr(self._parent, "themeStoreStack", None)
             detail_page = getattr(self._parent, "themeStoreDetailPage", None)
