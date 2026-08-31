@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QTimer, QThread
 from portprotonqt.logger import get_logger
 from portprotonqt.sound_manager import SoundManager
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import AnimatedCard
 from portprotonqt.config import display_config, window_config
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.input_manager.constants import (
@@ -286,9 +286,11 @@ class InputManager(
         if container is None:
             return
         game_cards = [
-            card for card in container.findChildren(GameCard)
+            card for card in container.findChildren(AnimatedCard)
             if card.isVisible() and card.isEnabled()
         ]
+        if self._navigate_horizontal_library(game_cards, code, value):
+            return
         focused = QApplication.focusWidget()
         if game_cards and focused not in game_cards:
             self._focus_grid_card(game_cards[0])
@@ -298,6 +300,33 @@ class InputManager(
             first_row = self._get_card_grid_rows(game_cards)[0]
             if focused in first_row:
                 self._parent.tabButtons[tab_index].setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def _navigate_horizontal_library(
+        self, cards: list[QWidget], code: int, value: int
+    ) -> bool:
+        manager = getattr(self._parent, "game_library_manager", None)
+        if getattr(manager, "layout_mode", "grid") not in {
+            "horizontal", "horizontal_top"
+        }:
+            return False
+        layout = getattr(manager, "gamesListLayout", None)
+        if code != PAD_DPAD_X or value == 0 or layout is None:
+            return False
+        ordered_cards = []
+        for index in range(layout.count()):
+            item = layout.itemAt(index)
+            widget = item.widget() if item is not None else None
+            if widget in cards:
+                ordered_cards.append(widget)
+        focused = QApplication.focusWidget()
+        if not ordered_cards:
+            return True
+        if focused not in ordered_cards:
+            self._focus_grid_card(ordered_cards[0])
+            return True
+        target_index = (ordered_cards.index(focused) + value) % len(ordered_cards)
+        self._focus_grid_card(ordered_cards[target_index])
+        return True
 
     def _get_card_grid_rows(self, cards: list[QWidget]) -> list[list[QWidget]]:
         """Group cards into rows ordered by their visual position."""

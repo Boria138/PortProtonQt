@@ -13,8 +13,12 @@ from PySide6.QtGui import (
     QIcon,
     QPen,
     QLinearGradient,
+    QEnterEvent,
+    QFocusEvent,
+    QMouseEvent,
+    QPaintEvent,
 )
-from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer, QSize
+from PySide6.QtCore import QEvent, Signal, Property, Qt, QUrl, QTimer, QSize
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -209,10 +213,114 @@ class SourceCorner(QWidget):
         self.update()
 
 
-class GameCard(QFrame):
+class AnimatedCard(QFrame):
+    animation_base_size: tuple[int, int]
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
     scaleChanged = Signal()
+    hoverChanged = Signal(str, bool)
+    focusChanged = Signal(str, bool)
+    clicked = Signal()
+
+    def setup_card_animations(self, theme: Any, layout_config: dict) -> None:
+        self.theme = theme
+        self.card_layout_cfg = layout_config
+        self._borderWidth = layout_config.get(
+            "default_border_width", theme.GAME_CARD_ANIMATION["default_border_width"]
+        )
+        self._gradientAngle = layout_config.get(
+            "gradient_start_angle", theme.GAME_CARD_ANIMATION["gradient_start_angle"]
+        )
+        self._scale = layout_config.get(
+            "default_scale", theme.GAME_CARD_ANIMATION["default_scale"]
+        )
+        self._hovered = False
+        self._focused = False
+        self._hover_sound_pending = False
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setMouseTracking(True)
+        self.animations = GameCardAnimations(self, theme)
+        self.animations.setup_animations()
+
+    def update_scale(self) -> None:
+        width, height = self.animation_base_size
+        self.setFixedSize(int(width * self._scale), int(height * self._scale))
+
+    def getBorderWidth(self) -> int:
+        return self._borderWidth
+
+    def setBorderWidth(self, value: int) -> None:
+        self._borderWidth = value
+        self.borderWidthChanged.emit()
+        self.update()
+
+    def getGradientAngle(self) -> float:
+        return self._gradientAngle
+
+    def setGradientAngle(self, value: float) -> None:
+        self._gradientAngle = value
+        self.gradientAngleChanged.emit()
+        self.update()
+
+    def getScale(self) -> float:
+        return self._scale
+
+    def setScale(self, value: float) -> None:
+        self._scale = value
+        self.update_scale()
+        self.scaleChanged.emit()
+
+    borderWidth = Property(int, getBorderWidth, setBorderWidth, notify=borderWidthChanged)
+    gradientAngle = Property(float, getGradientAngle, setGradientAngle, notify=gradientAngleChanged)
+    scale = Property(float, getScale, setScale, notify=scaleChanged)
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        self.animations.paint_border(QPainter(self))
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.raise_()
+        self._hover_sound_pending = True
+        self.animations.handle_enter_event()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event: QEvent) -> None:
+        self._hover_sound_pending = False
+        self.animations.handle_leave_event()
+        super().leaveEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._hover_sound_pending:
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
+            self._hover_sound_pending = False
+        super().mouseMoveEvent(event)
+
+    def focusInEvent(self, event: QFocusEvent) -> None:
+        self.raise_()
+        if QApplication.activeWindow() is not None and event.reason() not in (
+            Qt.FocusReason.ActiveWindowFocusReason,
+            Qt.FocusReason.MouseFocusReason,
+        ):
+            from portprotonqt.sound_manager import SoundManager
+            SoundManager().play("navigate")
+        self.animations.handle_focus_in_event()
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event: QFocusEvent) -> None:
+        self.animations.handle_focus_out_event()
+        super().focusOutEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.pos()):
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+    def click(self) -> None:
+        self.clicked.emit()
+
+
+class GameCard(AnimatedCard):
     editShortcutRequested = Signal(str, str, str)
     deleteGameRequested = Signal(str, str)
     addToMenuRequested = Signal(str, str)
@@ -222,8 +330,6 @@ class GameCard(QFrame):
     addToSteamRequested = Signal(str, str, str)
     removeFromSteamRequested = Signal(str, str)
     openGameFolderRequested = Signal(str, str)
-    hoverChanged = Signal(str, bool)
-    focusChanged = Signal(str, bool)
 
     def __init__(
         self, name, description, cover_path, appid, controller_support, exec_line,
@@ -266,8 +372,12 @@ class GameCard(QFrame):
         self.display_filter = game_config.get_display_filter()
         self.badge_view_mode = ui_config.get_badge_view_mode()
         self.current_theme_name = ui_config.get_theme()
-        self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        parent_mode = parent.property("library_layout_mode") if parent is not None else None
+        self.layout_mode = str(
+            parent_mode or getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")
+        ).lower()
         self.list_layout = self.layout_mode == "list"
+        self.horizontal_layout = self.layout_mode in {"horizontal", "horizontal_top"}
         self.economy_mode = ui_config.get_economy_mode()
         self.missing_executable_path = self._get_missing_executable_path()
 
@@ -277,24 +387,18 @@ class GameCard(QFrame):
         self.portproton_visible = str(game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
-        config_name = "GAME_CARD_LIST" if self.list_layout else "GAME_CARD_GRID"
+        if self.list_layout:
+            config_name = "GAME_CARD_LIST"
+        elif self.horizontal_layout:
+            config_name = "GAME_CARD_HORIZONTAL"
+        else:
+            config_name = "GAME_CARD_GRID"
         self.card_layout_cfg = getattr(self.theme, config_name, {})
         default_margin = 8 if self.list_layout else 20
         self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setProperty("theme_style_name", "GAME_CARD_WINDOW_STYLE")
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
-
-        self._borderWidth = self.theme.GAME_CARD_ANIMATION["default_border_width"]
-        self._gradientAngle = self.theme.GAME_CARD_ANIMATION["gradient_start_angle"]
-        self._scale = self.theme.GAME_CARD_ANIMATION["default_scale"]
-        self._hovered = False
-        self._focused = False
-        self._hover_sound_pending = False
-        self.setMouseTracking(True)
-
-        self.animations = GameCardAnimations(self, self.theme)
-        self.animations.setup_animations()
+        self.setup_card_animations(self.theme, self.card_layout_cfg)
 
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(self.theme.shadow_blur_radius)
@@ -455,7 +559,12 @@ class GameCard(QFrame):
         old_theme = self.theme
         old_layout_cfg = self.card_layout_cfg
         self.theme = theme
-        config_name = "GAME_CARD_LIST" if self.list_layout else "GAME_CARD_GRID"
+        if self.list_layout:
+            config_name = "GAME_CARD_LIST"
+        elif self.horizontal_layout:
+            config_name = "GAME_CARD_HORIZONTAL"
+        else:
+            config_name = "GAME_CARD_GRID"
         self.card_layout_cfg = getattr(theme, config_name, {})
         default_margin = 8 if self.list_layout else 20
         self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
@@ -494,7 +603,10 @@ class GameCard(QFrame):
                 icon_name, self.current_theme_name, as_path=True
             )
             label.refresh_source_theme(corner_config, icon)
-        if old_theme.GAME_CARD_ANIMATION != theme.GAME_CARD_ANIMATION:
+        if (
+            old_theme.GAME_CARD_ANIMATION != theme.GAME_CARD_ANIMATION
+            or old_layout_cfg != self.card_layout_cfg
+        ):
             self.animations.refresh_theme(theme)
         else:
             self.animations.theme = theme
@@ -522,7 +634,8 @@ class GameCard(QFrame):
             height = cover_size
         else:
             width = self.base_card_width
-            height = int(self.base_card_width * 1.5)
+            layout_config = getattr(self, "card_layout_cfg", {})
+            height = int(self.base_card_width * layout_config.get("cover_aspect_ratio", 1.5))
         if self._set_animated_cover(cover_path, width, height):
             return
         fallback_exe, fallback_icon_path = self._get_exe_icon_fallback()
@@ -1031,76 +1144,6 @@ class GameCard(QFrame):
         favorites_config.set_games(favorites)
         self.update_favorite_icon()
 
-    def getBorderWidth(self) -> int:
-        return self._borderWidth
-
-    def setBorderWidth(self, value: int):
-        if self._borderWidth != value:
-            self._borderWidth = value
-            self.borderWidthChanged.emit()
-            self.update()
-
-    def getGradientAngle(self) -> float:
-        return self._gradientAngle
-
-    def setGradientAngle(self, value: float):
-        if self._gradientAngle != value:
-            self._gradientAngle = value
-            self.gradientAngleChanged.emit()
-            self.update()
-
-    def getScale(self) -> float:
-        return self._scale
-
-    def setScale(self, value: float):
-        if self._scale != value:
-            self._scale = value
-            self.update_scale()
-            self.scaleChanged.emit()
-
-    borderWidth = Property(int, fget=getBorderWidth, fset=setBorderWidth, notify=borderWidthChanged)
-    gradientAngle = Property(float, fget=getGradientAngle, fset=setGradientAngle, notify=gradientAngleChanged)
-    scale = Property(float, fget=getScale, fset=setScale, notify=scaleChanged)
-
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        self.animations.paint_border(QPainter(self))
-
-    def enterEvent(self, event):
-        self._hover_sound_pending = True
-        self.animations.handle_enter_event()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self._hover_sound_pending = False
-        self.animations.handle_leave_event()
-        super().leaveEvent(event)
-
-    def mouseMoveEvent(self, event):
-        if self._hover_sound_pending:
-            from portprotonqt.sound_manager import SoundManager
-            SoundManager().play("navigate")
-            self._hover_sound_pending = False
-        super().mouseMoveEvent(event)
-
-    def focusInEvent(self, event):
-        if (
-            QApplication.activeWindow() is not None
-            and event.reason() not in (
-                Qt.FocusReason.ActiveWindowFocusReason,
-                Qt.FocusReason.MouseFocusReason,
-            )
-        ):
-            from portprotonqt.sound_manager import SoundManager
-            SoundManager().play("navigate")
-        self.animations.handle_focus_in_event()
-        super().focusInEvent(event)
-
-    def focusOutEvent(self, event):
-        self.animations.handle_focus_out_event()
-        super().focusOutEvent(event)
-
     def hideEvent(self, event: QHideEvent) -> None:
         self.set_animated_cover_paused(True)
         super().hideEvent(event)
@@ -1109,28 +1152,31 @@ class GameCard(QFrame):
         self.set_animated_cover_paused(False)
         super().showEvent(event)
 
-    def mousePressEvent(self, event):
+    def click(self) -> None:
+        game_data = {
+            "name": self.name,
+            "description": self.description,
+            "cover_path": self.cover_path,
+            "appid": self.appid,
+            "controller_support": self.controller_support,
+            "exec_line": self.exec_line,
+            "last_launch": self.last_launch,
+            "formatted_playtime": self.formatted_playtime,
+            "playtime_seconds": self.playtime_seconds,
+            "protondb_tier": self.protondb_tier,
+            "game_source": self.game_source,
+            "anticheat_status": self.anticheat_status,
+            "anticheat_slug": self.anticheat_slug,
+            "ppdb_id": self.ppdb_id,
+            "ppdb_rating": self.ppdb_rating,
+            "protondb_appid": self.protondb_appid,
+            "autoinstall_exe_name": getattr(self, "autoinstall_exe_name", ""),
+        }
+        self.select_callback(game_data)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            game_data = {
-                "name": self.name,
-                "description": self.description,
-                "cover_path": self.cover_path,
-                "appid": self.appid,
-                "controller_support": self.controller_support,
-                "exec_line": self.exec_line,
-                "last_launch": self.last_launch,
-                "formatted_playtime": self.formatted_playtime,
-                "playtime_seconds": self.playtime_seconds,
-                "protondb_tier": self.protondb_tier,
-                "game_source": self.game_source,
-                "anticheat_status": self.anticheat_status,
-                "anticheat_slug": self.anticheat_slug,
-                "ppdb_id": self.ppdb_id,
-                "ppdb_rating": self.ppdb_rating,
-                "protondb_appid": self.protondb_appid,
-                "autoinstall_exe_name": getattr(self, "autoinstall_exe_name", ""),
-            }
-            self.select_callback(game_data)
+            self.click()
         super().mousePressEvent(event)
 
     def cleanup(self):

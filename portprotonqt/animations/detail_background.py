@@ -30,7 +30,16 @@ class DetailBackgroundAnimations:
         if effect not in self.effects:
             self.remove(page)
             return False
-        config = theme.DETAIL_PAGE_BACKGROUNDS
+        config = getattr(theme, "DETAIL_PAGE_BACKGROUNDS", {})
+        animated = not mode.startswith("static_")
+        if not isinstance(config, dict) or not isinstance(config.get(effect), dict):
+            self.remove(page)
+            return False
+        if animated and not all(
+            key in config for key in ("animation_interval_ms", "animation_speed")
+        ):
+            self.remove(page)
+            return False
         self.remove(page)
         state = {
             "effect": effect,
@@ -47,7 +56,7 @@ class DetailBackgroundAnimations:
             self._paint(page, state)
 
         page.paintEvent = paint_event
-        if not mode.startswith("static_"):
+        if animated:
             self._start_timer(page, state)
         return True
 

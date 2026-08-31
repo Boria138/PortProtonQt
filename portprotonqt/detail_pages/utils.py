@@ -4,9 +4,9 @@ import os
 import re
 from weakref import WeakKeyDictionary
 from collections.abc import Callable
-from PySide6.QtWidgets import QWidget, QApplication, QLabel, QGraphicsOpacityEffect
+from PySide6.QtWidgets import QWidget, QApplication, QLabel, QGraphicsBlurEffect, QGraphicsOpacityEffect, QGraphicsPixmapItem, QGraphicsScene
 from PySide6.QtCore import QTimer, Qt, QObject, Signal, QPropertyAnimation, QByteArray
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QBrush, QImage, QPainter, QPalette, QPixmap
 
 from portprotonqt.image_utils import get_animated_cover_pixmap
 from portprotonqt.image_utils import load_pixmap_async, round_corners, set_animated_cover
@@ -85,7 +85,7 @@ def _set_animated_cover(
     detail_page, image_label = cover_widgets
     if not set_animated_cover(image_label, cover_path, cover_size[0], cover_size[1], 10):
         return False
-    _setup_palette_stylesheet(detail_page, get_animated_cover_pixmap(image_label), main_window)
+    setup_cover_background(detail_page, get_animated_cover_pixmap(image_label), main_window)
     _reveal_cover(image_label, main_window.theme)
     return True
 
@@ -99,7 +99,7 @@ def _on_pixmap_ready(pixmap: QPixmap, detail_page: QWidget, image_label: QLabel,
         image_label.setPixmap(rounded)
         _reveal_cover(image_label, main_window.theme)
         logger.debug("Pixmap set for imageLabel")
-        _setup_palette_stylesheet(detail_page, pixmap, main_window)
+        setup_cover_background(detail_page, pixmap, main_window)
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping pixmap update")
 
@@ -138,25 +138,75 @@ def _reveal_cover(image_label: QLabel, theme) -> None:
     animation.start()
 
 
-def _setup_palette_stylesheet(detail_page: QWidget, pixmap: QPixmap | None, main_window) -> None:
+def setup_cover_background(
+    detail_page: QWidget, pixmap: QPixmap | None, main_window, theme=None
+) -> None:
     """Setup palette-based stylesheet after image load."""
     if pixmap is None:
         return
+    active_theme = theme or main_window.theme
+    if getattr(active_theme, "DETAIL_PAGE_BG_MODE", "gradient") == "blur":
+        _apply_blurred_cover(detail_page, pixmap, active_theme)
+        return
 
     def on_palette_ready(palette: list) -> None:
-        _on_palette_ready(palette, detail_page, main_window)
+        _on_palette_ready(palette, detail_page, main_window, active_theme)
 
-    num_colors = getattr(main_window.theme, 'DETAIL_PAGE_PALETTE_COLORS', 5)
+    num_colors = getattr(active_theme, 'DETAIL_PAGE_PALETTE_COLORS', 5)
     if num_colors < 2:
         num_colors = 2
     main_window.getColorPalette_from_pixmap(pixmap, num_colors=num_colors, callback=on_palette_ready)
 
 
-def _on_palette_ready(palette: list, detail_page: QWidget, main_window) -> None:
+def remove_cover_background(widget: QWidget) -> None:
+    """Remove a shared cover-driven background and stop its animation."""
+    _remove_wave_background(widget)
+    _detail_backgrounds.remove(widget)
+    widget.setStyleSheet("")
+    widget.setAutoFillBackground(False)
+    if isinstance(widget, QLabel):
+        widget.clear()
+
+
+def _on_palette_ready(
+    palette: list, detail_page: QWidget, main_window, theme
+) -> None:
     """Handle palette ready callback."""
     if not _is_detail_page_valid(detail_page):
         return
-    _apply_palette_stylesheet(detail_page, palette, main_window)
+    _apply_palette_stylesheet(detail_page, palette, main_window, theme)
+
+
+def _apply_blurred_cover(widget: QWidget, pixmap: QPixmap, theme) -> None:
+    config = theme.DETAIL_PAGE_BACKGROUNDS.get("blur", {})
+    width, height = config.get("render_resolution", (1280, 720))
+    scaled = pixmap.scaled(
+        width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    source = scaled.copy(
+        (scaled.width() - width) // 2, (scaled.height() - height) // 2,
+        width, height,
+    )
+    item = QGraphicsPixmapItem(source)
+    effect = QGraphicsBlurEffect()
+    effect.setBlurRadius(config.get("radius", 64))
+    item.setGraphicsEffect(effect)
+    scene = QGraphicsScene()
+    scene.addItem(item)
+    image = QImage(source.size(), QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(image)
+    scene.render(painter)
+    painter.end()
+    background = QPixmap.fromImage(image).scaled(widget.size())
+    if isinstance(widget, QLabel):
+        widget.setPixmap(background)
+        return
+    palette = widget.palette()
+    palette.setBrush(QPalette.ColorRole.Window, QBrush(background))
+    widget.setPalette(palette)
+    widget.setAutoFillBackground(True)
 
 
 def _build_palette_stops(dark_palette: list) -> str:
@@ -228,14 +278,16 @@ def _resolve_gradient_config(theme: object) -> dict:
     return config
 
 
-def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) -> None:
+def _apply_palette_stylesheet(
+    detail_page: QWidget, palette: list, main_window, theme
+) -> None:
     """Apply palette-based stylesheet to detail page."""
     try:
         dark_palette = [
             main_window.darkenColor(color, factor=200) for color in palette
         ]
-        gradient_config = _resolve_gradient_config(main_window.theme)
-        stops = _resolve_gradient_stops(main_window.theme, dark_palette)
+        gradient_config = _resolve_gradient_config(theme)
+        stops = _resolve_gradient_stops(theme, dark_palette)
         gradient_type = gradient_config.get("type", "linear")
 
         if gradient_type == 'radial':
@@ -268,7 +320,7 @@ def _apply_palette_stylesheet(detail_page: QWidget, palette: list, main_window) 
             """
 
         detail_page.setStyleSheet(stylesheet)
-        _setup_wave_background(detail_page, dark_palette, main_window.theme)
+        _setup_wave_background(detail_page, dark_palette, theme)
         detail_page.update()
         logger.debug("Stylesheet updated with palette")
     except RuntimeError:
@@ -287,7 +339,7 @@ def _setup_wave_background(detail_page: QWidget, dark_palette: list, theme) -> N
         return
     _detail_backgrounds.remove(detail_page)
 
-    if bg_mode == "gradient":
+    if bg_mode not in {"waves", "static_waves"}:
         _remove_wave_background(detail_page)
         return
 

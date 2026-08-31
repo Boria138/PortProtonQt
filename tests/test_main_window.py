@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch, mark
 from PySide6.QtCore import QObject, Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 
 from portprotonqt.animations.library_controls import _animation_duration
@@ -22,9 +23,10 @@ from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.egs_api import EGSAPI
 from portprotonqt.tabs.download_tab import MainWindowDownloadTabMixin
 from portprotonqt.game_card import GameCard, SourceCorner
-from portprotonqt.game_library_manager import GameLibraryManager
+from portprotonqt.game_library_manager import FullLibraryTile, GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
+from portprotonqt.themes.standart.styles.constants import GAME_CARD_ANIMATION
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
 import portprotonqt.tabs.download_tab as download_tab_module
@@ -32,6 +34,8 @@ import portprotonqt.tabs.library_tab as library_tab_module
 import portprotonqt.tabs.system_tab as system_tab_module
 import portprotonqt.steam_api.api as steam_api_module
 import portprotonqt.main_window as main_window_module
+
+
 from portprotonqt.tabs import (
     MainWindowAutoInstallTabMixin,
     MainWindowLibraryTabMixin,
@@ -49,6 +53,17 @@ from portprotonqt.tabs.theme_tab import (
     MainWindowThemeTabMixin as ThemeMixin,
 )
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
+
+
+def _tile_theme() -> Any:
+    return SimpleNamespace(
+        fullLibraryTileSize=(180, 180),
+        fullLibraryTileColumns=2,
+        fullLibraryTileRows=2,
+        fullLibraryTileRadius=10,
+        GAME_CARD_HORIZONTAL={},
+        GAME_CARD_ANIMATION=GAME_CARD_ANIMATION,
+    )
 
 
 def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
@@ -293,8 +308,7 @@ def test_live_theme_rebuilds_library_when_layout_mode_changes() -> None:
     manager = SimpleNamespace(
         gamesListLayout=layout,
         games=[("Game",)],
-        clear_layout=MagicMock(),
-        set_games=MagicMock(),
+        rebuild_library_layout=MagicMock(),
     )
     mixin.game_library_manager = manager
 
@@ -303,8 +317,42 @@ def test_live_theme_rebuilds_library_when_layout_mode_changes() -> None:
         SimpleNamespace(LIBRARY_LAYOUT_MODE="grid"),
     )
 
-    manager.clear_layout.assert_called_once_with(layout)
-    manager.set_games.assert_called_once_with(manager.games, focus_first_card=False)
+    manager.rebuild_library_layout.assert_called_once_with("grid")
+
+
+def test_full_library_tile_accepts_async_cover_result() -> None:
+    QApplication.instance() or QApplication([])
+    manager: Any = GameLibraryManager.__new__(GameLibraryManager)
+    theme = _tile_theme()
+    tile = FullLibraryTile(theme)
+    manager.fullLibraryTile = tile
+    manager._full_library_tile_pixmaps = {}
+    manager.theme = theme
+    cover = QPixmap(60, 90)
+    cover.fill(Qt.GlobalColor.red)
+
+    manager._set_full_library_tile_cover(tile, 0, cover)
+
+    assert not tile.tile_pixmap.isNull()
+
+
+def test_full_library_tile_uses_card_scale() -> None:
+    QApplication.instance() or QApplication([])
+    theme = _tile_theme()
+    tile = FullLibraryTile(theme)
+
+    tile.setScale(1.1)
+
+    assert tile.size().toTuple() == (198, 198)
+
+
+def test_close_full_library_restores_top_layout() -> None:
+    manager: Any = GameLibraryManager.__new__(GameLibraryManager)
+    manager.full_library_open = True
+    manager.rebuild_library_layout = MagicMock()
+
+    assert manager.close_full_library()
+    manager.rebuild_library_layout.assert_called_once_with("horizontal_top")
 
 
 def test_live_theme_reopens_visible_detail_page() -> None:
@@ -433,6 +481,63 @@ def test_game_card_animation_refresh_supports_all_modes() -> None:
         assert animations.theme is theme
 
     animations.cleanup()
+
+
+def test_game_card_animation_type_uses_layout_override() -> None:
+    card = SimpleNamespace(
+        card_layout_cfg={
+            "card_animation_type": "scale",
+            "hover_scale": 1.055,
+            "hover_border_width": 6,
+            "fill_alpha": 40,
+        }
+    )
+    theme = SimpleNamespace(
+        GAME_CARD_ANIMATION={
+            "card_animation_type": "gradient",
+            "hover_scale": 1.1,
+            "hover_border_width": 8,
+            "fill_alpha": 90,
+            "focus_scale": 1.05,
+        }
+    )
+
+    animations = GameCardAnimations(card, theme)
+
+    assert animations._animation_type() == "scale"
+    assert animations._config_value("hover_scale") == 1.055
+    assert animations._config_value("hover_border_width") == 6
+    assert animations._optional_config_value("fill_alpha", 0) == 40
+    assert animations._config_value("focus_scale") == 1.05
+
+
+def test_game_card_click_uses_select_callback() -> None:
+    select_callback = MagicMock()
+    card = SimpleNamespace(
+        name="Game",
+        description="Description",
+        cover_path="cover.png",
+        appid="1",
+        controller_support="full",
+        exec_line="game.exe",
+        last_launch="today",
+        formatted_playtime="1 hour",
+        playtime_seconds=3600,
+        protondb_tier="gold",
+        game_source="steam",
+        anticheat_status="supported",
+        anticheat_slug="anti-cheat",
+        ppdb_id="report",
+        ppdb_rating="platinum",
+        protondb_appid="1",
+        autoinstall_exe_name="",
+        select_callback=select_callback,
+    )
+
+    GameCard.click(cast(Any, card))
+
+    select_callback.assert_called_once()
+    assert select_callback.call_args.args[0]["name"] == "Game"
 
 
 def test_game_card_theme_refresh_updates_hidden_badge_styles() -> None:

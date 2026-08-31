@@ -619,6 +619,7 @@ def round_corners(pixmap, radius):
     painter.end()
     return rounded
 
+
 class FullscreenDialog(QDialog):
     """
     Dialog for viewing images without standard controls.

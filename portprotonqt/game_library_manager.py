@@ -1,5 +1,6 @@
-from typing import Protocol
-from portprotonqt.game_card import GameCard
+from types import SimpleNamespace
+from typing import Any, Protocol
+from portprotonqt.game_card import AnimatedCard, GameCard
 from portprotonqt.search_utils import (
     SearchOptimizer,
     ThreadedSearch,
@@ -7,14 +8,38 @@ from portprotonqt.search_utils import (
     search_index,
 )
 from PySide6.QtWidgets import QAbstractButton
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QRegion
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QFrame, QScrollArea, QSlider, QScroller, QStackedWidget
+from PySide6.QtCore import QRect, QRectF, Qt, QTimer
+from PySide6.QtGui import QPaintEvent, QPainter, QPainterPath, QPixmap, QRegion
 from portprotonqt.custom_widgets import FlowLayout, AutoHideScrollArea
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
+from portprotonqt.detail_pages.utils import remove_cover_background, setup_cover_background
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from collections import deque
+
+
+class FullLibraryTile(AnimatedCard):
+    def __init__(self, theme: Any):
+        super().__init__()
+        self.name = ""
+        self.animation_base_size = theme.fullLibraryTileSize
+        self.tile_pixmap = QPixmap()
+        self.setup_card_animations(theme, theme.GAME_CARD_HORIZONTAL)
+        self.update_scale()
+
+    def set_tile_pixmap(self, pixmap: QPixmap) -> None:
+        self.tile_pixmap = pixmap
+        self.update()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        QFrame.paintEvent(self, event)
+        painter = QPainter(self)
+        painter.drawPixmap(self.rect(), self.tile_pixmap)
+        painter.end()
+        border_painter = QPainter(self)
+        self.animations.paint_border(border_painter)
+        border_painter.end()
 
 class MainWindowProtocol(Protocol):
     """Protocol defining the interface that MainWindow must implement for GameLibraryManager."""
@@ -48,8 +73,13 @@ class GameLibraryManager:
         self.card_width = ui_config.get_card_width()
         self.layout_mode = str(getattr(theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.gamesListWidget: QWidget | None = None
-        self.gamesListLayout: FlowLayout | None = None
+        self.gamesListLayout: FlowLayout | QHBoxLayout | None = None
         self.gamesScrollArea: QScrollArea | None = None
+        self.libraryBackgroundLabel: QLabel | None = None
+        self.fullLibraryTile: FullLibraryTile | None = None
+        self._full_library_tile_covers: list[str] = []
+        self._full_library_tile_pixmaps: dict[int, QPixmap] = {}
+        self.full_library_open = False
         self.sizeSlider: QSlider | None = None
         self._update_timer: QTimer | None = None
         self._incremental_add_timer: QTimer | None = None
@@ -71,7 +101,18 @@ class GameLibraryManager:
         self.gamesLibraryWidget = QWidget()
         self.gamesLibraryWidget.setProperty("theme_style_name", "LIBRARY_WIDGET_STYLE")
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
-        layout = QVBoxLayout(self.gamesLibraryWidget)
+        library_background = getattr(self.theme, "LIBRARY_BACKGROUND", None)
+        if isinstance(library_background, dict):
+            stack_layout = QGridLayout(self.gamesLibraryWidget)
+            stack_layout.setContentsMargins(*library_background["margins"])
+            self.libraryBackgroundLabel = QLabel()
+            stack_layout.addWidget(self.libraryBackgroundLabel, 0, 0)
+            content_widget = QWidget()
+            content_widget.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
+            layout = QVBoxLayout(content_widget)
+            stack_layout.addWidget(content_widget, 0, 0)
+        else:
+            layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
 
         # Search widget
@@ -86,9 +127,18 @@ class GameLibraryManager:
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()
+        self.gamesListWidget.setProperty("library_layout_mode", self.layout_mode)
         self.gamesListWidget.setProperty("theme_style_name", "LIST_WIDGET_STYLE")
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
-        self.gamesListLayout = FlowLayout(self.gamesListWidget)
+        if self.layout_mode in {"horizontal", "horizontal_top"}:
+            layout_config = self.theme.GAME_CARD_HORIZONTAL
+            self.gamesListLayout = QHBoxLayout(self.gamesListWidget)
+            self.gamesListLayout.setContentsMargins(*layout_config["layout_margins"])
+            self.gamesListLayout.setSpacing(layout_config["layout_spacing"])
+            scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        else:
+            self.gamesListLayout = FlowLayout(self.gamesListWidget)
         self.gamesListWidget.setLayout(self.gamesListLayout)
 
         scrollArea.setWidget(self.gamesListWidget)
@@ -109,7 +159,7 @@ class GameLibraryManager:
             self.main_window._register_gamepad_tooltip(self.sizeSlider, f"{self.card_width} px")
         self.sizeSlider.sliderReleased.connect(self.main_window.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
-        if self.layout_mode == "list":
+        if self.layout_mode in {"list", "horizontal", "horizontal_top"}:
             self.sizeSlider.setVisible(False)
         self._set_card_width_from_slider()
 
@@ -126,30 +176,89 @@ class GameLibraryManager:
 
         # Connect scroll event for lazy loading
         scrollArea.verticalScrollBar().valueChanged.connect(self.load_visible_images)
+        scrollArea.horizontalScrollBar().valueChanged.connect(self.load_visible_images)
 
         return self.gamesLibraryWidget
 
+    def rebuild_library_layout(self, layout_mode: str) -> None:
+        """Replace the card layout when a theme changes its library mode."""
+        if self.gamesListWidget is None or self.gamesListLayout is None:
+            return
+        self.clear_layout(self.gamesListLayout)
+        self.fullLibraryTile = None
+        old_layout = self.gamesListLayout
+        if layout_mode in {"horizontal", "horizontal_top"}:
+            layout_config = self.theme.GAME_CARD_HORIZONTAL
+            self.gamesListLayout = QHBoxLayout()
+            self.gamesListLayout.setContentsMargins(*layout_config["layout_margins"])
+            self.gamesListLayout.setSpacing(layout_config["layout_spacing"])
+        else:
+            self.gamesListLayout = FlowLayout()
+        QWidget().setLayout(old_layout)
+        self.gamesListWidget.setLayout(self.gamesListLayout)
+        if self.gamesScrollArea is not None:
+            horizontal = layout_mode in {"horizontal", "horizontal_top"}
+            vertical_policy = (
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+                if horizontal
+                else Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            )
+            self.gamesScrollArea.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+            self.gamesScrollArea.setVerticalScrollBarPolicy(vertical_policy)
+        theme_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        self.full_library_open = theme_mode == "horizontal_top" and layout_mode == "grid"
+        if self.full_library_open and self.libraryBackgroundLabel is not None:
+            remove_cover_background(self.libraryBackgroundLabel)
+        self.layout_mode = layout_mode
+        self.gamesListWidget.setProperty("library_layout_mode", layout_mode)
+        if self.sizeSlider is not None:
+            self.sizeSlider.setVisible(
+                not self.full_library_open
+                and layout_mode not in {"list", "horizontal", "horizontal_top"}
+            )
+            self._set_card_width_from_slider()
+            self.main_window.card_width = self.card_width
+        self.set_games(self.games, focus_first_card=False)
+
+    def open_full_library(self) -> None:
+        """Open the complete grid from the horizontal top mode."""
+        if self.layout_mode == "horizontal_top":
+            self.rebuild_library_layout("grid")
+
+    def close_full_library(self) -> bool:
+        """Return from the complete grid to the horizontal top mode."""
+        if not self.full_library_open:
+            return False
+        self.full_library_open = False
+        self.rebuild_library_layout("horizontal_top")
+        return True
+
     def on_slider_released(self):
         """Handles slider release to update card size."""
-        if self.layout_mode == "list":
+        if self.full_library_open or self.layout_mode in {
+            "list", "horizontal", "horizontal_top"
+        }:
             return
         if self.sizeSlider is None:
             return
         self._set_card_width_from_slider()
         if hasattr(self.main_window, "_gamepad_tooltip_map"):
             self.main_window._gamepad_tooltip_map[self.sizeSlider] = f"{self.card_width} px"
-        if self.layout_mode != "list":
-            ui_config.set_card_width(self.card_width)
+        ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width
         for card in self.game_card_cache.values():
             card.update_card_size(self.card_width)
         self.update_game_grid()
 
     def _set_card_width_from_slider(self):
-        """Use max card width for list layout."""
+        """Use max card width for fixed-size layouts."""
         if self.sizeSlider is None:
             return
-        if self.layout_mode == "list":
+        if self.full_library_open or self.layout_mode in {
+            "list", "horizontal", "horizontal_top"
+        }:
             self.card_width = self.sizeSlider.maximum()
         else:
             self.card_width = self.sizeSlider.value()
@@ -202,7 +311,7 @@ class GameLibraryManager:
             if self.main_window.current_hovered_card and self.main_window.current_hovered_card != card:
                 try:
                     self.main_window.current_hovered_card._hovered = False
-                    self.main_window.current_hovered_card.leaveEvent(None)
+                    self.main_window.current_hovered_card.animations.handle_leave_event()
                 except RuntimeError:
                     pass  # Card already deleted
                 self.main_window.current_hovered_card = None
@@ -213,9 +322,28 @@ class GameLibraryManager:
                 except RuntimeError:
                     pass  # Card already deleted
             self.main_window.current_focused_card = card
+            self._update_library_background(card)
         else:
             if self.main_window.current_focused_card == card:
                 self.main_window.current_focused_card = None
+
+    def _update_library_background(self, card: GameCard) -> None:
+        """Render the configured library background from the active cover."""
+        if self.full_library_open or self.libraryBackgroundLabel is None:
+            return
+        pixmap = card.coverLabel.pixmap()
+        if pixmap is None or pixmap.isNull():
+            return
+        library_config = self.theme.LIBRARY_BACKGROUND
+        backgrounds = dict(getattr(self.theme, "DETAIL_PAGE_BACKGROUNDS", {}))
+        backgrounds.update(library_config.get("backgrounds", {}))
+        background_theme = SimpleNamespace(
+            DETAIL_PAGE_BG_MODE=library_config.get("mode", "gradient"),
+            DETAIL_PAGE_BACKGROUNDS=backgrounds,
+        )
+        setup_cover_background(
+            self.libraryBackgroundLabel, pixmap, self.main_window, background_theme
+        )
 
     def _collapse_library_filter_controls(self) -> None:
         if getattr(self.main_window, "_library_controls_hover_close_delayed", False):
@@ -254,10 +382,11 @@ class GameLibraryManager:
                 try:
                     if self.main_window.current_hovered_card:
                         self.main_window.current_hovered_card._hovered = False
-                        self.main_window.current_hovered_card.leaveEvent(None)
+                        self.main_window.current_hovered_card.animations.handle_leave_event()
                 except RuntimeError:
                     pass  # Card already deleted
             self.main_window.current_hovered_card = card
+            self._update_library_background(card)
         else:
             if self.main_window.current_hovered_card == card:
                 self.main_window.current_hovered_card = None
@@ -278,9 +407,14 @@ class GameLibraryManager:
         """Schedules a game grid update with debouncing."""
         if focus_first_card is not None:
             self._focus_first_card_after_update = focus_first_card
-        self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        theme_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        if not self.full_library_open:
+            self.layout_mode = theme_mode
         if self.sizeSlider is not None:
-            self.sizeSlider.setVisible(self.layout_mode != "list")
+            self.sizeSlider.setVisible(
+                not self.full_library_open
+                and self.layout_mode not in {"list", "horizontal", "horizontal_top"}
+            )
             old_card_width = self.card_width
             self._set_card_width_from_slider()
             self.main_window.card_width = self.card_width
@@ -295,6 +429,9 @@ class GameLibraryManager:
             # When filtering, we want to update with the current filtered_games
             # which has already been set by _perform_search
             pass
+        if is_filter and self.layout_mode == "horizontal_top":
+            self.dirty = True
+            is_filter = False
         self.is_filtering = is_filter
         self._pending_update = True
 
@@ -389,6 +526,7 @@ class GameLibraryManager:
 
         if added_new_card:
             self.load_visible_images()
+        self._sync_full_library_tile()
         self.force_update_cards_library()
         self._cancel_incremental_add()
         self._schedule_focus_first_card()
@@ -407,7 +545,9 @@ class GameLibraryManager:
             self._update_search_results(search_text)
         else:
             # Full update: sorting, removal/addition, reorganization
-            games_list = self.filtered_games if self.filtered_games else self.games
+            games_list = self.filtered_games
+            if self.layout_mode != "horizontal_top" and not games_list:
+                games_list = self.games
             favorites = favorites_config.get_games()
             sort_method = game_config.get_sort_method()
 
@@ -436,6 +576,13 @@ class GameLibraryManager:
                 sorted_fav = sorted(fav_games, key=partition_sort_key)
                 sorted_non_fav = sorted(non_fav_games, key=partition_sort_key)
                 sorted_games = sorted_fav + sorted_non_fav
+                if self.layout_mode == "horizontal_top":
+                    limit = self.theme.horizontalTopGameLimit
+                    tile_games = sorted_games[limit:limit + self.theme.fullLibraryTileGameCount]
+                    self._full_library_tile_covers = [str(game[2] or "") for game in tile_games]
+                    sorted_games = sorted_games[:limit]
+                else:
+                    self._full_library_tile_covers = []
 
                 # Build set of current game keys for faster lookup
                 current_game_keys = {(game[0], game[5]) for game in sorted_games}
@@ -528,7 +675,67 @@ class GameLibraryManager:
                 self.force_update_cards_library()
 
         self.is_filtering = False  # Reset flag in any case
+        if not self._incremental_add_queue:
+            self._sync_full_library_tile()
         self._schedule_focus_first_card()
+
+    def _sync_full_library_tile(self) -> None:
+        if self.fullLibraryTile is not None:
+            self.fullLibraryTile.setParent(None)
+            self.fullLibraryTile.deleteLater()
+            self.fullLibraryTile = None
+        if self.layout_mode != "horizontal_top" or self.gamesListLayout is None:
+            return
+        if len(self.filtered_games) <= self.theme.horizontalTopGameLimit:
+            return
+        tile = FullLibraryTile(self.theme)
+        tile.setProperty("full_library_tile", True)
+        tile.setStyleSheet(self.theme.FULL_LIBRARY_TILE_STYLE)
+        tile.clicked.connect(self.open_full_library)
+        self.gamesListLayout.addWidget(tile)
+        self.fullLibraryTile = tile
+        self._full_library_tile_pixmaps = {}
+        cover_width, cover_height = self.theme.fullLibraryTileSize
+        for index, cover_path in enumerate(self._full_library_tile_covers):
+            load_pixmap_async(
+                cover_path,
+                cover_width,
+                cover_height,
+                lambda pixmap, item=index: self._set_full_library_tile_cover(
+                    tile, item, pixmap
+                ),
+            )
+
+    def _set_full_library_tile_cover(
+        self, tile: FullLibraryTile, index: int, pixmap: QPixmap
+    ) -> None:
+        if tile is not self.fullLibraryTile:
+            return
+        self._full_library_tile_pixmaps[index] = pixmap
+        width, height = self.theme.fullLibraryTileSize
+        cell_width = width // self.theme.fullLibraryTileColumns
+        cell_height = height // self.theme.fullLibraryTileRows
+        canvas = QPixmap(width, height)
+        canvas.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(canvas)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        clip = QPainterPath()
+        clip.addRoundedRect(
+            QRectF(canvas.rect()),
+            self.theme.fullLibraryTileRadius,
+            self.theme.fullLibraryTileRadius,
+        )
+        painter.setClipPath(clip)
+        for item, cover in self._full_library_tile_pixmaps.items():
+            cell = QRect(
+                item % self.theme.fullLibraryTileColumns * cell_width,
+                item // self.theme.fullLibraryTileColumns * cell_height,
+                cell_width,
+                cell_height,
+            )
+            painter.drawPixmap(cell, cover)
+        painter.end()
+        tile.set_tile_pixmap(canvas)
 
     def _schedule_focus_first_card(self) -> None:
         if not self._focus_first_card_after_update:

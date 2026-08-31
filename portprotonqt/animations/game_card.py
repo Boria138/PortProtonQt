@@ -23,6 +23,25 @@ class GameCardAnimations:
         self.pulse_anim: QPropertyAnimation | None = None
         self._isPulseAnimationConnected = False
 
+    def _animation_type(self) -> str:
+        layout_config = getattr(self.game_card, "card_layout_cfg", {})
+        return layout_config.get(
+            "card_animation_type",
+            self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient"),
+        )
+
+    def _config_value(self, key: str) -> Any:
+        layout_config = getattr(self.game_card, "card_layout_cfg", {})
+        if key in layout_config:
+            return layout_config[key]
+        return self.theme.GAME_CARD_ANIMATION[key]
+
+    def _optional_config_value(self, key: str, default: Any) -> Any:
+        layout_config = getattr(self.game_card, "card_layout_cfg", {})
+        if key in layout_config:
+            return layout_config[key]
+        return self.theme.GAME_CARD_ANIMATION.get(key, default)
+
     def _disconnect_pulse_animation(self) -> None:
         if not self._isPulseAnimationConnected or self.thickness_anim is None:
             return
@@ -50,20 +69,20 @@ class GameCardAnimations:
     def _restart_gradient_animation(self) -> None:
         self._stop_animation("gradient_anim")
         self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
-        self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
-        self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
-        self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
+        self.gradient_anim.setDuration(self._config_value("gradient_anim_duration"))
+        self.gradient_anim.setStartValue(self._config_value("gradient_start_angle"))
+        self.gradient_anim.setEndValue(self._config_value("gradient_end_angle"))
         self.gradient_anim.setLoopCount(-1)
         self.gradient_anim.start()
 
     def _easing_curve(self, easing_key: str) -> QEasingCurve:
-        easing_type = QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION[easing_key]]
+        easing_type = QEasingCurve.Type[self._config_value(easing_key)]
         return QEasingCurve(easing_type)
 
     def _restart_scale_animation(self, end_value: float, easing_key: str) -> None:
         self._stop_animation("scale_anim")
         self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-        self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
+        self.scale_anim.setDuration(self._config_value("scale_anim_duration"))
         self.scale_anim.setEasingCurve(self._easing_curve(easing_key))
         self.scale_anim.setStartValue(self.game_card._scale)
         self.scale_anim.setEndValue(end_value)
@@ -94,22 +113,21 @@ class GameCardAnimations:
         """Recreate animation state for a live theme change."""
         self.cleanup()
         self.theme = theme
-        config = self.theme.GAME_CARD_ANIMATION
-        animation_type = config.get("card_animation_type", "gradient")
-        self.game_card._gradientAngle = config["gradient_start_angle"]
+        animation_type = self._animation_type()
+        self.game_card._gradientAngle = self._config_value("gradient_start_angle")
         if self.game_card._hovered:
-            self.game_card._borderWidth = config["hover_border_width"]
-            active_scale = config["hover_scale"]
+            self.game_card._borderWidth = self._config_value("hover_border_width")
+            active_scale = self._config_value("hover_scale")
         elif self.game_card._focused:
-            self.game_card._borderWidth = config["focus_border_width"]
-            active_scale = config["focus_scale"]
+            self.game_card._borderWidth = self._config_value("focus_border_width")
+            active_scale = self._config_value("focus_scale")
         else:
-            self.game_card._borderWidth = config["default_border_width"]
-            active_scale = config["default_scale"]
+            self.game_card._borderWidth = self._config_value("default_border_width")
+            active_scale = self._config_value("default_scale")
         self.game_card._scale = (
             active_scale
             if animation_type in {"scale", "scale_fill"}
-            else config["default_scale"]
+            else self._config_value("default_scale")
         )
         self.setup_animations()
         if (self.game_card._hovered or self.game_card._focused) and animation_type in {
@@ -123,15 +141,15 @@ class GameCardAnimations:
     def setup_animations(self):
         """Initialize animation properties based on theme."""
         self.thickness_anim = QPropertyAnimation(self.game_card, QByteArray(b"borderWidth"))
-        self.thickness_anim.setDuration(self.theme.GAME_CARD_ANIMATION["thickness_anim_duration"])
+        self.thickness_anim.setDuration(self._config_value("thickness_anim_duration"))
 
-        animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+        animation_type = self._animation_type()
         if animation_type in {"gradient", "glow"}:
             self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
-            self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
+            self.gradient_anim.setDuration(self._config_value("gradient_anim_duration"))
         elif animation_type in {"scale", "scale_fill"}:
             self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-            self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
+            self.scale_anim.setDuration(self._config_value("scale_anim_duration"))
 
     def start_pulse_animation(self):
         """Start pulse animation for border width when hovered or focused."""
@@ -141,11 +159,11 @@ class GameCardAnimations:
         self._stop_animation("pulse_anim")
 
         self.pulse_anim = QPropertyAnimation(self.game_card, QByteArray(b"borderWidth"))
-        self.pulse_anim.setDuration(self.theme.GAME_CARD_ANIMATION["pulse_anim_duration"])
+        self.pulse_anim.setDuration(self._config_value("pulse_anim_duration"))
         self.pulse_anim.setLoopCount(0)
-        self.pulse_anim.setKeyValueAt(0, self.theme.GAME_CARD_ANIMATION["pulse_min_border_width"])
-        self.pulse_anim.setKeyValueAt(0.5, self.theme.GAME_CARD_ANIMATION["pulse_max_border_width"])
-        self.pulse_anim.setKeyValueAt(1, self.theme.GAME_CARD_ANIMATION["pulse_min_border_width"])
+        self.pulse_anim.setKeyValueAt(0, self._config_value("pulse_min_border_width"))
+        self.pulse_anim.setKeyValueAt(0.5, self._config_value("pulse_max_border_width"))
+        self.pulse_anim.setKeyValueAt(1, self._config_value("pulse_min_border_width"))
         self.pulse_anim.start()
 
     def handle_enter_event(self):
@@ -157,10 +175,10 @@ class GameCardAnimations:
         if not self.thickness_anim:
             self.setup_animations()
 
-        animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+        animation_type = self._animation_type()
 
         self._start_thickness_animation(
-            self.theme.GAME_CARD_ANIMATION["hover_border_width"],
+            self._config_value("hover_border_width"),
             "thickness_easing_curve",
             True,
         )
@@ -168,21 +186,21 @@ class GameCardAnimations:
         if animation_type in {"gradient", "glow"}:
             self._restart_gradient_animation()
         elif animation_type in {"scale", "scale_fill"}:
-            self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["hover_scale"], "scale_easing_curve")
+            self._restart_scale_animation(self._config_value("hover_scale"), "scale_easing_curve")
 
     def handle_leave_event(self):
         """Handle mouse leave event animations."""
         self.game_card._hovered = False
         self.game_card.hoverChanged.emit(self.game_card.name, False)
         if not self.game_card._focused:
-            animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+            animation_type = self._animation_type()
             if animation_type in {"gradient", "glow"}:
                 self._stop_animation("gradient_anim")
             elif animation_type in {"scale", "scale_fill"}:
-                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["default_scale"], "scale_easing_curve_out")
+                self._restart_scale_animation(self._config_value("default_scale"), "scale_easing_curve_out")
             self._stop_animation("pulse_anim")
             self._start_thickness_animation(
-                self.theme.GAME_CARD_ANIMATION["default_border_width"],
+                self._config_value("default_border_width"),
                 "thickness_easing_curve_out",
                 False,
             )
@@ -196,10 +214,10 @@ class GameCardAnimations:
             if not self.thickness_anim:
                 self.setup_animations()
 
-            animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+            animation_type = self._animation_type()
 
             self._start_thickness_animation(
-                self.theme.GAME_CARD_ANIMATION["focus_border_width"],
+                self._config_value("focus_border_width"),
                 "thickness_easing_curve",
                 True,
             )
@@ -207,21 +225,21 @@ class GameCardAnimations:
             if animation_type in {"gradient", "glow"}:
                 self._restart_gradient_animation()
             elif animation_type in {"scale", "scale_fill"}:
-                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["focus_scale"], "scale_easing_curve")
+                self._restart_scale_animation(self._config_value("focus_scale"), "scale_easing_curve")
 
     def handle_focus_out_event(self):
         """Handle focus out event animations."""
         self.game_card._focused = False
         self.game_card.focusChanged.emit(self.game_card.name, False)
         if not self.game_card._hovered:
-            animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+            animation_type = self._animation_type()
             if animation_type in {"gradient", "glow"}:
                 self._stop_animation("gradient_anim")
             elif animation_type in {"scale", "scale_fill"}:
-                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["default_scale"], "scale_easing_curve_out")
+                self._restart_scale_animation(self._config_value("default_scale"), "scale_easing_curve_out")
             self._stop_animation("pulse_anim")
             self._start_thickness_animation(
-                self.theme.GAME_CARD_ANIMATION["default_border_width"],
+                self._config_value("default_border_width"),
                 "thickness_easing_curve_out",
                 False,
             )
@@ -234,39 +252,39 @@ class GameCardAnimations:
         pen = QPen()
         pen.setWidth(self.game_card._borderWidth)
         fill_brush = QBrush(Qt.BrushStyle.NoBrush)
-        animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
+        animation_type = self._animation_type()
         if (self.game_card._hovered or self.game_card._focused) and animation_type == "gradient":
             center = self.game_card.rect().center()
             gradient = QConicalGradient(center, self.game_card._gradientAngle)
-            for stop in self.theme.GAME_CARD_ANIMATION["gradient_colors"]:
+            for stop in self._config_value("gradient_colors"):
                 gradient.setColorAt(stop["position"], QColor(stop["color"]))
             pen.setBrush(QBrush(gradient))
         elif (self.game_card._hovered or self.game_card._focused) and animation_type in {"fill", "scale_fill"}:
-            fill_color_value = self.theme.GAME_CARD_ANIMATION.get(
+            fill_color_value = self._optional_config_value(
                 "fill_color",
                 getattr(self.theme, "color_accent", self.theme.color_text),
             )
-            fill_alpha = int(self.theme.GAME_CARD_ANIMATION.get("fill_alpha", 90))
+            fill_alpha = int(self._optional_config_value("fill_alpha", 90))
             fill_color = QColor(fill_color_value)
             fill_color.setAlpha(max(0, min(255, fill_alpha)))
             fill_brush = QBrush(fill_color)
             pen.setColor(QColor(0, 0, 0, 0))
         elif (self.game_card._hovered or self.game_card._focused) and animation_type == "stripe":
-            stripe_color_value = self.theme.GAME_CARD_ANIMATION.get(
+            stripe_color_value = self._optional_config_value(
                 "stripe_color",
                 getattr(self.theme, "color_accent", self.theme.color_text),
             )
-            stripe_alpha = int(self.theme.GAME_CARD_ANIMATION.get("stripe_alpha", 255))
+            stripe_alpha = int(self._optional_config_value("stripe_alpha", 255))
             stripe_color = QColor(stripe_color_value)
             stripe_color.setAlpha(max(0, min(255, stripe_alpha)))
             pen.setColor(stripe_color)
         elif (self.game_card._hovered or self.game_card._focused) and animation_type == "glow":
-            glow_color_value = self.theme.GAME_CARD_ANIMATION.get(
+            glow_color_value = self._optional_config_value(
                 "stripe_color",
                 getattr(self.theme, "color_accent", self.theme.color_text),
             )
-            glow_base_alpha = int(self.theme.GAME_CARD_ANIMATION.get("glow_base_alpha", 120))
-            glow_pulse_alpha = int(self.theme.GAME_CARD_ANIMATION.get("glow_pulse_alpha", 80))
+            glow_base_alpha = int(self._optional_config_value("glow_base_alpha", 120))
+            glow_pulse_alpha = int(self._optional_config_value("glow_pulse_alpha", 80))
             glow_wave = 0.5 + 0.5 * sin(radians(self.game_card._gradientAngle))
             glow_alpha = max(0, min(255, glow_base_alpha + int(glow_pulse_alpha * glow_wave)))
             glow_color = QColor(glow_color_value)

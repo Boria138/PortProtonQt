@@ -441,8 +441,7 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
         layout = getattr(manager, "gamesListLayout", None)
         if manager is None or layout is None:
             return
-        manager.clear_layout(layout)
-        manager.set_games(manager.games, focus_first_card=False)
+        manager.rebuild_library_layout(str(new_mode).lower())
 
     def _refresh_open_detail_page(self) -> None:
         manager = getattr(self, "detail_page_manager", None)
