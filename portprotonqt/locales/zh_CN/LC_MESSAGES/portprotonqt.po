@@ -2237,6 +2237,9 @@ msgstr "隐藏自动安装标签页"
 msgid "Hide Control Hints"
 msgstr ""
 
+msgid "Force English language"
+msgstr ""
+
 msgid "Enable UI Sounds"
 msgstr "启用界面音效"
 

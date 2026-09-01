@@ -2276,6 +2276,9 @@ msgstr "Скрывать вкладку \"Автоустановка\""
 msgid "Hide Control Hints"
 msgstr "Скрывать подсказки управления"
 
+msgid "Force English language"
+msgstr ""
+
 msgid "Enable UI Sounds"
 msgstr "Включить звуки интерфейса"
 

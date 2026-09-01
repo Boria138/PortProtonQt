@@ -2174,6 +2174,9 @@ msgstr ""
 msgid "Hide Control Hints"
 msgstr ""
 
+msgid "Force English language"
+msgstr ""
+
 msgid "Enable UI Sounds"
 msgstr ""
 
