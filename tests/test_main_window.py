@@ -12,7 +12,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch, mark
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QEventLoop, QObject, Qt, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
 
@@ -2521,3 +2521,45 @@ def test_logout_skips_without_session_id(monkeypatch: MonkeyPatch) -> None:
     MainWindowSystemTabMixin.logoutSystem(window)
 
     assert calls == []
+
+
+def test_delayed_system_adapters_appear_on_retry() -> None:
+    QApplication.instance() or QApplication([])
+    event_loop = QEventLoop()
+    network_timer = QTimer()
+    bluetooth_timer = QTimer()
+    network_timer.setInterval(1)
+    bluetooth_timer.setInterval(1)
+    available_sections: list[str] = []
+    window = cast(
+        MainWindowSystemTabMixin,
+        SimpleNamespace(
+            networkRetryTimer=network_timer,
+            bluetoothRetryTimer=bluetooth_timer,
+            _setBluetoothScanPreloaderVisible=lambda _visible: None,
+            populateSystemNetworks=lambda payload: (
+                available_sections.append("wifi") if payload["available"] else None
+            ),
+            populateSystemBluetoothDevices=lambda payload: (
+                available_sections.append("bluetooth") if payload["available"] else None
+            ),
+            setNetworkBusy=lambda _busy: None,
+            setBluetoothBusy=lambda _busy: None,
+        ),
+    )
+
+    def make_adapters_available() -> None:
+        MainWindowSystemTabMixin.onNetworkOperationFinished(window, "load", {"available": True})
+        MainWindowSystemTabMixin.onBluetoothOperationFinished(window, "load", {"available": True})
+        event_loop.quit()
+
+    network_timer.timeout.connect(make_adapters_available)
+    MainWindowSystemTabMixin.onNetworkOperationFinished(window, "load", {"available": False})
+    MainWindowSystemTabMixin.onBluetoothOperationFinished(window, "load", {"available": False})
+
+    QTimer.singleShot(100, event_loop.quit)
+    event_loop.exec()
+
+    assert available_sections == ["wifi", "bluetooth"]
+    assert not network_timer.isActive()
+    assert not bluetooth_timer.isActive()

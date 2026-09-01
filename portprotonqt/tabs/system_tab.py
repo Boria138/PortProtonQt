@@ -47,6 +47,7 @@ logger = get_logger(__name__)
 
 AUDIO_MAX_VOLUME = 150
 RETURN_TO_DESKTOP_ENV = "PORTPROTONQT_RETURN_TO_DESKTOP_SCRIPT"
+SYSTEM_DEVICE_RETRY_INTERVAL_MS = 2000
 
 
 if TYPE_CHECKING:
@@ -326,6 +327,12 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.audioBusy = False
         self.audioVolumeUpdating = False
         self.audioFocusSinkName = ""
+        self.networkRetryTimer = QTimer(self)
+        self.networkRetryTimer.setInterval(SYSTEM_DEVICE_RETRY_INTERVAL_MS)
+        self.networkRetryTimer.timeout.connect(self.loadSystemNetworks)
+        self.bluetoothRetryTimer = QTimer(self)
+        self.bluetoothRetryTimer.setInterval(SYSTEM_DEVICE_RETRY_INTERVAL_MS)
+        self.bluetoothRetryTimer.timeout.connect(self.loadSystemBluetoothDevices)
 
     def _startSystemBackgroundTasks(self) -> None:
         self.system_tab_index = self.stackedWidget.addWidget(self.systemWidget)
@@ -1237,6 +1244,10 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.vpnRows = payload.get("vpns", [])
         self.populateSystemNetworks(payload)
         self.setNetworkBusy(False)
+        if payload.get("available"):
+            self.networkRetryTimer.stop()
+        else:
+            self.networkRetryTimer.start()
         if operation == "scan":
             logger.info("Network scan finished: wifi_networks=%d", len(self.networkRows))
         elif operation == "load":
@@ -1246,9 +1257,11 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
                 len(self.vpnRows),
             )
 
-    def onNetworkOperationFailed(self, _operation: str, error_text: str) -> None:
+    def onNetworkOperationFailed(self, operation: str, error_text: str) -> None:
         self.setNetworkBusy(False)
         logger.warning("Network operation failed: %s", error_text)
+        if operation == "load":
+            self.networkRetryTimer.start()
         self.networkStatusLabel.setText("Error")
         self.wirelessEnabledCheckBox.blockSignals(True)
         self.wirelessEnabledCheckBox.setChecked(self.systemWirelessEnabled)
@@ -1456,6 +1469,10 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.bluetoothRows = payload.get("devices", [])
         self.populateSystemBluetoothDevices(payload)
         self.setBluetoothBusy(False)
+        if payload.get("available"):
+            self.bluetoothRetryTimer.stop()
+        else:
+            self.bluetoothRetryTimer.start()
         if operation != "load":
             QTimer.singleShot(800, self.loadSystemBluetoothDevices)
         if operation == "scan":
@@ -1476,6 +1493,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             self.bluetoothRows = []
             self.bluetoothTable.setRowCount(0)
             self._setSystemSectionVisible(self.systemSectionBluetoothIndex, False)
+            self.bluetoothRetryTimer.start()
         self.bluetoothEnabledCheckBox.blockSignals(True)
         self.bluetoothEnabledCheckBox.setChecked(self.systemBluetoothEnabled)
         self.bluetoothEnabledCheckBox.blockSignals(False)
