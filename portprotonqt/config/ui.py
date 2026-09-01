@@ -357,6 +357,22 @@ class UIConfig(BaseConfig):
         validate_bool(hide, "hide_control_hints")
         self._save_value("hide_control_hints", hide, "bool")
 
+    def get_force_english(self) -> bool:
+        """Get forced English language setting."""
+        cp = self._read_config()
+        if cp is None:
+            return False
+        try:
+            return cp.getboolean(self._section, "force_english", fallback=False)
+        except (configparser.Error, ValueError) as e:
+            logger.warning("Error reading force_english: %s", e)
+            return False
+
+    def set_force_english(self, enabled: bool) -> None:
+        """Set forced English language setting."""
+        validate_bool(enabled, "force_english")
+        self._save_value("force_english", enabled, "bool")
+
     def get_badge_view_mode(self) -> str:
         """Get badge view mode ('detailed' or 'compact')."""
         mode = self._get_str("badge_view_mode", "detailed")

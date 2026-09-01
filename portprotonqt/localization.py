@@ -54,10 +54,21 @@ except FileNotFoundError:
         localedir=_system_localedir,
         fallback=True,
     )
-_ = translate.gettext
+
+
+def _(message: str) -> str:
+    from portprotonqt.config import ui_config
+
+    if ui_config.get_force_english():
+        return message
+    return translate.gettext(message)
 
 def get_system_locale():
     """Return system locale, e.g., 'ru_RU'. Returns 'en' if detection fails."""
+    from portprotonqt.config import ui_config
+
+    if ui_config.get_force_english():
+        return 'en'
     loc = locale.getdefaultlocale()[0]
     return loc if loc else 'en'
 

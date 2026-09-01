@@ -126,6 +126,14 @@ def test_control_hints_are_visible_by_default(tmp_path: Path):
     assert config.get_hide_control_hints() is True
 
 
+def test_force_english_is_disabled_by_default(tmp_path: Path):
+    config = UIConfig(config_file=tmp_path / "test.conf")
+
+    assert config.get_force_english() is False
+    config.set_force_english(True)
+    assert config.get_force_english() is True
+
+
 class TestUpdateAppVersion:
     def test_first_save_returns_true(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr("portprotonqt.config.base.CONFIG_FILE", tmp_path / "test.conf")

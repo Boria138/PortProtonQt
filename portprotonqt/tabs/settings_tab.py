@@ -380,6 +380,21 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         hide_control_hints_layout.addStretch()
         uiForm.addRow(hide_control_hints_layout)
 
+        self.forceEnglishCheckBox = QCheckBox()
+        self.forceEnglishCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.forceEnglishCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.forceEnglishTitle = QLabel(_("Force English language"))
+        self.forceEnglishTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.forceEnglishTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.forceEnglishTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.forceEnglishCheckBox.setChecked(ui_config.get_force_english())
+        force_english_layout = QHBoxLayout()
+        force_english_layout.setContentsMargins(0, 0, 0, 0)
+        force_english_layout.addWidget(self.forceEnglishCheckBox)
+        force_english_layout.addWidget(self.forceEnglishTitle)
+        force_english_layout.addStretch()
+        uiForm.addRow(force_english_layout)
+
         self.soundsEnabledCheckBox = QCheckBox()
         self.soundsEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.soundsEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -904,6 +919,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         hide_control_hints = self.hideControlHintsCheckBox.isChecked()
         ui_config.set_hide_control_hints(hide_control_hints)
+        ui_config.set_force_english(self.forceEnglishCheckBox.isChecked())
 
         gamepad_type_idx = self.gamepadTypeCombo.currentIndex()
         gamepad_type = self.gamepad_type_keys[gamepad_type_idx]
