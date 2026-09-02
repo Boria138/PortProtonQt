@@ -15,6 +15,14 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 
+@pytest.fixture(autouse=True)
+def mute_ui_sounds(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+    """Prevent UI feedback sounds outside dedicated sound manager tests."""
+    if request.path.name == "test_sound_manager.py":
+        return
+    monkeypatch.setattr("portprotonqt.sound_manager.SoundManager.play", lambda _self, _event: None)
+
+
 @pytest.fixture
 def tmp_config_dir(tmp_path: Path) -> Generator[Path, None, None]:
     os.environ["XDG_CONFIG_HOME"] = str(tmp_path / "config")
