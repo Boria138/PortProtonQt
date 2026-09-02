@@ -2536,6 +2536,8 @@ def test_delayed_system_adapters_appear_on_retry() -> None:
         SimpleNamespace(
             networkRetryTimer=network_timer,
             bluetoothRetryTimer=bluetooth_timer,
+            networkRetryCount=0,
+            bluetoothRetryCount=0,
             _setBluetoothScanPreloaderVisible=lambda _visible: None,
             populateSystemNetworks=lambda payload: (
                 available_sections.append("wifi") if payload["available"] else None
@@ -2561,5 +2563,44 @@ def test_delayed_system_adapters_appear_on_retry() -> None:
     event_loop.exec()
 
     assert available_sections == ["wifi", "bluetooth"]
+    assert not network_timer.isActive()
+    assert not bluetooth_timer.isActive()
+
+
+def test_missing_system_adapters_stop_after_retries() -> None:
+    QApplication.instance() or QApplication([])
+    network_timer = QTimer()
+    bluetooth_timer = QTimer()
+    window = cast(
+        MainWindowSystemTabMixin,
+        SimpleNamespace(
+            networkRetryTimer=network_timer,
+            bluetoothRetryTimer=bluetooth_timer,
+            networkRetryCount=0,
+            bluetoothRetryCount=0,
+            networkRows=[],
+            vpnRows=[],
+            bluetoothRows=[],
+            populateSystemNetworks=lambda _payload: None,
+            populateSystemBluetoothDevices=lambda _payload: None,
+            setNetworkBusy=lambda _busy: None,
+            setBluetoothBusy=lambda _busy: None,
+            _setBluetoothScanPreloaderVisible=lambda _visible: None,
+        ),
+    )
+
+    for _attempt in range(system_tab_module.SYSTEM_DEVICE_RETRY_LIMIT):
+        MainWindowSystemTabMixin.onNetworkOperationFinished(window, "load", {"available": False})
+        MainWindowSystemTabMixin.onBluetoothOperationFinished(window, "load", {"available": False})
+        assert network_timer.isActive()
+        assert bluetooth_timer.isActive()
+        network_timer.stop()
+        bluetooth_timer.stop()
+
+    MainWindowSystemTabMixin.onNetworkOperationFinished(window, "load", {"available": False})
+    MainWindowSystemTabMixin.onBluetoothOperationFinished(window, "load", {"available": False})
+
+    assert window.networkRetryCount == system_tab_module.SYSTEM_DEVICE_RETRY_LIMIT
+    assert window.bluetoothRetryCount == system_tab_module.SYSTEM_DEVICE_RETRY_LIMIT
     assert not network_timer.isActive()
     assert not bluetooth_timer.isActive()
