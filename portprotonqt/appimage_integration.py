@@ -20,7 +20,7 @@ DESKTOP_DATABASE_TIMEOUT = 10
 EXECUTABLE_MODE = 0o755
 WINDOWS_MIME_TYPES = (
     "application/x-ms-dos-executable;application/x-msdos-program;"
-    "application/x-ms-dos-exec;application/x-executable;"
+    "application/x-ms-dos-exec;"
     "application/x-dosexec;application/vnd.microsoft.portable-executable;"
 )
 INTEGRATION_MODES = ("log", "silent")

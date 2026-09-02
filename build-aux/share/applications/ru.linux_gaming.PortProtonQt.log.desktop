@@ -16,5 +16,5 @@ Icon=ru.linux_gaming.PortProtonQt
 StartupWMClass=ru.linux_gaming.PortProtonQt
 Categories=Game;
 NoDisplay=true
-MimeType=application/x-ms-dos-executable;application/x-msdos-program;application/x-ms-dos-exec;application/x-executable;application/x-dosexec;application/vnd.microsoft.portable-executable;
+MimeType=application/x-ms-dos-executable;application/x-msdos-program;application/x-ms-dos-exec;application/x-dosexec;application/vnd.microsoft.portable-executable;
 StartupNotify=true
