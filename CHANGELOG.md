@@ -25,6 +25,7 @@
 - Обновлён перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Русский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/ru/`
+- В AppImage добавлен Bash для предотвращения конфликтов Vulkan со Steam Runtime при использовании системного GameMode
 
 ### Fixed
 
