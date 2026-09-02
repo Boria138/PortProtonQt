@@ -1,18 +1,26 @@
 import os
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QObject, Qt, QTimer
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QAbstractButton,
     QCheckBox,
+    QComboBox,
     QFormLayout,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QScrollArea,
     QScroller,
     QSizePolicy,
+    QTabBar,
+    QTableWidget,
+    QTreeWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -38,7 +46,7 @@ from portprotonqt.config import (
 from portprotonqt.context_menu_manager import CustomLineEdit
 from portprotonqt.custom_widgets import AutoSizeButton, CustomComboBox, FlowLayout
 from portprotonqt.debug_utils import get_selectable_gpu_list
-from portprotonqt.localization import _
+from portprotonqt.localization import _, retranslate
 from portprotonqt.logger import get_logger
 from portprotonqt.portproton_api import get_user_conf_setting, set_user_conf_setting
 from portprotonqt.qt_utils import get_system_dpi_for_wine
@@ -884,6 +892,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
     def savePortProtonSettings(self):
         previous_economy_mode = ui_config.get_economy_mode()
+        previous_force_english = ui_config.get_force_english()
         game_config.set_steam_account_id(
             str(self.steamAccountCombo.currentData())
         )
@@ -919,7 +928,10 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         hide_control_hints = self.hideControlHintsCheckBox.isChecked()
         ui_config.set_hide_control_hints(hide_control_hints)
-        ui_config.set_force_english(self.forceEnglishCheckBox.isChecked())
+        force_english = self.forceEnglishCheckBox.isChecked()
+        ui_config.set_force_english(force_english)
+        if previous_force_english != force_english:
+            self._retranslate_interface()
 
         gamepad_type_idx = self.gamepadTypeCombo.currentIndex()
         gamepad_type = self.gamepad_type_keys[gamepad_type_idx]
@@ -1044,6 +1056,39 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         from portprotonqt.sound_manager import SoundManager
         SoundManager().reload_config()
+
+    def _retranslate_interface(self) -> None:
+        """Apply the selected language to the existing interface."""
+        objects = [self, *self.findChildren(QObject)]
+        for obj in objects:
+            if isinstance(obj, QAction):
+                obj.setText(retranslate(obj.text()))
+            if isinstance(obj, (QLabel, QAbstractButton)):
+                obj.setText(retranslate(obj.text()))
+            if isinstance(obj, (QGroupBox, QMenu)):
+                obj.setTitle(retranslate(obj.title()))
+            if isinstance(obj, QLineEdit):
+                obj.setPlaceholderText(retranslate(obj.placeholderText()))
+            if isinstance(obj, QComboBox):
+                for index in range(obj.count()):
+                    obj.setItemText(index, retranslate(obj.itemText(index)))
+            if isinstance(obj, QTabBar):
+                for index in range(obj.count()):
+                    obj.setTabText(index, retranslate(obj.tabText(index)))
+            if isinstance(obj, QTableWidget):
+                for column in range(obj.columnCount()):
+                    item = obj.horizontalHeaderItem(column)
+                    if item is not None:
+                        item.setText(retranslate(item.text()))
+                for row in range(obj.rowCount()):
+                    for column in range(obj.columnCount()):
+                        item = obj.item(row, column)
+                        if item is not None:
+                            item.setText(retranslate(item.text()))
+            if isinstance(obj, QTreeWidget):
+                for column in range(obj.columnCount()):
+                    item = obj.headerItem()
+                    item.setText(column, retranslate(item.text(column)))
 
     def _apply_gamepad_type_setting(self) -> None:
         """Apply configured gamepad type to current input manager."""

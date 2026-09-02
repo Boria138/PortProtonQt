@@ -6,6 +6,7 @@ import pytest
 from portprotonqt.config.base import BaseConfig
 from portprotonqt.config.game import GameConfig
 from portprotonqt.config.ui import UIConfig
+import portprotonqt.localization as localization
 
 
 @pytest.fixture(autouse=True)
@@ -132,6 +133,23 @@ def test_force_english_is_disabled_by_default(tmp_path: Path):
     assert config.get_force_english() is False
     config.set_force_english(True)
     assert config.get_force_english() is True
+
+
+def test_translation_can_switch_to_english_without_restart(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    force_english = False
+    monkeypatch.setattr(localization.translate, "gettext", lambda message: f"ru:{message}")
+    monkeypatch.setattr(
+        "portprotonqt.config.ui_config.get_force_english",
+        lambda: force_english,
+    )
+    monkeypatch.setattr(localization, "_translation_sources", {})
+
+    translated = localization._("Settings")
+    force_english = True
+
+    assert localization.retranslate(translated) == "Settings"
 
 
 class TestUpdateAppVersion:

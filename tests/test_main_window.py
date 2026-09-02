@@ -14,7 +14,15 @@ from unittest.mock import MagicMock
 from pytest import MonkeyPatch, mark
 from PySide6.QtCore import QEventLoop, QObject, Qt, QTimer
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QApplication, QComboBox, QGridLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QGridLayout,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 from portprotonqt.animations.library_controls import _animation_duration
 from portprotonqt.animations.game_card import GameCardAnimations
@@ -248,6 +256,34 @@ def test_main_window_inherits_all_tab_mixins() -> None:
 
     for mixin in expected_mixins:
         assert issubclass(MainWindow, mixin)
+
+
+def test_settings_retranslate_existing_interface(monkeypatch: MonkeyPatch) -> None:
+    QApplication.instance() or QApplication([])
+    label = QLabel("Настройки")
+    combo = QComboBox()
+    combo.addItem("Системный")
+    table = QTableWidget(0, 1)
+    table.setHorizontalHeaderItem(0, QTableWidgetItem("Профиль"))
+    mixin = MainWindowSettingsTabMixin()
+    mixin.findChildren = MagicMock(return_value=[label, combo, table])
+    translations = {
+        "Настройки": "Settings",
+        "Системный": "System",
+        "Профиль": "Profile",
+    }
+    monkeypatch.setattr(
+        "portprotonqt.tabs.settings_tab.retranslate",
+        lambda text: translations.get(text, text),
+    )
+
+    mixin._retranslate_interface()
+
+    assert label.text() == "Settings"
+    assert combo.itemText(0) == "System"
+    header_item = table.horizontalHeaderItem(0)
+    assert header_item is not None
+    assert header_item.text() == "Profile"
 
 
 def test_live_theme_style_replacement_does_not_rewrite_new_paths() -> None:
