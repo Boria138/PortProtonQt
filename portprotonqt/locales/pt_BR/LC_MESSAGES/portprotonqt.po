@@ -2281,6 +2281,9 @@ msgstr "Ocultar Aba de Instalação Automática"
 msgid "Hide Control Hints"
 msgstr "Ocultar dicas de controle"
 
+msgid "Force English language"
+msgstr ""
+
 msgid "Enable UI Sounds"
 msgstr "Ativar sons da interface"
 

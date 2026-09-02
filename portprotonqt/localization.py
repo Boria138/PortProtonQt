@@ -8,6 +8,8 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+_translation_sources: dict[str, str] = {}
+
 LOCALE_MAP = {
     'ru': 'russian',
     'en': 'english',
@@ -54,10 +56,31 @@ except FileNotFoundError:
         localedir=_system_localedir,
         fallback=True,
     )
-_ = translate.gettext
+
+
+def _(message: str) -> str:
+    from portprotonqt.config import ui_config
+
+    translated = translate.gettext(message)
+    _translation_sources[message] = message
+    _translation_sources[translated] = message
+    return message if ui_config.get_force_english() else translated
+
+
+def retranslate(message: str) -> str:
+    """Translate text previously passed through gettext."""
+    source = _translation_sources.get(message)
+    if source is None:
+        return message
+    return _(source)
+
 
 def get_system_locale():
     """Return system locale, e.g., 'ru_RU'. Returns 'en' if detection fails."""
+    from portprotonqt.config import ui_config
+
+    if ui_config.get_force_english():
+        return 'en'
     loc = locale.getdefaultlocale()[0]
     return loc if loc else 'en'
 

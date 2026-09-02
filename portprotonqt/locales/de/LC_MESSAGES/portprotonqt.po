@@ -2283,6 +2283,9 @@ msgstr "Tab „Automatische Installation“ ausblenden"
 msgid "Hide Control Hints"
 msgstr "Steuerungshinweise ausblenden"
 
+msgid "Force English language"
+msgstr ""
+
 msgid "Enable UI Sounds"
 msgstr "Benutzeroberflächen-Sounds aktivieren"
 
