@@ -6,10 +6,30 @@ from typing import Any, cast
 
 from PySide6.QtCore import QMimeData, QUrl
 
-from portprotonqt.dialogs.proton_manager import ProtonManager
+from portprotonqt.dialogs.proton_manager import ProtonManager, sort_wine_entries
 from portprotonqt.dialogs.wine_extractor import ExtractionThread
 from portprotonqt.tabs import library_tab
 
+
+def test_cachyos_releases_alternate_with_wineland() -> None:
+    names = [
+        "proton-cachyos-wineland-11.0-20260713.4-slr-x86_64",
+        "proton-cachyos-wineland-11.0-20260713.4-slr-x86_64_v3",
+        "proton-cachyos-wineland-11.0-20260713.3-slr-x86_64",
+        "proton-cachyos-11.0-20260703-slr-x86_64",
+        "proton-cachyos-11.0-20260703-slr-x86_64_v3",
+        "proton-cachyos-11.0-20260702-slr-x86_64",
+    ]
+    entries = [{"name": name} for name in names]
+
+    assert [entry["name"] for entry in sort_wine_entries(entries, "proton_cachyos")] == [
+        "proton-cachyos-11.0-20260703-slr-x86_64",
+        "proton-cachyos-11.0-20260703-slr-x86_64_v3",
+        "proton-cachyos-wineland-11.0-20260713.4-slr-x86_64",
+        "proton-cachyos-wineland-11.0-20260713.4-slr-x86_64_v3",
+        "proton-cachyos-11.0-20260702-slr-x86_64",
+        "proton-cachyos-wineland-11.0-20260713.3-slr-x86_64",
+    ]
 
 def test_dropped_wine_archives_accepts_supported_local_files(tmp_path) -> None:
     wine_archive = tmp_path / "WINE_LG_11-10.tar.xz"
