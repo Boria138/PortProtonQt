@@ -45,6 +45,7 @@ GAMEPAD_LIBRARY=$(find /usr/lib -type f \
 test -n "$GAMEPAD_LIBRARY"
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
+	/usr/bin/bash \
 	/usr/bin/update-desktop-database \
 	/usr/bin/update-mime-database \
 	/usr/bin/vk_gpu_info \

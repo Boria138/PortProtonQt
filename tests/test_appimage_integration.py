@@ -102,6 +102,7 @@ def test_integrate_appimage_installs_handlers(
     destination = appimage_integration.integrate_appimage()
 
     assert destination == tmp_path / "AppImages" / "portprotonqt.appimage"
+    assert "application/x-executable" not in appimage_integration.WINDOWS_MIME_TYPES
     assert destination.read_text(encoding="utf-8") == "appimage"
     assert not legacy_appimage.exists()
     assert not stale_png.exists()

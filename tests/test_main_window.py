@@ -266,14 +266,29 @@ def test_settings_retranslate_existing_interface(monkeypatch: MonkeyPatch) -> No
     table = QTableWidget(0, 1)
     table.setHorizontalHeaderItem(0, QTableWidgetItem("Профиль"))
     mixin = MainWindowSettingsTabMixin()
+    mixin.steamAccountTitle = QLabel("Аккаунт Steam:")
+    mixin.gogAccountTitle = QLabel("Аккаунт GOG:")
+    mixin.egsAccountTitle = QLabel("Аккаунт Epic Games:")
+    mixin.autoDownloadPPDBTitle = QLabel("Автозагрузка PPDB с linux-gaming.ru")
+    mixin.enableThemeStoreTitle = QLabel("Магазин тем linux-gaming.ru")
     mixin.findChildren = MagicMock(return_value=[label, combo, table])
     translations = {
         "Настройки": "Settings",
         "Системный": "System",
         "Профиль": "Profile",
+        "Account": "Account",
+        "Auto download PPDB from": "Auto download PPDB from",
+        "Enable Theme Store from %(source)s (%(warning)s)": (
+            "Enable Theme Store from %(source)s (%(warning)s)"
+        ),
+        "third-party themes may be unsafe": "third-party themes may be unsafe",
     }
     monkeypatch.setattr(
         "portprotonqt.tabs.settings_tab.retranslate",
+        lambda text: translations.get(text, text),
+    )
+    monkeypatch.setattr(
+        "portprotonqt.tabs.settings_tab._",
         lambda text: translations.get(text, text),
     )
 
@@ -284,6 +299,16 @@ def test_settings_retranslate_existing_interface(monkeypatch: MonkeyPatch) -> No
     header_item = table.horizontalHeaderItem(0)
     assert header_item is not None
     assert header_item.text() == "Profile"
+    assert mixin.steamAccountTitle.text() == "Account Steam:"
+    assert mixin.gogAccountTitle.text() == "Account GOG:"
+    assert mixin.egsAccountTitle.text() == "Account Epic Games:"
+    assert mixin.autoDownloadPPDBTitle.text() == (
+        "Auto download PPDB from linux-gaming.ru"
+    )
+    assert mixin.enableThemeStoreTitle.text() == (
+        "Enable Theme Store from linux-gaming.ru "
+        "(third-party themes may be unsafe)"
+    )
 
 
 def test_live_theme_style_replacement_does_not_rewrite_new_paths() -> None:

@@ -155,9 +155,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         selected_account = game_config.get_steam_account_id()
         selected_index = self.steamAccountCombo.findData(selected_account)
         self.steamAccountCombo.setCurrentIndex(max(selected_index, 0))
-        steam_account_title = QLabel(_("Account") + " Steam:")
-        steam_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        gogForm.addRow(steam_account_title, self.steamAccountCombo)
+        self.steamAccountTitle = QLabel(_("Account") + " Steam:")
+        self.steamAccountTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(self.steamAccountTitle, self.steamAccountCombo)
         self.gogAccountStatus = QLabel()
         self.gogAccountStatus.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gogAccountStatus.setSizePolicy(
@@ -171,9 +171,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         gog_buttons = QHBoxLayout()
         gog_buttons.addWidget(self.gogAccountStatus)
         gog_buttons.addWidget(self.gogLoginButton)
-        gog_account_title = QLabel(_("Account") + " GOG:")
-        gog_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        gogForm.addRow(gog_account_title, gog_buttons)
+        self.gogAccountTitle = QLabel(_("Account") + " GOG:")
+        self.gogAccountTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(self.gogAccountTitle, gog_buttons)
         self._update_gog_account_state()
         self.egsAccountStatus = QLabel()
         self.egsAccountStatus.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
@@ -188,9 +188,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         egs_buttons = QHBoxLayout()
         egs_buttons.addWidget(self.egsAccountStatus)
         egs_buttons.addWidget(self.egsLoginButton)
-        egs_account_title = QLabel(_("Account") + " Epic Games:")
-        egs_account_title.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        gogForm.addRow(egs_account_title, egs_buttons)
+        self.egsAccountTitle = QLabel(_("Account") + " Epic Games:")
+        self.egsAccountTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        gogForm.addRow(self.egsAccountTitle, egs_buttons)
         self._update_egs_account_state()
 
         self.timeDetailCombo = CustomComboBox(theme=self.theme)
@@ -1089,6 +1089,18 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
                 for column in range(obj.columnCount()):
                     item = obj.headerItem()
                     item.setText(column, retranslate(item.text(column)))
+        self.steamAccountTitle.setText(_("Account") + " Steam:")
+        self.gogAccountTitle.setText(_("Account") + " GOG:")
+        self.egsAccountTitle.setText(_("Account") + " Epic Games:")
+        self.autoDownloadPPDBTitle.setText(
+            _("Auto download PPDB from") + " linux-gaming.ru"
+        )
+        self.enableThemeStoreTitle.setText(
+            _("Enable Theme Store from %(source)s (%(warning)s)") % {
+                "source": "linux-gaming.ru",
+                "warning": _("third-party themes may be unsafe"),
+            }
+        )
 
     def _apply_gamepad_type_setting(self) -> None:
         """Apply configured gamepad type to current input manager."""
