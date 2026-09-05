@@ -15,6 +15,7 @@ from threading import Thread
 from typing import TYPE_CHECKING
 
 import psutil
+import orjson
 
 from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail, get_exe_icon_cache_path
@@ -404,6 +405,8 @@ class MainWindow(
         self.wine_download_seen = False
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
+        self.game_process_exit_monotonic = None
+        self.egs_launch_cancelled = False
 
         # Central widget and main layout
         centralWidget = QWidget()
@@ -2058,6 +2061,7 @@ class MainWindow(
             if launch_started:
                 if not self.game_launch_started:
                     self.game_launch_monotonic = time.monotonic()
+                    self.game_process_exit_monotonic = None
                 self.game_launch_started = True
                 continue
             if status is not None:
@@ -2098,6 +2102,7 @@ class MainWindow(
             self.game_start_exe = None
             self.game_start_exact_path = False
             self.game_launch_monotonic = None
+            self.game_process_exit_monotonic = None
             self.game_stopped_by_user = False
 
         self.target_exe = None
@@ -2211,15 +2216,23 @@ class MainWindow(
 
     def _has_running_game_process(self) -> bool:
         if any(proc.poll() is None for proc in self.game_processes):
+            self.game_process_exit_monotonic = None
             return True
         target = str(self.target_exe or "").lower()
         if target:
             for process in psutil.process_iter(attrs=["name"]):
                 try:
                     if str(process.info.get("name") or "").lower() == target:
+                        self.game_process_exit_monotonic = None
                         return True
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
+        launch_started = getattr(self, "game_launch_monotonic", None)
+        if launch_started is not None:
+            now = time.monotonic()
+            if getattr(self, "game_process_exit_monotonic", None) is None:
+                self.game_process_exit_monotonic = now
+            return now - launch_started < STORE_LAUNCH_GRACE_SECONDS
         started = getattr(self, "game_start_time", None)
         if started is None:
             return False
@@ -2244,6 +2257,49 @@ class MainWindow(
             if state is not None:
                 self.launch_output_queue.put(state)
 
+    def _read_egs_launch_output(self, process: subprocess.Popen[str]) -> None:
+        """Resolve an EGS command before starting its controlled Wine process."""
+        if process.stdout is None:
+            return
+        launch_data = None
+        for line in process.stdout:
+            text = line.strip()
+            if text:
+                logger.info("%s", text)
+            if text.startswith("{"):
+                try:
+                    launch_data = orjson.loads(text)
+                except orjson.JSONDecodeError:
+                    logger.warning("Invalid Legendary launch response")
+        process.wait()
+        if process.returncode != 0 or launch_data is None or self.egs_launch_cancelled:
+            return
+        command = list(launch_data.get("launch_command", []))
+        executable = os.path.join(
+            launch_data.get("game_directory", ""),
+            launch_data.get("game_executable", ""),
+        )
+        command.extend([executable, *launch_data.get("game_parameters", [])])
+        command.extend(launch_data.get("egl_parameters", []))
+        command.extend(launch_data.get("user_parameters", []))
+        environment = os.environ.copy()
+        environment.update(launch_data.get("environment", {}))
+        try:
+            game_process = subprocess.Popen(
+                command, env=environment, shell=False, preexec_fn=os.setsid,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, errors="replace",
+            )
+        except OSError as error:
+            logger.error("Failed to start resolved Epic game: %s", error)
+            return
+        if self.egs_launch_cancelled:
+            os.killpg(os.getpgid(game_process.pid), signal.SIGTERM)
+            game_process.kill()
+            return
+        self.game_processes = [game_process]
+        self._start_launch_output_reader(game_process)
+
     def _analyze_short_launch(self) -> None:
         if not ui_config.get_crash_reports_enabled():
             return
@@ -2251,7 +2307,8 @@ class MainWindow(
         started = getattr(self, "game_launch_monotonic", None)
         if started is None:
             return
-        duration = time.monotonic() - started
+        ended = getattr(self, "game_process_exit_monotonic", None)
+        duration = (ended or time.monotonic()) - started
         stopped_by_user = getattr(self, "game_stopped_by_user", False)
         exit_code = next(
             (process.poll() for process in self.game_processes if process.poll() is not None),
@@ -2294,6 +2351,7 @@ class MainWindow(
                 continue
             try:
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                proc.kill()
             except ProcessLookupError:
                 continue
             except OSError as e:
@@ -2316,19 +2374,18 @@ class MainWindow(
         if button is not None:
             self.current_running_button = button
         self.game_stopped_by_user = True
+        self.egs_launch_cancelled = True
         self._analyze_short_launch()
-
-        if not self._run_portproton_stop_command():
-            return False
 
         self._terminate_game_processes()
         self.game_processes = []
+        stopped = self._run_portproton_stop_command()
         if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
             self.checkProcessTimer.stop()
             self.checkProcessTimer.deleteLater()
             self.checkProcessTimer = None
         self.resetPlayButton()
-        return True
+        return stopped
 
     def _check_missing_prefix_by_name_before_launch(self, prefix_name: str, env_vars: dict[str, str]) -> None:
         """Check prefix presence and optionally disable default recommended libs."""
@@ -2674,7 +2731,8 @@ class MainWindow(
             return
         try:
             command = self.egs_api.build_command([
-                "launch", app_id, "--wine", self.start_sh[0],
+                "launch", app_id, "--json", "--wrapper", self.start_sh[0],
+                "--no-wine",
             ])
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
@@ -2686,6 +2744,7 @@ class MainWindow(
             QMessageBox.warning(self, _("Error"), str(error))
             return
         SoundManager().play("game_launch")
+        self.egs_launch_cancelled = False
         self.game_processes.append(process)
         self.target_exe = target_name
         self.current_running_button = button
@@ -2695,7 +2754,13 @@ class MainWindow(
         self.game_start_exact_path = True
         save_last_launch(f"egs-{app_id}", launch_time)
         self._update_last_launch_after_start(target, launch_time)
-        self._start_launch_output_reader(process)
+        self.launch_output_queue = Queue()
+        self.launch_output_thread = Thread(
+            target=self._read_egs_launch_output,
+            args=(process,),
+            daemon=True,
+        )
+        self.launch_output_thread.start()
         self.input_manager.suspend_gamepad_polling()
         self.checkProcessTimer = QTimer(self)
         self.checkProcessTimer.timeout.connect(self.checkTargetExe)

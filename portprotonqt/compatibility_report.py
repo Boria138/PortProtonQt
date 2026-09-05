@@ -28,7 +28,7 @@ from portprotonqt.scripts_utils.graphics_detector import analyze_executable
 
 logger = get_logger(__name__)
 
-CRASH_THRESHOLD_SECONDS = 5
+CRASH_THRESHOLD_SECONDS = 7
 COMPATIBILITY_ALWAYS_REPORT_ENV = "PORTPROTONQT_COMPATIBILITY_ALWAYS_REPORT"
 PE_MACHINE_AMD64 = 0x8664
 COMPATIBILITY_SCAN_BYTES = 4_194_304

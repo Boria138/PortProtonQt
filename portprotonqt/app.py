@@ -312,6 +312,7 @@ def main():
     autoinstall_path = None
     theme_store_id = None
     gog_launch_uri = None
+    egs_launch_uri = None
     resolution_from_args = None
     if args.resolution:
         resolution_from_args = parse_resolution(args.resolution)
@@ -325,14 +326,11 @@ def main():
         prefix_name, backup_dir = args.create_backup
         backup_request = (prefix_name, os.path.abspath(os.path.expanduser(backup_dir)))
         ipc_message = "backup:{}:{}".format(quote(prefix_name, safe=""), quote(backup_request[1], safe=""))
-    elif is_silent_launch and not args.log and args.file_or_url and is_launch_file(args.file_or_url):
-        run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
-        sys.exit(app.exec())
     elif is_restore_prefix_request(args):
         restore_prefix_path = normalize_launch_path(args.file_or_url)
         ipc_message = f"restore:{quote(restore_prefix_path, safe='')}"
     elif args.file_or_url and is_launch_file(args.file_or_url):
-        launch_action = "log" if args.log else "open"
+        launch_action = "silent" if is_silent_launch and not args.log else "log" if args.log else "open"
         ipc_message = f"{launch_action}:{normalize_launch_path(args.file_or_url)}"
     elif args.file_or_url and is_autoinstall_file(args.file_or_url):
         autoinstall_path = normalize_launch_path(args.file_or_url)
@@ -341,11 +339,12 @@ def main():
         app_id = args.file_or_url.removeprefix("gog://launch/")
         if app_id.isdigit():
             gog_launch_uri = args.file_or_url
-            ipc_message = f"gog:{app_id}"
+            ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"gog:{app_id}"
     elif args.file_or_url and args.file_or_url.startswith("egs://launch/"):
         app_id = args.file_or_url.removeprefix("egs://launch/")
         if app_id and "/" not in app_id:
-            ipc_message = f"egs:{app_id}"
+            egs_launch_uri = args.file_or_url
+            ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"egs:{app_id}"
     elif args.file_or_url:
         theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
         if theme_store_id is not None:
@@ -414,7 +413,7 @@ def main():
             logger.warning("Failed to persist PORT_DATA_PATH in PortProtonQt config")
 
     # Check if we have a portproton:// URL or launch file to handle
-    if args.file_or_url and not restore_prefix_path and not gog_launch_uri:
+    if args.file_or_url and not restore_prefix_path and not gog_launch_uri and not egs_launch_uri:
         if is_portproton_url(args.file_or_url):
             # Parse the portproton:// URL to get the full download URL
             download_url = parse_portproton_url(args.file_or_url)
@@ -498,13 +497,56 @@ def main():
         logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g. 1920x1080)")
 
     launch_path = exe_path or autoinstall_path
+    silent_game_request = is_silent_launch and not args.log and bool(
+        exe_path or gog_launch_uri or egs_launch_uri
+    )
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=launch_path, resolution=window_resolution, show_system_tab=args.ppqtos)
+    if silent_game_request:
+        if exe_path:
+            window.tray_manager.tray_icon.hide()
+        else:
+            window.tray_manager.set_minimal_mode()
+
+    def open_store_game_card(source: str, app_id: str) -> None:
+        exec_line = f"{source}://launch/{app_id}"
+
+        def open_card(games: list[tuple]) -> None:
+            game = next((item for item in games if item[5] == exec_line), None)
+            if game is None:
+                return
+            window.openGameDetailPage({
+                "name": game[0], "description": game[1], "cover_path": game[2],
+                "appid": game[3], "controller_support": game[4],
+                "exec_line": game[5], "last_launch": game[6],
+                "formatted_playtime": game[7], "protondb_tier": game[8],
+                "anticheat_status": game[9], "playtime_seconds": game[11],
+                "game_source": game[12], "anticheat_slug": game[13],
+                "ppdb_id": game[14], "ppdb_rating": game[15],
+                "protondb_appid": game[16],
+            })
+
+        loader = getattr(window, f"_load_{source}_games_async")
+        loader(open_card)
+
+    def handle_game_request(target: str, silent: bool, log_mode: bool = False) -> None:
+        if is_launch_file(target):
+            path = normalize_launch_path(target)
+            if silent:
+                run_silent_tray(app, start_sh, path)
+                return
+            window.handle_launch_exe(path, log_mode=log_mode)
+            return
+        source, app_id = target.split("://launch/", 1)
+        if silent:
+            window.toggleGame(target)
+            return
+        open_store_game_card(source, app_id)
 
     # Handle launch file if provided
     if exe_path:
         # Defer the call until after the window is shown
-        def handle_launch_exe():
-            window.handle_launch_exe(exe_path, log_mode=args.log)
+        def handle_launch_exe() -> None:
+            handle_game_request(exe_path, is_silent_launch and not args.log, args.log)
         QTimer.singleShot(0, handle_launch_exe)
     elif autoinstall_path:
         def handle_autoinstall():
@@ -519,9 +561,13 @@ def main():
             window._perform_restore(restore_prefix_path)
         QTimer.singleShot(0, handle_restore_prefix)
     elif gog_launch_uri:
-        def handle_gog_launch():
-            window.toggleGame(gog_launch_uri)
+        def handle_gog_launch() -> None:
+            handle_game_request(gog_launch_uri, is_silent_launch)
         QTimer.singleShot(0, handle_gog_launch)
+    elif egs_launch_uri:
+        def handle_egs_launch() -> None:
+            handle_game_request(egs_launch_uri, is_silent_launch)
+        QTimer.singleShot(0, handle_egs_launch)
 
     # --- Handle incoming connections ---
     def handle_new_connection():
@@ -540,20 +586,24 @@ def main():
                         msg.startswith("show")
                         or msg.startswith("open:")
                         or msg.startswith("log:")
+                        or msg.startswith("silent:")
                         or msg.startswith("restore:")
                         or msg.startswith("backup:")
                         or msg.startswith("theme:")
                         or msg.startswith("autoinstall:")
                         or msg.startswith("gog:")
+                        or msg.startswith("egs:")
                     ):
-                        # Ensure the window is visible and not minimized
-                        window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
-                        window.show()
-                        window.raise_()
-                        window.activateWindow()
+                        if not msg.startswith("silent:"):
+                            window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
+                            window.show()
+                            window.raise_()
+                            window.activateWindow()
 
-                        # Ensure window is in active state for systems with strict focus policies
-                        window.setWindowState(window.windowState() | Qt.WindowState.WindowActive)
+                            # Ensure active state for strict focus policies
+                            window.setWindowState(
+                                window.windowState() | Qt.WindowState.WindowActive
+                            )
 
                         if ":fullscreen" in msg:
                             logger.info("Switching to fullscreen via IPC")
@@ -565,12 +615,15 @@ def main():
                                 display_config.set_fullscreen(False)
                                 window.showNormal()
 
-                        if msg.startswith("open:") or msg.startswith("log:"):
+                        if msg.startswith("silent:"):
+                            target = unquote(msg[7:].strip())
+                            handle_game_request(target, True)
+                        elif msg.startswith("open:") or msg.startswith("log:"):
                             log_mode = msg.startswith("log:")
                             launch_path = msg.split(":", 1)[1].strip()
                             if launch_path and is_launch_file(launch_path):
                                 logger.info("Opening launch file via IPC: %s", launch_path)
-                                window.handle_launch_exe(launch_path, log_mode=log_mode)
+                                handle_game_request(launch_path, False, log_mode)
                             else:
                                 logger.warning("Invalid launch file via IPC: %s", launch_path)
                         elif msg.startswith("restore:"):
@@ -583,13 +636,13 @@ def main():
                         elif msg.startswith("gog:"):
                             app_id = msg[4:].strip()
                             if app_id.isdigit():
-                                window.toggleGame(f"gog://launch/{app_id}")
+                                handle_game_request(f"gog://launch/{app_id}", False)
                             else:
                                 logger.warning("Invalid GOG app id via IPC: %s", app_id)
                         elif msg.startswith("egs:"):
                             app_id = msg[4:].strip()
                             if app_id and "/" not in app_id:
-                                window.toggleGame(f"egs://launch/{app_id}")
+                                handle_game_request(f"egs://launch/{app_id}", False)
                             else:
                                 logger.warning("Invalid Epic app id via IPC: %s", app_id)
                         elif msg.startswith("backup:"):
@@ -634,16 +687,20 @@ def main():
         and getattr(window.input_manager, "gamepad", None) is not None
     )
     launch_minimized = (
-        display_config.get_start_minimized()
-        and not args.fullscreen
-        and not launch_auto_fullscreen
-        and window_resolution is None
-        and exe_path is None
-        and backup_request is None
-        and restore_prefix_path is None
-        and autoinstall_path is None
-        and theme_store_id is None
-        and gog_launch_uri is None
+        silent_game_request
+        or (
+            display_config.get_start_minimized()
+            and not args.fullscreen
+            and not launch_auto_fullscreen
+            and window_resolution is None
+            and exe_path is None
+            and backup_request is None
+            and restore_prefix_path is None
+            and autoinstall_path is None
+            and theme_store_id is None
+            and gog_launch_uri is None
+            and egs_launch_uri is None
+        )
     )
     if launch_minimized:
         logger.info("Launching in tray")

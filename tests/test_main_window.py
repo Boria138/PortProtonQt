@@ -13,12 +13,13 @@ from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch, mark
 from PySide6.QtCore import QEventLoop, QObject, Qt, QTimer
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QGridLayout,
     QLabel,
+    QMenu,
     QTableWidget,
     QTableWidgetItem,
     QWidget,
@@ -34,6 +35,7 @@ from portprotonqt.game_card import GameCard, SourceCorner
 from portprotonqt.game_library_manager import FullLibraryTile, GameLibraryManager
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.main_window import MainWindow
+from portprotonqt.tray_manager import TrayManager
 from portprotonqt.themes.standart.styles.constants import GAME_CARD_ANIMATION
 from portprotonqt.portproton_api import remove_empty_custom_data_dirs
 import portprotonqt.tabs.autoinstall_tab as autoinstall_tab_module
@@ -72,6 +74,35 @@ def _tile_theme() -> Any:
         GAME_CARD_HORIZONTAL={},
         GAME_CARD_ANIMATION=GAME_CARD_ANIMATION,
     )
+
+
+def test_minimal_tray_contains_only_stop_action() -> None:
+    _application = QApplication.instance() or QApplication([])
+    manager = TrayManager.__new__(TrayManager)
+    manager.tray_menu = QMenu()
+    manager.stop_game_action = QAction("Stop Game", manager.tray_menu)
+    manager.minimal_mode = True
+    manager.update_stop_game_action = MagicMock()
+
+    manager.refresh_tray_menu()
+
+    assert manager.tray_menu.actions() == [manager.stop_game_action]
+    manager.update_stop_game_action.assert_called_once_with()
+
+
+def test_minimal_tray_exits_after_stopping_game(monkeypatch: MonkeyPatch) -> None:
+    manager = TrayManager.__new__(TrayManager)
+    manager.main_window = SimpleNamespace(stop_running_game=lambda: True)
+    manager.minimal_mode = True
+    manager.tray_icon = MagicMock()
+    manager.update_stop_game_action = MagicMock()
+    quit_app = MagicMock()
+    monkeypatch.setattr("portprotonqt.tray_manager.QApplication.quit", quit_app)
+
+    manager.stop_game()
+
+    manager.tray_icon.hide.assert_called_once_with()
+    quit_app.assert_called_once_with()
 
 
 def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
@@ -1667,13 +1698,36 @@ def test_stop_running_game_analyzes_before_stop_command_failure(
     monkeypatch: MonkeyPatch,
 ) -> None:
     window: Any = MainWindow.__new__(MainWindow)
-    analyzed = []
+    events = []
     window.current_running_button = None
-    monkeypatch.setattr(window, "_analyze_short_launch", lambda: analyzed.append(True))
-    monkeypatch.setattr(window, "_run_portproton_stop_command", lambda: False)
+    window.game_processes = [MagicMock()]
+    window.checkProcessTimer = None
+    monkeypatch.setattr(window, "_analyze_short_launch", lambda: events.append("analyze"))
+    monkeypatch.setattr(window, "_terminate_game_processes", lambda: events.append("terminate"))
+    monkeypatch.setattr(
+        window, "_run_portproton_stop_command",
+        lambda: events.append("portproton-stop") or False,
+    )
+    monkeypatch.setattr(window, "resetPlayButton", lambda: events.append("reset"))
 
     assert window.stop_running_game() is False
-    assert analyzed == [True]
+    assert events == ["analyze", "terminate", "portproton-stop", "reset"]
+    assert window.game_processes == []
+
+
+def test_terminate_game_processes_kills_launcher(monkeypatch: MonkeyPatch) -> None:
+    process = MagicMock(pid=1234)
+    process.poll.return_value = None
+    window: Any = MainWindow.__new__(MainWindow)
+    window.game_processes = [process]
+    kill_group = MagicMock()
+    monkeypatch.setattr("portprotonqt.main_window.os.getpgid", lambda _pid: 4321)
+    monkeypatch.setattr("portprotonqt.main_window.os.killpg", kill_group)
+
+    window._terminate_game_processes()
+
+    kill_group.assert_called_once_with(4321, main_window_module.signal.SIGTERM)
+    process.kill.assert_called_once_with()
 
 
 def test_dxvk_incompatibility_reports_after_manual_stop(
@@ -2330,6 +2384,69 @@ def test_store_launch_grace_prevents_early_button_reset(
     ))
 
     assert MainWindow._has_running_game_process(window)
+
+
+def test_store_launch_grace_starts_after_slow_legendary_login(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(main_window_module.psutil, "process_iter", lambda attrs: [])
+    monkeypatch.setattr(main_window_module.time, "monotonic", lambda: 105.0)
+    window = cast(MainWindow, SimpleNamespace(
+        game_processes=[], target_exe="DOOM64_x64.exe",
+        game_start_time=datetime.now() - timedelta(minutes=1),
+        game_launch_monotonic=100.0,
+    ))
+
+    assert MainWindow._has_running_game_process(window)
+
+
+def test_cancelled_egs_resolution_does_not_start_portproton(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    launch_data = '{"launch_command": ["start.sh"]}\n'
+    process: Any = SimpleNamespace(
+        stdout=[launch_data], wait=lambda: None, returncode=0,
+    )
+    window = cast(MainWindow, SimpleNamespace(egs_launch_cancelled=True))
+    popen = MagicMock()
+    monkeypatch.setattr(main_window_module.subprocess, "Popen", popen)
+
+    MainWindow._read_egs_launch_output(window, process)
+
+    popen.assert_not_called()
+
+
+def test_store_launch_grace_preserves_early_crash_duration(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monotonic = iter((101.0, 111.0))
+    launches = []
+    monkeypatch.setattr(main_window_module.psutil, "process_iter", lambda attrs: [])
+    monkeypatch.setattr(main_window_module.time, "monotonic", lambda: next(monotonic))
+    monkeypatch.setattr(
+        main_window_module.ui_config, "get_crash_reports_enabled", lambda: True,
+    )
+    monkeypatch.setattr(
+        main_window_module, "Thread",
+        lambda **kwargs: SimpleNamespace(
+            start=lambda: launches.append(kwargs["args"][0])
+        ),
+    )
+    exited_installer = SimpleNamespace(poll=lambda: 0)
+    window = cast(MainWindow, SimpleNamespace(
+        game_processes=[exited_installer], target_exe="DOOM64_x64.exe",
+        game_start_exe="game.exe",
+        game_start_time=datetime.now() - timedelta(minutes=1),
+        game_launch_monotonic=100.0, game_stopped_by_user=False,
+        _build_compatibility_report=lambda *_args: None,
+    ))
+
+    assert MainWindow._has_running_game_process(window)
+    assert not MainWindow._has_running_game_process(window)
+    MainWindow._analyze_short_launch(window)
+
+    assert launches[0].duration == 1.0
+    assert launches[0].exit_code == 0
 
 
 def test_egs_verification_uses_total_progress_format() -> None:

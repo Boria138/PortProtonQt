@@ -73,6 +73,7 @@ class TrayManager:
         self.tray_icon.setToolTip(self.app_name)
 
         self.tray_menu = QMenu()
+        self.minimal_mode = False
 
         self.stop_game_action = QAction(_("Stop Game"), self.main_window)
         self.stop_game_action.setEnabled(False)
@@ -96,8 +97,10 @@ class TrayManager:
         self.tray_menu.clear()
 
         self.tray_menu.addAction(self.stop_game_action)
-        self.tray_menu.addSeparator()
         self.update_stop_game_action()
+        if self.minimal_mode:
+            return
+        self.tray_menu.addSeparator()
 
         if display_config.get_tray_menu_mode() == "compact":
             self._populate_compact_menu()
@@ -108,6 +111,11 @@ class TrayManager:
         exit_action = QAction(_("Exit"), self.main_window)
         exit_action.triggered.connect(self.force_exit)
         self.tray_menu.addAction(exit_action)
+
+    def set_minimal_mode(self) -> None:
+        """Show only the stop action in the tray menu."""
+        self.minimal_mode = True
+        self.refresh_tray_menu()
 
     def _populate_detailed_menu(self) -> None:
         self._populate_tabs_flat()
@@ -182,6 +190,9 @@ class TrayManager:
     def stop_game(self) -> None:
         if self.main_window.stop_running_game():
             self.update_stop_game_action()
+            if self.minimal_mode:
+                self.tray_icon.hide()
+                QApplication.quit()
             return
 
         QMessageBox.warning(self.main_window, _("Error"), _("Failed to stop game"))
