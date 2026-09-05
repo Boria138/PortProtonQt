@@ -25,7 +25,8 @@ def test_suspected_crash_requires_existing_windows_executable(tmp_path: Path) ->
 
     assert compatibility.is_suspected_crash(1.0, False, str(executable)) is True
     assert compatibility.is_suspected_crash(1.0, True, str(executable)) is False
-    assert compatibility.is_suspected_crash(6.0, False, str(executable)) is False
+    assert compatibility.is_suspected_crash(6.0, False, str(executable)) is True
+    assert compatibility.is_suspected_crash(8.0, False, str(executable)) is False
 
 
 def test_always_report_environment_bypasses_duration(

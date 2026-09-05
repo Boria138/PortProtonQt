@@ -915,10 +915,16 @@ class DetailPageManager:
         return_tab_index = getattr(self, "_return_to_tab_index", 0)
         current_page = self._current_detail_page
         running_button = self.main_window.current_running_button
+        debug_log_button = self._debug_log_button
         replace_running_button = (
             current_page is not None
             and running_button is not None
             and current_page.isAncestorOf(running_button)
+        )
+        replace_debug_log_button = (
+            current_page is not None
+            and debug_log_button is not None
+            and current_page.isAncestorOf(debug_log_button)
         )
         self._remove_current_detail_page()
         if source_kind == "autoinstall":
@@ -926,6 +932,15 @@ class DetailPageManager:
         else:
             self.openGameDetailPage(source_data)
         self._return_to_tab_index = return_tab_index
+        if (
+            replace_debug_log_button
+            and self.debug_log_manager.is_running
+            and self._debug_log_button is not None
+        ):
+            self._debug_log_button.setText(_("Stop Log"))
+            icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
+            if icon:
+                self._debug_log_button.setIcon(icon)
         if replace_running_button and self._current_detail_page is not None:
             play_button = self._find_play_button(self._current_detail_page)
             if play_button is not None:
