@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QTableWidget,
     QTableWidgetItem,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -105,7 +106,12 @@ def test_minimal_tray_exits_after_stopping_game(monkeypatch: MonkeyPatch) -> Non
     quit_app.assert_called_once_with()
 
 
-def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
+@mark.parametrize(("vertical_layout", "ribbon_visible"), [(False, True), (True, False)])
+def test_source_ribbon_visibility(
+    monkeypatch: MonkeyPatch,
+    vertical_layout: bool,
+    ribbon_visible: bool,
+) -> None:
     card = MagicMock()
     card.coverLabel = MagicMock()
     card.game_source = "portproton"
@@ -113,6 +119,7 @@ def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
     card.protondb_tier = "Platinum"
     card.anticheat_status = "Supported"
     card.badge_view_mode = "hidden"
+    card.vertical_layout = vertical_layout
     card.coverWidget.width.return_value = 300
     card.getAntiCheatText.return_value = "Supported"
     card.parentWidget.return_value = None
@@ -120,7 +127,7 @@ def test_hidden_badges_keep_source_ribbon(monkeypatch: MonkeyPatch) -> None:
 
     GameCard.update_badge_visibility(card, "portproton")
 
-    card.portprotonLabel.setVisible.assert_called_with(True)
+    card.portprotonLabel.setVisible.assert_called_with(ribbon_visible)
     card.ppdbLabel.setVisible.assert_called_with(False)
     card.protondbLabel.setVisible.assert_called_with(False)
     card.anticheatLabel.setVisible.assert_called_with(False)
@@ -410,6 +417,38 @@ def test_live_theme_rebuilds_library_when_layout_mode_changes() -> None:
     )
 
     manager.rebuild_library_layout.assert_called_once_with("grid")
+
+
+def test_vertical_library_uses_column_layout() -> None:
+    QApplication.instance() or QApplication([])
+    manager: Any = GameLibraryManager.__new__(GameLibraryManager)
+    manager.gamesListWidget = QWidget()
+    manager.gamesListLayout = QGridLayout(manager.gamesListWidget)
+    manager._incremental_add_timer = None
+    manager._incremental_add_queue = []
+    manager._incremental_new_games_map = {}
+    manager._incremental_search_text = ""
+    manager.game_card_cache = {}
+    manager.pending_images = {}
+    manager.theme = SimpleNamespace(
+        LIBRARY_LAYOUT_MODE="vertical",
+        GAME_CARD_VERTICAL={"layout_margins": (1, 2, 3, 4), "layout_spacing": 5},
+    )
+    manager.fullLibraryTile = None
+    manager.full_library_open = False
+    manager.libraryBackgroundLabel = None
+    manager.libraryHeaderWidget = None
+    manager.libraryContentLayout = None
+    manager.gamesScrollArea = None
+    manager.sizeSlider = None
+    manager.games = []
+    manager.set_games = MagicMock()
+
+    manager.rebuild_library_layout("vertical")
+
+    assert isinstance(manager.gamesListLayout, QVBoxLayout)
+    assert manager.gamesListLayout.contentsMargins().left() == 1
+    assert manager.gamesListLayout.spacing() == 5
 
 
 def test_full_library_tile_accepts_async_cover_result() -> None:

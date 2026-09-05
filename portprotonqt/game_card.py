@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QStackedLayout,
     QLabel,
+    QSizePolicy,
 )
 from portprotonqt.image_utils import (
     cleanup_animated_cover,
@@ -376,7 +377,8 @@ class GameCard(AnimatedCard):
         self.layout_mode = str(
             parent_mode or getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")
         ).lower()
-        self.list_layout = self.layout_mode == "list"
+        self.list_layout = self.layout_mode in {"list", "vertical"}
+        self.vertical_layout = self.layout_mode == "vertical"
         self.horizontal_layout = self.layout_mode in {"horizontal", "horizontal_top"}
         self.economy_mode = ui_config.get_economy_mode()
         self.missing_executable_path = self._get_missing_executable_path()
@@ -387,7 +389,9 @@ class GameCard(AnimatedCard):
         self.portproton_visible = str(game_source).lower() == "portproton"
         self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
-        if self.list_layout:
+        if self.vertical_layout:
+            config_name = "GAME_CARD_VERTICAL"
+        elif self.list_layout:
             config_name = "GAME_CARD_LIST"
         elif self.horizontal_layout:
             config_name = "GAME_CARD_HORIZONTAL"
@@ -396,8 +400,18 @@ class GameCard(AnimatedCard):
         self.card_layout_cfg = getattr(self.theme, config_name, {})
         default_margin = 8 if self.list_layout else 20
         self.base_extra_margin = self.card_layout_cfg.get("extra_margin", default_margin)
-        self.setProperty("theme_style_name", "GAME_CARD_WINDOW_STYLE")
-        self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
+        card_style_name = (
+            "GAME_CARD_VERTICAL_STYLE"
+            if self.vertical_layout
+            else "GAME_CARD_WINDOW_STYLE"
+        )
+        self.setProperty("theme_style_name", card_style_name)
+        card_style = (
+            self.theme.GAME_CARD_VERTICAL_STYLE
+            if self.vertical_layout
+            else self.theme.GAME_CARD_WINDOW_STYLE
+        )
+        self.setStyleSheet(card_style)
         self.setup_card_animations(self.theme, self.card_layout_cfg)
 
         self.shadow = QGraphicsDropShadowEffect(self)
@@ -465,7 +479,7 @@ class GameCard(AnimatedCard):
             config=corner_config,
             parent=self.coverWidget,
         )
-        self.steamLabel.setVisible(self.steam_visible)
+        self.steamLabel.setVisible(self.steam_visible and not self.vertical_layout)
 
         gog_icon = self.theme_manager.get_icon("badge_gog", as_path=True)
         self.gogLabel = SourceCorner(
@@ -473,7 +487,7 @@ class GameCard(AnimatedCard):
             config=corner_config,
             parent=self.coverWidget,
         )
-        self.gogLabel.setVisible(self.gog_visible)
+        self.gogLabel.setVisible(self.gog_visible and not self.vertical_layout)
 
         egs_icon = self.theme_manager.get_icon("badge_egs", as_path=True)
         self.egsLabel = SourceCorner(
@@ -481,7 +495,7 @@ class GameCard(AnimatedCard):
             config=corner_config,
             parent=self.coverWidget,
         )
-        self.egsLabel.setVisible(self.egs_visible)
+        self.egsLabel.setVisible(self.egs_visible and not self.vertical_layout)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = SourceCorner(
@@ -489,7 +503,9 @@ class GameCard(AnimatedCard):
             config=corner_config,
             parent=self.coverWidget,
         )
-        self.portprotonLabel.setVisible(self.portproton_visible)
+        self.portprotonLabel.setVisible(
+            self.portproton_visible and not self.vertical_layout
+        )
 
         if self.ppdb_visible:
             self.ppdbLabel = ClickableLabel(
@@ -535,9 +551,34 @@ class GameCard(AnimatedCard):
             self.nameLabel.setContentsMargins(0, 0, 10, 0)
         else:
             self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
-        self.layout_.addWidget(self.nameLabel)
-        if self.list_layout:
+        name_style = (
+            self.theme.GAME_CARD_VERTICAL_NAME_STYLE
+            if self.vertical_layout
+            else self.theme.GAME_CARD_NAME_LABEL_STYLE
+        )
+        self.nameLabel.setStyleSheet(name_style)
+        if self.vertical_layout:
+            self.nameLabel.setProperty(
+                "theme_style_name", "GAME_CARD_VERTICAL_NAME_STYLE"
+            )
+        if self.vertical_layout:
+            stretches = self.theme.GAME_CARD_VERTICAL["column_stretches"]
+            self.layout_.addWidget(self.nameLabel, stretches[0])
+            for text, stretch in zip(
+                (self.last_launch, self.formatted_playtime, str(self.game_source)),
+                stretches[1:],
+                strict=True,
+            ):
+                label = QLabel(text)
+                label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+                label.setProperty(
+                    "theme_style_name", "GAME_CARD_COLUMN_LABEL_STYLE"
+                )
+                label.setStyleSheet(self.theme.GAME_CARD_COLUMN_LABEL_STYLE)
+                self.layout_.addWidget(label, stretch)
+        else:
+            self.layout_.addWidget(self.nameLabel)
+        if self.list_layout and not self.vertical_layout:
             self.layout_.addStretch()
 
         font_size = self.nameLabel.font().pointSizeF()
@@ -559,7 +600,9 @@ class GameCard(AnimatedCard):
         old_theme = self.theme
         old_layout_cfg = self.card_layout_cfg
         self.theme = theme
-        if self.list_layout:
+        if self.vertical_layout:
+            config_name = "GAME_CARD_VERTICAL"
+        elif self.list_layout:
             config_name = "GAME_CARD_LIST"
         elif self.horizontal_layout:
             config_name = "GAME_CARD_HORIZONTAL"
@@ -778,10 +821,10 @@ class GameCard(AnimatedCard):
         ribbon_size = int(current_width * ribbon_cfg.get("size_ratio", 0.28))
         ribbon_size = max(ribbon_size, int(ribbon_cfg.get("min_size", 54) * self._scale))
         source_ribbons = [
-            (self.steam_visible, self.steamLabel),
-            (self.gog_visible, self.gogLabel),
-            (self.egs_visible, self.egsLabel),
-            (self.portproton_visible, self.portprotonLabel),
+            (self.steam_visible and not self.vertical_layout, self.steamLabel),
+            (self.gog_visible and not self.vertical_layout, self.gogLabel),
+            (self.egs_visible and not self.vertical_layout, self.egsLabel),
+            (self.portproton_visible and not self.vertical_layout, self.portprotonLabel),
         ]
 
         for is_visible, ribbon in source_ribbons:
@@ -826,7 +869,15 @@ class GameCard(AnimatedCard):
                 int(self.card_layout_cfg.get("cover_size", 56) * self._scale),
             )
             margin_left = self.card_layout_cfg.get("cover_left_margin", 10)
-            self.setFixedSize(scaled_width + scaled_extra, row_height + scaled_extra)
+            if self.vertical_layout:
+                self.setMinimumWidth(0)
+                self.setFixedHeight(row_height + scaled_extra)
+                self.setSizePolicy(
+                    QSizePolicy.Policy.Expanding,
+                    QSizePolicy.Policy.Fixed,
+                )
+            else:
+                self.setFixedSize(scaled_width + scaled_extra, row_height + scaled_extra)
             self.coverWidget.setFixedSize(icon_size + margin_left, icon_size)
             self.coverWidget.setContentsMargins(margin_left, 0, 0, 0)
             self.coverLabel.setFixedSize(icon_size, icon_size)
@@ -949,12 +1000,15 @@ class GameCard(AnimatedCard):
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
         hidden_badges = self.badge_view_mode == "hidden"
+        show_source_ribbons = self.vertical_layout is not True
 
         try:
-            self.steamLabel.setVisible(self.steam_visible)
-            self.gogLabel.setVisible(self.gog_visible)
-            self.egsLabel.setVisible(self.egs_visible)
-            self.portprotonLabel.setVisible(self.portproton_visible)
+            self.steamLabel.setVisible(self.steam_visible and show_source_ribbons)
+            self.gogLabel.setVisible(self.gog_visible and show_source_ribbons)
+            self.egsLabel.setVisible(self.egs_visible and show_source_ribbons)
+            self.portprotonLabel.setVisible(
+                self.portproton_visible and show_source_ribbons
+            )
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)

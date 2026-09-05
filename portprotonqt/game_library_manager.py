@@ -14,6 +14,7 @@ from PySide6.QtGui import QPaintEvent, QPainter, QPainterPath, QPixmap, QRegion
 from portprotonqt.custom_widgets import FlowLayout, AutoHideScrollArea
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
+from portprotonqt.localization import _
 from portprotonqt.detail_pages.utils import remove_cover_background, setup_cover_background
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from collections import deque
@@ -73,8 +74,10 @@ class GameLibraryManager:
         self.card_width = ui_config.get_card_width()
         self.layout_mode = str(getattr(theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.gamesListWidget: QWidget | None = None
-        self.gamesListLayout: FlowLayout | QHBoxLayout | None = None
+        self.gamesListLayout: FlowLayout | QHBoxLayout | QVBoxLayout | None = None
         self.gamesScrollArea: QScrollArea | None = None
+        self.libraryHeaderWidget: QWidget | None = None
+        self.libraryContentLayout: QVBoxLayout | None = None
         self.libraryBackgroundLabel: QLabel | None = None
         self.fullLibraryTile: FullLibraryTile | None = None
         self._full_library_tile_covers: list[str] = []
@@ -113,11 +116,16 @@ class GameLibraryManager:
             stack_layout.addWidget(content_widget, 0, 0)
         else:
             layout = QVBoxLayout(self.gamesLibraryWidget)
+        self.libraryContentLayout = layout
         layout.setSpacing(15)
 
         # Search widget
         searchWidget, self.searchEdit = self.main_window.createSearchWidget()
         layout.addWidget(searchWidget)
+
+        if self.layout_mode == "vertical":
+            self.libraryHeaderWidget = self._create_library_header()
+            layout.addWidget(self.libraryHeaderWidget)
 
         # Scroll area for game grid
         scrollArea = AutoHideScrollArea(theme=self.theme)
@@ -137,6 +145,13 @@ class GameLibraryManager:
             self.gamesListLayout.setSpacing(layout_config["layout_spacing"])
             scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        elif self.layout_mode == "vertical":
+            layout_config = self.theme.GAME_CARD_VERTICAL
+            self.gamesListLayout = QVBoxLayout(self.gamesListWidget)
+            self.gamesListLayout.setContentsMargins(
+                *layout_config.get("layout_margins", (0, 0, 0, 0))
+            )
+            self.gamesListLayout.setSpacing(layout_config.get("layout_spacing", 0))
         else:
             self.gamesListLayout = FlowLayout(self.gamesListWidget)
         self.gamesListWidget.setLayout(self.gamesListLayout)
@@ -159,7 +174,7 @@ class GameLibraryManager:
             self.main_window._register_gamepad_tooltip(self.sizeSlider, f"{self.card_width} px")
         self.sizeSlider.sliderReleased.connect(self.main_window.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
-        if self.layout_mode in {"list", "horizontal", "horizontal_top"}:
+        if self.layout_mode in {"list", "vertical", "horizontal", "horizontal_top"}:
             self.sizeSlider.setVisible(False)
         self._set_card_width_from_slider()
 
@@ -180,6 +195,26 @@ class GameLibraryManager:
 
         return self.gamesLibraryWidget
 
+    def _create_library_header(self) -> QWidget:
+        """Create the shared header for vertical library columns."""
+        config = self.theme.GAME_CARD_VERTICAL
+        header = QWidget()
+        header.setFixedHeight(config["header_height"])
+        header.setProperty("theme_style_name", "LIBRARY_HEADER_STYLE")
+        header.setStyleSheet(self.theme.LIBRARY_HEADER_STYLE)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(*config["header_margins"])
+        header_layout.setSpacing(config["header_spacing"])
+        header_layout.addSpacing(config["header_cover_width"])
+        labels = (_("Game Title"), _("LAST LAUNCH"), _("TIME SPENT"), _("Library"))
+        for text, stretch in zip(labels, config["column_stretches"], strict=True):
+            label = QLabel(text)
+            label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            label.setProperty("theme_style_name", "LIBRARY_HEADER_LABEL_STYLE")
+            label.setStyleSheet(self.theme.LIBRARY_HEADER_LABEL_STYLE)
+            header_layout.addWidget(label, stretch)
+        return header
+
     def rebuild_library_layout(self, layout_mode: str) -> None:
         """Replace the card layout when a theme changes its library mode."""
         if self.gamesListWidget is None or self.gamesListLayout is None:
@@ -192,6 +227,13 @@ class GameLibraryManager:
             self.gamesListLayout = QHBoxLayout()
             self.gamesListLayout.setContentsMargins(*layout_config["layout_margins"])
             self.gamesListLayout.setSpacing(layout_config["layout_spacing"])
+        elif layout_mode == "vertical":
+            layout_config = self.theme.GAME_CARD_VERTICAL
+            self.gamesListLayout = QVBoxLayout()
+            self.gamesListLayout.setContentsMargins(
+                *layout_config.get("layout_margins", (0, 0, 0, 0))
+            )
+            self.gamesListLayout.setSpacing(layout_config.get("layout_spacing", 0))
         else:
             self.gamesListLayout = FlowLayout()
         QWidget().setLayout(old_layout)
@@ -212,11 +254,20 @@ class GameLibraryManager:
         if self.full_library_open and self.libraryBackgroundLabel is not None:
             remove_cover_background(self.libraryBackgroundLabel)
         self.layout_mode = layout_mode
+        if (
+            layout_mode == "vertical"
+            and self.libraryHeaderWidget is None
+            and self.libraryContentLayout is not None
+        ):
+            self.libraryHeaderWidget = self._create_library_header()
+            self.libraryContentLayout.insertWidget(1, self.libraryHeaderWidget)
+        if self.libraryHeaderWidget is not None:
+            self.libraryHeaderWidget.setVisible(layout_mode == "vertical")
         self.gamesListWidget.setProperty("library_layout_mode", layout_mode)
         if self.sizeSlider is not None:
             self.sizeSlider.setVisible(
                 not self.full_library_open
-                and layout_mode not in {"list", "horizontal", "horizontal_top"}
+                and layout_mode not in {"list", "vertical", "horizontal", "horizontal_top"}
             )
             self._set_card_width_from_slider()
             self.main_window.card_width = self.card_width
@@ -238,7 +289,7 @@ class GameLibraryManager:
     def on_slider_released(self):
         """Handles slider release to update card size."""
         if self.full_library_open or self.layout_mode in {
-            "list", "horizontal", "horizontal_top"
+            "list", "vertical", "horizontal", "horizontal_top"
         }:
             return
         if self.sizeSlider is None:
@@ -257,7 +308,7 @@ class GameLibraryManager:
         if self.sizeSlider is None:
             return
         if self.full_library_open or self.layout_mode in {
-            "list", "horizontal", "horizontal_top"
+            "list", "vertical", "horizontal", "horizontal_top"
         }:
             self.card_width = self.sizeSlider.maximum()
         else:
@@ -413,7 +464,7 @@ class GameLibraryManager:
         if self.sizeSlider is not None:
             self.sizeSlider.setVisible(
                 not self.full_library_open
-                and self.layout_mode not in {"list", "horizontal", "horizontal_top"}
+                and self.layout_mode not in {"list", "vertical", "horizontal", "horizontal_top"}
             )
             old_card_width = self.card_width
             self._set_card_width_from_slider()

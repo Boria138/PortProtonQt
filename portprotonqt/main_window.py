@@ -3009,12 +3009,12 @@ class MainWindow(
         layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         size_slider = getattr(self.game_library_manager, 'sizeSlider', None)
         if size_slider is None or layout_mode not in {
-            "list", "horizontal", "horizontal_top"
+            "list", "vertical", "horizontal", "horizontal_top"
         }:
             ui_config.set_card_width(self.card_width)
         if (
             hasattr(self, 'auto_size_slider')
-            and layout_mode not in {"list", "horizontal", "horizontal_top"}
+            and layout_mode not in {"list", "vertical", "horizontal", "horizontal_top"}
         ):
             ui_config.set_auto_card_width(self.auto_card_width)
 

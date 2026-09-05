@@ -235,12 +235,14 @@ NAV_BUTTON_STYLE = f"""
 You can control the game library card layout directly from the theme via `styles.py`:
 
 ```python
-# "grid", "list", "horizontal", or "horizontal_top"
+# "grid", "list", "vertical", "horizontal", or "horizontal_top"
 LIBRARY_LAYOUT_MODE = "grid"
 ```
 
 - `grid`: multi-column card grid (classic behavior).
 - `list`: horizontal row-style cards (launcher-style list).
+- `vertical`: a full-width table with game title, last launch, time spent, and
+  library columns.
 - `horizontal`: one horizontally scrolling row containing every game.
 - `horizontal_top`: the first `horizontalTopGameLimit` games from the current
   filter and sort order, followed by a tile composed from the next games that
