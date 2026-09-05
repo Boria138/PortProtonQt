@@ -38,6 +38,13 @@ logger = get_logger(__name__)
 GOG_CANCEL_KILL_TIMEOUT_MS = 3000
 GOG_LOGIN_TIMEOUT_MS = 300000
 EGS_LOGIN_TIMEOUT_MS = 300000
+MIB_PER_GIB = 1024.0
+
+
+def _format_download_size(size_mib: float) -> str:
+    if size_mib >= MIB_PER_GIB:
+        return f"{size_mib / MIB_PER_GIB:.2f} GiB"
+    return f"{size_mib:.1f} MiB"
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
@@ -842,9 +849,20 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         )
 
     def _kill_gog_process(self, process: QProcess) -> None:
-        if process.state() != QProcess.ProcessState.NotRunning:
-            logger.warning("gogdl did not terminate after cancellation; killing it")
-            process.kill()
+        try:
+            if process.state() != QProcess.ProcessState.NotRunning:
+                logger.warning("gogdl did not terminate after cancellation; killing it")
+                process.kill()
+        except RuntimeError:
+            # QProcess may be deleted by its finished handler before the timer fires.
+            return
+
+    def _clear_egs_data_lock(self) -> None:
+        lock_path = self.egs_api.config_dir / "installed.json.lock"
+        try:
+            lock_path.unlink(missing_ok=True)
+        except OSError as error:
+            logger.warning("Failed to clear Legendary data lock: %s", error)
 
     def _append_download_row(
         self, table: QTableWidget, game: dict, action: str, store: str = "GOG"
@@ -975,7 +993,14 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
             self.diskSpeedLabel.setText(
                 _("Disk: {0} MiB/s").format(disk_speeds[-1])
             )
-        details = [f"{downloaded[-1]} MiB"] if downloaded else []
+        details = []
+        if downloaded and self.egs_download_total > 0:
+            details.append(
+                f"{_format_download_size(float(downloaded[-1]))} / "
+                f"{_format_download_size(self.egs_download_total)}"
+            )
+        elif downloaded:
+            details.append(f"{downloaded[-1]} MiB")
         if eta:
             details.append(_("ETA: {0}").format(eta[-1]))
         if details:
@@ -1046,6 +1071,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
             logger.error("Epic download failed for %s: %s", app_id, error)
         process = self.egs_process
         self.egs_process = None
+        self._clear_egs_data_lock()
         if process is not None:
             process.deleteLater()
         self.downloadOverallProgress.setValue(0)
@@ -1063,6 +1089,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         details.setText(_("Completed") if success else self._get_egs_download_error())
         process = self.egs_process
         self.egs_process = None
+        self._clear_egs_data_lock()
         if process is not None:
             process.deleteLater()
         self.downloadOverallProgress.setValue(0)

@@ -2416,6 +2416,26 @@ def test_cancelled_egs_resolution_does_not_start_portproton(
     popen.assert_not_called()
 
 
+def test_egs_update_progress_shows_downloaded_and_total() -> None:
+    details = []
+    progress = MagicMock()
+    output = b"Download size: 500 MiB\nDownloaded: 125 MiB\n"
+    process = SimpleNamespace(
+        readAllStandardOutput=lambda: SimpleNamespace(data=lambda: output),
+    )
+    window = cast(MainWindowDownloadTabMixin, SimpleNamespace(
+        egs_process=process, egs_download_output="", egs_download_total=0.0,
+        downloadOverallProgress=progress, downloadSpeedLabel=MagicMock(),
+        diskSpeedLabel=MagicMock(), downloadActiveDetails=MagicMock(),
+        _update_active_download_details=details.append,
+    ))
+
+    MainWindowDownloadTabMixin._read_egs_download_output(window)
+
+    assert details == [["125.0 MiB / 500.0 MiB"]]
+    progress.setValue.assert_called_with(25)
+
+
 def test_store_launch_grace_preserves_early_crash_duration(
     monkeypatch: MonkeyPatch,
 ) -> None:

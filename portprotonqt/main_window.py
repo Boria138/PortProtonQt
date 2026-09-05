@@ -2732,7 +2732,7 @@ class MainWindow(
         try:
             command = self.egs_api.build_command([
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
-                "--no-wine",
+                "--no-wine", "--skip-version-check",
             ])
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
