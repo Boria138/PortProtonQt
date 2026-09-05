@@ -507,6 +507,7 @@ def main():
         exe_path or gog_launch_uri or egs_launch_uri
     )
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=launch_path, resolution=window_resolution, show_system_tab=args.ppqtos)
+    window.silent_launch_mode = silent_game_request
     if silent_game_request:
         if exe_path:
             window.tray_manager.tray_icon.hide()
