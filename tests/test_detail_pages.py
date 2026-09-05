@@ -213,6 +213,8 @@ def test_compact_layout_rebuild_preserves_running_button() -> None:
     )
     manager._current_detail_source = ("game", {"name": "Game"})
     manager._current_detail_page = old_page
+    cast(Any, manager).debug_log_manager = SimpleNamespace(is_running=False)
+    manager._debug_log_button = None
     manager._return_to_tab_index = 0
     manager._remove_current_detail_page = MagicMock()
     manager.openGameDetailPage = MagicMock(
@@ -224,6 +226,36 @@ def test_compact_layout_rebuild_preserves_running_button() -> None:
 
     assert manager.main_window.current_running_button is new_button
     manager.main_window._set_running_button_stop.assert_called_once_with()
+
+
+def test_compact_layout_rebuild_preserves_debug_log_button(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr("portprotonqt.detail_pages._", lambda text: text)
+    manager = DetailPageManager.__new__(DetailPageManager)
+    old_page = MagicMock(spec=QWidget)
+    old_button = MagicMock()
+    new_button = MagicMock()
+    stop_icon = object()
+    old_page.isAncestorOf.return_value = True
+    manager.main_window = SimpleNamespace(
+        current_running_button=None,
+        theme_manager=SimpleNamespace(
+            get_icon=MagicMock(return_value=stop_icon),
+        ),
+    )
+    cast(Any, manager).debug_log_manager = SimpleNamespace(is_running=True)
+    manager._debug_log_button = old_button
+    manager._current_detail_source = ("game", {"name": "Game"})
+    manager._current_detail_page = old_page
+    manager._return_to_tab_index = 0
+    manager._remove_current_detail_page = MagicMock()
+    manager.openGameDetailPage = MagicMock(
+        side_effect=lambda _data: setattr(manager, "_debug_log_button", new_button)
+    )
+
+    manager._reopen_current_detail_page()
+
+    new_button.setText.assert_called_once_with("Stop Log")
+    new_button.setIcon.assert_called_once_with(stop_icon)
 
 
 def _make_palette(colors):
