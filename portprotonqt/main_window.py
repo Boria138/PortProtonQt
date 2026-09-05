@@ -1689,6 +1689,9 @@ class MainWindow(
         self.detail_page_manager.openGameDetailPage(game_data)
         pending_log_exe = self._pending_log_exe
         detail_exe = extract_exec_target_path(game_data.get("exec_line", ""))
+        if exec_line.startswith(("gog://launch/", "egs://launch/")):
+            source, app_id = exec_line.split("://", 1)[0], exec_line.rsplit("/", 1)[-1]
+            detail_exe = getattr(self, f"{source}_api").get_launch_target(app_id)
         if pending_log_exe and detail_exe:
             if os.path.abspath(detail_exe) == pending_log_exe:
                 self._pending_log_exe = None

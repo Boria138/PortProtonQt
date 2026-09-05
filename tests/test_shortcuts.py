@@ -289,6 +289,21 @@ class TestCreateDesktopFile:
         assert 'Exec=portprotonqt --silent "gog://launch/123"' in entry
         assert icon_path == "applications-games"
 
+    def test_egs_launch_uri_uses_common_desktop_entry(
+        self, tmp_path: Path, monkeypatch: Any
+    ) -> None:
+        _patch_location(monkeypatch, tmp_path)
+
+        result = create_desktop_file(
+            "egs://launch/5b60142e120c4f2d88027595c21d4a04",
+            game_name="DOOM 64",
+        )
+
+        assert result is not None
+        entry, _, icon_path = result
+        assert 'Exec=portprotonqt --silent "egs://launch/5b60142e120c4f2d88027595c21d4a04"' in entry
+        assert icon_path == "applications-games"
+
     def test_gog_launch_uri_uses_executable_icon(
         self, tmp_path: Path, monkeypatch: Any
     ) -> None:
