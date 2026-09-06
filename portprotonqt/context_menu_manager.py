@@ -548,6 +548,31 @@ class ContextMenuManager:
         if game_card.game_source == "egs":
             app_id = str(game_card.appid)
             if game_card.exec_line.startswith("egs://launch/"):
+                desktop_dir = QStandardPaths.writableLocation(
+                    QStandardPaths.StandardLocation.DesktopLocation
+                )
+                desktop_path = self._get_shortcut_path(game_card.name, desktop_dir)
+                desktop_exists = os.path.exists(desktop_path)
+                desktop_action = menu.addAction(
+                    self._get_safe_icon("delete" if desktop_exists else "desktop"),
+                    _("Remove from Desktop") if desktop_exists else _("Add to Desktop"),
+                )
+                desktop_action.triggered.connect(
+                    lambda: self.remove_from_desktop(game_card.name)
+                    if desktop_exists
+                    else self.add_to_desktop(game_card.name, game_card.exec_line)
+                )
+                menu_path = self._get_menu_shortcut_path(game_card.name)
+                menu_exists = os.path.exists(menu_path)
+                menu_action = menu.addAction(
+                    self._get_safe_icon("delete" if menu_exists else "menu"),
+                    _("Remove from Menu") if menu_exists else _("Add to Menu"),
+                )
+                menu_action.triggered.connect(
+                    lambda: self.remove_from_menu(game_card.name)
+                    if menu_exists
+                    else self.add_to_menu(game_card.name, game_card.exec_line)
+                )
                 update_action = menu.addAction(
                     self._get_safe_icon("update"), _("Update")
                 )
@@ -1035,15 +1060,15 @@ class ContextMenuManager:
         """Add the game desktop entry to the XDG applications directory."""
         if not self._check_portproton():
             return
-        is_gog_uri = str(exec_line).startswith("gog://launch/")
+        is_store_uri = str(exec_line).startswith(("gog://launch/", "egs://launch/"))
         desktop_path = self._get_desktop_path(game_name)
-        if not is_gog_uri and not os.path.exists(desktop_path):
+        if not is_store_uri and not os.path.exists(desktop_path):
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
-        if not is_gog_uri:
+        if not is_store_uri:
             exec_line = self._get_exec_line(game_name, exec_line)
             if not exec_line:
                 return
@@ -1051,9 +1076,9 @@ class ContextMenuManager:
             if not exec_line:
                 return
         icon_source = None
-        if is_gog_uri:
-            app_id = str(exec_line).rsplit("/", 1)[-1]
-            icon_source = self.parent.gog_api.get_launch_target(app_id)
+        if is_store_uri:
+            source, app_id = exec_line.split("://", 1)[0], str(exec_line).rsplit("/", 1)[-1]
+            icon_source = getattr(self.parent, f"{source}_api").get_launch_target(app_id)
         shortcut = create_desktop_file(exec_line, game_name, icon_source)
         if not shortcut:
             return
@@ -1106,16 +1131,16 @@ class ContextMenuManager:
 
         if not self._check_portproton():
             return
-        is_gog_uri = str(exec_line).startswith("gog://launch/")
+        is_store_uri = str(exec_line).startswith(("gog://launch/", "egs://launch/"))
         desktop_path = self._get_desktop_path(game_name)
-        if not is_gog_uri and not os.path.exists(desktop_path):
+        if not is_store_uri and not os.path.exists(desktop_path):
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
         # Ensure icon exists
-        if not is_gog_uri:
+        if not is_store_uri:
             exec_line = self._get_exec_line(game_name, exec_line)
             if not exec_line:
                 return
@@ -1123,9 +1148,9 @@ class ContextMenuManager:
             if not exec_line:
                 return
         icon_source = None
-        if is_gog_uri:
-            app_id = str(exec_line).rsplit("/", 1)[-1]
-            icon_source = self.parent.gog_api.get_launch_target(app_id)
+        if is_store_uri:
+            source, app_id = exec_line.split("://", 1)[0], str(exec_line).rsplit("/", 1)[-1]
+            icon_source = getattr(self.parent, f"{source}_api").get_launch_target(app_id)
         shortcut = create_desktop_file(exec_line, game_name, icon_source)
         if not shortcut:
             return

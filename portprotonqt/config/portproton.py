@@ -546,8 +546,8 @@ def create_desktop_file(
 ) -> tuple[str, str, str] | None:
     """Create desktop entry content, destination path and icon path for a game."""
     portproton_path = get_portproton_location()
-    is_gog_uri = re.fullmatch(r"gog://launch/\d+", exe_path) is not None
-    if not is_gog_uri and not os.path.isfile(exe_path):
+    is_store_uri = re.fullmatch(r"(?:gog|egs)://launch/[^/]+", exe_path) is not None
+    if not is_store_uri and not os.path.isfile(exe_path):
         logger.error("Executable not found: %s", exe_path)
         return None
     if not portproton_path:
@@ -560,7 +560,7 @@ def create_desktop_file(
     icon_name = _sanitize_icon_name(game_name)
     has_icon_source = bool(icon_source and os.path.isfile(icon_source))
     icon_path = (
-        "applications-games" if is_gog_uri and not has_icon_source
+        "applications-games" if is_store_uri and not has_icon_source
         else os.path.join(base_path, "img", f"{icon_name}.png")
     )
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")

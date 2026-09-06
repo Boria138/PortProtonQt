@@ -339,12 +339,18 @@ def main():
         app_id = args.file_or_url.removeprefix("gog://launch/")
         if app_id.isdigit():
             gog_launch_uri = args.file_or_url
-            ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"gog:{app_id}"
+            if args.log:
+                ipc_message = f"log:{quote(args.file_or_url, safe='')}"
+            else:
+                ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"gog:{app_id}"
     elif args.file_or_url and args.file_or_url.startswith("egs://launch/"):
         app_id = args.file_or_url.removeprefix("egs://launch/")
         if app_id and "/" not in app_id:
             egs_launch_uri = args.file_or_url
-            ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"egs:{app_id}"
+            if args.log:
+                ipc_message = f"log:{quote(args.file_or_url, safe='')}"
+            else:
+                ipc_message = f"silent:{quote(args.file_or_url, safe='')}" if is_silent_launch else f"egs:{app_id}"
     elif args.file_or_url:
         theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
         if theme_store_id is not None:
@@ -501,14 +507,17 @@ def main():
         exe_path or gog_launch_uri or egs_launch_uri
     )
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=launch_path, resolution=window_resolution, show_system_tab=args.ppqtos)
+    window.silent_launch_mode = silent_game_request
     if silent_game_request:
         if exe_path:
             window.tray_manager.tray_icon.hide()
         else:
             window.tray_manager.set_minimal_mode()
 
-    def open_store_game_card(source: str, app_id: str) -> None:
+    def open_store_game_card(source: str, app_id: str, log_mode: bool = False) -> None:
         exec_line = f"{source}://launch/{app_id}"
+        if log_mode:
+            window._pending_log_exe = getattr(window, f"{source}_api").get_launch_target(app_id)
 
         def open_card(games: list[tuple]) -> None:
             game = next((item for item in games if item[5] == exec_line), None)
@@ -540,7 +549,7 @@ def main():
         if silent:
             window.toggleGame(target)
             return
-        open_store_game_card(source, app_id)
+        open_store_game_card(source, app_id, log_mode)
 
     # Handle launch file if provided
     if exe_path:
@@ -562,11 +571,11 @@ def main():
         QTimer.singleShot(0, handle_restore_prefix)
     elif gog_launch_uri:
         def handle_gog_launch() -> None:
-            handle_game_request(gog_launch_uri, is_silent_launch)
+            handle_game_request(gog_launch_uri, is_silent_launch, args.log)
         QTimer.singleShot(0, handle_gog_launch)
     elif egs_launch_uri:
         def handle_egs_launch() -> None:
-            handle_game_request(egs_launch_uri, is_silent_launch)
+            handle_game_request(egs_launch_uri, is_silent_launch, args.log)
         QTimer.singleShot(0, handle_egs_launch)
 
     # --- Handle incoming connections ---
@@ -620,10 +629,12 @@ def main():
                             handle_game_request(target, True)
                         elif msg.startswith("open:") or msg.startswith("log:"):
                             log_mode = msg.startswith("log:")
-                            launch_path = msg.split(":", 1)[1].strip()
+                            launch_path = unquote(msg.split(":", 1)[1].strip())
                             if launch_path and is_launch_file(launch_path):
                                 logger.info("Opening launch file via IPC: %s", launch_path)
                                 handle_game_request(launch_path, False, log_mode)
+                            elif log_mode and launch_path.startswith(("gog://launch/", "egs://launch/")):
+                                handle_game_request(unquote(launch_path), False, True)
                             else:
                                 logger.warning("Invalid launch file via IPC: %s", launch_path)
                         elif msg.startswith("restore:"):

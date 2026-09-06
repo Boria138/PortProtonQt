@@ -407,6 +407,8 @@ class MainWindow(
         self.game_launch_started = False
         self.game_process_exit_monotonic = None
         self.egs_launch_cancelled = False
+        self.launcher_process_only = False
+        self.silent_launch_mode = False
 
         # Central widget and main layout
         centralWidget = QWidget()
@@ -1689,6 +1691,9 @@ class MainWindow(
         self.detail_page_manager.openGameDetailPage(game_data)
         pending_log_exe = self._pending_log_exe
         detail_exe = extract_exec_target_path(game_data.get("exec_line", ""))
+        if exec_line.startswith(("gog://launch/", "egs://launch/")):
+            source, app_id = exec_line.split("://", 1)[0], exec_line.rsplit("/", 1)[-1]
+            detail_exe = getattr(self, f"{source}_api").get_launch_target(app_id)
         if pending_log_exe and detail_exe:
             if os.path.abspath(detail_exe) == pending_log_exe:
                 self._pending_log_exe = None
@@ -2019,12 +2024,21 @@ class MainWindow(
         else:
             # Game completed - reset flag, reset button and stop timer
             self._analyze_short_launch()
+            if getattr(self, "launcher_process_only", False):
+                self._terminate_game_processes()
             self.resetPlayButton()
             #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
+            self._finish_silent_launch()
+
+    def _finish_silent_launch(self) -> None:
+        if not getattr(self, "silent_launch_mode", False):
+            return
+        self.tray_manager.tray_icon.hide()
+        QApplication.quit()
 
     def _set_running_button_stop(self) -> None:
         """Update current running button to stop state."""
@@ -2111,7 +2125,11 @@ class MainWindow(
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
-        self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
+        launcher_only = getattr(self, "launcher_process_only", False)
+        self.launcher_process_only = False
+        self.game_processes = [] if launcher_only else [
+            proc for proc in self.game_processes if proc.poll() is None
+        ]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
         self._refresh_portproton_shortcuts()
@@ -2215,7 +2233,11 @@ class MainWindow(
         return extract_exec_target_path(exec_line) or ""
 
     def _has_running_game_process(self) -> bool:
-        if any(proc.poll() is None for proc in self.game_processes):
+        process_alive = any(proc.poll() is None for proc in self.game_processes)
+        if process_alive and not (
+            getattr(self, "launcher_process_only", False)
+            and self.game_launch_started
+        ):
             self.game_process_exit_monotonic = None
             return True
         target = str(self.target_exe or "").lower()
@@ -2715,9 +2737,11 @@ class MainWindow(
     def _launch_egs_game(self, app_id: str, button=None) -> None:
         target = self.egs_api.get_launch_target(app_id)
         if not target:
+            self._finish_silent_launch()
             QMessageBox.warning(self, _("Error"), _("Game not found."))
             return
         if not self.start_sh:
+            self._finish_silent_launch()
             QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
             return
         target_name = os.path.basename(target)
@@ -2732,7 +2756,7 @@ class MainWindow(
         try:
             command = self.egs_api.build_command([
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
-                "--no-wine",
+                "--no-wine", "--skip-version-check",
             ])
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
@@ -2740,11 +2764,13 @@ class MainWindow(
                 stderr=subprocess.STDOUT, text=True, errors="replace",
             )
         except OSError as error:
+            self._finish_silent_launch()
             logger.error("Failed to launch Epic game %s: %s", app_id, error)
             QMessageBox.warning(self, _("Error"), str(error))
             return
         SoundManager().play("game_launch")
         self.egs_launch_cancelled = False
+        self.launcher_process_only = True
         self.game_processes.append(process)
         self.target_exe = target_name
         self.current_running_button = button
@@ -2776,9 +2802,11 @@ class MainWindow(
         discovered_path = self.gog_api.get_installed_path(app_id)
         install_path = str(discovered_path) if discovered_path else ""
         if not install_path:
+            self._finish_silent_launch()
             QMessageBox.warning(self, _("Error"), _("Game not found."))
             return
         if not self.start_sh:
+            self._finish_silent_launch()
             QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
             return
         target = os.path.basename(self.gog_api.get_launch_target(app_id) or app_id)
@@ -2803,12 +2831,14 @@ class MainWindow(
                 stderr=subprocess.STDOUT, text=True, errors="replace",
             )
         except (OSError, ValueError) as error:
+            self._finish_silent_launch()
             logger.error("Failed to launch GOG game %s: %s", app_id, error)
             QMessageBox.warning(self, _("Error"), str(error))
             return
         if play_sound:
             SoundManager().play("game_launch")
         self.game_processes.append(process)
+        self.launcher_process_only = True
         self.target_exe = target
         self.current_running_button = button
         launch_target = self.gog_api.get_launch_target(app_id)
@@ -2979,12 +3009,12 @@ class MainWindow(
         layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         size_slider = getattr(self.game_library_manager, 'sizeSlider', None)
         if size_slider is None or layout_mode not in {
-            "list", "horizontal", "horizontal_top"
+            "list", "vertical", "horizontal", "horizontal_top"
         }:
             ui_config.set_card_width(self.card_width)
         if (
             hasattr(self, 'auto_size_slider')
-            and layout_mode not in {"list", "horizontal", "horizontal_top"}
+            and layout_mode not in {"list", "vertical", "horizontal", "horizontal_top"}
         ):
             ui_config.set_auto_card_width(self.auto_card_width)
 
