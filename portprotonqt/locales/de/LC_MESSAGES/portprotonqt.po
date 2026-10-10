@@ -2322,6 +2322,10 @@ msgstr "Gamepad-Typ:"
 msgid "Launch Application in Fullscreen"
 msgstr "Anwendung im Vollbildmodus starten"
 
+#, fuzzy
+msgid "Hide Cursor in Fullscreen"
+msgstr "Fenster in den Vollbildmodus erzwingen"
+
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "Automatischer Vollbildmodus bei angeschlossenem Gamepad"
 

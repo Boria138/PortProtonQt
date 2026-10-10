@@ -2337,6 +2337,9 @@ msgstr ""
 msgid "Launch Application in Fullscreen"
 msgstr ""
 
+msgid "Hide Cursor in Fullscreen"
+msgstr ""
+
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr ""
 
