@@ -12,8 +12,8 @@ from unittest.mock import MagicMock
 
 import psutil
 from pytest import MonkeyPatch, fixture, mark
-from PySide6.QtCore import QEventLoop, QObject, QPoint, QPointF, Qt, QTimer
-from PySide6.QtGui import QAction, QPixmap, QWheelEvent
+from PySide6.QtCore import QEvent, QEventLoop, QObject, QPoint, QPointF, Qt, QTimer
+from PySide6.QtGui import QAction, QMouseEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMenu,
+    QMainWindow,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -66,6 +67,73 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 import portprotonqt.localization as localization
+
+
+@mark.parametrize("fullscreen, enabled", [(False, True), (True, True), (True, False)])
+def test_fullscreen_cursor_hides_after_inactivity(monkeypatch: MonkeyPatch, fullscreen: bool, enabled: bool) -> None:
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow.__new__(MainWindow)
+    QMainWindow.__init__(window)
+    monkeypatch.setattr(window, "_update_animated_covers_activity", lambda: None)
+    monkeypatch.setattr(window, "_set_animated_covers_suspended", lambda value: None)
+    monkeypatch.setattr(QApplication, "applicationState", lambda: Qt.ApplicationState.ApplicationActive)
+    monkeypatch.setattr(main_window_module.display_config, "get_hide_cursor", lambda: enabled)
+    should_hide = fullscreen and enabled
+    window.theme = SimpleNamespace(cursorHideTimeoutMs=5000)
+    window._cursor_hidden = False
+    window._cursor_timer = QTimer(window)
+    window._cursor_timer.setSingleShot(True)
+    window._cursor_timer.timeout.connect(window._hide_cursor)
+    app.installEventFilter(window)
+    child = QWidget(window)
+    child.setCursor(Qt.CursorShape.PointingHandCursor)
+    try:
+        window.showFullScreen() if fullscreen else window.show()
+        assert QApplication.overrideCursor() is None
+        assert window._cursor_timer.isActive() == should_hide
+        window._cursor_timer.stop()
+        window._cursor_timer.timeout.emit()
+        assert window._cursor_hidden == should_hide
+        event = QMouseEvent(
+            QEvent.Type.MouseMove, QPointF(1, 1), QPointF(1, 1),
+            Qt.MouseButton.NoButton, Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+        )
+        app.sendEvent(child, event)
+        assert QApplication.overrideCursor() is None
+        assert child.cursor().shape() == Qt.CursorShape.PointingHandCursor
+        assert window._cursor_timer.isActive() == should_hide
+        if should_hide:
+            assert window._cursor_timer.interval() == 5000
+        window._cursor_timer.stop()
+        window._cursor_timer.timeout.emit()
+        assert window._cursor_hidden == should_hide
+        monkeypatch.setattr(QApplication, "applicationState", lambda: Qt.ApplicationState.ApplicationInactive)
+        window._on_application_state_changed(Qt.ApplicationState.ApplicationInactive)
+        assert QApplication.overrideCursor() is None
+        monkeypatch.setattr(QApplication, "applicationState", lambda: Qt.ApplicationState.ApplicationActive)
+        window._on_application_state_changed(Qt.ApplicationState.ApplicationActive)
+        assert window._cursor_timer.isActive() == should_hide
+        window.hide()
+        assert QApplication.overrideCursor() is None
+        assert not window._cursor_timer.isActive()
+    finally:
+        window.hide()
+        window._update_cursor_visibility()
+        app.removeEventFilter(window)
+
+
+def test_disabling_cursor_hiding_restores_cursor(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(main_window_module.display_config, "get_hide_cursor", lambda: False)
+    restore = MagicMock()
+    monkeypatch.setattr(QApplication, "restoreOverrideCursor", restore)
+    window = SimpleNamespace(
+        _cursor_hidden=True, _cursor_timer=MagicMock(),
+        isFullScreen=lambda: True, isVisible=lambda: True, isMinimized=lambda: False,
+    )
+    MainWindow._update_cursor_visibility(cast(Any, window))
+    restore.assert_called_once_with()
+    window._cursor_timer.stop.assert_called_once_with()
+    assert not window._cursor_hidden
 
 
 @mark.parametrize("initial_english", [True, False])

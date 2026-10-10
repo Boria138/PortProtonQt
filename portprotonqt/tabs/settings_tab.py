@@ -330,6 +330,21 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         fullscreen_layout.addStretch()
         uiForm.addRow(fullscreen_layout)
 
+        self.hideCursorCheckBox = QCheckBox()
+        self.hideCursorCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.hideCursorCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.hideCursorTitle = QLabel(_("Hide Cursor in Fullscreen"))
+        self.hideCursorTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.hideCursorTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.hideCursorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.hideCursorCheckBox.setChecked(display_config.get_hide_cursor())
+        hide_cursor_layout = QHBoxLayout()
+        hide_cursor_layout.setContentsMargins(0, 0, 0, 0)
+        hide_cursor_layout.addWidget(self.hideCursorCheckBox)
+        hide_cursor_layout.addWidget(self.hideCursorTitle)
+        hide_cursor_layout.addStretch()
+        uiForm.addRow(hide_cursor_layout)
+
         self.autoFullscreenGamepadCheckBox = QCheckBox()
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1044,6 +1059,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         fullscreen = self.fullscreenCheckBox.isChecked()
         display_config.set_fullscreen(fullscreen)
+        display_config.set_hide_cursor(self.hideCursorCheckBox.isChecked())
+        self._update_cursor_visibility()
 
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         display_config.set_auto_fullscreen_gamepad(auto_fullscreen_gamepad)

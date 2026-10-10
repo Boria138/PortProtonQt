@@ -20,6 +20,16 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return config_file
 
 
+def test_hide_cursor_setting_persists(tmp_path: Path) -> None:
+    config_file = tmp_path / "display.conf"
+    config = DisplayConfig(config_file=config_file)
+    assert config.get_hide_cursor() is True
+    config.set_hide_cursor(False)
+    assert DisplayConfig(config_file=config_file).get_hide_cursor() is False
+    config.set_hide_cursor(True)
+    assert DisplayConfig(config_file=config_file).get_hide_cursor() is True
+
+
 def test_boot_animation_setting_persists(tmp_path: Path) -> None:
     config_file = tmp_path / "display.conf"
     config = DisplayConfig(config_file=config_file)
