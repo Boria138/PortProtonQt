@@ -994,7 +994,9 @@ class MainWindow(
             self._on_only_installed_changed(current_filter[1])
             return
         self.games = games
-        focus_first_card = not getattr(self, "_preserve_library_focus_after_load", False)
+        focus_first_card = not self.game_library_manager.games and not getattr(
+            self, "_preserve_library_focus_after_load", False
+        )
         self._preserve_library_focus_after_load = False
         self.game_library_manager.set_games(games, focus_first_card=focus_first_card)
         self._known_portproton_desktops = self._get_portproton_desktop_files()

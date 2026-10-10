@@ -286,6 +286,50 @@ def test_real_cover_loading_and_first_paint_focus_latency(
     assert max_gap < 0.1, ticks
 
 
+@pytest.mark.parametrize("scenario", [("grid", 0), ("grid", 1), ("vertical", 0), ("vertical", 1)])
+def test_failed_protondb_completion_preserves_library_scroll(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, scenario: tuple[str, int],
+) -> None:
+    from portprotonqt.main_window import MainWindow
+    from portprotonqt.steam_api import api
+
+    manager, _ = library_scene
+    manager.rebuild_library_layout(scenario[0])
+    main = cast(Any, manager.main_window)
+    main.stackedWidget = SimpleNamespace(currentIndex=lambda: 0)
+    main.getColorPalette_from_pixmap = MagicMock()
+    main.game_library_manager = manager
+    main._get_portproton_desktop_files = lambda: set()
+    monkeypatch.setattr(api, "load_protondb_status", lambda _appid: None)
+    monkeypatch.setattr(api, "CacheManager", lambda: SimpleNamespace(cache_dir=tmp_path))
+    responses: list[Callable[[str | None], None]] = []
+    monkeypatch.setattr(api.downloader, "download_async",
+                        lambda *_args, **kwargs: responses.append(kwargs["callback"]))
+    games = [(f"Game {i}", "", "", "", "", str(i), "", "", "", "", 0, 0, "steam") for i in range(40)]
+    manager.set_games(games)
+    QApplication.processEvents()
+    assert manager._incremental_add_timer is not None
+    while manager._incremental_add_queue:
+        manager._process_incremental_add_batch()
+        manager._incremental_add_timer.stop()
+        QApplication.processEvents()
+    api.get_protondb_tier_async(1, lambda _tier: MainWindow.on_games_loaded(main, games))
+    assert manager.gamesScrollArea is not None
+    scrollbar = manager.gamesScrollArea.verticalScrollBar()
+    scrollbar.setValue(scrollbar.maximum() // 2)
+    previous_value = scrollbar.value()
+    assert previous_value > 0
+    main.stackedWidget.currentIndex = lambda: scenario[1]
+
+    responses[0](None)
+    QApplication.processEvents()
+    QApplication.processEvents()
+
+    assert scrollbar.value() == previous_value
+    assert not manager._focus_first_card_after_update
+
+
 def test_initial_favorite_icon_does_not_restart_library_loading(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
     monkeypatch: pytest.MonkeyPatch,
