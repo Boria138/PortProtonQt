@@ -2533,17 +2533,20 @@ def test_vertical_horizontal_layout_saves_card_orientation(
     manager.rebuild_library_layout.assert_called_once_with(layout_mode)
 
 
-def test_incremental_game_add_updates_search_index() -> None:
+@mark.parametrize("shared_lists", [False, True])
+def test_incremental_game_add_updates_search_index(shared_lists: bool) -> None:
     game = ("New Game", "", "", "", "", "/games/new.exe")
     manager = GameLibraryManager.__new__(GameLibraryManager)
     manager.games = []
-    manager.filtered_games = []
+    manager.filtered_games = manager.games if shared_lists else []
     manager.search_optimizer = SearchOptimizer()
     manager.update_game_grid = MagicMock()
     manager._update_missing_exe_button = MagicMock()
 
     manager.add_game_incremental(game)
 
+    assert manager.games == [game]
+    assert manager.filtered_games == [game]
     assert search_index(manager.search_optimizer, "new") == [game]
 
 

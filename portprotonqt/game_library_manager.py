@@ -1008,7 +1008,8 @@ class GameLibraryManager:
     def add_game_incremental(self, game_data: tuple):
         """Add a single game without full reload."""
         self.games.append(game_data)
-        self.filtered_games.append(game_data)  # Assume no filter active; adjust if needed
+        if self.filtered_games is not self.games:
+            self.filtered_games.append(game_data)  # Assume no filter active; adjust if needed
         self._build_search_indices(self.games)
         self.dirty = True
         self.update_game_grid()
