@@ -2314,9 +2314,8 @@ msgstr "Тип геймпада:"
 msgid "Launch Application in Fullscreen"
 msgstr "Запускать приложение в полноэкранном режиме"
 
-#, fuzzy
 msgid "Hide Cursor in Fullscreen"
-msgstr "Принудительный полноэкранный режим"
+msgstr "Скрывать курсор в полноэкранном режиме"
 
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
