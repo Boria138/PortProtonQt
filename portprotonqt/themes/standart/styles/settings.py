@@ -5,6 +5,16 @@ SETTINGS_DESCRIPTION_HTML = (
     '{description}</span>'
 )
 
+SETTINGS_SELECTED_TEXT_HTML = (
+    f'<span style="color: {color_text_accent_hover};">'
+    '{text}</span>'
+)
+
+SETTINGS_SELECTED_DESCRIPTION_HTML = (
+    f'<span style="color: {color_text_accent_hover}; font-size: {font_size_value};">'
+    '{description}</span>'
+)
+
 SETTINGS_FRAME_STYLE = f"""
     QFrame {{
         background: {color_bg};

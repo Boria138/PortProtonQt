@@ -7,13 +7,12 @@ from html import escape
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QHideEvent, QIcon, QPalette, QRegion
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QHideEvent, QIcon, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
     QCheckBox,
     QComboBox,
-    QRubberBand,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -422,20 +421,6 @@ class ExeSettingsDialog(
             lambda pos: self.show_setting_context_menu(self.favorites_table, pos)
         )
         for table in (self.settings_table, self.advanced_table, self.favorites_table):
-            table.setStyleSheet(re.sub(
-                r"QTableWidget::item:selected.*?\}", "", table.styleSheet(), flags=re.DOTALL,
-            ))
-            table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-            table.setStyleSheet(
-                table.styleSheet() + "QTableWidget::item:focus { background: transparent; }"
-            )
-            frame = QRubberBand(QRubberBand.Shape.Rectangle, table.viewport())
-            frame.setObjectName("settingsRowFrame")
-            frame.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-            frame.setAutoFillBackground(False)
-            palette = frame.palette()
-            palette.setColor(QPalette.ColorRole.Highlight, QColor(self.theme.color_accent))
-            frame.setPalette(palette)
             table.viewport().setProperty("ppqt_settings_values", True)
             table.viewport().installEventFilter(self)
             table.setColumnHidden(2, True)
@@ -1608,18 +1593,29 @@ class ExeSettingsDialog(
                     table.setCellWidget(row, 0, label)
                     label.setAutoFillBackground(False)
                     label.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+                selected = row == table.currentRow()
                 palette = table.palette()
-                if item.data(Qt.ItemDataRole.ForegroundRole) is not None:
+                if selected:
+                    palette.setColor(QPalette.ColorRole.Text, QColor(self.theme.color_text_accent_hover))
+                    palette.setColor(QPalette.ColorRole.Window, QColor(self.theme.color_accent))
+                elif item.data(Qt.ItemDataRole.ForegroundRole) is not None:
                     palette.setBrush(QPalette.ColorRole.Text, item.foreground())
+                label.setAutoFillBackground(selected)
                 label.setPalette(palette)
                 label.setForegroundRole(QPalette.ColorRole.Text)
                 text = item.data(Qt.ItemDataRole.AccessibleTextRole)
                 name, separator, description = text.partition("\n")
                 formatted_text = escape(name)
                 if separator:
-                    formatted_text += "<br>" + self.theme.SETTINGS_DESCRIPTION_HTML.format(
+                    description_style = (
+                        self.theme.SETTINGS_SELECTED_DESCRIPTION_HTML if selected
+                        else self.theme.SETTINGS_DESCRIPTION_HTML
+                    )
+                    formatted_text += "<br>" + description_style.format(
                         description=escape(description).replace("\n", "<br>"),
                     )
+                if selected:
+                    formatted_text = self.theme.SETTINGS_SELECTED_TEXT_HTML.format(text=formatted_text)
                 if label.text() != formatted_text:
                     label.setText(formatted_text)
                 width = max(1, table.columnWidth(0))
@@ -1635,16 +1631,6 @@ class ExeSettingsDialog(
                     rect.left(), rect.top() + (rect.height() - height) // 2,
                     rect.width(), height,
                 )
-            frame = table.viewport().findChild(QRubberBand, "settingsRowFrame")
-            if frame is not None:
-                row = table.currentRow()
-                frame.setVisible(row >= 0 and not table.isRowHidden(row))
-                if row >= 0:
-                    rect = table.visualRect(table.model().index(row, 0))
-                    rect.setRight(table.visualRect(table.model().index(row, 1)).right())
-                    frame.setGeometry(rect)
-                    frame.setMask(QRegion(frame.rect()) - QRegion(frame.rect().adjusted(1, 1, -1, -1)))
-                    frame.raise_()
             return False
 
         if isinstance(obj, QWidget) and self._handle_vkbasalt_key_button_event(obj, event):
