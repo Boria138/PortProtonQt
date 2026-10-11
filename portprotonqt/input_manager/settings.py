@@ -270,6 +270,10 @@ class SettingsInputMixin(InputMixin):
                             kb.move_focus_up()
                 return
 
+            if self._handle_table_action_navigation(self.settings_dialog, code, value):
+                return
+            action_buttons = self._get_dialog_action_buttons(self.settings_dialog)
+
             if self._is_current_settings_tool_tab():
                 focused = QApplication.focusWidget()
                 open_combo = self._get_open_settings_combo()
@@ -315,6 +319,8 @@ class SettingsInputMixin(InputMixin):
                         self.current_dpad_value = normalized_value
 
                 sections = self._get_mangohud_nav_sections()
+                if action_buttons:
+                    sections.append(action_buttons)
                 if not sections:
                     return
 
