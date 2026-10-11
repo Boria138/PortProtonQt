@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Signal, QThread
+from PySide6.QtCore import QObject, Signal, QThread, Qt, QCoreApplication
 import threading
 import os
 import time
@@ -70,7 +70,7 @@ class Downloader(QObject):
         self._locks = {}
         self._active_threads: list[QThread] = []
         self._global_lock = threading.Lock()
-        self.callback_requested.connect(self._run_callback)
+        self.callback_requested.connect(self._run_callback, Qt.ConnectionType.QueuedConnection)
 
     def _run_callback(self, callback, result):
         if callback:
@@ -240,11 +240,14 @@ class Downloader(QObject):
                         on_result(url, None)
                         emitted_urls.add(url)
                     continue
-                if url in self._cache:
+                cached_path = self._cache.get(url)
+                if (cached_path and os.path.exists(cached_path)
+                        and os.path.abspath(cached_path) == os.path.abspath(path)):
                     if on_result and url not in emitted_urls:
-                        on_result(url, self._cache[url])
+                        on_result(url, cached_path)
                         emitted_urls.add(url)
                     continue
+                self._cache.pop(url, None)
                 filtered_urls.append(url)
                 filtered_paths.append(path)
 
@@ -261,7 +264,7 @@ class Downloader(QObject):
             throttle_delay,
             workers,
             on_result=emit_result,
-        )
+        ) if filtered_urls else {}
 
         with self._global_lock:
             for url, path in results.items():
@@ -270,7 +273,9 @@ class Downloader(QObject):
         final_results = {}
         with self._global_lock:
             for url in urls:
-                if url in self._cache:
+                if url in self._last_error:
+                    final_results[url] = None
+                elif url in self._cache:
                     final_results[url] = self._cache[url]
                 else:
                     final_results[url] = None
@@ -281,7 +286,18 @@ class Downloader(QObject):
         return final_results
 
 
-    def download_async(self, url: str, local_path: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None, parallel: bool = False) -> QThread:
+    def download_async(self, url: str, local_path: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None, parallel: bool = False) -> QThread | None:
+        with self._global_lock:
+            previous_error = url in self._last_error
+            cached = not previous_error and os.path.exists(local_path)
+            if cached:
+                self._cache[url] = local_path
+        if previous_error or cached:
+            result = local_path if cached else None
+            self.download_completed.emit(url, result or "", cached)
+            self.callback_requested.emit(callback, result)
+            return None
+
         class DownloadThread(QThread):
             def __init__(self, downloader: 'Downloader', url: str, local_path: str, timeout: int, parallel: bool):
                 super().__init__()
@@ -308,7 +324,11 @@ class Downloader(QObject):
                     self.downloader.callback_requested.emit(callback, None)
 
         thread = DownloadThread(self, url, local_path, timeout, parallel)
+        thread.moveToThread(self.thread())
         thread.finished.connect(thread.deleteLater)
+        app = QCoreApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(thread.wait)
 
         # Remove from list after completion
         def cleanup():

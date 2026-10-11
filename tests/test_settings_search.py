@@ -305,6 +305,7 @@ def test_gamescope_search_uses_description_and_selects_category(
 @pytest.mark.parametrize("theme_name", ["standart", "standart-light", "classic-light"])
 def test_settings_table_descriptions_and_centered_controls(theme_name: str) -> None:
     from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor
     from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
     from portprotonqt.theme_manager import ThemeWrapper, load_theme
 
@@ -346,14 +347,25 @@ def test_settings_table_descriptions_and_centered_controls(theme_name: str) -> N
         from html import escape
 
         assert label.textFormat() == Qt.TextFormat.RichText
-        assert label.text() == "Setting<br>" + theme.SETTINGS_DESCRIPTION_HTML.format(
+        description_style = (
+            theme.SETTINGS_SELECTED_DESCRIPTION_HTML if row == table.currentRow()
+            else theme.SETTINGS_DESCRIPTION_HTML
+        )
+        expected_text = "Setting<br>" + description_style.format(
             description=escape(description_item.text()),
         )
+        if row == table.currentRow():
+            expected_text = theme.SETTINGS_SELECTED_TEXT_HTML.format(text=expected_text)
+        assert label.text() == expected_text
         assert name_item.data(Qt.ItemDataRole.AccessibleTextRole) == f"Setting\n{description_item.text()}"
-        assert label.palette().color(label.foregroundRole()) == table.palette().color(label.foregroundRole())
+        expected_color = (
+            QColor(theme.color_text_accent_hover) if row == table.currentRow()
+            else table.palette().color(label.foregroundRole())
+        )
+        assert label.palette().color(label.foregroundRole()) == expected_color
         assert name_item.text() == ""
     if theme_name.endswith("-light"):
-        from PySide6.QtGui import QColor, QPalette
+        from PySide6.QtGui import QPalette
 
         assert table.palette().color(QPalette.ColorRole.Text) == QColor(theme.color_text_dark)
     table.selectRow(1)
@@ -410,32 +422,43 @@ def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed
     dialog.close()
 
 
-def test_settings_row_frame_does_not_cover_contents() -> None:
-    from PySide6.QtWidgets import QAbstractItemView, QRubberBand, QTableWidget, QTableWidgetItem
+@pytest.mark.parametrize("theme_name", ["standart", "standart-light", "classic", "classic-light"])
+def test_settings_selected_row_keeps_text_readable(theme_name: str) -> None:
+    from PySide6.QtGui import QColor, QPalette
+    from PySide6.QtWidgets import QTableWidgetItem
 
     from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
-    from portprotonqt.theme_manager import ThemeWrapper
-    from portprotonqt.themes.standart import styles
+    from portprotonqt.theme_manager import ThemeWrapper, load_theme
 
-    table = QTableWidget(1, 3)
-    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+    theme = ThemeWrapper(load_theme(theme_name))
+    table = QTableWidget(2, 3)
+    table.setStyleSheet(theme.WINETRICKS_TABBLE_STYLE)
     table.viewport().setProperty("ppqt_settings_values", True)
-    table.setItem(0, 0, QTableWidgetItem("Setting\nDescription"))
-    table.setCurrentCell(0, 0)
-    frame = QRubberBand(QRubberBand.Shape.Rectangle, table.viewport())
-    frame.setObjectName("settingsRowFrame")
-    dialog = SimpleNamespace(theme=ThemeWrapper(styles))
-    ExeSettingsDialog.eventFilter(
-        cast(ExeSettingsDialog, dialog), table.viewport(), QEvent(QEvent.Type.Paint),
-    )
-    table.selectRow(0)
-    assert table.currentRow() == 0
-    assert not table.selectedItems()
-    assert frame.mask().contains(frame.rect().topLeft())
-    assert not frame.mask().contains(frame.rect().center())
-    label = table.cellWidget(0, 0)
-    assert isinstance(label, QLabel)
-    assert label.text()
+    for row in range(2):
+        table.setItem(row, 0, QTableWidgetItem("Setting\nDescription"))
+    dialog = SimpleNamespace(theme=theme)
+    for selected_row in range(2):
+        table.setCurrentCell(selected_row, 0)
+        table.selectRow(selected_row)
+        ExeSettingsDialog.eventFilter(
+            cast(ExeSettingsDialog, dialog), table.viewport(), QEvent(QEvent.Type.Paint),
+        )
+        for row in range(2):
+            label = table.cellWidget(row, 0)
+            assert isinstance(label, QLabel)
+            selected = row == selected_row
+            assert label.autoFillBackground() == selected
+            if selected:
+                assert label.palette().color(QPalette.ColorRole.Window) == QColor(theme.color_accent)
+                assert label.palette().color(QPalette.ColorRole.Text) == QColor(theme.color_text_accent_hover)
+                expected_text = "Setting<br>" + theme.SETTINGS_SELECTED_DESCRIPTION_HTML.format(
+                    description="Description",
+                )
+                assert label.text() == theme.SETTINGS_SELECTED_TEXT_HTML.format(text=expected_text)
+            else:
+                assert label.text() == "Setting<br>" + theme.SETTINGS_DESCRIPTION_HTML.format(
+                    description="Description",
+                )
     table.close()
 
 

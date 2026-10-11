@@ -2304,6 +2304,10 @@ msgstr "游戏手柄类型："
 msgid "Launch Application in Fullscreen"
 msgstr "全屏启动应用程序"
 
+#, fuzzy
+msgid "Hide Cursor in Fullscreen"
+msgstr "强制窗口全屏"
+
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "连接手柄时自动全屏"
 

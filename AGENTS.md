@@ -280,6 +280,8 @@ AI agents MAY:
 - Avoid O(n²) in game lists
 - Lazy load images
 - Limit threads to CPU cores
+- Skip worker creation for valid cached downloads and URLs already marked failed; still complete callbacks exactly once through the owner's event loop
+- Reuse cached download paths only while the file exists and matches the requested destination
 
 ### Clarification: "No Shared Mutable Global State" Does NOT Mean Removing Caches
 
@@ -412,6 +414,7 @@ tests/
 ├── test_appimage_updater.py # AppImage auto-update worker, mirrors, changelog parsing
 ├── test_dark_theme.py       # Dark theme detection (XFCE/MATE/Cinnamon/GNOME)
 ├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
+├── test_downloader.py       # Cache/error callbacks, worker ownership, and shutdown regressions
 ├── test_base_config.py      # BaseConfig read/write, caching, versioning
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
 ├── test_debug_env_utils.py  # Debug environment helpers, runtime variables
@@ -465,6 +468,15 @@ pre-commit run pytest
 - Use `monkeypatch` for environment variables and function patching
 - Keep tests locale-independent: assert stable identifiers or numbers instead of translated strings; resolve values created through `_()` from the same application mapping using stable identifiers; use `monkeypatch` to provide deterministic text when testing translated search or matching
 - Test regression scenarios from git fix commits
+
+### Library Refresh Regressions
+
+- Late metadata/download completion must preserve scroll position and focused card in an already populated library; first-card focus belongs to initial loading
+- Cover both library layouts and refresh completion while the autoinstall tab is active
+- For reported scrolling regressions, supplement unit tests with a full application cycle: isolated empty cache, forced ProtonDB connection failure, scroll and refresh both tabs, switch back, then close the application
+- Record scroll values and visible cards around late updates; distinguish an intentional refresh reset from an unsolicited rollback after the user resumes scrolling
+- Use temporary XDG config/data directories for GUI reproduction; never clear the user's real cache or alter system-wide network settings
+- Report baseline reproduction and final-code results separately; passing callback tests alone does not prove the visible regression is fixed
 
 ### Key Regression Areas
 

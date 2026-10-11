@@ -7,6 +7,7 @@ current_theme_name = ui_config.get_theme()
 # === Layout Constants ===
 color_boot_animation = "#000000"
 bootAnimationTimeoutMs = 30000
+cursorHideTimeoutMs = 5000
 startupLibraryLoadDelayMs = 500
 autoSizeButtonPadding = (10, 20)
 favoriteLabelSize = 48, 48

@@ -135,18 +135,48 @@ class MainWindow(
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() in (QEvent.Type.ActivationChange, QEvent.Type.WindowStateChange):
+            self._update_cursor_visibility()
             self._update_animated_covers_activity()
 
     def hideEvent(self, event: QHideEvent) -> None:
+        self._update_cursor_visibility()
         self._set_animated_covers_suspended(True)
         super().hideEvent(event)
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
+        self._update_cursor_visibility()
         self._update_animated_covers_activity()
 
     def _on_application_state_changed(self, _state: Qt.ApplicationState) -> None:
+        self._update_cursor_visibility()
         self._update_animated_covers_activity()
+
+    def _update_cursor_visibility(self) -> None:
+        if not hasattr(self, "_cursor_timer"):
+            return
+        hide = (
+            self.isFullScreen() and self.isVisible() and not self.isMinimized()
+            and display_config.get_hide_cursor()
+            and QApplication.applicationState() == Qt.ApplicationState.ApplicationActive
+        )
+        if hide and not self._cursor_hidden and not self._cursor_timer.isActive():
+            self._cursor_timer.start(self.theme.cursorHideTimeoutMs)
+        elif not hide:
+            self._cursor_timer.stop()
+            if self._cursor_hidden:
+                QApplication.restoreOverrideCursor()
+                self._cursor_hidden = False
+
+    def _hide_cursor(self) -> None:
+        if (
+            self.isFullScreen() and self.isVisible() and not self.isMinimized()
+            and display_config.get_hide_cursor()
+            and QApplication.applicationState() == Qt.ApplicationState.ApplicationActive
+            and not self._cursor_hidden
+        ):
+            QApplication.setOverrideCursor(Qt.CursorShape.BlankCursor)
+            self._cursor_hidden = True
 
     def _update_animated_covers_activity(self) -> None:
         should_suspend = (
@@ -219,6 +249,15 @@ class MainWindow(
         self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(obj, QWidget) and hasattr(self, "_cursor_timer"):
+            if event.type() == QEvent.Type.Polish:
+                obj.setMouseTracking(True)
+            if event.type() in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress):
+                if self.isFullScreen() and self.isVisible() and not self.isMinimized() and display_config.get_hide_cursor():
+                    if self._cursor_hidden:
+                        QApplication.restoreOverrideCursor()
+                        self._cursor_hidden = False
+                    self._cursor_timer.start(self.theme.cursorHideTimeoutMs)
         if isinstance(obj, QWidget) and obj in getattr(self, "_gamepad_tooltip_map", {}):
             if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
                 self._show_gamepad_tooltip(True, self._gamepad_tooltip_map[obj], obj)
@@ -308,6 +347,15 @@ class MainWindow(
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
         self.setAcceptDrops(True)
         self._init_gamepad_tooltip()
+        self._cursor_hidden = False
+        self._cursor_timer = QTimer(self)
+        self._cursor_timer.setSingleShot(True)
+        self._cursor_timer.timeout.connect(self._hide_cursor)
+        app = QApplication.instance()
+        if app is not None:
+            app.installEventFilter(self)
+        for widget in self.findChildren(QWidget):
+            widget.setMouseTracking(True)
         self.current_exec_line = None
         self.currentDetailPage = None
         self.current_play_button = None
@@ -946,7 +994,9 @@ class MainWindow(
             self._on_only_installed_changed(current_filter[1])
             return
         self.games = games
-        focus_first_card = not getattr(self, "_preserve_library_focus_after_load", False)
+        focus_first_card = not self.game_library_manager.games and not getattr(
+            self, "_preserve_library_focus_after_load", False
+        )
         self._preserve_library_focus_after_load = False
         self.game_library_manager.set_games(games, focus_first_card=focus_first_card)
         self._known_portproton_desktops = self._get_portproton_desktop_files()

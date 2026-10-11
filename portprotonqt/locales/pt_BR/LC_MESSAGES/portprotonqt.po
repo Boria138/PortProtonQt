@@ -2326,6 +2326,10 @@ msgstr "Tipo de Controle:"
 msgid "Launch Application in Fullscreen"
 msgstr "Iniciar Aplicativo em Tela Cheia"
 
+#, fuzzy
+msgid "Hide Cursor in Fullscreen"
+msgstr "Forçar janelas em tela cheia"
+
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "Tela Cheia Automática ao Conectar o Controle"
 

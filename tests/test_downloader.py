@@ -1,0 +1,174 @@
+"""Download cache completion and worker lifecycle regressions."""
+
+from pathlib import Path
+import threading
+from typing import Any, cast
+from unittest.mock import MagicMock
+
+import pytest
+from PySide6.QtCore import QCoreApplication, QThread
+from PySide6.QtWidgets import QApplication
+
+from portprotonqt.downloader import Downloader
+from portprotonqt.tabs.workers import MainWindowWorkersMixin
+
+
+@pytest.fixture(autouse=True)
+def application() -> QCoreApplication:
+    return QApplication.instance() or QApplication([])
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize("failed", [False, True])
+def test_resolved_download_completes_without_a_worker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, parallel: bool, failed: bool,
+) -> None:
+    downloader = Downloader()
+    url = "https://example.com/data.json"
+    path = str(tmp_path / "data.json")
+    if failed:
+        downloader._last_error[url] = True
+    else:
+        Path(path).write_text("{}")
+    start = MagicMock()
+    monkeypatch.setattr(QThread, "start", start)
+    results: list[tuple[str | None, QThread]] = []
+    completed = MagicMock()
+    downloader.download_completed.connect(completed)
+
+    worker = downloader.download_async(
+        url, path, parallel=parallel,
+        callback=lambda result: results.append((result, QThread.currentThread())),
+    )
+
+    assert worker is None
+    start.assert_not_called()
+    assert results == []
+    assert downloader._active_threads == []
+    QApplication.processEvents()
+    expected = None if failed else path
+    assert results == [(expected, QThread.currentThread())]
+    completed.assert_called_once_with(url, expected or "", not failed)
+    if not failed:
+        assert downloader._cache[url] == path
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize("cached_file_exists", [False, True])
+def test_missing_destination_still_downloads_with_a_worker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    parallel: bool, cached_file_exists: bool,
+) -> None:
+    downloader = Downloader()
+    url = "https://example.com/data.json"
+    cached_path = tmp_path / "old.json"
+    target = tmp_path / "new.json"
+    if cached_file_exists:
+        cached_path.write_text("{}")
+    downloader._cache[url] = str(cached_path)
+    download = MagicMock(return_value=str(target))
+    parallel_download = MagicMock(return_value={url: str(target)})
+    monkeypatch.setattr("portprotonqt.downloader.download_with_cache", download)
+    monkeypatch.setattr(downloader, "_download_with_parallel", parallel_download)
+    results: list[str | None] = []
+
+    worker = downloader.download_async(url, str(target), parallel=parallel, callback=results.append)
+
+    assert worker is not None
+    assert worker in downloader._active_threads
+    assert worker.wait(5000)
+    assert results == []
+    QApplication.processEvents()
+    assert results == [str(target)]
+    assert downloader._active_threads == []
+    if parallel:
+        assert parallel_download.call_args.args[:2] == ([url], [str(target)])
+    else:
+        download.assert_called_once_with(url, str(target), 5, downloader)
+
+
+def test_parallel_known_failure_does_not_create_an_executor(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    downloader = Downloader()
+    url = "https://example.com/data.json"
+    path = str(tmp_path / "data.json")
+    downloader._last_error[url] = True
+    downloader._cache[url] = path
+    download = MagicMock()
+    monkeypatch.setattr(downloader, "_download_with_parallel", download)
+    completed = MagicMock()
+
+    result = downloader.download_parallel([url], [path], on_result=completed)
+
+    download.assert_not_called()
+    assert result == {url: None}
+    completed.assert_called_once_with(url, None)
+
+
+def test_download_started_from_a_worker_cleans_up_on_the_owner_thread(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    downloader = Downloader()
+    path = str(tmp_path / "data.json")
+    monkeypatch.setattr("portprotonqt.downloader.download_with_cache",
+                        lambda *_args: path)
+    workers: list[QThread | None] = []
+    results: list[tuple[str | None, QThread]] = []
+
+    def start_download() -> None:
+        workers.append(downloader.download_async(
+            "https://example.com/data.json", path,
+            callback=lambda result: results.append((result, QThread.currentThread())),
+        ))
+
+    caller = threading.Thread(target=start_download)
+    caller.start()
+    caller.join(timeout=5)
+    assert not caller.is_alive()
+    worker = workers[0]
+    assert worker is not None
+    assert worker.wait(5000)
+    QApplication.processEvents()
+
+    assert results == [(path, QThread.currentThread())]
+    assert downloader._active_threads == []
+
+
+@pytest.mark.parametrize("shutdown", ["owner", "application"])
+def test_shutdown_waits_for_an_active_download(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, shutdown: str,
+) -> None:
+    downloader = Downloader()
+    entered = threading.Event()
+    release = threading.Event()
+    path = str(tmp_path / "data.json")
+
+    def download(*_args: Any) -> str:
+        entered.set()
+        assert release.wait(5)
+        return path
+
+    monkeypatch.setattr("portprotonqt.downloader.download_with_cache", download)
+    worker = downloader.download_async("https://example.com/data.json", path)
+    assert worker is not None
+    assert entered.wait(5)
+    owner = cast(Any, MainWindowWorkersMixin())
+    owner.downloader = downloader
+    owner.compatibility_workers = []
+    release_timer = threading.Timer(0.05, release.set)
+    release_timer.start()
+    try:
+        if shutdown == "owner":
+            owner._stopBackgroundWorkers()
+        else:
+            app = QApplication.instance()
+            assert app is not None
+            app.aboutToQuit.emit()
+        assert not worker.isRunning()
+        QApplication.processEvents()
+        assert downloader._active_threads == []
+    finally:
+        release.set()
+        release_timer.join()
+        worker.wait(5000)

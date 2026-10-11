@@ -33,6 +33,15 @@ class DisplayConfig(BaseConfig):
         validate_bool(auto, "auto_fullscreen_gamepad")
         self._save_value("auto_fullscreen_gamepad", auto, "bool")
 
+    def get_hide_cursor(self) -> bool:
+        """Return whether fullscreen cursor hiding is enabled."""
+        return self._get_bool("hide_cursor", True)
+
+    def set_hide_cursor(self, enabled: bool) -> None:
+        """Enable or disable fullscreen cursor hiding."""
+        validate_bool(enabled, "hide_cursor")
+        self._save_value("hide_cursor", enabled, "bool")
+
     def get_boot_animation_enabled(self) -> bool:
         """Return whether fullscreen boot videos are enabled."""
         return self._get_bool("boot_animation_enabled", True)
