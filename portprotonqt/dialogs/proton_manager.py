@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
     QWidget, QCheckBox, QHeaderView, QMessageBox, QLabel, QTextEdit,
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
-    QStackedWidget, QPushButton
+    QStackedWidget
 )
 from PySide6.QtCore import QEvent, QMimeData, QObject, Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDropEvent, QGuiApplication
@@ -17,6 +17,7 @@ from shiboken6 import isValid
 
 from portprotonqt.config import get_portproton_start_command, ui_config
 from portprotonqt.dialogs.base import DraggableDialog
+from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
@@ -239,7 +240,7 @@ class ProtonManager(DraggableDialog):
         self.download_progress = QProgressBar()
         self.download_progress.setMinimum(0)
         self.download_progress.setMaximum(100)
-        self.cancel_btn = QPushButton(_('Cancel'))
+        self.cancel_btn = AutoSizeButton(_('Cancel'), icon=theme_manager.get_icon('cancel', as_path=True))
         self.cancel_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_btn.clicked.connect(self.cancel_current_download)
         progress_layout.addWidget(self.download_progress, 4)
@@ -255,18 +256,18 @@ class ProtonManager(DraggableDialog):
             layout.addWidget(self.hints_widget)
 
         button_layout = QHBoxLayout()
-        self.download_btn = QPushButton(_('Download Selected'))
+        self.download_btn = AutoSizeButton(_('Download Selected'), icon=theme_manager.get_icon('apply', as_path=True))
         self.download_btn.clicked.connect(self.download_selected)
         self.download_btn.setEnabled(False)
         self.download_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.clear_btn = QPushButton(_('Clear All'))
+        self.clear_btn = AutoSizeButton(_('Clear All'), icon=theme_manager.get_icon('delete', as_path=True))
         self.clear_btn.clicked.connect(self.clear_selection)
         self.clear_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.open_folder_btn = QPushButton(_('Open Folder'))
+        self.open_folder_btn = AutoSizeButton(_('Open Folder'), icon=theme_manager.get_icon('folder', as_path=True))
         self.open_folder_btn.clicked.connect(self._open_wine_folder)
         self.open_folder_btn.setEnabled(bool(self.portproton_location))
         self.open_folder_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.cancel_btn_dialog = QPushButton(_('Cancel'))
+        self.cancel_btn_dialog = AutoSizeButton(_('Cancel'), icon=theme_manager.get_icon('cancel', as_path=True))
         self.cancel_btn_dialog.clicked.connect(self.reject)
         self.cancel_btn_dialog.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         button_layout.addWidget(self.download_btn)
