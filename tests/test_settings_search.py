@@ -59,6 +59,42 @@ def test_mangohud_parser_recognizes_font_settings() -> None:
     assert raw_tokens == []
 
 
+@pytest.mark.parametrize("original_enabled", ["0", "1"])
+@pytest.mark.parametrize("original_config", ["", "cpu_stats,font_size=28"])
+def test_disabled_mangohud_preserves_config(
+    monkeypatch: pytest.MonkeyPatch, original_enabled: str, original_config: str,
+) -> None:
+    monkeypatch.setenv("MANGOHUD", "1")
+    settings = MangoHudSettingsMixin()
+    settings.current_settings = {"PW_MANGOHUD": "0", "PW_MANGOHUD_USER_CONF": "1"}
+    monkeypatch.setattr(settings, "original_values", {
+        "PW_MANGOHUD": original_enabled, "PW_MANGOHUD_USER_CONF": "0",
+    }, raising=False)
+    settings.mangohud_original_values = {"MANGOHUD_CONFIG": original_config, "FPS_LIMIT": "60"}
+
+    changes = settings._collect_mangohud_changes()
+
+    expected = ["PW_MANGOHUD_USER_CONF=1"]
+    if original_enabled == "1":
+        expected.insert(0, "PW_MANGOHUD=0")
+    assert changes == expected
+
+
+def test_enabled_mangohud_collects_config_and_fps(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = MangoHudSettingsMixin()
+    settings.current_settings = {"PW_MANGOHUD": "1"}
+    monkeypatch.setattr(settings, "original_values", {"PW_MANGOHUD": "0"}, raising=False)
+    settings.mangohud_original_values = {"MANGOHUD_CONFIG": "", "FPS_LIMIT": ""}
+    checkbox = QCheckBox()
+    checkbox.setChecked(True)
+    settings.mangohud_fps_widgets = {"60": checkbox}
+    monkeypatch.setattr(settings, "_build_mangohud_config", lambda: "fps_limit=60")
+
+    assert settings._collect_mangohud_changes() == [
+        "PW_MANGOHUD=1", "MANGOHUD_CONFIG=fps_limit=60", "FPS_LIMIT=60",
+    ]
+
+
 def test_mangohud_font_options_use_fc_list(monkeypatch: pytest.MonkeyPatch) -> None:
     output = (
         "Noto Sans Regular\t/usr/share/fonts/NotoSans.ttf\n"

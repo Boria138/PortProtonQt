@@ -4431,7 +4431,9 @@ gui_edit_db () {
 
     edit_db_from_gui "${PW_EDIT_DB_FINAL_LIST[@]}"
 
-    if [[ -z "$MANGOHUD_CONFIG" ]] ; then
+    if [[ "${PW_MANGOHUD}" == "1" ]] \
+    && [[ "${PW_MANGOHUD_USER_CONF}" != "1" ]] \
+    && [[ -z "$MANGOHUD_CONFIG" ]] ; then
         MONITOR_HEIGHT="$(echo "$PW_SCREEN_RESOLUTION" | awk -F'x' '{print $2}')"
         MH_FONT_SIZE="font_size=$(( MONITOR_HEIGHT / 45 ))"
 
