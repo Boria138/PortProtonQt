@@ -54,6 +54,31 @@ def library_scene(
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
+@pytest.mark.parametrize("layout_mode", ["horizontal", "horizontal_top"])
+def test_library_clear_releases_full_library_tile(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    layout_mode: str,
+) -> None:
+    manager, _ = library_scene
+    manager.layout_mode = "horizontal_top"
+    manager.filtered_games = [()] * (manager.theme.horizontalTopGameLimit + 1)
+    manager._sync_full_library_tile()
+    tile = manager.fullLibraryTile
+    assert tile is not None
+
+    manager.clear_layout(manager.gamesListLayout)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    manager.layout_mode = layout_mode
+    manager._sync_full_library_tile()
+    manager._set_full_library_tile_cover(tile, 0, QPixmap())
+
+    if layout_mode == "horizontal":
+        assert manager.fullLibraryTile is None
+    else:
+        assert manager.fullLibraryTile is not None
+        assert manager.fullLibraryTile is not tile
+
+
 def test_cached_library_stays_visible_when_order_changes(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
 ) -> None:

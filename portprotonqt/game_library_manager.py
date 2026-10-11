@@ -965,6 +965,8 @@ class GameLibraryManager:
                 # Always schedule widget for deletion regardless of cache state
                 if isinstance(widget, GameCard):
                     widget.cleanup()
+                if widget is self.fullLibraryTile:
+                    self.fullLibraryTile = None
                 widget.deleteLater()
 
         # Also clear the cache completely if needed (in case layout wasn't in sync)
