@@ -389,6 +389,9 @@ class WinetricksDialog(DraggableDialog):
             info_item = QTableWidgetItem(info)
             table.setItem(row, 2, info_item)
 
+        if table is self.dll_table or table is self.fonts_table:
+            table.sortItems(1, Qt.SortOrder.AscendingOrder)
+
     def install_selected(self, force=False):
         """Install selected components."""
         selected = []
