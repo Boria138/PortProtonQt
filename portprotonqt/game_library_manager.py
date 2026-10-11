@@ -558,7 +558,7 @@ class GameLibraryManager:
         if self.gamesListWidget:
             self.gamesListWidget.updateGeometry()
 
-    def _fit_horizontal_cards(self) -> None:
+    def _fit_horizontal_cards(self, card: GameCard | None = None) -> None:
         if self.layout_mode not in {"horizontal", "horizontal_top"}:
             return
         if self.gamesScrollArea is None or self.gamesListLayout is None:
@@ -567,7 +567,8 @@ class GameLibraryManager:
         height = self.gamesScrollArea.viewport().height() - margins.top() - margins.bottom()
         if height <= 0:
             return
-        for card in self.game_card_cache.values():
+        cards = (card,) if card is not None else self.game_card_cache.values()
+        for card in cards:
             config = card.card_layout_cfg
             scale = max(
                 config.get(name, self.theme.GAME_CARD_ANIMATION[name])
@@ -919,6 +920,8 @@ class GameLibraryManager:
 
         card.hoverChanged.connect(self._on_card_hovered)
         card.focusChanged.connect(self._on_card_focused)
+
+        self._fit_horizontal_cards(card)
 
         if self.context_menu_manager:
             card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
