@@ -2465,6 +2465,36 @@ def test_installed_filter_reuses_loaded_store_games(monkeypatch: MonkeyPatch) ->
     window.loadGames.assert_not_called()
 
 
+@mark.parametrize("index, mode", [
+    (4, "horizontal_top"), (5, "horizontal_top_vertical"),
+    (6, "horizontal"), (7, "horizontal_vertical"),
+])
+def test_horizontal_layout_menu_maps_endless_modes(
+    index: int, mode: str, monkeypatch: MonkeyPatch,
+) -> None:
+    application = QApplication.instance() or QApplication([])
+    assert application is not None
+    monkeypatch.setattr(library_tab_module.ui_config, "get_economy_mode", lambda: False)
+    monkeypatch.setattr(library_tab_module.ui_config, "get_library_layout_mode", lambda _: "theme")
+    window = cast(Any, SimpleNamespace(
+        theme=SimpleNamespace(CHECKBOX_STYLE=""),
+        _create_library_combo=lambda labels, tooltip: QComboBox(),
+        _set_combo_current_key=MagicMock(),
+        _register_gamepad_tooltip=MagicMock(),
+        _on_library_sort_changed=MagicMock(),
+        _on_library_filter_changed=MagicMock(),
+        _on_only_installed_changed=MagicMock(),
+        _on_library_badge_view_changed=MagicMock(),
+        _on_library_layout_changed=MagicMock(),
+        _delay_library_controls_hover_close=MagicMock(),
+    ))
+    controls = QWidget()
+
+    LibraryMixin._add_library_filter_controls(window, QGridLayout(controls))
+
+    assert window.library_layout_keys[index] == mode
+
+
 def test_library_layout_control_rebuilds_both_libraries(
     monkeypatch: MonkeyPatch,
 ) -> None:

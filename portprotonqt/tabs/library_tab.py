@@ -382,8 +382,8 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         controls_layout.addWidget(self.gamesBadgeViewCombo, 2, 0)
 
         self.library_layout_keys = [
-            "theme", "grid", "list", "vertical", "horizontal",
-            "horizontal_vertical", "horizontal_top", "horizontal_top_vertical",
+            "theme", "grid", "list", "vertical", "horizontal_top",
+            "horizontal_top_vertical", "horizontal", "horizontal_vertical",
         ]
         self.library_layout_labels = [
             _("Theme"), _("Grid"), _("List"), _("Vertical"),

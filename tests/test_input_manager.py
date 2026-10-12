@@ -674,6 +674,8 @@ def test_settings_gamepad_skips_separator_and_activates_download(monkeypatch: Mo
     manager = SimpleNamespace(
         settings_dialog=SimpleNamespace(advanced_table=table, settings_table=None, favorites_table=None),
         _is_current_settings_tool_tab=lambda: False,
+        _handle_table_action_navigation=lambda *_args: False,
+        _get_dialog_action_buttons=lambda _dialog: [],
         _get_current_settings_table=lambda: table,
         _get_open_settings_combo=lambda: combo,
         _handle_common_ui_elements=lambda _code: False,
@@ -711,6 +713,8 @@ def test_settings_combo_navigation_with_keyboard_events_intercepted() -> None:
     manager = SimpleNamespace(
         settings_dialog=SimpleNamespace(advanced_table=table, settings_table=None),
         _is_current_settings_tool_tab=lambda: False,
+        _handle_table_action_navigation=lambda *_args: False,
+        _get_dialog_action_buttons=lambda _dialog: [],
         _get_current_settings_table=lambda: table,
     )
     key_filter = KeyFilter()
@@ -1300,3 +1304,126 @@ def test_settings_grid_vertical_navigation_does_not_wrap_columns() -> None:
     assert manager._find_mangohud_vertical_grid_target(
         checkboxes[1], -1, checkboxes
     ) is None
+
+
+@mark.parametrize("tool_tab", [False, True])
+def test_settings_gamepad_reaches_clear_ppdb(monkeypatch: MonkeyPatch, tool_tab: bool) -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = QDialog()
+    layout = QHBoxLayout(dialog)
+    table = QTableWidget(1, 2)
+    table.setCurrentCell(0, 1)
+    layout.addWidget(table)
+    buttons = [QPushButton(name) for name in ("Apply", "Cancel", "Edit", "Clear")]
+    for button in buttons:
+        layout.addWidget(button)
+    manager = InputManager.__new__(InputManager)
+    settings = SimpleNamespace(
+        keyboard=None, advanced_table=table, settings_table=table,
+        mangohud_fps_widgets={}, mangohud_toggle_widgets={},
+        tab_widget=SimpleNamespace(currentWidget=lambda: table),
+        apply_button=buttons[0], cancel_button=buttons[1],
+        open_ppdb_button=buttons[2], clear_ppdb_button=buttons[3],
+    )
+    for name, value in vars(settings).items():
+        setattr(dialog, name, value)
+    manager.settings_dialog = cast(Any, dialog)
+    manager.dpad_timer = MagicMock()
+    manager.current_dpad_code = None
+    manager.current_dpad_value = 0
+    monkeypatch.setattr(manager, "_get_current_settings_table", lambda: table)
+    monkeypatch.setattr(manager, "_is_current_settings_tool_tab", lambda: tool_tab)
+    monkeypatch.setattr(manager, "_get_open_settings_combo", lambda: None)
+    monkeypatch.setattr(manager, "_get_mangohud_nav_sections", lambda: [[table]])
+    monkeypatch.setattr(manager, "_handle_common_ui_elements", lambda _code: False)
+    clicked = MagicMock()
+    buttons[3].clicked.connect(clicked)
+    dialog.show()
+    table.setFocus()
+    app.processEvents()
+    manager.handle_settings_dpad(PAD_DPAD_Y, 1, 0)
+    assert QApplication.focusWidget() is buttons[0]
+    for button in buttons[1:]:
+        manager.handle_settings_dpad(PAD_DPAD_X, 1, 0)
+        assert QApplication.focusWidget() is button
+    manager.handle_settings_button(next(iter(input_manager.BUTTONS["confirm"])), 1)
+    clicked.assert_called_once()
+    manager.handle_settings_dpad(PAD_DPAD_Y, -1, 0)
+    assert QApplication.focusWidget() is table
+    dialog.close()
+
+
+@mark.parametrize("mode", ["winetricks", "proton_manager"])
+@mark.parametrize("empty", [False, True])
+def test_manager_gamepad_table_actions(mode: str, empty: bool, monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = QDialog()
+    layout = QHBoxLayout(dialog)
+    table = QTableWidget(0 if empty else 2, 1)
+    layout.addWidget(table)
+    if not empty:
+        table.setCurrentCell(0, 0)
+        table.setRowHidden(1, True)
+    buttons = [QPushButton(name) for name in ("First", "Disabled", "Last")]
+    for button in buttons:
+        layout.addWidget(button)
+    buttons[1].setEnabled(False)
+    manager = InputManager.__new__(InputManager)
+    setattr(manager, mode + "_dialog", dialog)
+    manager.dpad_timer = MagicMock()
+    manager.current_dpad_code = None
+    manager.current_dpad_value = 0
+    monkeypatch.setattr(manager, "_handle_common_ui_elements", lambda _code: False)
+    clicked = MagicMock()
+    buttons[-1].clicked.connect(clicked)
+    navigate = getattr(manager, "handle_" + mode + "_dpad")
+    confirm = getattr(manager, "handle_" + mode + "_button")
+    dialog.show()
+    table.setFocus()
+    app.processEvents()
+    navigate(PAD_DPAD_Y, 1, 0)
+    assert QApplication.focusWidget() is buttons[0]
+    navigate(PAD_DPAD_X, 1, 0)
+    assert QApplication.focusWidget() is buttons[-1]
+    confirm(next(iter(input_manager.BUTTONS["confirm"])), 1)
+    clicked.assert_called_once()
+    navigate(PAD_DPAD_X, -1, 0)
+    assert QApplication.focusWidget() is buttons[0]
+    navigate(PAD_DPAD_Y, -1, 0)
+    assert QApplication.focusWidget() is table
+    dialog.close()
+
+
+@mark.parametrize("tool", ["mangohud", "vkbasalt", "gamescope"])
+def test_settings_tool_gamepad_reaches_action_buttons(tool: str, monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = cast(Any, QDialog())
+    layout = QHBoxLayout(dialog)
+    tool_tab = QWidget()
+    tool_layout = QHBoxLayout(tool_tab)
+    control = QLineEdit()
+    tool_layout.addWidget(control)
+    layout.addWidget(tool_tab)
+    button = QPushButton("Clear")
+    layout.addWidget(button)
+    dialog.keyboard = None
+    dialog.tab_widget = SimpleNamespace(currentWidget=lambda: tool_tab)
+    setattr(dialog, tool + "_tab", tool_tab)
+    dialog.mangohud_widgets = {}
+    dialog.mangohud_fps_widgets = {}
+    manager = InputManager.__new__(InputManager)
+    manager.settings_dialog = dialog
+    manager.dpad_timer = MagicMock()
+    manager.current_dpad_code = None
+    manager.current_dpad_value = 0
+    monkeypatch.setattr(manager, "_get_current_settings_table", lambda: None)
+    monkeypatch.setattr(manager, "_get_open_settings_combo", lambda: None)
+    monkeypatch.setattr(manager, "_get_mangohud_nav_sections", lambda: [[control]])
+    dialog.show()
+    control.setFocus()
+    app.processEvents()
+    manager.handle_settings_dpad(PAD_DPAD_Y, 1, 0)
+    assert QApplication.focusWidget() is button
+    manager.handle_settings_dpad(PAD_DPAD_Y, -1, 0)
+    assert QApplication.focusWidget() is control
+    dialog.close()

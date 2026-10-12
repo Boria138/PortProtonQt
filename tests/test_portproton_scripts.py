@@ -6,6 +6,42 @@ from pathlib import Path
 from pytest import mark
 
 
+@mark.parametrize("case", [
+    ("0", "0", "", ""),
+    ("1", "1", "", ""),
+    ("1", "0", "", 'export MANGOHUD_CONFIG="cpu_stats,font_size=24"\n'),
+    ("1", "0", "gpu_stats", ""),
+])
+def test_gui_edit_db_only_creates_enabled_mangohud_config(
+    tmp_path: Path, case: tuple[str, str, str, str],
+) -> None:
+    enabled, user_conf, existing, expected = case
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text()
+    gui_body = helper.split("gui_edit_db () {", 1)[1].split(
+        "# Gamescope configuration and processing", 1,
+    )[0]
+    block = gui_body.split('    edit_db_from_gui "${PW_EDIT_DB_FINAL_LIST[@]}"', 1)[1]
+    ppdb = tmp_path / "game.exe.ppdb"
+    ppdb.touch()
+    script = '''
+edit_db_from_gui () {
+    printf 'export MANGOHUD_CONFIG="%s"\\n' "$MANGOHUD_CONFIG" >> "$PORTWINE_DB_FILE"
+}
+gui_config () {
+''' + block + '\ngui_config\n'
+
+    result = subprocess.run(
+        ["bash", "-c", script], capture_output=True, text=True, check=False,
+        env={"PATH": os.defpath, "PORTWINE_DB_FILE": str(ppdb), "MANGOHUD": "1",
+             "PW_MANGOHUD": enabled, "PW_MANGOHUD_USER_CONF": user_conf,
+             "MANGOHUD_CONFIG": existing, "DEFAULT_MANGOHUD_CONFIG": "cpu_stats",
+             "PW_SCREEN_RESOLUTION": "1920x1080"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert ppdb.read_text() == expected
+
+
 @mark.parametrize("second_name", ["Game.exe", "Trainer.exe"])
 def test_run_after_accepts_same_exe(tmp_path: Path, second_name: str) -> None:
     helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text()

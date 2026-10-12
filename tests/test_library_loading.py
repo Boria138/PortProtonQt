@@ -54,6 +54,60 @@ def library_scene(
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
+@pytest.mark.parametrize("layout_mode", ["horizontal", "horizontal_top"])
+@pytest.mark.parametrize("orientation", ["horizontal", "vertical"])
+def test_new_horizontal_cards_fit_before_layout_insertion(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, layout_mode: str, orientation: str,
+) -> None:
+    manager, _ = library_scene
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_horizontal_card_orientation",
+                        lambda _: orientation)
+    manager.rebuild_library_layout(layout_mode)
+    manager.gamesLibraryWidget.resize(800, 400)
+    QApplication.processEvents()
+    assert manager.gamesListLayout is not None and manager.gamesScrollArea is not None
+    for name in ("First", "Second"):
+        card = manager._create_game_card((name, "", "", "", "", name, "", "", "", "", 0, 0, "steam"))
+        margins = manager.gamesListLayout.contentsMargins()
+        scale = max(card.card_layout_cfg.get(key, manager.theme.GAME_CARD_ANIMATION[key])
+                    for key in ("default_scale", "hover_scale", "focus_scale"))
+        ratio = card.card_geometry_cfg["card_height_ratio"]
+        assert (card.base_card_width * ratio + card.base_extra_margin) * scale <= (
+            manager.gamesScrollArea.viewport().height() - margins.top() - margins.bottom()
+        )
+        initial_size = card.size()
+        manager.game_card_cache[(name, name)] = card
+        manager.gamesListLayout.addWidget(card)
+        manager._fit_horizontal_cards()
+        assert card.size() == initial_size
+
+
+@pytest.mark.parametrize("layout_mode", ["horizontal", "horizontal_top"])
+def test_library_clear_releases_full_library_tile(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    layout_mode: str,
+) -> None:
+    manager, _ = library_scene
+    manager.layout_mode = "horizontal_top"
+    manager.filtered_games = [()] * (manager.theme.horizontalTopGameLimit + 1)
+    manager._sync_full_library_tile()
+    tile = manager.fullLibraryTile
+    assert tile is not None
+
+    manager.clear_layout(manager.gamesListLayout)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    manager.layout_mode = layout_mode
+    manager._sync_full_library_tile()
+    manager._set_full_library_tile_cover(tile, 0, QPixmap())
+
+    if layout_mode == "horizontal":
+        assert manager.fullLibraryTile is None
+    else:
+        assert manager.fullLibraryTile is not None
+        assert manager.fullLibraryTile is not tile
+
+
 def test_cached_library_stays_visible_when_order_changes(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
 ) -> None:

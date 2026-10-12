@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QListView,
     QListWidget,
     QMenu,
+    QPushButton,
     QStackedWidget,
     QTableWidget,
     QWidget,
@@ -35,6 +36,48 @@ class InputSurface:
 
 
 class DialogInputModesMixin(InputMixin):
+    def _get_dialog_action_buttons(self, dialog: QWidget) -> list[QPushButton]:
+        """Return available dialog buttons outside tab contents."""
+        buttons = [
+            button for button in dialog.findChildren(
+                QPushButton, options=Qt.FindChildOption.FindDirectChildrenOnly,
+            )
+            if button.isVisible() and button.isEnabled()
+        ]
+        return sorted(buttons, key=lambda button: (button.y(), button.x()))
+
+    def _handle_table_action_navigation(self, dialog: QWidget, code: int, value: int) -> bool:
+        """Move between the current table and dialog action buttons."""
+        direction = self._normalize_dpad_direction(code, value)
+        if direction is None or QApplication.activePopupWidget() is not None:
+            return False
+        code, value = direction
+        buttons = self._get_dialog_action_buttons(dialog)
+        focused = QApplication.focusWidget()
+        table = next((table for table in dialog.findChildren(QTableWidget) if table.isVisible()), None)
+        if isinstance(focused, QPushButton) and focused in buttons:
+            self._reset_surface_navigation()
+            if code == PAD_DPAD_X:
+                index = buttons.index(focused) + value
+                if 0 <= index < len(buttons):
+                    buttons[index].setFocus(Qt.FocusReason.OtherFocusReason)
+            elif value < 0:
+                if table is not None:
+                    table.setFocus(Qt.FocusReason.OtherFocusReason)
+                elif dialog is getattr(self, 'settings_dialog', None):
+                    self._focus_first_row_in_current_settings_table()
+            return True
+        if table is None or code != PAD_DPAD_Y or value < 0 or not buttons:
+            return False
+        next_row = table.currentRow() + 1
+        while next_row < table.rowCount() and table.isRowHidden(next_row):
+            next_row += 1
+        if next_row < table.rowCount():
+            return False
+        self._reset_surface_navigation()
+        buttons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
     # WINETRICKS MODE
     def enable_winetricks_mode(self, winetricks_dialog):
         """Setup gamepad handling for WinetricksDialog"""
@@ -70,11 +113,13 @@ class DialogInputModesMixin(InputMixin):
             # Winetricks-specific button handling
             focused = QApplication.focusWidget()
 
-            if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
+            if button_code in BUTTONS['confirm']:  # A: Confirm
                 if isinstance(focused, QCheckBox) and focused.isEnabled():
                     focused.toggle()
                 elif isinstance(focused, QTableWidget):
                     self.handle_table_confirm(focused)
+                elif isinstance(focused, QPushButton) and focused.isEnabled():
+                    focused.click()
                 return
 
             elif button_code in BUTTONS['add_game']:  # X: Install
@@ -112,6 +157,8 @@ class DialogInputModesMixin(InputMixin):
         if self.winetricks_dialog is None:
             return
         try:
+            if self._handle_table_action_navigation(self.winetricks_dialog, code, value):
+                return
             if value == 0:  # Release
                 self.dpad_timer.stop()
                 self.current_dpad_code = None
@@ -500,7 +547,10 @@ class DialogInputModesMixin(InputMixin):
             # ProtonManager-specific button handling
             focused = QApplication.focusWidget()
 
-            if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
+            if button_code in BUTTONS['confirm']:  # A: Confirm
+                if isinstance(focused, QPushButton) and focused.isEnabled():
+                    focused.click()
+                    return
                 if isinstance(focused, QTableWidget):
                     current_row = focused.currentRow()
                     if current_row >= 0:
@@ -557,6 +607,8 @@ class DialogInputModesMixin(InputMixin):
             return
 
         try:
+            if self._handle_table_action_navigation(self.proton_manager_dialog, code, value):
+                return
             if value == 0:  # Release
                 self.dpad_timer.stop()
                 self.current_dpad_code = None

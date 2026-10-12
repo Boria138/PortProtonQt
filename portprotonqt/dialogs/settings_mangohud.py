@@ -1291,6 +1291,9 @@ class MangoHudSettingsMixin:
         if new_user_conf != orig_user_conf:
             changes.append(f"PW_MANGOHUD_USER_CONF={new_user_conf}")
 
+        if not mangohud_enabled:
+            return changes
+
         config_value = self._build_mangohud_config()
         if config_value != self.mangohud_original_values.get('MANGOHUD_CONFIG', ''):
             changes.append(f"MANGOHUD_CONFIG={config_value}")
