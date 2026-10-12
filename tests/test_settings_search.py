@@ -6,7 +6,8 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
-from PySide6.QtCore import QEvent, QRect
+from PySide6.QtCore import QEvent, QRect, Qt, QTimer
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import (
     QApplication,
     QBoxLayout,
@@ -15,6 +16,9 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QDialog,
+    QLineEdit,
+    QPushButton,
     QTableWidget,
     QStackedWidget,
     QWidget,
@@ -37,6 +41,53 @@ from portprotonqt.dialogs.settings_vkbasalt import VkBasaltSettingsMixin
 
 
 _application = QApplication.instance() or QApplication([])
+
+
+def test_settings_dialog_search_accepts_typing_without_search_focus() -> None:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+
+    dialog = ExeSettingsDialog.__new__(ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.search_edit = QLineEdit(dialog)
+    dialog.vkbasalt_toggle_key_button = None
+    dialog._gamepad_tooltip_map = {}
+    dialog.input_manager = None
+    dialog.gamepad_tooltip = QLabel(dialog)
+    dialog.gamepad_tooltip_timer = QTimer(dialog)
+    button = QPushButton(dialog)
+    other_input = QLineEdit(dialog)
+    dialog.search_edit.show()
+    button.show()
+    other_input.show()
+    dialog.setModal(True)
+    dialog.show()
+    QApplication.processEvents()
+    _application.installEventFilter(dialog)
+
+    try:
+        button.setFocus()
+        QTest.keyClicks(button, "fps")
+        assert dialog.search_edit.text() == "fps"
+        assert QApplication.focusWidget() is button
+
+        QTest.keyClick(button, Qt.Key.Key_Backspace)
+        assert dialog.search_edit.text() == "fp"
+        QTest.keyClick(button, Qt.Key.Key_Backspace)
+        QTest.keyClick(button, Qt.Key.Key_Backspace)
+        assert dialog.search_edit.text() == ""
+        QTest.keyClick(button, Qt.Key.Key_Backspace)
+        assert dialog.search_edit.text() == ""
+        assert dialog.isVisible()
+
+        other_input.setFocus()
+        QTest.keyClicks(other_input, "text")
+        assert other_input.text() == "text"
+        assert dialog.search_edit.text() == ""
+    finally:
+        _application.removeEventFilter(dialog)
+        dialog.close()
+        dialog.deleteLater()
+        QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
 def test_mangohud_search_ignores_unavailable_categories() -> None:
