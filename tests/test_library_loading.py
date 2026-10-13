@@ -271,6 +271,52 @@ def test_first_batch_receives_focus_without_waiting_for_remaining_cards(
     assert main.current_focused_card is second
 
 
+@pytest.mark.parametrize("layout_mode", ["grid", "horizontal"])
+def test_scrolling_defers_card_creation_until_scroll_stops(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    layout_mode: str,
+) -> None:
+    manager, _ = library_scene
+    manager.rebuild_library_layout(layout_mode)
+    QApplication.processEvents()
+    games = [(f"Game {i}", "", "", "", "", str(i), "", "", "", "", 0, 0, "steam") for i in range(80)]
+    keys = [(game[0], game[5]) for game in games]
+    manager._start_incremental_add(keys, dict(zip(keys, games, strict=True)), "")
+    assert manager._incremental_add_timer is not None
+    assert manager.gamesScrollArea is not None
+    scrollbar = (manager.gamesScrollArea.horizontalScrollBar() if layout_mode == "horizontal"
+                 else manager.gamesScrollArea.verticalScrollBar())
+    while scrollbar.maximum() < 100:
+        manager._incremental_add_timer.stop()
+        manager._process_incremental_add_batch()
+        QApplication.processEvents()
+    manager._incremental_add_timer.stop()
+    count_before = len(manager.game_card_cache)
+
+    def scroll() -> None:
+        scrollbar.setValue(0 if scrollbar.value() else 50)
+
+    loop = QEventLoop()
+    scroll_timer = QTimer()
+    scroll_timer.timeout.connect(scroll)
+    scroll_timer.start(20)
+    manager._incremental_add_timer.start(manager._incremental_batch_budget_ms)
+    scroll()
+    QTimer.singleShot(manager._incremental_scroll_delay_ms * 2, loop.quit)
+    loop.exec()
+    scroll_timer.stop()
+    assert len(manager.game_card_cache) == count_before
+    assert manager._incremental_add_queue
+    assert manager.gamesListWidget is not None and manager.gamesListWidget.updatesEnabled()
+
+    manager._incremental_add_timer.timeout.connect(loop.quit)
+    QTimer.singleShot(manager._incremental_scroll_delay_ms * 2, loop.quit)
+    loop.exec()
+    manager._incremental_add_timer.timeout.disconnect(loop.quit)
+    manager._incremental_add_timer.stop()
+    assert len(manager.game_card_cache) > count_before
+
+
 @pytest.fixture
 def real_cover_scene(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],

@@ -98,6 +98,7 @@ class GameLibraryManager:
         self._incremental_card_positions: dict[tuple[str, str], int] = {}
         self._incremental_batch_size: int = 8
         self._incremental_batch_budget_ms: int = 8
+        self._incremental_scroll_delay_ms: int = 250
         self._focus_first_card_after_update = False
         self._pending_update = False
         self.pending_deletions = deque()
@@ -362,6 +363,8 @@ class GameLibraryManager:
         """Loads images for visible game cards."""
         if self.gamesListWidget is None:
             return
+        if self._incremental_add_queue and self._incremental_add_timer is not None:
+            self._incremental_add_timer.start(self._incremental_scroll_delay_ms)
         visible_region = self.gamesListWidget.visibleRegion()
         max_concurrent_loads = 5
         loaded_count = 0
