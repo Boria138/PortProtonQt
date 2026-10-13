@@ -7,10 +7,20 @@ from html import escape
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QHideEvent, QIcon, QPalette
+from PySide6.QtGui import (
+    QColor,
+    QContextMenuEvent,
+    QDesktopServices,
+    QGuiApplication,
+    QHideEvent,
+    QIcon,
+    QKeyEvent,
+    QPalette,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
+    QAbstractSpinBox,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
@@ -23,8 +33,10 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QTableWidget,
     QTableWidgetItem,
+    QPlainTextEdit,
     QVBoxLayout,
     QWidget,
+    QTextEdit,
 )
 
 if TYPE_CHECKING:
@@ -224,6 +236,7 @@ class ExeSettingsDialog(
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.focusChanged.connect(self._on_focus_changed)
+            app.installEventFilter(self)
 
         self.input_manager = None
         self.main_window = None
@@ -1554,6 +1567,9 @@ class ExeSettingsDialog(
             self.close()
 
     def closeEvent(self, event):
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.removeEventFilter(self)
         if hasattr(self, 'keyboard') and self.keyboard.isVisible():
             self.keyboard.hide()
         if self.input_manager:
@@ -1561,6 +1577,34 @@ class ExeSettingsDialog(
         super().closeEvent(event)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if (
+            event.type() == QEvent.Type.KeyPress
+            and self.isVisible()
+            and QApplication.activeWindow() is self
+        ):
+            focused_widget = QApplication.focusWidget()
+            if focused_widget is None or focused_widget.window() is self:
+                text_input = isinstance(
+                    focused_widget,
+                    (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox, QComboBox),
+                )
+                if focused_widget is not self.search_edit and not text_input:
+                    key_event = cast(QKeyEvent, event)
+                    modifiers = (
+                        Qt.KeyboardModifier.ControlModifier
+                        | Qt.KeyboardModifier.AltModifier
+                        | Qt.KeyboardModifier.MetaModifier
+                    )
+                    if not key_event.modifiers() & modifiers:
+                        if key_event.key() == Qt.Key.Key_Backspace:
+                            search_text = self.search_edit.text()
+                            if search_text:
+                                self.search_edit.setText(search_text[:-1])
+                            return True
+                        if key_event.text() and key_event.text().isprintable():
+                            self.search_edit.setText(self.search_edit.text() + key_event.text())
+                            return True
+
         if isinstance(obj, QAbstractItemView) and event.type() == QEvent.Type.Show:
             combo = obj.window().parentWidget()
             if isinstance(combo, QComboBox):

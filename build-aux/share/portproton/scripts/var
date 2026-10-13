@@ -62,7 +62,7 @@ check_variables PW_USE_GALLIUM_NINE "0"
 check_variables PW_USE_GALLIUM_ZINK "0"
 check_variables PW_USE_WINED3D_VULKAN "0"
 check_variables PW_USE_SUPPLIED_DXVK_VKD3D "1"
-check_variables PW_WINE_FULLSCREEN_FSR "1"
+check_variables PW_WINE_FULLSCREEN_FSR "0"
 check_variables WINE_FULLSCREEN_FSR_MODE "0"
 
 ###DXVK_AND_VKD3D###
