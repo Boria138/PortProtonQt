@@ -152,6 +152,7 @@ class GameLibraryManager:
             )
             self.gamesListLayout.setSpacing(layout_config.get("layout_spacing", 0))
             scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         elif self.layout_mode == "vertical":
             layout_config = self.theme.GAME_CARD_VERTICAL
             self.gamesListLayout = QVBoxLayout(self.gamesListWidget)
@@ -272,6 +273,10 @@ class GameLibraryManager:
                 else Qt.ScrollBarPolicy.ScrollBarAsNeeded
             )
             self.gamesScrollArea.setVerticalScrollBarPolicy(vertical_policy)
+            self.gamesScrollArea.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+                if horizontal else Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            )
         theme_mode = ui_config.get_library_layout_mode(
             str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid"))
         )
@@ -651,6 +656,10 @@ class GameLibraryManager:
         finally:
             self.gamesListLayout.invalidate()
             self.gamesListLayout.setEnabled(True)
+            if self.layout_mode in {"horizontal", "horizontal_top"}:
+                self.gamesListWidget.resize(
+                    self.gamesListWidget.size().expandedTo(self.gamesListLayout.minimumSize())
+                )
             self.gamesListLayout.activate()
             self.gamesListWidget.updateGeometry()
 

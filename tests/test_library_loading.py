@@ -129,6 +129,68 @@ def test_cached_library_stays_visible_when_order_changes(
     assert not manager._incremental_add_queue
 
 
+@pytest.mark.parametrize("layout_mode", ["horizontal", "horizontal_top"])
+def test_horizontal_loading_keeps_card_geometry_stable(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, layout_mode: str,
+) -> None:
+    manager, _ = library_scene
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_horizontal_card_orientation",
+                        lambda _: "vertical")
+    manager.rebuild_library_layout(layout_mode)
+    manager.gamesLibraryWidget.resize(800, 400)
+    games = [(f"Game {i}", "", "", "", "", str(i), "", "", "", "", 0, 0, "steam")
+             for i in range(4)]
+    manager.set_games(games, focus_first_card=False)
+    assert manager._incremental_add_timer is not None
+    for _ in range(20):
+        QApplication.processEvents()
+        if manager._incremental_add_queue:
+            manager._process_incremental_add_batch()
+        manager._incremental_add_timer.stop()
+    assert not manager._incremental_add_queue
+    card = next(iter(manager.game_card_cache.values()))
+    geometry = card.geometry()
+    for _ in range(20):
+        QApplication.processEvents()
+        assert card.geometry() == geometry
+    assert manager.gamesScrollArea is not None
+    assert card.height() <= manager.gamesScrollArea.viewport().height()
+    manager.rebuild_library_layout("grid")
+    assert manager.gamesScrollArea.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+
+
+@pytest.mark.parametrize("layout_mode", ["horizontal", "horizontal_top"])
+@pytest.mark.parametrize("orientation", ["horizontal", "vertical"])
+def test_horizontal_batches_keep_existing_cards_in_place(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, layout_mode: str, orientation: str,
+) -> None:
+    manager, _ = library_scene
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_horizontal_card_orientation",
+                        lambda _: orientation)
+    manager.rebuild_library_layout(layout_mode)
+    manager.gamesLibraryWidget.resize(1280, 800)
+    QApplication.processEvents()
+    manager._incremental_batch_size = 1
+    games = [(f"Game {i}", "", "", "", "", str(i), "", "", "", "", 0, 0, "steam")
+             for i in range(8)]
+    keys = [(game[0], game[5]) for game in games]
+    manager._start_incremental_add(keys, dict(zip(keys, games, strict=True)), "")
+    assert manager._incremental_add_timer is not None
+    manager._incremental_add_timer.stop()
+    QApplication.processEvents()
+    manager._incremental_add_timer.stop()
+    while manager._incremental_add_queue:
+        geometries = {card: card.geometry() for card in manager.game_card_cache.values()}
+        manager._process_incremental_add_batch()
+        manager._incremental_add_timer.stop()
+        assert all(card.geometry() == previous for card, previous in geometries.items())
+        QApplication.processEvents()
+        manager._incremental_add_timer.stop()
+        assert all(card.geometry() == previous for card, previous in geometries.items())
+
+
 def test_batches_keep_drawing_enabled_and_accept_clicks_before_completion(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
     monkeypatch: pytest.MonkeyPatch,
