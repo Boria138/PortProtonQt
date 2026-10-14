@@ -83,6 +83,23 @@ jobs:
       image: archlinux:base-devel@sha256:996c3a1d6b0d87b01242f6fcd8cfa3ad3eece1a67ab5c8f108e20af1d7b97bdd
       options: --privileged --device /dev/fuse
     steps:
+      - name: Rank Arch mirrors
+        run: |
+          if curl -fL --retry 2 --connect-timeout 10 --max-time 60 \
+            https://github.com/westandskif/rate-mirrors/releases/download/v0.33.0/rate-mirrors-v0.33.0-x86_64-unknown-linux-musl.tar.gz \
+            -o /tmp/rate-mirrors.tar.gz &&
+            echo 'e0ffb221649b7e1ce6b67ffaabe7cfd2b619c8bf8d6971e07ff9507d4e19a4b3  /tmp/rate-mirrors.tar.gz' | sha256sum -c - &&
+            tar -xzf /tmp/rate-mirrors.tar.gz -C /tmp --strip-components=1 \
+              rate-mirrors-v0.33.0-x86_64-unknown-linux-musl/rate_mirrors &&
+            timeout --kill-after=5s 120s /tmp/rate_mirrors --allow-root --protocol=https --disable-untested-fallback \
+              --save=/tmp/arch-mirrorlist arch --max-delay=21600 &&
+            grep -q '^Server = https://' /tmp/arch-mirrorlist; then
+            install -m 644 /tmp/arch-mirrorlist /etc/pacman.d/mirrorlist
+          else
+            echo '::warning::Mirror ranking failed; keeping the original Arch mirrorlist'
+          fi
+          sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
+
       - name: Prepare container
         uses: https://git.linux-gaming.ru/actions/anylinux-setup-action@b2d1ce4216f71162e00ae58fa11ee9aeb723d0d5 # v5
 
@@ -135,8 +152,13 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf upgrade -y --exclude=openh264,mozilla-openh264
-          dnf install -y --disablerepo=fedora-cisco-openh264 \
+          # Select nearby mirrors and abandon slow downloads after 20 seconds.
+          dnf --setopt=fastestmirror=True --setopt=max_parallel_downloads=10 \
+              --setopt=minrate=100k --setopt=timeout=20 \
+              upgrade -y --exclude=openh264,mozilla-openh264
+          dnf --setopt=fastestmirror=True --setopt=max_parallel_downloads=10 \
+              --setopt=minrate=100k --setopt=timeout=20 \
+              install -y --disablerepo=fedora-cisco-openh264 \
                          git rpmdevtools meson ninja-build python3-devel \
                          systemd-rpm-macros vulkan-loader-devel redhat-rpm-config nodejs npm \
                          gcc gettext 'pkgconfig(sdl3)'
@@ -188,9 +210,26 @@ jobs:
       image: archlinux:base-devel@sha256:996c3a1d6b0d87b01242f6fcd8cfa3ad3eece1a67ab5c8f108e20af1d7b97bdd
 
     steps:
+      - name: Rank Arch mirrors
+        run: |
+          if curl -fL --retry 2 --connect-timeout 10 --max-time 60 \
+            https://github.com/westandskif/rate-mirrors/releases/download/v0.33.0/rate-mirrors-v0.33.0-x86_64-unknown-linux-musl.tar.gz \
+            -o /tmp/rate-mirrors.tar.gz &&
+            echo 'e0ffb221649b7e1ce6b67ffaabe7cfd2b619c8bf8d6971e07ff9507d4e19a4b3  /tmp/rate-mirrors.tar.gz' | sha256sum -c - &&
+            tar -xzf /tmp/rate-mirrors.tar.gz -C /tmp --strip-components=1 \
+              rate-mirrors-v0.33.0-x86_64-unknown-linux-musl/rate_mirrors &&
+            timeout --kill-after=5s 120s /tmp/rate_mirrors --allow-root --protocol=https --disable-untested-fallback \
+              --save=/tmp/arch-mirrorlist arch --max-delay=21600 &&
+            grep -q '^Server = https://' /tmp/arch-mirrorlist; then
+            install -m 644 /tmp/arch-mirrorlist /etc/pacman.d/mirrorlist
+          else
+            echo '::warning::Mirror ranking failed; keeping the original Arch mirrorlist'
+          fi
+          sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
+
       - name: Prepare container
         run: |
-          pacman -Syuu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm
+          pacman -Syu --noconfirm --needed git wget gnupg nodejs npm
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
           sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
           yes | pacman -Scc
@@ -257,8 +296,22 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
+          # Bootstrap Nala before mirror ranking without the slow CDN used by this runner.
+          sed -i -e 's|http://deb.debian.org/debian-security|http://security.debian.org/debian-security|g' \
+                 -e 's|http://deb.debian.org/debian|http://ftp.ru.debian.org/debian|g' \
+                 /etc/apt/sources.list.d/debian.sources
           apt-get update
-          apt-get install -y build-essential debhelper dpkg-dev gettext git \
+          apt-get install -y --no-install-recommends nala
+          if timeout --kill-after=5s 120s nala fetch --auto --fetches=3 &&
+             test -s /etc/apt/sources.list.d/fetch.sources; then
+            # Keep updates and security; use only ranked mirrors for the base suite.
+            sed -i 's/^Suites: trixie trixie-updates$/Suites: trixie-updates/' \
+                   /etc/apt/sources.list.d/debian.sources
+          else
+            echo "::warning::Mirror selection failed; keeping the bootstrap Debian sources"
+          fi
+          nala update
+          nala install -y build-essential debhelper dpkg-dev gettext git \
                              libsdl3-dev libvulkan-dev meson ninja-build nodejs npm \
                              pkgconf python3
 
