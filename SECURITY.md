@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Do not publish suspected vulnerability details in public issues, discussions,
-or pull requests. Send reports to [support@linux-gaming.ru](mailto:info@linux-gaming.ru).
+or pull requests. Send reports to [support@linux-gaming.ru](mailto:support@linux-gaming.ru).
 
 Please include enough information to reproduce and assess the issue:
 
