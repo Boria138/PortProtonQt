@@ -24,8 +24,11 @@
   </developer>
 
   <releases>
-    <release version="1.4.1" date="2026-08-26">
+    <release version="1.5.0" date="2026-10-14">
       <description></description>
+    </release>
+    <release version="1.4.1" date="2026-08-26">
+      <description/>
     </release>
     <release version="1.4.0" date="2026-08-23">
       <description/>

@@ -1,5 +1,5 @@
 pkgname='portprotonqt'
-pkgver=1.4.1
+pkgver=1.5.0
 pkgrel=1
 pkgdesc="Game library manager and launcher for Linux"
 arch=('x86_64')
