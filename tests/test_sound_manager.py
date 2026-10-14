@@ -51,6 +51,9 @@ def test_sound_manager_survives_multimedia_initialization_failure(
     monkeypatch.setattr(sound_manager, "_SoundSlot", Mock(side_effect=RuntimeError("failed")))
 
     manager.__init__()
+    manager._enabled = True
+    manager._get_url = lambda _event: Mock()
+    manager.play("navigate")
 
     assert manager._slots == []
 
@@ -70,9 +73,47 @@ def test_sound_manager_skips_unavailable_audio_service(
     monkeypatch.setattr(sound_manager, "_SoundSlot", sound_slot)
 
     manager.__init__()
+    manager._enabled = True
+    manager._get_url = lambda _event: Mock()
+    manager.play("navigate")
 
     assert manager._slots == []
     sound_slot.assert_not_called()
+
+
+def test_sound_manager_defers_backend_until_visible_playback(
+    tmp_path: Path, monkeypatch: MonkeyPatch,
+) -> None:
+    app = QApplication.instance() or QApplication([])
+    window: Any = QWidget()
+    window.silent_launch_mode = True
+    manager: Any = object.__new__(SoundManager)
+    manager._initialized = False
+    slot = Mock(_loaded_event=None)
+    sound_slot = Mock(return_value=slot)
+    monkeypatch.setattr(sound_manager, "_SoundSlot", sound_slot)
+    monkeypatch.setattr(sound_manager, "_audio_service_available", lambda: True)
+    monkeypatch.setattr(sound_manager.ui_config, "get_sounds_enabled", lambda: True)
+    monkeypatch.setattr(QApplication, "topLevelWidgets", lambda: [window])
+
+    manager.__init__()
+    manager.set_sounds_dirs([str(tmp_path)])
+    manager._get_url = Mock(return_value=Mock())
+    assert manager._slots is None
+    sound_slot.assert_not_called()
+
+    manager.play("game_launch")
+    manager.play("gamepad_connect")
+    manager._get_url.assert_not_called()
+    sound_slot.assert_not_called()
+
+    window.show()
+    manager.play("navigate")
+    manager.play("navigate")
+    assert sound_slot.call_count == 4
+    assert slot.play.call_count == 2
+    window.close()
+    app.processEvents()
 
 
 def test_sound_manager_survives_playback_failure() -> None:
