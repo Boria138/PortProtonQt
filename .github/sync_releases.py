@@ -9,8 +9,8 @@ GITEA_API_URL = "https://git.linux-gaming.ru/api/v1/repos/Linux-Gaming/PortProto
 
 def get_gitea_releases():
     req = urllib.request.Request(
-        GITEA_API_URL, 
-        headers={'User-Agent': 'Mozilla/5.0'}
+        GITEA_API_URL,
+        headers={'User-Agent': 'PortProtonQt-release-sync'}
     )
     with urllib.request.urlopen(req) as response:
         return json.loads(response.read().decode('utf-8'))
@@ -27,19 +27,23 @@ def get_github_releases():
         return {item["tagName"] for item in data}
     except Exception as e:
         print(f"Error fetching GitHub releases: {e}", file=sys.stderr)
-        return set()
+        raise
 
-def download_file(url, local_filename):
+def download_file(url: str, local_filename: str, expected_size: int) -> None:
     req = urllib.request.Request(
         url,
-        headers={'User-Agent': 'Mozilla/5.0'}
+        headers={'User-Agent': 'PortProtonQt-release-sync'}
     )
     with urllib.request.urlopen(req) as resp, open(local_filename, "wb") as f:
+        if resp.headers.get_content_type() == "text/html":
+            raise ValueError(f"Received HTML instead of asset: {url}")
         while True:
             chunk = resp.read(16 * 1024 * 1024)  # 16MB buffer
             if not chunk:
                 break
             f.write(chunk)
+    if os.path.getsize(local_filename) != expected_size:
+        raise ValueError(f"Asset size mismatch: {local_filename}")
 
 def main():
     print("Fetching releases from Gitea...")
@@ -66,7 +70,7 @@ def main():
         body = release.get("body") or ""
         prerelease = release.get("prerelease", False)
         draft = release.get("draft", False)
-        
+
         downloaded_files = []
         assets = release.get("assets", [])
         for asset in assets:
@@ -74,16 +78,17 @@ def main():
             download_url = asset["browser_download_url"]
             print(f"  Downloading asset: {asset_name}...")
             try:
-                download_file(download_url, asset_name)
+                download_file(download_url, asset_name, asset["size"])
                 downloaded_files.append(asset_name)
             except Exception as e:
                 print(f"  Failed to download asset {asset_name}: {e}", file=sys.stderr)
+                raise
 
         # Create release on GitHub via GitHub CLI
         cmd = ["gh", "release", "create", tag]
         cmd.extend(downloaded_files)
         cmd.extend(["--title", name, "--notes", body])
-        
+
         if prerelease:
             cmd.append("--prerelease")
         if draft:
@@ -95,7 +100,8 @@ def main():
             print(f"  Successfully synced release '{tag}'!")
         except subprocess.CalledProcessError as e:
             print(f"  Failed to create GitHub release '{tag}': {e}", file=sys.stderr)
-        
+            raise
+
         # Clean up downloaded assets
         for file in downloaded_files:
             try:
