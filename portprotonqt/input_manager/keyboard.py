@@ -93,10 +93,6 @@ class KeyboardInputMixin(InputMixin):
                 keyboard.stop_backspace_repeat()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        app = QApplication.instance()
-        if not app:
-            return QObject.eventFilter(cast(QObject, self), obj, event)
-
         if event.type() == QEvent.Type.Show:
             if isinstance(obj, QMenu):
                 SoundManager().play("open")
