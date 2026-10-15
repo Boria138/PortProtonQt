@@ -900,14 +900,15 @@ def main():
             finally:
                 self.finished.emit()
 
-    if start_sh:
+    # Initial setup can stop Wine and must not race a silent game launch.
+    if start_sh and not silent_game_request:
         worker = InitialCommandWorker(start_sh)
         window.initialCommandWorker = worker
         worker.finished.connect(
             lambda: setattr(window, "initialCommandWorker", None)
         )
         worker.start()
-    else:
+    elif not start_sh:
         logger.warning("PortProton start command not available, skipping initial command")
 
     # --- Cleanup ---

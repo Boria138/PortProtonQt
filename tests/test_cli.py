@@ -152,6 +152,35 @@ def test_silent_exe_uses_existing_instance(
     startup.qt_app.exec.assert_not_called()
 
 
+@pytest.mark.parametrize("silent", [False, True])
+def test_silent_launch_skips_initial_command(
+    silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch, silent: bool,
+) -> None:
+    from PySide6.QtCore import QThread
+    from portprotonqt import appimage_updater
+
+    startup = silent_startup
+    window = MagicMock()
+    startup.window.side_effect = None
+    startup.window.return_value = window
+    monkeypatch.setattr(startup.app, "QTimer", MagicMock())
+    monkeypatch.setattr(QThread, "start", MagicMock())
+    monkeypatch.setattr(appimage_updater, "AppImageUpdateWorker", MagicMock())
+    monkeypatch.setattr(startup.app.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+    monkeypatch.setattr(startup.app.display_config, "get_start_minimized", lambda: False)
+    monkeypatch.setattr(startup.app.display_config, "set_fullscreen", MagicMock())
+    flags = ["--silent"] if silent else []
+    monkeypatch.setattr(sys, "argv", ["portprotonqt", *flags, str(startup.exe)])
+
+    with pytest.raises(SystemExit) as result:
+        startup.app.main()
+
+    assert result.value.code == 0
+    assert window.silent_launch_mode is silent
+    assert ("initialCommandWorker" in vars(window)) is (not silent)
+    startup.window.assert_called_once()
+
+
 @pytest.mark.parametrize("flags,target", [
     ([], "exe"),
     (["--silent", "--log"], "exe"),
