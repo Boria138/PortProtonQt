@@ -1646,7 +1646,8 @@ class ExeSettingsDialog(
                     palette.setBrush(QPalette.ColorRole.Text, item.foreground())
                 label.setAutoFillBackground(selected)
                 label.setPalette(palette)
-                label.setForegroundRole(QPalette.ColorRole.Text)
+                if label.foregroundRole() != QPalette.ColorRole.Text:
+                    label.setForegroundRole(QPalette.ColorRole.Text)
                 text = item.data(Qt.ItemDataRole.AccessibleTextRole)
                 name, separator, description = text.partition("\n")
                 formatted_text = escape(name)
@@ -1663,7 +1664,11 @@ class ExeSettingsDialog(
                 if label.text() != formatted_text:
                     label.setText(formatted_text)
                 width = max(1, table.columnWidth(0))
-                table.setRowHeight(row, label.heightForWidth(width) + table.fontMetrics().height())
+                height_key = [width, formatted_text, label.font().toString()]
+                if label.property("ppqt_height_key") != height_key:
+                    height = label.heightForWidth(width) + table.fontMetrics().height()
+                    label.setProperty("ppqt_height_key", height_key)
+                    table.setRowHeight(row, height)
             for row in range(table.rowCount()):
                 widget = table.cellWidget(row, 1)
                 if widget is None:
