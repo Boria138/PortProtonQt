@@ -2,6 +2,10 @@
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+import pytest
 
 from portprotonqt.cli import (
     normalize_launch_path,
@@ -31,6 +35,100 @@ class TestParseArgs:
         assert args.log is True
         assert args.silent is True
         assert args.file_or_url == "file:///tmp/game.exe"
+
+
+@pytest.fixture
+def silent_startup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
+    from PySide6 import QtNetwork
+    from portprotonqt import app, main_window, port_data_path_selector
+
+    monkeypatch.delenv("STEAM_COMPAT", raising=False)
+    monkeypatch.delenv("PORTPROTONQT_INTEGRATE_APPIMAGE", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+    monkeypatch.setenv("MANGOHUD", "1")
+    monkeypatch.setenv("LD_PRELOAD", "libMangoHud_shim.so")
+    monkeypatch.setattr(app, "get_steam_language", lambda: "english")
+    monkeypatch.setattr(app, "get_portproton_location", lambda: str(tmp_path))
+    monkeypatch.setattr(app, "get_portproton_start_command", lambda: ["start.sh"])
+    monkeypatch.setattr(app, "consume_download_counter_skip", lambda: False)
+    monkeypatch.setattr(app, "update_app_version", lambda _version: False)
+    monkeypatch.setattr(app.ui_config, "get_disable_runtime_download", lambda: False)
+    monkeypatch.setattr(app.display_config, "get_fullscreen", lambda: False)
+    monkeypatch.setattr(port_data_path_selector, "is_portdata_path_read_write", lambda _path: True)
+    qt_app = MagicMock()
+    qt_app.exec.return_value = 0
+    monkeypatch.setattr(app, "QApplication", MagicMock(return_value=qt_app))
+    socket = MagicMock()
+    socket.waitForConnected.return_value = False
+    server = MagicMock()
+    monkeypatch.setattr(QtNetwork, "QLocalSocket", MagicMock(return_value=socket))
+    monkeypatch.setattr(QtNetwork, "QLocalServer", server)
+    tray = MagicMock()
+    window = MagicMock(side_effect=RuntimeError("main window reached"))
+    monkeypatch.setattr(app, "run_silent_tray", tray)
+    monkeypatch.setattr(main_window, "MainWindow", window)
+    exe = tmp_path / "my game.exe"
+    exe.touch()
+    return SimpleNamespace(app=app, qt_app=qt_app, socket=socket, server=server,
+                           tray=tray, window=window, exe=exe)
+
+
+@pytest.mark.parametrize("file_uri", [False, True])
+def test_silent_exe_keeps_main_window_for_emulation(
+    silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch, file_uri: bool,
+) -> None:
+    startup = silent_startup
+    target = startup.exe.as_uri() if file_uri else str(startup.exe)
+    monkeypatch.setattr(sys, "argv", ["portprotonqt", "--silent", target])
+
+    with pytest.raises(RuntimeError, match="main window reached"):
+        startup.app.main()
+
+    startup.tray.assert_not_called()
+    startup.window.assert_called_once()
+    assert startup.window.call_args.kwargs["launch_exe"] == str(startup.exe)
+    assert os.environ["MANGOHUD"] == "1"
+    assert os.environ["LD_PRELOAD"] == "libMangoHud_shim.so"
+
+
+def test_silent_exe_uses_existing_instance(
+    silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    startup = silent_startup
+    startup.socket.waitForConnected.return_value = True
+    monkeypatch.setattr(sys, "argv", ["portprotonqt", "--silent", str(startup.exe)])
+
+    startup.app.main()
+
+    startup.socket.write.assert_called_once_with(f"silent:{startup.exe}".encode())
+    startup.tray.assert_not_called()
+    startup.window.assert_not_called()
+    startup.qt_app.exec.assert_not_called()
+
+
+@pytest.mark.parametrize("flags,target", [
+    ([], "exe"),
+    (["--silent", "--log"], "exe"),
+    (["--silent"], "gog://launch/123"),
+    (["--silent"], "egs://launch/example"),
+    (["--silent", "--restore-prefix"], "exe"),
+    (["--silent", "--create-backup", "DEFAULT", "/tmp"], "exe"),
+])
+def test_other_launch_modes_keep_main_window(
+    silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch,
+    flags: list[str], target: str,
+) -> None:
+    startup = silent_startup
+    target = str(startup.exe) if target == "exe" else target
+    monkeypatch.setattr(sys, "argv", ["portprotonqt", *flags, target])
+
+    with pytest.raises(RuntimeError, match="main window reached"):
+        startup.app.main()
+
+    startup.tray.assert_not_called()
+    startup.window.assert_called_once()
 
 
 class TestNormalizeLaunchPath:

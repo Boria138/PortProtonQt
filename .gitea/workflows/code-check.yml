@@ -24,10 +24,26 @@ jobs:
     container:
       image: archlinux:base-devel@sha256:996c3a1d6b0d87b01242f6fcd8cfa3ad3eece1a67ab5c8f108e20af1d7b97bdd
     steps:
+      - name: Rank Arch mirrors
+        run: |
+          if curl -fL --retry 2 --connect-timeout 10 --max-time 60 \
+            https://github.com/westandskif/rate-mirrors/releases/download/v0.33.0/rate-mirrors-v0.33.0-x86_64-unknown-linux-musl.tar.gz \
+            -o /tmp/rate-mirrors.tar.gz &&
+            echo 'e0ffb221649b7e1ce6b67ffaabe7cfd2b619c8bf8d6971e07ff9507d4e19a4b3  /tmp/rate-mirrors.tar.gz' | sha256sum -c - &&
+            tar -xzf /tmp/rate-mirrors.tar.gz -C /tmp --strip-components=1 \
+              rate-mirrors-v0.33.0-x86_64-unknown-linux-musl/rate_mirrors &&
+            timeout --kill-after=5s 120s /tmp/rate_mirrors --allow-root --protocol=https --disable-untested-fallback \
+              --save=/tmp/arch-mirrorlist arch --max-delay=21600 &&
+            grep -q '^Server = https://' /tmp/arch-mirrorlist; then
+            install -m 644 /tmp/arch-mirrorlist /etc/pacman.d/mirrorlist
+          else
+            echo '::warning::Mirror ranking failed; keeping the original Arch mirrorlist'
+          fi
+          sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
+
       - name: Install system dependencies
         run: |
-          pacman -Syuu --noconfirm --disable-download-timeout
-          pacman -S --noconfirm --needed git nodejs npm mesa libarchive libpulse sdl3 pyside6 qt6-svg qt6-imageformats uv
+          pacman -Syu --noconfirm --needed git nodejs npm mesa libarchive libpulse sdl3 pyside6 qt6-svg qt6-imageformats uv
           pacman -Scc --noconfirm
 
       - uses: https://git.linux-gaming.ru/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

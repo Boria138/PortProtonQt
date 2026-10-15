@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QUrl, qInstallMessageHandler
+from PySide6.QtWidgets import QApplication
 
 from portprotonqt.config import ui_config
 from portprotonqt.logger import get_logger
@@ -94,13 +95,7 @@ class SoundManager:
         self._initialized = True
         self._enabled = ui_config.get_sounds_enabled()
         self._sounds_dirs: list[str] = []
-        try:
-            if QCoreApplication.instance() is None or not _audio_service_available():
-                raise RuntimeError("audio service is unavailable")
-            self._slots = [_SoundSlot() for _ in range(4)]
-        except Exception as e:
-            logger.warning("UI sounds are unavailable: %s", e)
-            self._slots = []
+        self._slots: list[_SoundSlot] | None = None
         self._slot_index = 0
         self._url_cache: dict[str, QUrl] = {}
 
@@ -108,7 +103,7 @@ class SoundManager:
         if dirs != self._sounds_dirs:
             self._sounds_dirs = dirs
             self._url_cache.clear()
-            for slot in self._slots:
+            for slot in self._slots or []:
                 slot.reset()
 
     def reload_config(self) -> None:
@@ -136,8 +131,23 @@ class SoundManager:
     def play(self, event: str) -> None:
         if not self._enabled:
             return
+        if any(
+            getattr(window, "silent_launch_mode", False) and not window.isVisible()
+            for window in QApplication.topLevelWidgets()
+        ):
+            return
         url = self._get_url(event)
-        if url is None or not self._slots:
+        if url is None:
+            return
+        if self._slots is None:
+            try:
+                if QCoreApplication.instance() is None or not _audio_service_available():
+                    raise RuntimeError("audio service is unavailable")
+                self._slots = [_SoundSlot() for _ in range(4)]
+            except Exception as e:
+                logger.warning("UI sounds are unavailable: %s", e)
+                self._slots = []
+        if not self._slots:
             return
         try:
             for slot in self._slots:
