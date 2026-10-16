@@ -4,7 +4,6 @@ import hashlib
 import os
 import platform
 import re
-import shutil
 import subprocess
 import time
 import zlib
@@ -25,7 +24,8 @@ GOG_LOGIN_URL = (
     "redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&"
     "response_type=code&layout=galaxy"
 )
-GOGDL_RELEASE_URL = "https://api.github.com/repos/Heroic-Games-Launcher/heroic-gogdl/releases/latest"
+GOGDL_RELEASE_SOURCE = "linux-gaming-ru/gogdl"
+GOGDL_RELEASE_URL = f"https://api.github.com/repos/{GOGDL_RELEASE_SOURCE}/releases/latest"
 GOGDL_AUTH_TIMEOUT = 60
 GOGDL_UPDATE_INTERVAL = 30 * 24 * 60 * 60
 GOG_USER_TIMEOUT = 15
@@ -77,11 +77,11 @@ class GOGAPI:
         self.games_dir = Path.home() / "Games"
 
     def get_gogdl_path(self) -> str | None:
-        """Return an available gogdl executable."""
+        """Return the managed gogdl fork executable when installed."""
         bundled = self.bin_dir / "gogdl"
-        if bundled.is_file() and os.access(bundled, os.X_OK):
+        if bundled.is_file() and os.access(bundled, os.X_OK) and self._get_gogdl_release_tag():
             return str(bundled)
-        return shutil.which("gogdl")
+        return None
 
     def build_command(self, arguments: list[str]) -> list[str]:
         """Build a gogdl command with private configuration paths."""
@@ -94,7 +94,7 @@ class GOGAPI:
         return [gogdl, "--auth-config-path", str(self.auth_path), *arguments]
 
     def ensure_gogdl(self) -> str:
-        """Download and verify the latest official Heroic gogdl binary."""
+        """Download and verify the latest linux-gaming-ru gogdl binary."""
         existing = self.get_gogdl_path()
         if existing:
             return existing
@@ -102,9 +102,9 @@ class GOGAPI:
         return self._install_gogdl_release(asset, release_tag)
 
     def update_gogdl(self) -> str:
-        """Update the bundled gogdl binary to the latest official release."""
+        """Replace other gogdl binaries and update the managed fork."""
         bundled = self.bin_dir / "gogdl"
-        if bundled.is_file() and os.access(bundled, os.X_OK):
+        if self.get_gogdl_path():
             try:
                 last_check = self.gogdl_version_path.stat().st_mtime
             except OSError:
@@ -143,13 +143,17 @@ class GOGAPI:
 
     def _get_gogdl_release_tag(self) -> str:
         try:
-            return self.gogdl_version_path.read_text(encoding="utf-8").strip()
+            version = self.gogdl_version_path.read_text(encoding="utf-8").strip()
         except OSError:
             return ""
+        source, _, tag = version.partition(":")
+        return tag if source == GOGDL_RELEASE_SOURCE else ""
 
     def _install_gogdl_release(self, asset: dict, release_tag: str) -> str:
         path = self._download_gogdl_asset(asset)
-        self.gogdl_version_path.write_text(release_tag, encoding="utf-8")
+        self.gogdl_version_path.write_text(
+            f"{GOGDL_RELEASE_SOURCE}:{release_tag}", encoding="utf-8"
+        )
         return path
 
     def _download_gogdl_asset(self, asset: dict) -> str:

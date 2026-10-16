@@ -1,5 +1,6 @@
 import os
 import zlib
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -7,7 +8,7 @@ from unittest.mock import Mock
 import orjson
 import pytest
 
-from portprotonqt.gog_api import GOGAPI, GOGDL_UPDATE_INTERVAL, GOG_PRODUCT_LOCALES
+from portprotonqt.gog_api import GOGAPI, GOGDL_RELEASE_SOURCE, GOGDL_UPDATE_INTERVAL, GOG_PRODUCT_LOCALES
 from portprotonqt.localization import LOCALE_MAP
 
 
@@ -392,13 +393,82 @@ def test_ensure_gogdl_downloads_matching_architecture(tmp_path: Path, monkeypatc
     response = Mock()
     response.json.return_value = {"assets": [asset], "tag_name": "v1.2.1"}
     monkeypatch.setattr("portprotonqt.gog_api.platform.machine", lambda: "x86_64")
-    monkeypatch.setattr("portprotonqt.gog_api.requests.get", lambda *args, **kwargs: response)
+    request = Mock(return_value=response)
+    monkeypatch.setattr("portprotonqt.gog_api.requests.get", request)
     monkeypatch.setattr(
         api, "_install_gogdl_release",
         lambda selected, tag: f'{selected["name"]}:{tag}',
     )
 
     assert api.ensure_gogdl() == "gogdl_linux_x86_64:v1.2.1"
+    assert request.call_args.args[0] == f"https://api.github.com/repos/{GOGDL_RELEASE_SOURCE}/releases/latest"
+
+
+@pytest.mark.parametrize("operation", ["ensure_gogdl", "update_gogdl"])
+@pytest.mark.parametrize("version", ["", "v1.3.2", "Heroic-Games-Launcher/heroic-gogdl:v1.3.2"])
+def test_gogdl_replaces_existing_upstream(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, operation: str, version: str
+) -> None:
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    api = GOGAPI()
+    api.bin_dir.mkdir(parents=True)
+    binary = api.bin_dir / "gogdl"
+    binary.write_bytes(b"upstream")
+    binary.chmod(0o755)
+    if version:
+        api.gogdl_version_path.write_text(version)
+    latest = Mock(return_value=({"name": "gogdl_linux_x86_64"}, "v1.3.2"))
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", latest)
+
+    def download(_asset: dict) -> str:
+        binary.write_bytes(b"fork")
+        return str(binary)
+
+    monkeypatch.setattr(api, "_download_gogdl_asset", download)
+    assert api.get_gogdl_path() is None
+    assert getattr(api, operation)() == str(binary)
+    latest.assert_called_once_with()
+    assert binary.read_bytes() == b"fork"
+    assert api.gogdl_version_path.read_text() == f"{GOGDL_RELEASE_SOURCE}:v1.3.2"
+    assert api.get_gogdl_path() == str(binary)
+
+
+def test_gogdl_does_not_use_system_binary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    api = GOGAPI()
+    which = Mock(return_value="/usr/bin/gogdl")
+    monkeypatch.setattr("shutil.which", which)
+    install = Mock(return_value=str(api.bin_dir / "gogdl"))
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", lambda: ({}, "v1.3.2"))
+    monkeypatch.setattr(api, "_install_gogdl_release", install)
+
+    assert api.get_gogdl_path() is None
+    assert api.ensure_gogdl() == str(api.bin_dir / "gogdl")
+    install.assert_called_once_with({}, "v1.3.2")
+    which.assert_not_called()
+
+
+def test_failed_gogdl_migration_keeps_old_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    api = GOGAPI()
+    api.bin_dir.mkdir(parents=True)
+    binary = api.bin_dir / "gogdl"
+    binary.write_bytes(b"upstream")
+    binary.chmod(0o755)
+    api.gogdl_version_path.write_text("v1.3.2")
+    response = Mock()
+    response.iter_content.return_value = [b"corrupted download"]
+    monkeypatch.setattr("portprotonqt.gog_api.requests.get", lambda *args, **kwargs: nullcontext(response))
+    asset = {"browser_download_url": "https://github.com/linux-gaming-ru/gogdl/releases/download/v1.3.2/gogdl_linux_x86_64", "digest": "sha256:invalid"}
+    monkeypatch.setattr(api, "_get_latest_gogdl_release", lambda: (asset, "v1.3.2"))
+
+    with pytest.raises(OSError, match="checksum verification failed"):
+        api.update_gogdl()
+
+    assert binary.read_bytes() == b"upstream"
+    assert api.gogdl_version_path.read_text() == "v1.3.2"
+    assert not binary.with_suffix(".part").exists()
+    assert api.get_gogdl_path() is None
 
 
 def test_update_gogdl_skips_current_release(tmp_path: Path, monkeypatch) -> None:
@@ -410,7 +480,7 @@ def test_update_gogdl_skips_current_release(tmp_path: Path, monkeypatch) -> None
     gogdl_path.parent.mkdir()
     gogdl_path.touch()
     gogdl_path.chmod(0o755)
-    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    api.gogdl_version_path.write_text(f"{GOGDL_RELEASE_SOURCE}:v1.2.1", encoding="utf-8")
     latest_release = Mock(return_value=({}, "v1.2.1"))
     monkeypatch.setattr(api, "_get_latest_gogdl_release", latest_release)
     install = Mock()
@@ -430,7 +500,7 @@ def test_update_gogdl_checks_release_after_month(tmp_path: Path, monkeypatch) ->
     gogdl_path.parent.mkdir()
     gogdl_path.touch()
     gogdl_path.chmod(0o755)
-    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    api.gogdl_version_path.write_text(f"{GOGDL_RELEASE_SOURCE}:v1.2.1", encoding="utf-8")
     os.utime(api.gogdl_version_path, (1, 1))
     last_check = api.gogdl_version_path.stat().st_mtime
     monkeypatch.setattr(
@@ -453,7 +523,7 @@ def test_update_gogdl_records_failed_monthly_check(tmp_path: Path, monkeypatch) 
     gogdl_path.parent.mkdir()
     gogdl_path.touch()
     gogdl_path.chmod(0o755)
-    api.gogdl_version_path.write_text("v1.2.1", encoding="utf-8")
+    api.gogdl_version_path.write_text(f"{GOGDL_RELEASE_SOURCE}:v1.2.1", encoding="utf-8")
     os.utime(api.gogdl_version_path, (1, 1))
     last_check = api.gogdl_version_path.stat().st_mtime
     monkeypatch.setattr(
@@ -492,7 +562,7 @@ def test_install_gogdl_release_records_version(tmp_path: Path, monkeypatch) -> N
     monkeypatch.setattr(api, "_download_gogdl_asset", lambda _asset: "/bin/gogdl")
 
     assert api._install_gogdl_release({}, "v1.2.1") == "/bin/gogdl"
-    assert api.gogdl_version_path.read_text(encoding="utf-8") == "v1.2.1"
+    assert api.gogdl_version_path.read_text(encoding="utf-8") == f"{GOGDL_RELEASE_SOURCE}:v1.2.1"
 
 
 def test_authenticate_returns_gogdl_error(monkeypatch) -> None:
