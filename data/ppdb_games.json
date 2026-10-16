@@ -385,6 +385,16 @@
     "overall_rating": "gold"
   },
   {
+    "id": 8729,
+    "normalized_name": "autonauts",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 8640,
+    "normalized_name": "avatar frontiers of pandora",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 3568,
     "normalized_name": "avowed",
     "overall_rating": "platinum"
@@ -402,6 +412,11 @@
   {
     "id": 71342,
     "normalized_name": "ayasa shadows of silence",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 43802,
+    "normalized_name": "ball x pit",
     "overall_rating": "platinum"
   },
   {
@@ -427,6 +442,11 @@
   {
     "id": 136793,
     "normalized_name": "bad day l.a.",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 116179,
+    "normalized_name": "baldo the guardian owls",
     "overall_rating": "platinum"
   },
   {
@@ -532,6 +552,11 @@
   {
     "id": 122747,
     "normalized_name": "battlefield v",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 6953,
+    "normalized_name": "beacon pines",
     "overall_rating": "platinum"
   },
   {
@@ -920,6 +945,11 @@
     "overall_rating": "silver"
   },
   {
+    "id": 128972,
+    "normalized_name": "captain contraption's chocolate factory",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 2554,
     "normalized_name": "carx street",
     "overall_rating": "platinum"
@@ -987,6 +1017,16 @@
   {
     "id": 1511,
     "normalized_name": "clair obscur expedition 33",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1389,
+    "normalized_name": "clicker heroes",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 95679,
+    "normalized_name": "clive barker's hellraiser revival",
     "overall_rating": "platinum"
   },
   {
@@ -1600,6 +1640,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 22403,
+    "normalized_name": "down in bermuda",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 137816,
     "normalized_name": "downtown run",
     "overall_rating": "gold"
@@ -1790,6 +1835,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 32237,
+    "normalized_name": "echo weaver",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 135061,
     "normalized_name": "eclipse",
     "overall_rating": "platinum"
@@ -1827,6 +1877,11 @@
   {
     "id": 28479,
     "normalized_name": "enclave",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 142352,
+    "normalized_name": "end of abyss",
     "overall_rating": "platinum"
   },
   {
@@ -1900,6 +1955,21 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 144749,
+    "normalized_name": "eye of the beholder",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 144750,
+    "normalized_name": "eye of the beholder ii the legend of darkmoon",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 144751,
+    "normalized_name": "eye of the beholder iii assault on myth drannor",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 2102,
     "normalized_name": "f.e.a.r.",
     "overall_rating": "platinum"
@@ -1915,6 +1985,11 @@
     "overall_rating": "gold"
   },
   {
+    "id": 6674,
+    "normalized_name": "fatal frame / project zero maiden of black water",
+    "overall_rating": "silver"
+  },
+  {
     "id": 122228,
     "normalized_name": "final fantasy xvi",
     "overall_rating": "platinum"
@@ -1922,6 +1997,11 @@
   {
     "id": 111591,
     "normalized_name": "foundry",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 6470,
+    "normalized_name": "fpv kamikaze drone",
     "overall_rating": "platinum"
   },
   {
@@ -1937,6 +2017,11 @@
   {
     "id": 1476,
     "normalized_name": "ftl faster than light",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 57304,
+    "normalized_name": "futa runner big dick",
     "overall_rating": "platinum"
   },
   {
@@ -1977,7 +2062,7 @@
   {
     "id": 3730,
     "normalized_name": "fallout tactics brotherhood of steel",
-    "overall_rating": "gold"
+    "overall_rating": "platinum"
   },
   {
     "id": 1586,
@@ -2012,7 +2097,7 @@
   {
     "id": 1509,
     "normalized_name": "far cry 4",
-    "overall_rating": "broken"
+    "overall_rating": "silver"
   },
   {
     "id": 112335,
@@ -2047,6 +2132,11 @@
   {
     "id": 123327,
     "normalized_name": "fearmonium",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 142741,
+    "normalized_name": "femboy futa house",
     "overall_rating": "platinum"
   },
   {
@@ -2397,7 +2487,7 @@
   {
     "id": 134441,
     "normalized_name": "hard truck 2 king of the road",
-    "overall_rating": "gold"
+    "overall_rating": "platinum"
   },
   {
     "id": 2141,
@@ -2430,8 +2520,13 @@
     "overall_rating": "platinum"
   },
   {
-    "id": 135348,
+    "id": 116886,
     "normalized_name": "headquarters world war ii",
+    "overall_rating": null
+  },
+  {
+    "id": 95965,
+    "normalized_name": "hearts of iron iv",
     "overall_rating": "platinum"
   },
   {
@@ -2477,6 +2572,11 @@
   {
     "id": 127483,
     "normalized_name": "heroes of science and fiction",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1930,
+    "normalized_name": "heroes of might & magic iii hd",
     "overall_rating": "platinum"
   },
   {
@@ -2777,6 +2877,11 @@
   {
     "id": 5342,
     "normalized_name": "kiborg",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 144768,
+    "normalized_name": "kamikaze strike fpv drone",
     "overall_rating": "platinum"
   },
   {
@@ -3155,6 +3260,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 117468,
+    "normalized_name": "maneater",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 3619,
     "normalized_name": "manhunt",
     "overall_rating": "platinum"
@@ -3345,6 +3455,11 @@
     "overall_rating": "gold"
   },
   {
+    "id": 73042,
+    "normalized_name": "miss！don't affect my rank",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 71287,
     "normalized_name": "modern warships",
     "overall_rating": "platinum"
@@ -3387,6 +3502,11 @@
   {
     "id": 1938,
     "normalized_name": "mudrunner",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 2747,
+    "normalized_name": "mutant year zero road to eden",
     "overall_rating": "platinum"
   },
   {
@@ -3685,6 +3805,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 121097,
+    "normalized_name": "overlord",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 23742,
     "normalized_name": "overthrown",
     "overall_rating": "platinum"
@@ -3870,6 +3995,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 5719,
+    "normalized_name": "praey for the gods",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 83824,
     "normalized_name": "prehistorik",
     "overall_rating": "platinum"
@@ -3882,6 +4012,11 @@
   {
     "id": 2343,
     "normalized_name": "prey",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 7107,
+    "normalized_name": "prince of persia the lost crown",
     "overall_rating": "platinum"
   },
   {
@@ -3940,9 +4075,9 @@
     "overall_rating": "platinum"
   },
   {
-    "id": 134787,
+    "id": 28860,
     "normalized_name": "quartet",
-    "overall_rating": "platinum"
+    "overall_rating": null
   },
   {
     "id": 8765,
@@ -4345,6 +4480,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 1673,
+    "normalized_name": "star wars battlefront ii",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 116330,
     "normalized_name": "star wars empire at war gold pack",
     "overall_rating": "platinum"
@@ -4525,6 +4665,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 9068,
+    "normalized_name": "shadow man",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 1745,
     "normalized_name": "shadow of the tomb raider",
     "overall_rating": "platinum"
@@ -4615,6 +4760,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 3137,
+    "normalized_name": "sniper elite",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 1624,
     "normalized_name": "sniper elite 3",
     "overall_rating": "platinum"
@@ -4652,6 +4802,11 @@
   {
     "id": 140959,
     "normalized_name": "sonic heroes",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 2065,
+    "normalized_name": "sonic mania",
     "overall_rating": "platinum"
   },
   {
@@ -4895,6 +5050,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 144782,
+    "normalized_name": "stranger things 3 the game",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 142281,
     "normalized_name": "stranglehold",
     "overall_rating": "platinum"
@@ -5040,6 +5200,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 3256,
+    "normalized_name": "tails of iron",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 2892,
     "normalized_name": "tainted grail the fall of avalon",
     "overall_rating": "bronze"
@@ -5130,6 +5295,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 144742,
+    "normalized_name": "the amazing spider man (2012)",
+    "overall_rating": "bronze"
+  },
+  {
     "id": 1873,
     "normalized_name": "the ascent",
     "overall_rating": "platinum"
@@ -5163,6 +5333,11 @@
     "id": 2042,
     "normalized_name": "the callisto protocol",
     "overall_rating": "platinum"
+  },
+  {
+    "id": 144752,
+    "normalized_name": "the chronicles of riddick assault on dark athena",
+    "overall_rating": "gold"
   },
   {
     "id": 6140,
@@ -5255,6 +5430,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 95161,
+    "normalized_name": "the imperial gatekeeper",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 122565,
     "normalized_name": "the invincible",
     "overall_rating": "platinum"
@@ -5267,7 +5447,7 @@
   {
     "id": 1898,
     "normalized_name": "the last remnant",
-    "overall_rating": "silver"
+    "overall_rating": "platinum"
   },
   {
     "id": 117639,
@@ -5675,6 +5855,11 @@
     "overall_rating": "gold"
   },
   {
+    "id": 131874,
+    "normalized_name": "tropico 5",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 87300,
     "normalized_name": "truck driver",
     "overall_rating": "platinum"
@@ -5797,7 +5982,7 @@
   {
     "id": 143163,
     "normalized_name": "vk play",
-    "overall_rating": "bronze"
+    "overall_rating": "platinum"
   },
   {
     "id": 2997,
@@ -6045,6 +6230,11 @@
     "overall_rating": "platinum"
   },
   {
+    "id": 107512,
+    "normalized_name": "wild west pioneers",
+    "overall_rating": "platinum"
+  },
+  {
     "id": 116847,
     "normalized_name": "will rock",
     "overall_rating": "platinum"
@@ -6067,7 +6257,7 @@
   {
     "id": 138835,
     "normalized_name": "witcher 3 wild hunt",
-    "overall_rating": "platinum"
+    "overall_rating": "gold"
   },
   {
     "id": 6964,
@@ -6107,6 +6297,11 @@
   {
     "id": 2176,
     "normalized_name": "world of tanks",
+    "overall_rating": "platinum"
+  },
+  {
+    "id": 1335,
+    "normalized_name": "world of tanks blitz",
     "overall_rating": "platinum"
   },
   {
@@ -6277,7 +6472,7 @@
   {
     "id": 10633,
     "normalized_name": "калибр",
-    "overall_rating": "platinum"
+    "overall_rating": "silver"
   },
   {
     "id": 138882,
