@@ -158,7 +158,7 @@ class KeyboardInputMixin(InputMixin):
             logger.debug(f"Skipping event filter for non-QObject: {type(obj).__name__}")
             return False
 
-        return QObject.eventFilter(cast(QObject, self), obj, event)
+        return False
 
     def _qt_event_to_input_key(self, event: QEvent) -> int | None:
         native_key = self._native_scan_to_input_key(event)

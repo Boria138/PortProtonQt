@@ -6,8 +6,9 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 from PySide6.QtCore import QEvent, QObject, QStringListModel, Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLineEdit, QListView, QMenu, QPushButton, QSlider, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 from pytest import MonkeyPatch, raises, mark
+from shiboken6 import delete
 
 import portprotonqt.input_manager as input_manager
 import portprotonqt.input_manager.buttons as input_buttons
@@ -33,6 +34,18 @@ from portprotonqt.themes.standart.styles.constants import GAME_CARD_ANIMATION
 FIRST_CARD_X = 0
 HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
+
+
+@mark.parametrize("event_type", [QEvent.Type.Destroy, QEvent.Type.ChildRemoved, QEvent.Type.DeferredDelete])
+def test_keyboard_filter_ignores_deleted_layout(event_type: QEvent.Type) -> None:
+    app = QApplication.instance() or QApplication([])
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    layout = QVBoxLayout()
+    delete(layout)
+
+    assert manager.eventFilter(layout, QEvent(event_type)) is False
+    assert app is not None
 
 
 @mark.parametrize("event_type", [QEvent.Type.Destroy, QEvent.Type.ChildRemoved, QEvent.Type.DeferredDelete])
