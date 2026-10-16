@@ -37,6 +37,50 @@ class TestParseArgs:
         assert args.file_or_url == "file:///tmp/game.exe"
 
 
+@pytest.mark.parametrize("stopped", [False, True])
+def test_silent_tray_toggles_pause(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stopped: bool) -> None:
+    import signal
+    import psutil
+    from PySide6.QtWidgets import QApplication
+    from portprotonqt import app, time_utils
+
+    qt_app = QApplication.instance() or QApplication([])
+    assert isinstance(qt_app, QApplication)
+    tray = MagicMock()
+    timer = MagicMock()
+    launcher = MagicMock(pid=123)
+    launcher.poll.return_value = None
+    child = MagicMock(pid=124)
+    status = psutil.STATUS_STOPPED if stopped else psutil.STATUS_RUNNING
+    child.status.return_value = status
+    parent = MagicMock()
+    parent.children.return_value = [child]
+    monkeypatch.setattr(app, "QSystemTrayIcon", MagicMock(return_value=tray))
+    monkeypatch.setattr(app, "QTimer", MagicMock(return_value=timer))
+    monkeypatch.setattr(app, "get_portproton_tray_icon", MagicMock())
+    monkeypatch.setattr(app.subprocess, "Popen", MagicMock(return_value=launcher))
+    monkeypatch.setattr(app.psutil, "Process", MagicMock(return_value=parent))
+    monkeypatch.setattr(time_utils, "save_last_launch", MagicMock())
+    monkeypatch.setattr(time_utils, "save_playtime", MagicMock())
+
+    app.run_silent_tray(qt_app, ["start.sh"], str(tmp_path / "game.exe"))
+    menu = tray.setContextMenu.call_args.args[0]
+    menu.aboutToShow.emit()
+    pause, stop = menu.actions()
+    assert pause.isEnabled()
+    assert pause.text() == app._("Resume Game" if stopped else "Pause Game")
+    assert stop.text() == app._("Stop Game")
+    pause.trigger()
+    child.send_signal.assert_called_once_with(signal.SIGCONT if stopped else signal.SIGSTOP)
+    parent.children.assert_called_with(recursive=True)
+
+    parent.children.return_value = []
+    menu.aboutToShow.emit()
+    assert not pause.isEnabled()
+    pause.trigger()
+    assert child.send_signal.call_count == 1
+
+
 @pytest.fixture
 def silent_startup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     from PySide6 import QtNetwork
@@ -106,6 +150,38 @@ def test_silent_exe_uses_existing_instance(
     startup.tray.assert_not_called()
     startup.window.assert_not_called()
     startup.qt_app.exec.assert_not_called()
+
+
+@pytest.mark.parametrize("silent", [False, True])
+def test_silent_launch_skips_startup_workers(
+    silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch, silent: bool,
+) -> None:
+    from PySide6.QtCore import QThread
+    from portprotonqt import appimage_updater
+
+    startup = silent_startup
+    window = MagicMock()
+    startup.window.side_effect = None
+    startup.window.return_value = window
+    monkeypatch.setattr(startup.app, "QTimer", MagicMock())
+    monkeypatch.setattr(QThread, "start", MagicMock())
+    update_worker = MagicMock()
+    monkeypatch.setattr(appimage_updater, "AppImageUpdateWorker", update_worker)
+    monkeypatch.setattr(startup.app.display_config, "get_auto_fullscreen_gamepad", lambda: False)
+    monkeypatch.setattr(startup.app.display_config, "get_start_minimized", lambda: False)
+    monkeypatch.setattr(startup.app.display_config, "set_fullscreen", MagicMock())
+    flags = ["--silent"] if silent else []
+    monkeypatch.setattr(sys, "argv", ["portprotonqt", *flags, str(startup.exe)])
+
+    with pytest.raises(SystemExit) as result:
+        startup.app.main()
+
+    assert result.value.code == 0
+    assert window.silent_launch_mode is silent
+    assert ("initialCommandWorker" in vars(window)) is (not silent)
+    assert update_worker.called is (not silent)
+    assert ("appimageUpdateWorker" in vars(window)) is (not silent)
+    startup.window.assert_called_once()
 
 
 @pytest.mark.parametrize("flags,target", [

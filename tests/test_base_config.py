@@ -185,6 +185,21 @@ def test_horizontal_card_orientation_uses_theme_until_overridden(tmp_path: Path)
     assert config.get_horizontal_card_orientation("vertical") == "horizontal"
 
 
+@pytest.mark.parametrize("system_locale,force_english,expected", [
+    ("ru_RU", False, "ru_RU"),
+    (None, False, "en"),
+    ("ru_RU", True, "en"),
+])
+def test_system_locale(
+    monkeypatch: pytest.MonkeyPatch, system_locale: str | None,
+    force_english: bool, expected: str,
+) -> None:
+    monkeypatch.setattr(localization.locale, "getlocale", lambda: (system_locale, "UTF-8"))
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_force_english", lambda: force_english)
+
+    assert localization.get_system_locale() == expected
+
+
 def test_translation_can_switch_to_english_without_restart(
     monkeypatch: pytest.MonkeyPatch,
 ):

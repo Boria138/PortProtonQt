@@ -2,11 +2,14 @@ import argparse
 import sys
 import os
 import subprocess
+import signal
 import threading
 import urllib.error
 import urllib.request
 from urllib.parse import quote, unquote
 from logging import Logger
+
+import psutil
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
@@ -102,7 +105,7 @@ def get_portproton_tray_icon() -> QIcon:
 
 
 def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> None:
-    """Launch a game with a minimal tray stop action."""
+    """Launch a game with minimal tray game controls."""
     logger = get_logger(__name__)
     app.setQuitOnLastWindowClosed(False)
     tray_icon = QSystemTrayIcon(get_portproton_tray_icon(), app)
@@ -132,6 +135,39 @@ def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> No
         if process.poll() is not None:
             end_silent_run()
 
+    def update_pause_action() -> list[psutil.Process]:
+        try:
+            children = psutil.Process(process.pid).children(recursive=True)
+            paused = bool(children) and all(
+                child.status() == psutil.STATUS_STOPPED for child in children
+            )
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            children = []
+            paused = False
+        pause_action.setEnabled(bool(children))
+        pause_action.setText(_("Resume Game") if paused else _("Pause Game"))
+        return children
+
+    def toggle_pause() -> None:
+        children = update_pause_action()
+        if not children:
+            return
+        try:
+            paused = all(child.status() == psutil.STATUS_STOPPED for child in children)
+            pause_signal = signal.SIGCONT if paused else signal.SIGSTOP
+            for child in children:
+                try:
+                    child.send_signal(pause_signal)
+                except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as error:
+                    logger.warning("Failed to change pause state for process %s: %s", child.pid, error)
+        except (psutil.NoSuchProcess, psutil.AccessDenied) as error:
+            logger.warning("Failed to inspect game pause state: %s", error)
+        update_pause_action()
+
+    pause_action = QAction(_("Pause Game"), tray_menu)
+    pause_action.triggered.connect(toggle_pause)
+    tray_menu.addAction(pause_action)
+    tray_menu.aboutToShow.connect(update_pause_action)
     stop_action = QAction(_("Stop Game"), tray_menu)
     stop_action.triggered.connect(stop_game)
     tray_menu.addAction(stop_action)
@@ -771,13 +807,14 @@ def main():
             return
         QMessageBox.warning(window, _("Error"), _("Failed to update AppImage."))
 
-    window.appimageUpdateWorker = AppImageUpdateWorker("check")
-    window.appimageUpdateWorker.update_available.connect(show_appimage_update_prompt)
-    window.appimageUpdateWorker.finished.connect(
-        lambda: setattr(window, "appimageUpdateWorker", None)
-    )
-    window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
-    QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
+    if not is_silent_launch:
+        window.appimageUpdateWorker = AppImageUpdateWorker("check")
+        window.appimageUpdateWorker.update_available.connect(show_appimage_update_prompt)
+        window.appimageUpdateWorker.finished.connect(
+            lambda: setattr(window, "appimageUpdateWorker", None)
+        )
+        window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
+        QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
 
     class GOGDLUpdateWorker(QThread):
         """Update gogdl without blocking the UI thread."""
@@ -864,14 +901,15 @@ def main():
             finally:
                 self.finished.emit()
 
-    if start_sh:
+    # Initial setup can stop Wine and must not race a silent game launch.
+    if start_sh and not silent_game_request:
         worker = InitialCommandWorker(start_sh)
         window.initialCommandWorker = worker
         worker.finished.connect(
             lambda: setattr(window, "initialCommandWorker", None)
         )
         worker.start()
-    else:
+    elif not start_sh:
         logger.warning("PortProton start command not available, skipping initial command")
 
     # --- Cleanup ---

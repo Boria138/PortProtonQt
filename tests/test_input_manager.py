@@ -35,6 +35,22 @@ HIDDEN_CARD_X = 20
 NEXT_CARD_X = 40
 
 
+@mark.parametrize("event_type", [QEvent.Type.Destroy, QEvent.Type.ChildRemoved, QEvent.Type.DeferredDelete])
+def test_keyboard_filter_teardown_does_not_lookup_application(
+    monkeypatch: MonkeyPatch, event_type: QEvent.Type,
+) -> None:
+    app = QApplication.instance() or QApplication([])
+    manager = InputManager.__new__(InputManager)
+    QObject.__init__(manager)
+    watched = QObject()
+    lookup = MagicMock(side_effect=AssertionError("Application lookup during teardown"))
+    monkeypatch.setattr(QApplication, "instance", lookup)
+
+    assert manager.eventFilter(watched, QEvent(event_type)) is False
+    lookup.assert_not_called()
+    assert app is not None
+
+
 @mark.parametrize("initial", [True, False])
 def test_gamepad_auto_fullscreen_shows_boot_on_hotplug(monkeypatch: MonkeyPatch, initial: bool) -> None:
     app = QApplication.instance() or QApplication([])

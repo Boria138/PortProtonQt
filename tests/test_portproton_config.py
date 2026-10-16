@@ -28,6 +28,11 @@ def test_scripts_path_uses_xdg_data_dirs(
     monkeypatch.setenv("XDG_DATA_DIRS", str(data_dir))
     monkeypatch.delenv("APPDIR", raising=False)
     monkeypatch.delenv("SHARUN_DIR", raising=False)
+    monkeypatch.delenv("APPIMAGE", raising=False)
+    is_file = Path.is_file
+    monkeypatch.setattr(
+        Path, "is_file", lambda path: path.is_relative_to(tmp_path) and is_file(path)
+    )
 
     assert get_portproton_scripts_path() == str(scripts_dir)
 
