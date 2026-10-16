@@ -807,13 +807,14 @@ def main():
             return
         QMessageBox.warning(window, _("Error"), _("Failed to update AppImage."))
 
-    window.appimageUpdateWorker = AppImageUpdateWorker("check")
-    window.appimageUpdateWorker.update_available.connect(show_appimage_update_prompt)
-    window.appimageUpdateWorker.finished.connect(
-        lambda: setattr(window, "appimageUpdateWorker", None)
-    )
-    window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
-    QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
+    if not is_silent_launch:
+        window.appimageUpdateWorker = AppImageUpdateWorker("check")
+        window.appimageUpdateWorker.update_available.connect(show_appimage_update_prompt)
+        window.appimageUpdateWorker.finished.connect(
+            lambda: setattr(window, "appimageUpdateWorker", None)
+        )
+        window.appimageUpdateWorker.finished.connect(window.appimageUpdateWorker.deleteLater)
+        QTimer.singleShot(APPIMAGE_UPDATE_START_DELAY_MS, window.appimageUpdateWorker.start)
 
     class GOGDLUpdateWorker(QThread):
         """Update gogdl without blocking the UI thread."""

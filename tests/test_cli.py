@@ -153,7 +153,7 @@ def test_silent_exe_uses_existing_instance(
 
 
 @pytest.mark.parametrize("silent", [False, True])
-def test_silent_launch_skips_initial_command(
+def test_silent_launch_skips_startup_workers(
     silent_startup: SimpleNamespace, monkeypatch: pytest.MonkeyPatch, silent: bool,
 ) -> None:
     from PySide6.QtCore import QThread
@@ -165,7 +165,8 @@ def test_silent_launch_skips_initial_command(
     startup.window.return_value = window
     monkeypatch.setattr(startup.app, "QTimer", MagicMock())
     monkeypatch.setattr(QThread, "start", MagicMock())
-    monkeypatch.setattr(appimage_updater, "AppImageUpdateWorker", MagicMock())
+    update_worker = MagicMock()
+    monkeypatch.setattr(appimage_updater, "AppImageUpdateWorker", update_worker)
     monkeypatch.setattr(startup.app.display_config, "get_auto_fullscreen_gamepad", lambda: False)
     monkeypatch.setattr(startup.app.display_config, "get_start_minimized", lambda: False)
     monkeypatch.setattr(startup.app.display_config, "set_fullscreen", MagicMock())
@@ -178,6 +179,8 @@ def test_silent_launch_skips_initial_command(
     assert result.value.code == 0
     assert window.silent_launch_mode is silent
     assert ("initialCommandWorker" in vars(window)) is (not silent)
+    assert update_worker.called is (not silent)
+    assert ("appimageUpdateWorker" in vars(window)) is (not silent)
     startup.window.assert_called_once()
 
 
