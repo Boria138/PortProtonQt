@@ -22,6 +22,12 @@ msgstr ""
 "X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
 
+msgid "Resume Game"
+msgstr "Возобновить игру"
+
+msgid "Pause Game"
+msgstr "Приостановить игру"
+
 msgid "Stop Game"
 msgstr "Остановить игру"
 
@@ -480,6 +486,13 @@ msgstr "Другая операция Epic уже выполняется"
 msgid "Wine prefix not found"
 msgstr "Префикс Wine не найден"
 
+msgid ""
+"Launch cancelled. Cyrillic characters were found in the following paths. "
+"Wine may work unreliably. Move the game or PortProton to a path without "
+"Cyrillic characters:\n"
+"\n"
+msgstr ""
+
 msgid "Game not found."
 msgstr "Игра не найдена."
 
@@ -838,9 +851,6 @@ msgstr "мин."
 msgid "sec."
 msgstr "сек."
 
-msgid "Pause Game"
-msgstr "Приостановить игру"
-
 msgid "Exit"
 msgstr "Выход"
 
@@ -852,9 +862,6 @@ msgstr "Избранное"
 
 msgid "Recent Games"
 msgstr "Недавние"
-
-msgid "Resume Game"
-msgstr "Возобновить игру"
 
 msgid "Failed to pause game"
 msgstr "Не удалось приостановить игру"

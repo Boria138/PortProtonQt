@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-11 01:04+0500\n"
+"POT-Creation-Date: 2026-10-18 20:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+msgid "Resume Game"
+msgstr ""
+
+msgid "Pause Game"
+msgstr ""
 
 msgid "Stop Game"
 msgstr ""
@@ -467,6 +473,13 @@ msgstr ""
 msgid "Wine prefix not found"
 msgstr ""
 
+msgid ""
+"Launch cancelled. Cyrillic characters were found in the following paths. "
+"Wine may work unreliably. Move the game or PortProton to a path without "
+"Cyrillic characters:\n"
+"\n"
+msgstr ""
+
 msgid "Game not found."
 msgstr ""
 
@@ -762,9 +775,6 @@ msgstr ""
 msgid "sec."
 msgstr ""
 
-msgid "Pause Game"
-msgstr ""
-
 msgid "Exit"
 msgstr ""
 
@@ -775,9 +785,6 @@ msgid "Favorites"
 msgstr ""
 
 msgid "Recent Games"
-msgstr ""
-
-msgid "Resume Game"
 msgstr ""
 
 msgid "Failed to pause game"

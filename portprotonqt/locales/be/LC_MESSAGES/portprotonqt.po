@@ -22,6 +22,12 @@ msgstr ""
 "X-Generator: Weblate 2026.5\n"
 "Generated-By: Babel 2.18.0\n"
 
+msgid "Resume Game"
+msgstr ""
+
+msgid "Pause Game"
+msgstr ""
+
 msgid "Stop Game"
 msgstr ""
 
@@ -471,6 +477,13 @@ msgstr ""
 msgid "Wine prefix not found"
 msgstr ""
 
+msgid ""
+"Launch cancelled. Cyrillic characters were found in the following paths. "
+"Wine may work unreliably. Move the game or PortProton to a path without "
+"Cyrillic characters:\n"
+"\n"
+msgstr ""
+
 msgid "Game not found."
 msgstr ""
 
@@ -766,9 +779,6 @@ msgstr ""
 msgid "sec."
 msgstr ""
 
-msgid "Pause Game"
-msgstr ""
-
 msgid "Exit"
 msgstr ""
 
@@ -779,9 +789,6 @@ msgid "Favorites"
 msgstr ""
 
 msgid "Recent Games"
-msgstr ""
-
-msgid "Resume Game"
 msgstr ""
 
 msgid "Failed to pause game"
