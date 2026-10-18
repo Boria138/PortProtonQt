@@ -590,3 +590,144 @@ def test_non_actionable_findings_do_not_create_fixes() -> None:
     )
 
     assert suggestions == []
+
+
+@mark.parametrize("case", [
+    (True, False, False), (True, True, False), (False, True, True), (False, False, True),
+])
+def test_report_ppdb_lookup_conditions(
+    tmp_path: Path, monkeypatch: MonkeyPatch, case: tuple[bool, bool, bool],
+) -> None:
+    from unittest.mock import MagicMock
+    from portprotonqt.dialogs import compatibility_report as dialog_module
+
+    automatic, existing, lookup = case
+    executable = tmp_path / "game.exe"
+    executable.touch()
+    if existing:
+        executable.with_suffix(".exe.ppdb").touch()
+    monkeypatch.setattr(dialog_module.ui_config, "get_auto_download_ppdb", lambda: automatic)
+    network = MagicMock()
+    monkeypatch.setattr(dialog_module, "QNetworkAccessManager", network)
+    monkeypatch.setattr(dialog_module, "QNetworkDiskCache", MagicMock())
+    monkeypatch.setattr(dialog_module.proxy_config, "get_proxy", lambda: {})
+    dialog = MagicMock()
+
+    dialog_module.CompatibilityReportDialog.check_ppdb(dialog, str(executable))
+
+    assert network.called is lookup
+    if lookup:
+        assert network.return_value.get.call_args.args[0].url().toString().endswith("/game.exe")
+
+
+@mark.parametrize("metadata,visible", [
+    (b'{"ppdb_url":"https://linux-gaming.ru/ppdb/download"}', True),
+    (b'{"ppdb_url":""}', False), (b'{}', False), (b'[]', False),
+    (b'invalid', False), (b'{"ppdb_url":"file:///tmp/settings"}', False),
+])
+def test_report_ppdb_button_requires_download_url(metadata: bytes, visible: bool) -> None:
+    from unittest.mock import MagicMock
+    from PySide6.QtCore import QByteArray
+    from PySide6.QtNetwork import QNetworkReply
+    from portprotonqt.dialogs.compatibility_report import CompatibilityReportDialog
+
+    dialog = MagicMock()
+    reply = MagicMock()
+    reply.error.return_value = QNetworkReply.NetworkError.NoError
+    reply.readAll.return_value = QByteArray(metadata)
+
+    CompatibilityReportDialog._ppdb_lookup_finished(dialog, reply)
+
+    assert dialog.ppdb_button.show.called is visible
+    reply.deleteLater.assert_called_once()
+
+
+@mark.parametrize("existing,failed", [
+    (False, False), (True, False), (False, True), (True, True),
+])
+def test_report_ppdb_download_replaces_existing_file_only_on_success(
+    tmp_path: Path, existing: bool, failed: bool,
+) -> None:
+    from unittest.mock import MagicMock
+    from PySide6.QtCore import QByteArray
+    from PySide6.QtNetwork import QNetworkReply
+    from portprotonqt.dialogs.compatibility_report import CompatibilityReportDialog
+
+    path = tmp_path / "game.exe.ppdb"
+    if existing:
+        path.write_bytes(b"user settings")
+    dialog = MagicMock(ppdb_path=str(path))
+    reply = MagicMock()
+    reply.error.return_value = (QNetworkReply.NetworkError.ConnectionRefusedError
+                                if failed else QNetworkReply.NetworkError.NoError)
+    reply.readAll.return_value = QByteArray(b"downloaded settings")
+
+    CompatibilityReportDialog._ppdb_download_finished(dialog, reply)
+
+    if failed:
+        if existing:
+            assert path.read_bytes() == b"user settings"
+        else:
+            assert not path.exists()
+        dialog.ppdb_button.setEnabled.assert_called_with(True)
+    else:
+        assert path.read_bytes() == b"downloaded settings"
+        dialog.ppdb_button.setEnabled.assert_called_with(False)
+
+
+def test_report_close_releases_pending_ppdb_network(
+    tmp_path: Path, monkeypatch: MonkeyPatch,
+) -> None:
+    from unittest.mock import MagicMock
+    from PySide6.QtCore import QCoreApplication, QEvent
+    from PySide6.QtWidgets import QApplication
+    from shiboken6 import isValid
+    from portprotonqt.dialogs import compatibility_report as dialog_module
+
+    app = QApplication.instance() or QApplication([])
+    theme = SimpleNamespace(
+        COMPATIBILITY_REPORT_DIALOG={
+            "minimum_width": 400, "minimum_height": 300, "margin": 10, "spacing": 10,
+        },
+        MAIN_WINDOW_STYLE="", COMPATIBILITY_REPORT_DIALOG_STYLE="", SCROLL_STYLE="",
+        ACTION_BUTTON_STYLE="", ACTION_BUTTON_ACTIVE_STYLE="",
+    )
+    executable = tmp_path / "game.exe"
+    executable.touch()
+    monkeypatch.setattr(dialog_module, "CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(dialog_module.ui_config, "get_auto_download_ppdb", lambda: False)
+    monkeypatch.setattr(dialog_module.proxy_config, "get_proxy", lambda: {})
+    get = MagicMock()
+    monkeypatch.setattr(dialog_module.QNetworkAccessManager, "get", get)
+    dialog = dialog_module.CompatibilityReportDialog(None, theme, "report")
+    dialog.check_ppdb(str(executable))
+    manager = dialog.ppdb_network
+    assert manager.parent() is dialog
+    assert dialog.ppdb_button.isHidden()
+
+    dialog.reject()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    assert not isValid(manager)
+    assert app is not None
+
+
+def test_report_ppdb_redownload_bypasses_cache(tmp_path: Path) -> None:
+    from unittest.mock import MagicMock
+    from PySide6.QtCore import QUrl
+    from PySide6.QtNetwork import QNetworkRequest
+    from portprotonqt.dialogs.compatibility_report import CompatibilityReportDialog
+
+    path = tmp_path / "game.exe.ppdb"
+    path.write_bytes(b"old settings")
+    dialog = MagicMock(ppdb_path=str(path), ppdb_url=QUrl("https://linux-gaming.ru/ppdb"))
+
+    CompatibilityReportDialog._download_ppdb(dialog)
+
+    request = dialog.ppdb_network.get.call_args.args[0]
+    assert request.url() == dialog.ppdb_url
+    assert request.attribute(QNetworkRequest.Attribute.CacheLoadControlAttribute) == (
+        QNetworkRequest.CacheLoadControl.AlwaysNetwork
+    )
+    dialog.ppdb_button.setEnabled.assert_called_with(False)
+    assert path.read_bytes() == b"old settings"

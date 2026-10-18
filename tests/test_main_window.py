@@ -1840,7 +1840,7 @@ def test_dxvk_incompatibility_reports_after_manual_stop(
     reports = []
     launch = SimpleNamespace(executable="/games/game.exe", duration=60.0)
     window.portproton_location = "/portproton"
-    window.compatibility_report_ready = SimpleNamespace(emit=reports.append)
+    window.compatibility_report_ready = SimpleNamespace(emit=lambda *args: reports.append(args))
     monkeypatch.setattr(
         "portprotonqt.main_window.has_dxvk_vulkan_incompatibility",
         lambda _path: True,
@@ -1852,7 +1852,7 @@ def test_dxvk_incompatibility_reports_after_manual_stop(
 
     window._build_compatibility_report(launch, stopped_by_user=True)
 
-    assert reports == ["forced report"]
+    assert reports == [("forced report", launch.executable)]
 
 def test_disabled_crash_reports_skip_launch_analysis(
     monkeypatch: MonkeyPatch,
@@ -1921,7 +1921,7 @@ def test_nonzero_wine_exit_reports_after_long_game(monkeypatch: MonkeyPatch) -> 
     window: Any = MainWindow.__new__(MainWindow)
     window.portproton_location = "/portproton"
     reports = []
-    window.compatibility_report_ready = SimpleNamespace(emit=reports.append)
+    window.compatibility_report_ready = SimpleNamespace(emit=lambda *args: reports.append(args))
     launch = main_window_module.CompatibilityLaunch("/games/Game.exe", 5, 120.0)
     monkeypatch.setattr(main_window_module, "has_dxvk_vulkan_incompatibility", lambda _path: False)
     monkeypatch.setattr(main_window_module.os.path, "isfile", lambda _path: True)
@@ -1931,7 +1931,7 @@ def test_nonzero_wine_exit_reports_after_long_game(monkeypatch: MonkeyPatch) -> 
     window._build_compatibility_report(launch, stopped_by_user=False)
     window._build_compatibility_report(launch, stopped_by_user=True)
 
-    assert reports == ["crash report"]
+    assert reports == [("crash report", launch.executable)]
 
 def test_update_prefix_log_does_not_mark_wine_launch_start() -> None:
     window: Any = MainWindow.__new__(MainWindow)
@@ -1949,14 +1949,17 @@ def test_show_compatibility_report_uses_report_dialog(monkeypatch: MonkeyPatch) 
         def __init__(self, parent: object, theme: object, report: str) -> None:
             calls.append((parent, theme, report))
 
+        def check_ppdb(self, executable: str) -> None:
+            calls.append(executable)
+
         def exec(self) -> None:
             calls.append("exec")
 
     monkeypatch.setattr("portprotonqt.main_window.CompatibilityReportDialog", ReportDialog)
 
-    window._show_compatibility_report("report text")
+    window._show_compatibility_report("report text", "/games/Game.exe")
 
-    assert calls == [(window, window.theme, "report text"), "exec"]
+    assert calls == [(window, window.theme, "report text"), "/games/Game.exe", "exec"]
 
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)

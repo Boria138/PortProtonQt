@@ -116,7 +116,7 @@ class MainWindow(
     QMainWindow,
 ):
     games_loaded = Signal(list)
-    compatibility_report_ready = Signal(str)
+    compatibility_report_ready = Signal(str, str)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -2494,11 +2494,12 @@ class MainWindow(
         except (OSError, ValueError, TypeError) as error:
             logger.error("Compatibility analysis failed for %s: %s", launch.executable, error)
             return
-        self.compatibility_report_ready.emit(report)
+        self.compatibility_report_ready.emit(report, launch.executable)
 
-    def _show_compatibility_report(self, report: str) -> None:
+    def _show_compatibility_report(self, report: str, executable: str) -> None:
         logger.info("Compatibility report dialog opened")
         dialog = CompatibilityReportDialog(self, self.theme, report)
+        dialog.check_ppdb(executable)
         dialog.exec()
 
     def _terminate_game_processes(self) -> None:
