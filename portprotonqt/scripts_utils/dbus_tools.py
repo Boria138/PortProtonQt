@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import contextlib
+import os
 import sys
 import time
 from collections.abc import Awaitable
@@ -168,17 +169,20 @@ async def request_deepin_wm_switch() -> bool:
 
 
 async def request_idle_inhibit(application: str, reason: str) -> tuple[MessageBus, str, Any]:
-    """Request idle inhibit through screensaver or portal D-Bus API."""
-    bus = await dbus_call(MessageBus(bus_type=BusType.SESSION).connect())
+    """Request idle inhibit through screensaver, portal or logind D-Bus API."""
+    bus = None
     try:
+        bus = await dbus_call(MessageBus(bus_type=BusType.SESSION).connect())
         try:
             kind, payload = await _request_screensaver_inhibit(bus, application, reason)
         except Exception as error:
             logger.warning("Screensaver inhibit failed: %s", error)
             kind, payload = await _request_portal_inhibit(bus, reason)
-    except Exception:
-        bus.disconnect()
-        raise
+    except Exception as error:
+        logger.warning("Session idle inhibit failed: %s", error)
+        if bus is not None:
+            bus.disconnect()
+        return await _request_logind_inhibit(application, reason)
 
     return bus, kind, payload
 
@@ -211,8 +215,33 @@ async def _request_portal_inhibit(bus: MessageBus, reason: str) -> tuple[str, An
     return "portal", body[0]
 
 
+async def _request_logind_inhibit(application: str, reason: str) -> tuple[MessageBus, str, Any]:
+    bus = await dbus_call(MessageBus(bus_type=BusType.SYSTEM, negotiate_unix_fd=True).connect())
+    try:
+        reply = await dbus_call(bus.call(Message(
+            destination="org.freedesktop.login1",
+            path="/org/freedesktop/login1",
+            interface="org.freedesktop.login1.Manager",
+            member="Inhibit",
+            signature="ssss",
+            body=["sleep:idle", application, reason, "block"],
+        )))
+        if reply.message_type.name == "ERROR":
+            raise DBusError(reply.error_name, reply.body[0])
+        return bus, "logind", reply.unix_fds[reply.body[0]]
+    except Exception:
+        bus.disconnect()
+        raise
+
+
 async def release_idle_inhibit(bus: MessageBus, kind: str, payload: Any) -> None:
     """Release idle inhibit requested through request_idle_inhibit."""
+    if kind == "logind":
+        try:
+            os.close(payload)
+        finally:
+            bus.disconnect()
+        return
     with contextlib.suppress(DBusError, asyncio.TimeoutError):
         if kind == "screensaver":
             iface, cookie = payload

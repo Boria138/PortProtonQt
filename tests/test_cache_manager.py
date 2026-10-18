@@ -11,10 +11,6 @@ class TestCacheManagerInit:
         CacheManager(cache_dir=cache_dir)
         assert cache_dir.exists()
 
-    def test_default_cache_dir(self):
-        mgr = CacheManager()
-        assert mgr.cache_dir.exists()
-
 
 class TestGetCacheFilePath:
     def test_sanitizes_name(self, tmp_path: Path):

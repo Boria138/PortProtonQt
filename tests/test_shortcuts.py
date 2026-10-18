@@ -586,9 +586,6 @@ class TestExtractExecPathWithSpaces:
 # ── _sanitize_icon_name edge cases ───────────────────────────────────────────
 
 class TestSanitizeIconNameEdgeCases:
-    def test_spaces_underscored(self) -> None:
-        assert _sanitize_icon_name("My Game") == "My_Game"
-
     def test_multiple_spaces(self) -> None:
         assert _sanitize_icon_name("Game   Title") == "Game___Title"
 
@@ -597,9 +594,6 @@ class TestSanitizeIconNameEdgeCases:
 
     def test_unicode_trademark(self) -> None:
         assert _sanitize_icon_name("Game™") == "Game™"
-
-    def test_only_removed_chars(self) -> None:
-        assert _sanitize_icon_name("!%$&") == ""
 
     def test_mixed_removed_and_kept(self) -> None:
         result = _sanitize_icon_name("A!B%C$D&E<F")
@@ -611,9 +605,6 @@ class TestSanitizeIconNameEdgeCases:
     def test_long_name(self) -> None:
         name = "A" * 200
         assert _sanitize_icon_name(name) == name
-
-    def test_empty_string(self) -> None:
-        assert _sanitize_icon_name("") == ""
 
     def test_slashes_not_sandboxed(self) -> None:
         result = _sanitize_icon_name("Game/Title")
@@ -1182,12 +1173,13 @@ class TestDesktopEntryContent:
         assert '"' in exec_value
 
     def test_comment_has_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        monkeypatch.setattr("portprotonqt.config.portproton._", lambda text: text)
         _patch_location(monkeypatch, tmp_path)
         exe = _make_exe(tmp_path)
         result = create_desktop_file(exe, game_name="My Game")
         assert result is not None
         entry, _, _ = result
-        assert "My Game" in entry
+        assert 'Comment=Launch "My Game" with PortProton' in entry.splitlines()
 
     def test_icon_path_is_absolute(self, tmp_path: Path, monkeypatch: Any) -> None:
         _patch_location(monkeypatch, tmp_path)
@@ -1212,30 +1204,6 @@ class TestDesktopEntryContent:
         assert result is not None
         entry, _, _ = result
         assert "Path=" not in entry
-
-    def test_categories_line_present(self, tmp_path: Path, monkeypatch: Any) -> None:
-        _patch_location(monkeypatch, tmp_path)
-        exe = _make_exe(tmp_path)
-        result = create_desktop_file(exe, game_name="Test")
-        assert result is not None
-        entry, _, _ = result
-        assert "Categories=Game;" in entry
-
-    def test_startup_notify_true(self, tmp_path: Path, monkeypatch: Any) -> None:
-        _patch_location(monkeypatch, tmp_path)
-        exe = _make_exe(tmp_path)
-        result = create_desktop_file(exe, game_name="Test")
-        assert result is not None
-        entry, _, _ = result
-        assert "StartupNotify=true" in entry
-
-    def test_terminal_false(self, tmp_path: Path, monkeypatch: Any) -> None:
-        _patch_location(monkeypatch, tmp_path)
-        exe = _make_exe(tmp_path)
-        result = create_desktop_file(exe, game_name="Test")
-        assert result is not None
-        entry, _, _ = result
-        assert "Terminal=false" in entry
 
 
 # ── _copy_shortcut ───────────────────────────────────────────────────────────

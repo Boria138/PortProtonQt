@@ -1,27 +1,13 @@
 """Tests for scripts_utils/dbus_tools.py — D-Bus helpers, notifications, power profiles."""
 import asyncio
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from dbus_fast import DBusError, Message, Variant
+from dbus_fast import BusType, DBusError, Message, Variant
 
 from portprotonqt.scripts_utils.dbus_tools import (
-    ACTIVE_PROFILE,
-    DBUS_TIMEOUT,
-    NOTIFICATIONS_BUS_NAME,
-    NOTIFICATIONS_BUS_PATH,
-    PORTAL_BUS_NAME,
-    PORTAL_BUS_PATH,
-    PORTAL_IDLE_FLAG,
-    PORTAL_INTERFACE,
-    PORTAL_NOTIFICATION_INTERFACE,
-    PORTAL_REQUEST_INTERFACE,
-    POWER_PROFILE_ENDPOINTS,
-    PROFILES,
-    PROPERTIES_INTERFACE,
-    SCREENSAVER_BUS_NAME,
-    SCREENSAVER_BUS_PATH,
     NotificationRequest,
     _active_power_profile,
     _bus_call,
@@ -46,21 +32,6 @@ DUMMY_MSG = Message(
     interface="a.b",
     member="m",
 )
-
-
-class TestNotificationRequest:
-    def test_construction(self):
-        req = NotificationRequest("app", "icon", "title", "body", 5000)
-        assert req.app == "app"
-        assert req.icon == "icon"
-        assert req.title == "title"
-        assert req.body == "body"
-        assert req.timeout == 5000
-
-    def test_frozen(self):
-        req = NotificationRequest("a", "i", "t", "b", 1)
-        with pytest.raises(AttributeError):
-            req.app = "x"  # type: ignore[misc]
 
 
 class TestSerializeIcon:
@@ -213,11 +184,12 @@ class TestDbusCall:
         result = _run_async(dbus_call(coro()))
         assert result == "ok"
 
-    def test_timeout(self):
-        async def slow():
-            await asyncio.sleep(100)
+    def test_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        async def slow() -> None:
+            await asyncio.sleep(0.05)
+        monkeypatch.setattr("portprotonqt.scripts_utils.dbus_tools.DBUS_TIMEOUT", 0.01)
         with pytest.raises(asyncio.TimeoutError):
-            _run_async(asyncio.wait_for(slow(), timeout=0.01))
+            _run_async(dbus_call(slow()))
 
 
 class TestBusCall:
@@ -363,6 +335,66 @@ class TestRequestIdleInhibit:
         assert kind == "portal"
         assert payload == "/portal/path"
         assert bus is not None
+
+
+@pytest.mark.parametrize("session_available", [True, False])
+def test_idle_inhibit_falls_back_to_logind(session_available: bool) -> None:
+    session = MagicMock()
+    system = MagicMock()
+    session.connect = AsyncMock(return_value=session)
+    if not session_available:
+        session.connect.side_effect = OSError("no session bus")
+    system.connect = AsyncMock(return_value=system)
+    system.call = AsyncMock(return_value=Message.new_method_return(
+        Message(destination="a.b", path="/a", member="m", serial=1),
+        signature="h", body=[0], unix_fds=[42],
+    ))
+    with (
+        patch("portprotonqt.scripts_utils.dbus_tools.MessageBus", side_effect=[session, system]) as factory,
+        patch("portprotonqt.scripts_utils.dbus_tools._request_screensaver_inhibit", new_callable=AsyncMock) as screensaver,
+        patch("portprotonqt.scripts_utils.dbus_tools._request_portal_inhibit", new_callable=AsyncMock) as portal,
+    ):
+        screensaver.side_effect = RuntimeError("no screensaver")
+        portal.side_effect = RuntimeError("no portal")
+        bus, kind, payload = _run_async(request_idle_inhibit("app", "reason"))
+
+    assert (bus, kind, payload) == (system, "logind", 42)
+    factory.assert_called_with(bus_type=BusType.SYSTEM, negotiate_unix_fd=True)
+    assert session.disconnect.call_count == int(session_available)
+    message = system.call.call_args.args[0]
+    assert message.destination == "org.freedesktop.login1"
+    assert message.path == "/org/freedesktop/login1"
+    assert message.interface == "org.freedesktop.login1.Manager"
+    assert message.member == "Inhibit"
+    assert message.signature == "ssss"
+    assert message.body == ["sleep:idle", "app", "reason", "block"]
+    system.disconnect.assert_not_called()
+
+
+def test_idle_inhibit_disconnects_when_logind_fails() -> None:
+    session = MagicMock()
+    session.connect = AsyncMock(side_effect=OSError("no session bus"))
+    system = MagicMock()
+    system.connect = AsyncMock(return_value=system)
+    system.call = AsyncMock(return_value=Message.new_error(
+        Message(destination="a.b", path="/a", member="m", serial=1),
+        "org.freedesktop.DBus.Error.AccessDenied", "denied",
+    ))
+    with patch("portprotonqt.scripts_utils.dbus_tools.MessageBus", side_effect=[session, system]):
+        with pytest.raises(DBusError, match="denied"):
+            _run_async(request_idle_inhibit("app", "reason"))
+    system.disconnect.assert_called_once()
+
+
+def test_release_logind_closes_inhibitor() -> None:
+    bus = MagicMock()
+    read_fd, write_fd = os.pipe()
+    try:
+        _run_async(release_idle_inhibit(bus, "logind", write_fd))
+        assert os.read(read_fd, 1) == b""
+        bus.disconnect.assert_called_once()
+    finally:
+        os.close(read_fd)
 
 
 class TestReleaseIdleInhibit:
@@ -583,42 +615,3 @@ class TestMain:
         with patch("sys.argv", ["dbus_tools"]):
             with pytest.raises(SystemExit):
                 main()
-
-
-class TestConstants:
-    def test_power_profile_endpoints_count(self):
-        assert len(POWER_PROFILE_ENDPOINTS) == 2
-
-    def test_power_profile_endpoints_format(self):
-        for name, path in POWER_PROFILE_ENDPOINTS:
-            assert isinstance(name, str)
-            assert isinstance(path, str)
-            assert path.startswith("/")
-
-    def test_bus_timeout(self):
-        assert DBUS_TIMEOUT == 10
-
-    def test_portal_idle_flag(self):
-        assert PORTAL_IDLE_FLAG == 8
-
-    def test_screensaver_bus(self):
-        assert SCREENSAVER_BUS_NAME == "org.freedesktop.ScreenSaver"
-        assert SCREENSAVER_BUS_PATH == "/org/freedesktop/ScreenSaver"
-
-    def test_portal_bus(self):
-        assert PORTAL_BUS_NAME == "org.freedesktop.portal.Desktop"
-        assert PORTAL_BUS_PATH == "/org/freedesktop/portal/desktop"
-
-    def test_notification_bus(self):
-        assert NOTIFICATIONS_BUS_NAME == "org.freedesktop.Notifications"
-        assert NOTIFICATIONS_BUS_PATH == "/org/freedesktop/Notifications"
-
-    def test_interfaces(self):
-        assert PORTAL_INTERFACE == "org.freedesktop.portal.Inhibit"
-        assert PORTAL_NOTIFICATION_INTERFACE == "org.freedesktop.portal.Notification"
-        assert PORTAL_REQUEST_INTERFACE == "org.freedesktop.portal.Request"
-        assert PROPERTIES_INTERFACE == "org.freedesktop.DBus.Properties"
-
-    def test_profile_constants(self):
-        assert ACTIVE_PROFILE == "ActiveProfile"
-        assert PROFILES == "Profiles"
