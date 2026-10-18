@@ -69,6 +69,45 @@ from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 import portprotonqt.localization as localization
 
 
+@mark.parametrize("game_path,script_path,expected", [
+    ("/games/Game.exe", "/opt/PortProton/start.sh", False),
+    ("/games/Игра/Game.exe", "/opt/PortProton/start.sh", True),
+    ("/games/Ґра.exe", "/opt/PortProton/start.sh", True),
+    ("/games/Game.exe", "/home/Игрок/PortProton/start.sh", True),
+    ("/games/日本語/Game.exe", "/opt/PortProton/start.sh", False),
+])
+def test_cyrillic_launch_warning(
+    monkeypatch: MonkeyPatch, game_path: str, script_path: str, expected: bool,
+) -> None:
+    warning = MagicMock()
+    window = SimpleNamespace(start_sh=[script_path])
+    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+
+    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), game_path)
+
+    assert warning.call_count == int(expected)
+    if expected:
+        assert (game_path if "games/" in game_path and game_path != "/games/Game.exe"
+                else script_path) in warning.call_args.args[2]
+
+
+def test_cyrillic_launch_warning_resolves_symlinks(
+    monkeypatch: MonkeyPatch, tmp_path: Path,
+) -> None:
+    target = tmp_path / "Игры"
+    target.mkdir()
+    link = tmp_path / "games"
+    link.symlink_to(target, target_is_directory=True)
+    warning = MagicMock()
+    window = SimpleNamespace(start_sh=[])
+    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+
+    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), str(link / "game.exe"))
+
+    warning.assert_called_once()
+    assert str(target / "game.exe") in warning.call_args.args[2]
+
+
 @mark.parametrize("fullscreen, enabled", [(False, True), (True, True), (True, False)])
 def test_fullscreen_cursor_hides_after_inactivity(monkeypatch: MonkeyPatch, fullscreen: bool, enabled: bool) -> None:
     app = QApplication.instance() or QApplication([])

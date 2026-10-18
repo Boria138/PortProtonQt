@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import re
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
@@ -2870,6 +2871,24 @@ class MainWindow(
         prefix_path = Path(self.portproton_location) / "data/prefixes" / prefix_name
         return self.egs_api.is_eos_overlay_enabled(prefix_path)
 
+    def _warn_cyrillic_launch_paths(self, game_path: str) -> None:
+        paths = [game_path, *(self.start_sh or [])[:1]]
+        affected_paths = []
+        for path in paths:
+            for candidate in (os.path.abspath(path), os.path.realpath(path)):
+                if candidate in affected_paths:
+                    continue
+                if any("CYRILLIC" in unicodedata.name(char, "") for char in candidate):
+                    affected_paths.append(candidate)
+        if affected_paths:
+            QMessageBox.warning(
+                self, _("Warning"),
+                _("Cyrillic characters were found in the following paths. "
+                  "Wine may work unreliably. Move the game or PortProton "
+                  "to a path without Cyrillic characters:\n\n")
+                + "\n".join(affected_paths),
+            )
+
     def _launch_egs_game(self, app_id: str, button=None) -> None:
         target = self.egs_api.get_launch_target(app_id)
         if not target:
@@ -2897,6 +2916,7 @@ class MainWindow(
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
                 "--no-wine", "--skip-version-check",
             ])
+            self._warn_cyrillic_launch_paths(target)
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -2967,6 +2987,7 @@ class MainWindow(
                 "launch", install_path, app_id, "--platform", "windows",
                 "--wine", self.start_sh[0],
             ])
+            self._warn_cyrillic_launch_paths(self.gog_api.get_launch_target(app_id) or install_path)
             process = subprocess.Popen(
                 command, env=self.gog_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -3063,6 +3084,8 @@ class MainWindow(
         else:
             if not self._check_alt_i586_dependencies_before_launch():
                 return
+            if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
+                self._warn_cyrillic_launch_paths(file_to_check)
 
             if update_button:
                 try:
