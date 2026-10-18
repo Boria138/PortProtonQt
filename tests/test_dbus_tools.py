@@ -1,10 +1,11 @@
 """Tests for scripts_utils/dbus_tools.py — D-Bus helpers, notifications, power profiles."""
 import asyncio
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from dbus_fast import DBusError, Message, Variant
+from dbus_fast import BusType, DBusError, Message, Variant
 
 from portprotonqt.scripts_utils.dbus_tools import (
     ACTIVE_PROFILE,
@@ -363,6 +364,66 @@ class TestRequestIdleInhibit:
         assert kind == "portal"
         assert payload == "/portal/path"
         assert bus is not None
+
+
+@pytest.mark.parametrize("session_available", [True, False])
+def test_idle_inhibit_falls_back_to_logind(session_available: bool) -> None:
+    session = MagicMock()
+    system = MagicMock()
+    session.connect = AsyncMock(return_value=session)
+    if not session_available:
+        session.connect.side_effect = OSError("no session bus")
+    system.connect = AsyncMock(return_value=system)
+    system.call = AsyncMock(return_value=Message.new_method_return(
+        Message(destination="a.b", path="/a", member="m", serial=1),
+        signature="h", body=[0], unix_fds=[42],
+    ))
+    with (
+        patch("portprotonqt.scripts_utils.dbus_tools.MessageBus", side_effect=[session, system]) as factory,
+        patch("portprotonqt.scripts_utils.dbus_tools._request_screensaver_inhibit", new_callable=AsyncMock) as screensaver,
+        patch("portprotonqt.scripts_utils.dbus_tools._request_portal_inhibit", new_callable=AsyncMock) as portal,
+    ):
+        screensaver.side_effect = RuntimeError("no screensaver")
+        portal.side_effect = RuntimeError("no portal")
+        bus, kind, payload = _run_async(request_idle_inhibit("app", "reason"))
+
+    assert (bus, kind, payload) == (system, "logind", 42)
+    factory.assert_called_with(bus_type=BusType.SYSTEM, negotiate_unix_fd=True)
+    assert session.disconnect.call_count == int(session_available)
+    message = system.call.call_args.args[0]
+    assert message.destination == "org.freedesktop.login1"
+    assert message.path == "/org/freedesktop/login1"
+    assert message.interface == "org.freedesktop.login1.Manager"
+    assert message.member == "Inhibit"
+    assert message.signature == "ssss"
+    assert message.body == ["sleep:idle", "app", "reason", "block"]
+    system.disconnect.assert_not_called()
+
+
+def test_idle_inhibit_disconnects_when_logind_fails() -> None:
+    session = MagicMock()
+    session.connect = AsyncMock(side_effect=OSError("no session bus"))
+    system = MagicMock()
+    system.connect = AsyncMock(return_value=system)
+    system.call = AsyncMock(return_value=Message.new_error(
+        Message(destination="a.b", path="/a", member="m", serial=1),
+        "org.freedesktop.DBus.Error.AccessDenied", "denied",
+    ))
+    with patch("portprotonqt.scripts_utils.dbus_tools.MessageBus", side_effect=[session, system]):
+        with pytest.raises(DBusError, match="denied"):
+            _run_async(request_idle_inhibit("app", "reason"))
+    system.disconnect.assert_called_once()
+
+
+def test_release_logind_closes_inhibitor() -> None:
+    bus = MagicMock()
+    read_fd, write_fd = os.pipe()
+    try:
+        _run_async(release_idle_inhibit(bus, "logind", write_fd))
+        assert os.read(read_fd, 1) == b""
+        bus.disconnect.assert_called_once()
+    finally:
+        os.close(read_fd)
 
 
 class TestReleaseIdleInhibit:

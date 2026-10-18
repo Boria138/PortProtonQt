@@ -7,6 +7,8 @@
 
 ### Added
 
+- Добавлен резервный запрет сна через logind/elogind при недоступности ScreenSaver и портала, в том числе для дистрибутивов без systemd
+
 ### Changed
 
 ### Fixed
