@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: support@linux-gaming.ru\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-09-24 06:40+0000\n"
+"PO-Revision-Date: 2026-10-17 23:27+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.9.1\n"
+"X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -1218,15 +1218,14 @@ msgstr "O download ou a extração foi cancelado."
 msgid "System WINE"
 msgstr "WINE do Sistema"
 
-#, fuzzy
 msgid "Global Game Settings"
-msgstr "Salvar Configurações"
+msgstr "Configurações globais dos jogos"
 
 msgid "Exe Settings"
 msgstr "Configurações do Exe"
 
 msgid "Edit user.conf"
-msgstr ""
+msgstr "Editar o arquivo user.conf"
 
 msgid "Search settings…"
 msgstr "Pesquisar configurações…"
@@ -1252,9 +1251,8 @@ msgstr "Editar PPDB"
 msgid "Clear PPDB"
 msgstr "Limpar PPDB"
 
-#, fuzzy
 msgid "Failed to load global game settings."
-msgstr "Falha ao carregar temas"
+msgstr "Falha ao carregar as configurações globais dos jogos."
 
 msgid "Executable path is not available."
 msgstr "O caminho do executável não está disponível."
@@ -1265,9 +1263,8 @@ msgstr "O arquivo PPDB não existe em: "
 msgid "Failed to open PPDB file:\n"
 msgstr "Falha ao abrir o arquivo PPDB:\n"
 
-#, fuzzy
 msgid "Failed to open file:\n"
-msgstr "Falha ao abrir o arquivo PPDB:\n"
+msgstr "Falha ao abrir o arquivo:\n"
 
 msgid "Information"
 msgstr "Informação"
@@ -1292,9 +1289,8 @@ msgstr "Padrão"
 msgid "disabled"
 msgstr "desativado"
 
-#, fuzzy
 msgid "Download Wine/Proton..."
-msgstr "Baixar WINE/Proton para a Steam"
+msgstr "Baixar Wine/Proton..."
 
 msgid "Enter prefix name"
 msgstr "Digite o nome do prefixo"
@@ -2135,7 +2131,7 @@ msgid "GOG account connected"
 msgstr "Conta GOG conectada"
 
 msgid "Log out"
-msgstr "Encerrar sessão"
+msgstr "Sair da sessão"
 
 msgid "Open login page"
 msgstr "Abrir página de login"
@@ -2259,16 +2255,14 @@ msgstr "Oculto"
 msgid "Badge View Type:"
 msgstr "Modo de Exibição do Selo:"
 
-#, fuzzy
 msgid "Theme"
-msgstr "Temas"
+msgstr "Tema"
 
 msgid "Grid"
-msgstr ""
+msgstr "Grade"
 
-#, fuzzy
 msgid "List"
-msgstr "Claro"
+msgstr "Lista"
 
 msgid "Vertical"
 msgstr "Vertical"
@@ -2326,15 +2320,14 @@ msgstr "Tipo de Controle:"
 msgid "Launch Application in Fullscreen"
 msgstr "Iniciar Aplicativo em Tela Cheia"
 
-#, fuzzy
 msgid "Hide Cursor in Fullscreen"
-msgstr "Forçar janelas em tela cheia"
+msgstr "Ocultar o cursor em tela cheia"
 
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "Tela Cheia Automática ao Conectar o Controle"
 
 msgid "Disable Boot Animation"
-msgstr ""
+msgstr "Desativar animação de inicialização"
 
 msgid "Minimize to tray on close"
 msgstr "Minimizar para a bandeja ao fechar"
@@ -2361,7 +2354,7 @@ msgid "Show compatibility report after game crash"
 msgstr "Mostrar relatório de compatibilidade após a falha do jogo"
 
 msgid "Disable ALT Linux i586 dependency check"
-msgstr ""
+msgstr "Desativar verificação de dependências do ALT Linux i586"
 
 msgid "Disable runtime download"
 msgstr "Desativar download de runtime"
@@ -2370,7 +2363,7 @@ msgid "Add to Steam compatibility tools"
 msgstr "Adicionar às ferramentas de compatibilidade da Steam"
 
 msgid "Disable Steam Proton scanning"
-msgstr ""
+msgstr "Desativar a busca por instalações do Steam Proton"
 
 msgid "Download WINE/Proton to Steam"
 msgstr "Baixar WINE/Proton para a Steam"
