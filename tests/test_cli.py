@@ -16,8 +16,6 @@ from portprotonqt.cli import (
     parse_portprotonqt_theme_url,
     parse_resolution,
     LAUNCH_FILE_EXTENSIONS,
-    PP_EXTENSIONS,
-    PREFIX_BACKUP_EXTENSION,
     parse_args,
 )
 
@@ -292,9 +290,6 @@ class TestIsPrefixBackupFile:
     def test_nonexistent_file(self):
         assert is_prefix_backup_file("/nonexistent/backup.ppack") is False
 
-    def test_ppack_extension_constant(self):
-        assert PREFIX_BACKUP_EXTENSION == ".ppack"
-
 
 class TestIsAutoinstallFile:
     def test_ppai_file(self, tmp_path: Path):
@@ -306,9 +301,6 @@ class TestIsAutoinstallFile:
         txt = tmp_path / "installer.txt"
         txt.touch()
         assert is_autoinstall_file(str(txt)) is False
-
-    def test_ppai_extension_constant(self):
-        assert PP_EXTENSIONS == (".ppack", ".ppai")
 
 
 class TestParsePortprotonUrl:

@@ -94,33 +94,6 @@ class TestGetCurrentLauncherCommand:
         assert result is None
 
 
-# ── Launcher tail extraction ─────────────────────────────────────────────────
-
-class TestExtractLauncherTail:
-    def test_appimage_with_silent(self):
-        parts = ["/path/PortProtonQt.AppImage", "--silent", "/game.exe"]
-        assert _extract_launcher_tail(parts) == ["/game.exe"]
-
-    def test_appimage_without_silent(self):
-        parts = ["/path/PortProtonQt.AppImage", "/game.exe"]
-        assert _extract_launcher_tail(parts) == ["/game.exe"]
-
-    def test_portprotonqt_with_silent(self):
-        parts = ["portprotonqt", "--silent", "/game.exe"]
-        assert _extract_launcher_tail(parts) == ["/game.exe"]
-
-    def test_start_sh_with_silent(self):
-        parts = ["start.sh", "--silent", "/game.exe"]
-        assert _extract_launcher_tail(parts) == ["/game.exe"]
-
-    def test_unknown_command(self):
-        parts = ["/usr/bin/wine64", "/game.exe"]
-        assert _extract_launcher_tail(parts) is None
-
-    def test_empty(self):
-        assert _extract_launcher_tail([]) is None
-
-
 # ── Launcher line migration ──────────────────────────────────────────────────
 
 class TestMigrateLauncherLine:

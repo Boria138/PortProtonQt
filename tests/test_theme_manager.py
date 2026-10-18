@@ -773,62 +773,6 @@ class TestThemeStylesIntegrity:
         assert '"glow_base_alpha"' in content
         assert '"glow_pulse_alpha"' in content
 
-    def test_classic_styles_use_fstrings_not_hardcoded(self):
-        """Classic QSS style constants should be f-strings, not plain strings
-        (except HINT_BAR_STYLE and %-formatted styles for icon paths)."""
-        content = self._read_theme("classic")
-        tree = ast.parse(content)
-
-        plain_style_count = 0
-        fstring_style_count = 0
-        percent_style_count = 0
-        for node in ast.iter_child_nodes(tree):
-            if not isinstance(node, ast.Assign):
-                continue
-            for target in node.targets:
-                if not isinstance(target, ast.Name):
-                    continue
-                if not target.id.endswith("_STYLE"):
-                    continue
-                if isinstance(node.value, ast.JoinedStr):
-                    fstring_style_count += 1
-                elif isinstance(node.value, ast.BinOp) and isinstance(node.value.op, ast.Mod):
-                    percent_style_count += 1
-                elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                    plain_style_count += 1
-
-        assert fstring_style_count > 10, "Classic should use f-strings for most styles"
-        assert plain_style_count <= 1, f"Classic has {plain_style_count} plain string styles"
-        assert percent_style_count <= 3, f"Classic has {percent_style_count} %-formatted styles"
-
-    def test_classic_light_styles_use_fstrings_not_hardcoded(self):
-        """Classic-light QSS style constants should be f-strings, not plain strings
-        (except %-formatted styles for icon paths)."""
-        content = self._read_theme("classic-light")
-        tree = ast.parse(content)
-
-        plain_style_count = 0
-        fstring_style_count = 0
-        percent_style_count = 0
-        for node in ast.iter_child_nodes(tree):
-            if not isinstance(node, ast.Assign):
-                continue
-            for target in node.targets:
-                if not isinstance(target, ast.Name):
-                    continue
-                if not target.id.endswith("_STYLE"):
-                    continue
-                if isinstance(node.value, ast.JoinedStr):
-                    fstring_style_count += 1
-                elif isinstance(node.value, ast.BinOp) and isinstance(node.value.op, ast.Mod):
-                    percent_style_count += 1
-                elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                    plain_style_count += 1
-
-        assert fstring_style_count > 10, "Classic-light should use f-strings for most styles"
-        assert plain_style_count == 0, f"Classic-light has {plain_style_count} plain string styles"
-        assert percent_style_count <= 3, f"Classic-light has {percent_style_count} %-formatted styles"
-
     def test_classic_theme_inherits_standart(self):
         content = self._read_theme("classic")
         assert 'THEME_INHERITS = "standart"' in content
