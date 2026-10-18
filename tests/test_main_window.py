@@ -83,7 +83,7 @@ def test_cyrillic_launch_warning(
     window = SimpleNamespace(start_sh=[script_path])
     monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
 
-    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), game_path)
+    assert MainWindow._warn_cyrillic_launch_paths(cast(Any, window), game_path) is expected
 
     assert warning.call_count == int(expected)
     if expected:
@@ -106,6 +106,47 @@ def test_cyrillic_launch_warning_resolves_symlinks(
 
     warning.assert_called_once()
     assert str(target / "game.exe") in warning.call_args.args[2]
+
+
+@mark.parametrize("source", ["local", "gog", "egs"])
+def test_cyrillic_paths_cancel_launch(
+    monkeypatch: MonkeyPatch, tmp_path: Path, source: str,
+) -> None:
+    target = tmp_path / "Игры" / "Breach.exe"
+    target.parent.mkdir()
+    target.touch()
+    window: Any = MainWindow.__new__(MainWindow)
+    window.start_sh = ["/opt/PortProton/start.sh"]
+    window.game_processes = []
+    window.target_exe = None
+    window.current_play_button = None
+    window._check_alt_i586_dependencies_before_launch = lambda: True
+    window._finish_silent_launch = MagicMock()
+    window._start_gog_support_setup = MagicMock()
+    api = SimpleNamespace(
+        ensure_launch_parameters=lambda _app_id: None,
+        get_installed_path=lambda _app_id: target.parent,
+        get_launch_target=lambda _app_id: str(target),
+        needs_support_setup=lambda _app_id: True,
+        build_command=lambda arguments: arguments,
+    )
+    window.gog_api = api
+    window.egs_api = api
+    warning = MagicMock()
+    popen = MagicMock()
+    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+    monkeypatch.setattr(main_window_module.subprocess, "Popen", popen)
+
+    if source == "local":
+        window.toggleGame(shlex.quote(str(target)))
+    else:
+        getattr(window, f"_launch_{source}_game")("123")
+
+    warning.assert_called_once()
+    popen.assert_not_called()
+    window._start_gog_support_setup.assert_not_called()
+    window._finish_silent_launch.assert_called_once_with()
+    assert window.game_processes == []
 
 
 @mark.parametrize("fullscreen, enabled", [(False, True), (True, True), (True, False)])

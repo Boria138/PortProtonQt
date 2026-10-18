@@ -2871,7 +2871,7 @@ class MainWindow(
         prefix_path = Path(self.portproton_location) / "data/prefixes" / prefix_name
         return self.egs_api.is_eos_overlay_enabled(prefix_path)
 
-    def _warn_cyrillic_launch_paths(self, game_path: str) -> None:
+    def _warn_cyrillic_launch_paths(self, game_path: str) -> bool:
         paths = [game_path, *(self.start_sh or [])[:1]]
         affected_paths = []
         for path in paths:
@@ -2883,11 +2883,12 @@ class MainWindow(
         if affected_paths:
             QMessageBox.warning(
                 self, _("Warning"),
-                _("Cyrillic characters were found in the following paths. "
+                _("Launch cancelled. Cyrillic characters were found in the following paths. "
                   "Wine may work unreliably. Move the game or PortProton "
                   "to a path without Cyrillic characters:\n\n")
                 + "\n".join(affected_paths),
             )
+        return bool(affected_paths)
 
     def _launch_egs_game(self, app_id: str, button=None) -> None:
         target = self.egs_api.get_launch_target(app_id)
@@ -2916,7 +2917,9 @@ class MainWindow(
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
                 "--no-wine", "--skip-version-check",
             ])
-            self._warn_cyrillic_launch_paths(target)
+            if self._warn_cyrillic_launch_paths(target):
+                self._finish_silent_launch()
+                return
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -2978,6 +2981,9 @@ class MainWindow(
         if not self._check_alt_i586_dependencies_before_launch():
             self._finish_silent_launch()
             return
+        if self._warn_cyrillic_launch_paths(self.gog_api.get_launch_target(app_id) or install_path):
+            self._finish_silent_launch()
+            return
         needs_setup = getattr(self.gog_api, "needs_support_setup", lambda _app_id: False)
         if needs_setup(app_id):
             self._start_gog_support_setup(app_id, button)
@@ -2987,7 +2993,6 @@ class MainWindow(
                 "launch", install_path, app_id, "--platform", "windows",
                 "--wine", self.start_sh[0],
             ])
-            self._warn_cyrillic_launch_paths(self.gog_api.get_launch_target(app_id) or install_path)
             process = subprocess.Popen(
                 command, env=self.gog_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -3085,7 +3090,9 @@ class MainWindow(
             if not self._check_alt_i586_dependencies_before_launch():
                 return
             if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
-                self._warn_cyrillic_launch_paths(file_to_check)
+                if self._warn_cyrillic_launch_paths(file_to_check):
+                    self._finish_silent_launch()
+                    return
 
             if update_button:
                 try:
