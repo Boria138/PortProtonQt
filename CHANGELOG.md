@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Настройки exe и `user.conf` применяются автоматически при изменении
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Русский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/ru/`
 

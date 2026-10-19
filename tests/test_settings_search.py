@@ -676,3 +676,119 @@ def test_settings_table_stops_repainting_when_idle(theme_name: str) -> None:
         QTest.qWait(PAINT_SETTLE_MS)
         assert paint_filter.paints == paints
     table.close()
+
+
+@pytest.fixture
+def autosave_dialog(request, monkeypatch, tmp_path) -> tuple[QDialog, list[list[str]], bool]:
+    from PySide6.QtCore import QProcess
+    from portprotonqt.dialogs import settings_dialog as module
+
+    dialog = module.ExeSettingsDialog.__new__(module.ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.saving = False
+    dialog.settings_loading = False
+    dialog.close_after_save = False
+    user_conf = bool(request.param)
+    dialog.user_conf = user_conf
+    dialog.exe_path = str(tmp_path / 'game.exe')
+    dialog.save_timer = QTimer(dialog)
+    dialog.clear_ppdb_button = cast(module.AutoSizeButton, QPushButton(dialog))
+    dialog.original_values = {'TEST': '0'}
+    dialog.original_display_values = {}
+    dialog.current_settings = {}
+    dialog.blocked_keys = set()
+    prefix = CustomComboBox(dialog)
+    prefix.setEditable(True)
+    prefix.setCurrentText('lower prefix')
+    dialog.advanced_widgets = {} if user_conf else {'PW_PREFIX_NAME': prefix}
+    dialog.value_mapping = {}
+    dialog.game_source = ''
+    dialog.gamescope_available = False
+    dialog.settings_table = QTableWidget(1, 1, dialog)
+    from PySide6.QtWidgets import QTableWidgetItem
+    item = QTableWidgetItem('TEST')
+    item.setData(Qt.ItemDataRole.UserRole, 'TEST')
+    dialog.settings_table.setItem(0, 0, item)
+    checkbox = QCheckBox(dialog)
+    dialog.value_widgets = {(0, 1): checkbox}
+    dialog.mangohud_original_values = {}
+    dialog.vkbasalt_original_values = {}
+    dialog.gamescope_original_values = {}
+    calls: list[list[str]] = []
+    monkeypatch.setattr(dialog, '_collect_mangohud_changes', lambda: [])
+    monkeypatch.setattr(dialog, '_collect_vkbasalt_changes', lambda: [])
+    monkeypatch.setattr(dialog, '_get_process_args', lambda args: ['test-cli', *args])
+    monkeypatch.setattr(QProcess, 'start', lambda _self, program, args: calls.append(args))
+
+    return dialog, calls, user_conf
+
+
+@pytest.mark.parametrize('autosave_dialog', [False, True], indirect=True)
+def test_settings_autosave_serializes_changes(autosave_dialog) -> None:
+    from PySide6.QtCore import QProcess
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+
+    widget, calls, user_conf = autosave_dialog
+    dialog = cast(ExeSettingsDialog, widget)
+    checkbox = dialog.value_widgets[(0, 1)]
+    assert isinstance(checkbox, QCheckBox)
+    checkbox.setChecked(True)
+    dialog.apply_changes()
+    assert dialog.saving
+    assert len(calls) == 1
+    checkbox.setChecked(False)
+    dialog.apply_changes()
+    assert len(calls) == 1
+    process = dialog.user_conf_process if user_conf else dialog.save_process
+    process.finished.emit(0, QProcess.ExitStatus.NormalExit)
+    assert dialog.saving
+    assert len(calls) == 2
+    expected = ['TEST', '0'] if user_conf else ['TEST=0']
+    assert calls[-1][-len(expected):] == expected
+    process = dialog.user_conf_process if user_conf else dialog.save_process
+    process.finished.emit(0, QProcess.ExitStatus.NormalExit)
+    assert not dialog.saving
+    assert dialog.original_values['TEST'] == '0'
+    assert len(calls) == 2
+    dialog.deleteLater()
+
+
+def test_settings_autosave_ignores_search_and_initial_loading() -> None:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+
+    dialog = ExeSettingsDialog.__new__(ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.settings_loading = True
+    dialog.save_timer = QTimer(dialog)
+    dialog.search_edit = QLineEdit(dialog)
+    checkbox = QCheckBox(dialog)
+    dialog._connect_autosave()
+    checkbox.setChecked(True)
+    assert not dialog.save_timer.isActive()
+    dialog.settings_loading = False
+    dialog.search_edit.setText('search')
+    assert not dialog.save_timer.isActive()
+    checkbox.setChecked(False)
+    assert dialog.save_timer.isActive()
+    dialog.save_timer.stop()
+    dialog.deleteLater()
+
+
+def test_settings_close_waits_for_pending_save(monkeypatch) -> None:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+    from PySide6.QtGui import QCloseEvent
+
+    dialog = ExeSettingsDialog.__new__(ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.save_timer = QTimer(dialog)
+    dialog.saving = True
+    dialog.close_after_save = False
+    monkeypatch.setattr(dialog, 'apply_changes', lambda: None)
+    event = QCloseEvent()
+    dialog.closeEvent(event)
+    assert not event.isAccepted()
+    assert dialog.close_after_save
+    dialog.close_after_save = False
+    dialog.reject()
+    assert dialog.close_after_save
+    dialog.deleteLater()

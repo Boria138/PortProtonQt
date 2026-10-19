@@ -184,10 +184,7 @@ class SettingsInputMixin(InputMixin):
                     return
 
                 # 4. Global Shortcuts
-                if button_code in BUTTONS['add_game']:  # X: Apply
-                    self.settings_dialog.apply_changes()
-
-                elif button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
+                if button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
                     focused = QApplication.focusWidget()
                     focused_combo = None
                     if isinstance(focused, QTableWidget) and self.settings_dialog:

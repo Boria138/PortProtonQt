@@ -45,10 +45,9 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
     elif context == 'settings':
         dialog_actions = [
             ("confirm", _("Toggle")),
-            ("add_game", _("Save")),
             ("prev_dir", _("Search")),
             ("context_menu", _("Menu")),
-            ("back", _("Cancel")),
+            ("back", _("Close")),
             ("prev_tab", _("Prev Tab")),
             ("next_tab", _("Next Tab")),
         ]
