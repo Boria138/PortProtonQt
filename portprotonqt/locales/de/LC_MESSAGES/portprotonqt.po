@@ -21,6 +21,12 @@ msgstr ""
 "X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
 
+msgid "Resume Game"
+msgstr "Spiel fortsetzen"
+
+msgid "Pause Game"
+msgstr "Spiel anhalten"
+
 msgid "Stop Game"
 msgstr "Spiel beenden"
 
@@ -254,6 +260,9 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 msgid "Desktop"
 msgstr "Desktop"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "Fehler beim Speichern der Benutzerdaten: {error}"
@@ -366,6 +375,9 @@ msgstr "Kaputt"
 
 msgid "Denied"
 msgstr "Abgelehnt"
+
+msgid "Missing EXE"
+msgstr ""
 
 msgid "Game Title"
 msgstr "Spieltitel"
@@ -482,6 +494,16 @@ msgstr "Eine weitere Epic-Operation läuft"
 
 msgid "Wine prefix not found"
 msgstr "Wine-Prefix nicht gefunden"
+
+msgid ""
+"Cyrillic characters were found in the following paths. Wine may work "
+"unreliably. Move the game or PortProton to a path without Cyrillic "
+"characters:\n"
+"\n"
+msgstr ""
+
+msgid "Don't remind again"
+msgstr ""
 
 msgid "Game not found."
 msgstr "Spiel nicht gefunden."
@@ -837,9 +859,6 @@ msgstr "Min."
 msgid "sec."
 msgstr "Sek."
 
-msgid "Pause Game"
-msgstr "Spiel anhalten"
-
 msgid "Exit"
 msgstr "Exit"
 
@@ -851,9 +870,6 @@ msgstr "Favoriten"
 
 msgid "Recent Games"
 msgstr "Aktuelle Spiele"
-
-msgid "Resume Game"
-msgstr "Spiel fortsetzen"
 
 msgid "Failed to pause game"
 msgstr "Spiel konnte nicht pausiert werden"
@@ -1005,6 +1021,15 @@ msgstr ""
 msgid "Close"
 msgstr "Schließen"
 
+msgid "Downloading…"
+msgstr "Herunterladen…"
+
+msgid "Download process failed"
+msgstr "Download-Vorgang ist fehlgeschlagen"
+
+msgid "Downloading Complete"
+msgstr "Download abgeschlossen"
+
 msgid "Open"
 msgstr "Öffnen"
 
@@ -1025,9 +1050,6 @@ msgstr "Vorheriger Tab"
 
 msgid "Next Tab"
 msgstr "Nächster Tab"
-
-msgid "Save"
-msgstr "Speichern"
 
 msgid "Search"
 msgstr "Suchen"
@@ -1175,9 +1197,6 @@ msgstr "WINE/Proton konnte nicht entfernt werden in {path}: {error}"
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
 msgstr "{} WINE/Proton erfolgreich entfernt."
-
-msgid "Downloading Complete"
-msgstr "Download abgeschlossen"
 
 msgid "All selected WINE/Proton have been downloaded!"
 msgstr "Alle ausgewählten WINE/Proton-Versionen wurden heruntergeladen!"
@@ -2182,6 +2201,9 @@ msgstr "Installationsordner auswählen"
 msgid "Another download is running"
 msgstr "Ein weiterer Download läuft"
 
+msgid "All"
+msgstr "Alle"
+
 msgid "Another GOG operation is already running"
 msgstr "Eine andere GOG-Aktion läuft bereits"
 
@@ -2215,9 +2237,6 @@ msgstr "Fehlgeschlagen"
 msgid "Repaired"
 msgstr "Repariert"
 
-msgid "Download process failed"
-msgstr "Download-Vorgang ist fehlgeschlagen"
-
 msgid "Quick Launch"
 msgstr "Schnellstart"
 
@@ -2238,9 +2257,6 @@ msgstr "Alphabetisch"
 
 msgid "Sort Method:"
 msgstr "Sortiermethode:"
-
-msgid "All"
-msgstr "Alle"
 
 msgid "Display Filter:"
 msgstr "Anzeigefilter:"
@@ -2354,6 +2370,9 @@ msgstr "Benutzeroberflächen-Sounds aktivieren"
 
 msgid "Show compatibility report after game crash"
 msgstr "Kompatibilitätsbericht nach Spielabsturz anzeigen"
+
+msgid "Disable Cyrillic path warning"
+msgstr ""
 
 msgid "Disable ALT Linux i586 dependency check"
 msgstr "ALT Linux i586-Abhängigkeitsprüfung deaktivieren"
@@ -2578,9 +2597,6 @@ msgstr "Laden der Themes fehlgeschlagen"
 
 msgid "Failed to download theme"
 msgstr "Herunterladen des Themes fehlgeschlagen"
-
-msgid "Downloading…"
-msgstr "Herunterladen…"
 
 msgid "Downloading… {0}%"
 msgstr "Herunterladen… {0}%"

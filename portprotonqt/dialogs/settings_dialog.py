@@ -29,6 +29,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMessageBox,
+    QSlider,
+    QPushButton,
     QStackedWidget,
     QTabWidget,
     QTableWidget,
@@ -198,6 +200,12 @@ class ExeSettingsDialog(
                 _normalize_prefix_directories(prefixes_dir)
             self.prefix_options = get_available_prefix_options(self.portproton_path)
 
+        self.saving = False
+        self.settings_loading = True
+        self.close_after_save = False
+        self.save_timer = QTimer(self)
+        self.save_timer.setSingleShot(True)
+        self.save_timer.timeout.connect(self.apply_changes)
         self.current_settings = {}
         self.value_widgets = {}
         self.original_values = {}
@@ -480,25 +488,20 @@ class ExeSettingsDialog(
         self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
 
         button_layout = QHBoxLayout()
-        self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply", as_path=True))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel", as_path=True))
+        self.cancel_button = AutoSizeButton(_("Close"), icon=ThemeManager().get_icon("cancel", as_path=True))
         self.open_ppdb_button = AutoSizeButton(_("Edit PPDB"), icon=ThemeManager().get_icon("folder", as_path=True))
         self.clear_ppdb_button = AutoSizeButton(_("Clear PPDB"), icon=ThemeManager().get_icon("delete", as_path=True))
-        self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.open_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clear_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.apply_button.installEventFilter(self)
         self.cancel_button.installEventFilter(self)
         self.open_ppdb_button.installEventFilter(self)
         self.clear_ppdb_button.installEventFilter(self)
-        button_layout.addWidget(self.apply_button)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.open_ppdb_button)
         button_layout.addWidget(self.clear_ppdb_button)
         self.main_layout.addLayout(button_layout)
 
-        self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
         self.open_ppdb_button.clicked.connect(self.open_ppdb_file)
         self.clear_ppdb_button.clicked.connect(self.clear_ppdb_file)
@@ -506,6 +509,7 @@ class ExeSettingsDialog(
 
     def load_current_settings(self):
         """Load available toggles and current settings."""
+        self.settings_loading = True
         self.settings_container.setCurrentIndex(0)
         self.advanced_container.setCurrentIndex(0)
 
@@ -625,6 +629,8 @@ class ExeSettingsDialog(
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
+        self.settings_loading = False
+        self._connect_autosave()
 
     def open_ppdb_file(self):
         """Open the PPDB file for the current executable."""
@@ -711,8 +717,8 @@ class ExeSettingsDialog(
         self.user_conf_changes = [
             change for change in self.user_conf_changes if change.split('=', 1)[1]
         ]
+        self.saving = True
         self.close_after_user_conf_changes = False
-        self.apply_button.setEnabled(False)
         self._apply_next_user_conf_change()
 
     def populate_table(self):
@@ -1317,6 +1323,7 @@ class ExeSettingsDialog(
         ) if setting['key'] == 'PW_WINE_USE')
         if self.user_conf:
             options = [_('Default')] + options
+        combo.blockSignals(True)
         combo.clear()
         combo.addItems(options)
         if current_text and current_text not in options:
@@ -1324,6 +1331,7 @@ class ExeSettingsDialog(
         combo.insertSeparator(combo.count())
         combo.addItem(_('Download Wine/Proton...'), 'download_wine')
         combo.setCurrentText(current_text)
+        combo.blockSignals(False)
 
     def _select_checkbox_row(self, widget: QCheckBox) -> bool:
         for (row, column), checkbox in self.value_widgets.items():
@@ -1393,8 +1401,59 @@ class ExeSettingsDialog(
         self._filter_vkbasalt_settings(search_text)
         self._filter_gamescope_settings(search_text)
 
+    def _connect_autosave(self) -> None:
+        for widget in self.findChildren(QWidget):
+            if widget.property("ppqt_autosave") or widget is self.search_edit:
+                continue
+            if isinstance(widget, QLineEdit):
+                if isinstance(widget.parent(), QComboBox):
+                    continue
+                widget.textChanged.connect(self._schedule_save)
+            elif isinstance(widget, QComboBox):
+                widget.currentTextChanged.connect(self._schedule_save)
+            elif isinstance(widget, QCheckBox):
+                widget.toggled.connect(self._schedule_save)
+            elif isinstance(widget, QSlider):
+                widget.valueChanged.connect(self._schedule_save)
+            elif isinstance(widget, QPushButton):
+                widget.clicked.connect(self._schedule_save)
+            else:
+                continue
+            widget.setProperty("ppqt_autosave", True)
+
+    def _schedule_save(self) -> None:
+        if not self.settings_loading:
+            self.save_timer.start(0)
+
+    def _on_save_error(self, error: QProcess.ProcessError) -> None:
+        if error != QProcess.ProcessError.FailedToStart:
+            return
+        self.saving = False
+        self.close_after_save = False
+        self.clear_ppdb_button.setEnabled(True)
+        logger.error("Failed to start settings save process: %s", cast(QProcess, self.sender()).errorString())
+        QMessageBox.warning(self, _("Error"), _("Failed to apply changes. Check logs."))
+
+    def _finish_save(self) -> None:
+        for key, value in self.saved_values.items():
+            if self.current_settings.get(key) == self.saved_current_settings.get(key):
+                self.current_settings[key] = value
+        self.original_values.update(self.saved_values)
+        self.original_display_values.update(self.saved_display_values)
+        self.mangohud_original_values.update(self.saved_values)
+        self.vkbasalt_original_values.update(self.saved_values)
+        self.gamescope_original_values.update(self.saved_values)
+        self.clear_ppdb_button.setEnabled(True)
+        self.saving = False
+        self.apply_changes()
+        if self.close_after_save and not self.saving:
+            self.close()
+
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
+        if self.settings_loading or self.saving:
+            return
+        self.save_timer.stop()
         changes = []
         mangohud_enabled = False
 
@@ -1510,26 +1569,42 @@ class ExeSettingsDialog(
         if not changes:
             return
 
+        self.saving = True
+        self.clear_ppdb_button.setEnabled(False)
+        self.saved_current_settings = self.current_settings.copy()
+        self.saved_values = dict(change.split('=', 1) for change in changes)
+        self.saved_display_values = {
+            key: widget.currentText() if isinstance(widget, QComboBox) else widget.text().strip()
+            for key, widget in self.advanced_widgets.items()
+            if isinstance(widget, (QComboBox, QLineEdit))
+        }
+        for key in ('PW_PREFIX_NAME', 'PW_DEFAULT_PREFIX_NAME'):
+            if key in self.saved_display_values:
+                self.saved_display_values[key] = re.sub(
+                    r"[ \t]", "_", self.saved_display_values[key].strip()
+                ).upper()
+        if 'PW_RUN_AFTER_EXE' in self.saved_values:
+            self.saved_display_values['PW_RUN_AFTER_EXE'] = self.saved_values['PW_RUN_AFTER_EXE']
         if self.user_conf:
             self.user_conf_changes = changes
             self.close_after_user_conf_changes = True
-            self.apply_button.setEnabled(False)
             self._apply_next_user_conf_change()
             return
 
-        process = QProcess(self)
+        self.save_process = QProcess(self)
+        process = self.save_process
         process.finished.connect(self.on_edit_db_finished)
+        process.errorOccurred.connect(self._on_save_error)
         process_args = ["cli", "--edit-db", self.exe_path] + changes
         args = self._get_process_args(process_args)
         process.start(args[0], args[1:])
-        self.apply_button.setEnabled(False)
 
     def _apply_next_user_conf_change(self) -> None:
         if not self.user_conf_changes:
-            self.apply_button.setEnabled(True)
             if self.close_after_user_conf_changes:
-                self.close()
+                self._finish_save()
             else:
+                self.saving = False
                 self.load_current_settings()
             return
 
@@ -1540,33 +1615,45 @@ class ExeSettingsDialog(
             command.append(value)
         self.user_conf_process = QProcess(self)
         self.user_conf_process.finished.connect(self._on_user_conf_change_finished)
+        self.user_conf_process.errorOccurred.connect(self._on_save_error)
         args = self._get_process_args(command)
         self.user_conf_process.start(args[0], args[1:])
 
     def _on_user_conf_change_finished(self, exit_code, exit_status) -> None:
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+            self.saving = False
+            self.close_after_save = False
+            self.clear_ppdb_button.setEnabled(True)
             error_output = bytes(self.user_conf_process.readAllStandardError().data()).decode(
                 'utf-8', 'ignore'
             )
-            self.apply_button.setEnabled(True)
             QMessageBox.warning(self, _("Error"), _("Failed to apply changes. Check logs."))
             logger.error("Failed to update user.conf: %s", error_output)
             return
+        self.user_conf_process.deleteLater()
         self._apply_next_user_conf_change()
 
     def on_edit_db_finished(self, exit_code, exit_status):
         """Handle --edit-db output."""
         process = cast(QProcess, self.sender())
-        self.apply_button.setEnabled(True)
+        process.deleteLater()
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+            self.saving = False
+            self.close_after_save = False
+            self.clear_ppdb_button.setEnabled(True)
             error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
             QMessageBox.warning(self, _("Error"), _("Failed to apply changes. Check logs."))
             logger.error(f"Failed to apply changes: {error_output}")
         else:
-            self.load_current_settings()
-            self.close()
+            self._finish_save()
 
     def closeEvent(self, event):
+        if hasattr(self, 'save_timer'):
+            self.apply_changes()
+            if self.saving:
+                self.close_after_save = True
+                event.ignore()
+                return
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.removeEventFilter(self)
@@ -1683,10 +1770,10 @@ class ExeSettingsDialog(
             return False
 
         if isinstance(obj, QWidget) and self._handle_vkbasalt_key_button_event(obj, event):
+            self._schedule_save()
             return True
 
         action_buttons = (
-            getattr(self, "apply_button", None),
             getattr(self, "cancel_button", None),
             getattr(self, "open_ppdb_button", None),
             getattr(self, "clear_ppdb_button", None),
@@ -1795,6 +1882,11 @@ class ExeSettingsDialog(
         super().hideEvent(event)
 
     def reject(self):
+        if hasattr(self, 'save_timer'):
+            self.apply_changes()
+            if self.saving:
+                self.close_after_save = True
+                return
         if hasattr(self, 'keyboard') and self.keyboard.isVisible():
             self.keyboard.hide()
         self.gamepad_tooltip.setVisible(False)

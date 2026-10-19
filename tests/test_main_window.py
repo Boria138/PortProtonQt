@@ -11,7 +11,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import psutil
-from pytest import MonkeyPatch, fixture, mark
+from pytest import MonkeyPatch, fixture, mark, raises
 from PySide6.QtCore import QEvent, QEventLoop, QObject, QPoint, QPointF, Qt, QTimer
 from PySide6.QtGui import QAction, QMouseEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMenu,
     QMainWindow,
+    QMessageBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -67,6 +68,125 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 import portprotonqt.localization as localization
+
+
+@mark.parametrize("game_path,script_path,expected", [
+    ("/games/Game.exe", "/opt/PortProton/start.sh", False),
+    ("/games/Игра/Game.exe", "/opt/PortProton/start.sh", True),
+    ("/games/Ґра.exe", "/opt/PortProton/start.sh", True),
+    ("/games/Game.exe", "/home/Игрок/PortProton/start.sh", True),
+    ("/games/日本語/Game.exe", "/opt/PortProton/start.sh", False),
+])
+def test_cyrillic_launch_warning(
+    monkeypatch: MonkeyPatch, game_path: str, script_path: str, expected: bool,
+) -> None:
+    message_box = MagicMock()
+    message_box.addButton.return_value = object()
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
+    window = SimpleNamespace(start_sh=[script_path])
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
+
+    assert MainWindow._warn_cyrillic_launch_paths(cast(Any, window), game_path) is expected
+
+    assert message_box.exec.call_count == int(expected)
+    if expected:
+        assert (game_path if "games/" in game_path and game_path != "/games/Game.exe"
+                else script_path) in message_box.setText.call_args.args[0]
+
+
+def test_cyrillic_launch_warning_resolves_symlinks(
+    monkeypatch: MonkeyPatch, tmp_path: Path,
+) -> None:
+    target = tmp_path / "Игры"
+    target.mkdir()
+    link = tmp_path / "games"
+    link.symlink_to(target, target_is_directory=True)
+    message_box = MagicMock()
+    message_box.addButton.return_value = object()
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
+    window = SimpleNamespace(start_sh=[])
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
+
+    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), str(link / "game.exe"))
+
+    message_box.exec.assert_called_once()
+    assert str(target / "game.exe") in message_box.setText.call_args.args[0]
+
+
+def test_cyrillic_launch_warning_can_be_disabled(monkeypatch: MonkeyPatch) -> None:
+    set_disabled = MagicMock()
+    disable_button = object()
+    message_box = MagicMock()
+    message_box.addButton.return_value = disable_button
+    message_box.clickedButton.return_value = disable_button
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
+    window = SimpleNamespace(start_sh=[])
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module.ui_config, "set_disable_cyrillic_path_check", set_disabled)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
+
+    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), "/games/Игра.exe")
+
+    set_disabled.assert_called_once_with(True)
+
+
+@mark.parametrize("source", ["local", "gog", "egs"])
+def test_cyrillic_paths_continue_launch(
+    monkeypatch: MonkeyPatch, tmp_path: Path, source: str,
+) -> None:
+    target = tmp_path / "Игры" / "Breach.exe"
+    target.parent.mkdir()
+    target.touch()
+    window: Any = MainWindow.__new__(MainWindow)
+    window.start_sh = ["/opt/PortProton/start.sh"]
+    window.game_processes = []
+    window.target_exe = None
+    window.current_play_button = None
+    window._check_alt_i586_dependencies_before_launch = lambda: True
+    window._check_missing_prefix_before_launch = MagicMock()
+    window._finish_silent_launch = MagicMock()
+    window._start_gog_support_setup = MagicMock()
+    api = SimpleNamespace(
+        ensure_launch_parameters=lambda _app_id: None,
+        get_installed_path=lambda _app_id: target.parent,
+        get_launch_target=lambda _app_id: str(target),
+        needs_support_setup=lambda _app_id: True,
+        build_command=lambda arguments: arguments,
+        get_environment=lambda: {},
+    )
+    window.gog_api = api
+    window.egs_api = api
+    warning = MagicMock(return_value=True)
+    popen = MagicMock(side_effect=RuntimeError("launch reached"))
+    window._warn_cyrillic_launch_paths = warning
+    monkeypatch.setattr(main_window_module.subprocess, "Popen", popen)
+    monkeypatch.setattr(main_window_module.SoundManager, "play", MagicMock())
+    monkeypatch.setattr(main_window_module.QMessageBox, "warning", MagicMock())
+
+    if source == "local":
+        window.toggleGame(shlex.quote(str(target)), game_name="Breach")
+    elif source == "egs":
+        with raises(RuntimeError, match="launch reached"):
+            window._launch_egs_game("123")
+    else:
+        window._launch_gog_game("123")
+
+    warning.assert_called_once()
+    if source == "gog":
+        window._start_gog_support_setup.assert_called_once_with("123", None)
+    else:
+        popen.assert_called_once()
 
 
 @mark.parametrize("fullscreen, enabled", [(False, True), (True, True), (True, False)])
@@ -1760,7 +1880,7 @@ def test_dxvk_incompatibility_reports_after_manual_stop(
     reports = []
     launch = SimpleNamespace(executable="/games/game.exe", duration=60.0)
     window.portproton_location = "/portproton"
-    window.compatibility_report_ready = SimpleNamespace(emit=reports.append)
+    window.compatibility_report_ready = SimpleNamespace(emit=lambda *args: reports.append(args))
     monkeypatch.setattr(
         "portprotonqt.main_window.has_dxvk_vulkan_incompatibility",
         lambda _path: True,
@@ -1772,7 +1892,7 @@ def test_dxvk_incompatibility_reports_after_manual_stop(
 
     window._build_compatibility_report(launch, stopped_by_user=True)
 
-    assert reports == ["forced report"]
+    assert reports == [("forced report", launch.executable)]
 
 def test_disabled_crash_reports_skip_launch_analysis(
     monkeypatch: MonkeyPatch,
@@ -1841,7 +1961,7 @@ def test_nonzero_wine_exit_reports_after_long_game(monkeypatch: MonkeyPatch) -> 
     window: Any = MainWindow.__new__(MainWindow)
     window.portproton_location = "/portproton"
     reports = []
-    window.compatibility_report_ready = SimpleNamespace(emit=reports.append)
+    window.compatibility_report_ready = SimpleNamespace(emit=lambda *args: reports.append(args))
     launch = main_window_module.CompatibilityLaunch("/games/Game.exe", 5, 120.0)
     monkeypatch.setattr(main_window_module, "has_dxvk_vulkan_incompatibility", lambda _path: False)
     monkeypatch.setattr(main_window_module.os.path, "isfile", lambda _path: True)
@@ -1851,7 +1971,7 @@ def test_nonzero_wine_exit_reports_after_long_game(monkeypatch: MonkeyPatch) -> 
     window._build_compatibility_report(launch, stopped_by_user=False)
     window._build_compatibility_report(launch, stopped_by_user=True)
 
-    assert reports == ["crash report"]
+    assert reports == [("crash report", launch.executable)]
 
 def test_update_prefix_log_does_not_mark_wine_launch_start() -> None:
     window: Any = MainWindow.__new__(MainWindow)
@@ -1869,14 +1989,17 @@ def test_show_compatibility_report_uses_report_dialog(monkeypatch: MonkeyPatch) 
         def __init__(self, parent: object, theme: object, report: str) -> None:
             calls.append((parent, theme, report))
 
+        def check_ppdb(self, executable: str) -> None:
+            calls.append(executable)
+
         def exec(self) -> None:
             calls.append("exec")
 
     monkeypatch.setattr("portprotonqt.main_window.CompatibilityReportDialog", ReportDialog)
 
-    window._show_compatibility_report("report text")
+    window._show_compatibility_report("report text", "/games/Game.exe")
 
-    assert calls == [(window, window.theme, "report text"), "exec"]
+    assert calls == [(window, window.theme, "report text"), "/games/Game.exe", "exec"]
 
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)

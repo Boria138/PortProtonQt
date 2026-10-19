@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: support@linux-gaming.ru\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-10-09 11:06+0000\n"
-"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-10-15 19:27+0000\n"
+"Last-Translator: Andrei Stepanov <adem4ik@gmail.com>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
 "Language: ru\n"
@@ -19,8 +19,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 2026.9.1\n"
+"X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
+
+msgid "Resume Game"
+msgstr "Возобновить игру"
+
+msgid "Pause Game"
+msgstr "Приостановить игру"
 
 msgid "Stop Game"
 msgstr "Остановить игру"
@@ -252,6 +258,9 @@ msgstr "'{game_name}' удалён(а) из {location}"
 msgid "Desktop"
 msgstr "Рабочий стол"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "Не удалось сохранить пользовательские данные: {error}"
@@ -364,6 +373,9 @@ msgstr "Сломано"
 
 msgid "Denied"
 msgstr "Отказано"
+
+msgid "Missing EXE"
+msgstr ""
 
 msgid "Game Title"
 msgstr "Название игры"
@@ -479,6 +491,16 @@ msgstr "Другая операция Epic уже выполняется"
 
 msgid "Wine prefix not found"
 msgstr "Префикс Wine не найден"
+
+msgid ""
+"Cyrillic characters were found in the following paths. Wine may work "
+"unreliably. Move the game or PortProton to a path without Cyrillic "
+"characters:\n"
+"\n"
+msgstr ""
+
+msgid "Don't remind again"
+msgstr ""
 
 msgid "Game not found."
 msgstr "Игра не найдена."
@@ -747,14 +769,14 @@ msgstr ""
 "run --user --scope --slice=app.slice"
 
 msgid "CPU Cores Limit"
-msgstr "Ограничение ядер CPU"
+msgstr "Ограничение ядер ЦП"
 
 msgid ""
 "Limiting the number of CPU cores is useful for Unity games (It is "
 "recommended to set the value equal to 8)"
 msgstr ""
-"Ограничение количества ядер CPU полезно для игр на Unity (рекомендуется "
-"установить значение равным 8)"
+"Ограничение количества ядер процессора полезно для игр на Unity "
+"(рекомендуется установить значение равным 8)"
 
 msgid "OpenGL Version"
 msgstr "Версия OpenGL"
@@ -838,9 +860,6 @@ msgstr "мин."
 msgid "sec."
 msgstr "сек."
 
-msgid "Pause Game"
-msgstr "Приостановить игру"
-
 msgid "Exit"
 msgstr "Выход"
 
@@ -852,9 +871,6 @@ msgstr "Избранное"
 
 msgid "Recent Games"
 msgstr "Недавние"
-
-msgid "Resume Game"
-msgstr "Возобновить игру"
 
 msgid "Failed to pause game"
 msgstr "Не удалось приостановить игру"
@@ -1005,6 +1021,15 @@ msgstr ""
 msgid "Close"
 msgstr "Закрыть"
 
+msgid "Downloading…"
+msgstr "Скачивание…"
+
+msgid "Download process failed"
+msgstr "Ошибка процесса загрузки"
+
+msgid "Downloading Complete"
+msgstr "Скачивание завершено"
+
 msgid "Open"
 msgstr "Открыть"
 
@@ -1025,9 +1050,6 @@ msgstr "Предыдущая вкладка"
 
 msgid "Next Tab"
 msgstr "Следующая вкладка"
-
-msgid "Save"
-msgstr "Сохранить"
 
 msgid "Search"
 msgstr "Поиск"
@@ -1175,9 +1197,6 @@ msgstr "Не удалось удалить WINE/Proton в {path}: {error}"
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
 msgstr "Успешно удалено {} WINE/Proton."
-
-msgid "Downloading Complete"
-msgstr "Скачивание завершено"
 
 msgid "All selected WINE/Proton have been downloaded!"
 msgstr "Все выбранные WINE/Proton успешно загружены!"
@@ -1547,7 +1566,7 @@ msgid "Failed to save custom preset."
 msgstr "Ошибка сохранения пользовательских настроек."
 
 msgid "Overlay position"
-msgstr "Позиция MangoHud"
+msgstr "Положение MangoHud"
 
 msgid "Device battery"
 msgstr "Батарея устройства"
@@ -1562,7 +1581,7 @@ msgid "FCAT screen edge"
 msgstr "Край области FCAT"
 
 msgid "Table columns"
-msgstr "Кол-во колонок"
+msgstr "Столбцов таблицы"
 
 msgid "Network (tx/rx kb/s)"
 msgstr "Сеть (tx/rx kb/s)"
@@ -1931,9 +1950,8 @@ msgid ""
 "Select one or more FPS presets. The values are saved into FPS_LIMIT and "
 "MangoHud will also show the active FPS limit."
 msgstr ""
-"Выберите один или несколько предустановленных профилей FPS. Значения "
-"будут сохранены в FPS_LIMIT и MangoHud также отобразит активное "
-"ограничение FPS."
+"Выберите один или несколько предустановленных профилей FPS. Значения будут "
+"сохранены в FPS_LIMIT, а также MangoHud отобразит активное ограничение FPS."
 
 msgid "Additional comma-separated MangoHud options not covered by the GUI."
 msgstr "Дополнительные параметры MangoHud (через запятую), отсутствующие в GUI."
@@ -2176,6 +2194,9 @@ msgstr "Выберите папку установки"
 msgid "Another download is running"
 msgstr "Другая загрузка уже выполняется"
 
+msgid "All"
+msgstr "Все"
+
 msgid "Another GOG operation is already running"
 msgstr "Другая операция GOG уже выполняется"
 
@@ -2207,9 +2228,6 @@ msgstr "Ошибка"
 msgid "Repaired"
 msgstr "Исправлено"
 
-msgid "Download process failed"
-msgstr "Ошибка процесса загрузки"
-
 msgid "Quick Launch"
 msgstr "Быстрый запуск"
 
@@ -2230,9 +2248,6 @@ msgstr "Алфавитный"
 
 msgid "Sort Method:"
 msgstr "Метод сортировки:"
-
-msgid "All"
-msgstr "Все"
 
 msgid "Display Filter:"
 msgstr "Фильтр:"
@@ -2346,6 +2361,9 @@ msgstr "Включить звуки интерфейса"
 
 msgid "Show compatibility report after game crash"
 msgstr "Показывать отчёт о совместимости после сбоя игры"
+
+msgid "Disable Cyrillic path warning"
+msgstr ""
 
 msgid "Disable ALT Linux i586 dependency check"
 msgstr "Отключить проверку зависимостей ALT Linux i586"
@@ -2566,9 +2584,6 @@ msgstr "Не удалось загрузить темы"
 
 msgid "Failed to download theme"
 msgstr "Не удалось скачать тему"
-
-msgid "Downloading…"
-msgstr "Скачивание…"
 
 msgid "Downloading… {0}%"
 msgstr "Скачивание… {0}%"

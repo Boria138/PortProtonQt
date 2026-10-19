@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-11 01:04+0500\n"
+"POT-Creation-Date: 2026-10-19 10:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+msgid "Resume Game"
+msgstr ""
+
+msgid "Pause Game"
+msgstr ""
 
 msgid "Stop Game"
 msgstr ""
@@ -241,6 +247,9 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
+msgid "Play this game on Steam"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr ""
@@ -347,6 +356,9 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
+msgstr ""
+
+msgid "Missing EXE"
 msgstr ""
 
 msgid "Game Title"
@@ -465,6 +477,16 @@ msgid "Another Epic operation is running"
 msgstr ""
 
 msgid "Wine prefix not found"
+msgstr ""
+
+msgid ""
+"Cyrillic characters were found in the following paths. Wine may work "
+"unreliably. Move the game or PortProton to a path without Cyrillic "
+"characters:\n"
+"\n"
+msgstr ""
+
+msgid "Don't remind again"
 msgstr ""
 
 msgid "Game not found."
@@ -762,9 +784,6 @@ msgstr ""
 msgid "sec."
 msgstr ""
 
-msgid "Pause Game"
-msgstr ""
-
 msgid "Exit"
 msgstr ""
 
@@ -775,9 +794,6 @@ msgid "Favorites"
 msgstr ""
 
 msgid "Recent Games"
-msgstr ""
-
-msgid "Resume Game"
 msgstr ""
 
 msgid "Failed to pause game"
@@ -927,6 +943,15 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+msgid "Downloading…"
+msgstr ""
+
+msgid "Download process failed"
+msgstr ""
+
+msgid "Downloading Complete"
+msgstr ""
+
 msgid "Open"
 msgstr ""
 
@@ -946,9 +971,6 @@ msgid "Prev Tab"
 msgstr ""
 
 msgid "Next Tab"
-msgstr ""
-
-msgid "Save"
 msgstr ""
 
 msgid "Search"
@@ -1090,9 +1112,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
-msgstr ""
-
-msgid "Downloading Complete"
 msgstr ""
 
 msgid "All selected WINE/Proton have been downloaded!"
@@ -2080,6 +2099,9 @@ msgstr ""
 msgid "Another download is running"
 msgstr ""
 
+msgid "All"
+msgstr ""
+
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2113,9 +2135,6 @@ msgstr ""
 msgid "Repaired"
 msgstr ""
 
-msgid "Download process failed"
-msgstr ""
-
 msgid "Quick Launch"
 msgstr ""
 
@@ -2135,9 +2154,6 @@ msgid "Alphabetical"
 msgstr ""
 
 msgid "Sort Method:"
-msgstr ""
-
-msgid "All"
 msgstr ""
 
 msgid "Display Filter:"
@@ -2249,6 +2265,9 @@ msgid "Enable UI Sounds"
 msgstr ""
 
 msgid "Show compatibility report after game crash"
+msgstr ""
+
+msgid "Disable Cyrillic path warning"
 msgstr ""
 
 msgid "Disable ALT Linux i586 dependency check"
@@ -2470,9 +2489,6 @@ msgid "Failed to load themes"
 msgstr ""
 
 msgid "Failed to download theme"
-msgstr ""
-
-msgid "Downloading…"
 msgstr ""
 
 #, python-brace-format

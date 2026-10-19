@@ -1026,11 +1026,7 @@ class TerminalWidget(QPlainTextEdit):
                 max_fd = os.sysconf("SC_OPEN_MAX")
             except ValueError:
                 max_fd = 256
-            for fd in range(3, max_fd):
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
+            os.closerange(3, max_fd)
 
             if self.cwd:
                 os.chdir(self.cwd)

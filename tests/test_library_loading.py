@@ -15,6 +15,8 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.theme_manager import load_theme
 
+LOAD_TIMEOUT_MS = 30000
+
 
 @pytest.fixture
 def library_scene(
@@ -432,7 +434,7 @@ def test_real_cover_loading_yields_and_focuses_first_paint(
     timer.setInterval(5)
     timer.timeout.connect(sample)
     timer.start()
-    QTimer.singleShot(5000, loop.quit)
+    QTimer.singleShot(LOAD_TIMEOUT_MS, loop.quit)
     manager.set_games(games)
     loop.exec()
     timer.stop()

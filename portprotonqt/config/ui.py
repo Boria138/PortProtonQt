@@ -519,6 +519,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "crash_reports_enabled")
         self._save_value("crash_reports_enabled", enabled, "bool")
 
+    def get_disable_cyrillic_path_check(self) -> bool:
+        """Get Cyrillic launch path check setting."""
+        return self._get_bool("disable_cyrillic_path_check", False)
+
+    def set_disable_cyrillic_path_check(self, enabled: bool) -> None:
+        """Set Cyrillic launch path check setting."""
+        validate_bool(enabled, "disable_cyrillic_path_check")
+        self._save_value("disable_cyrillic_path_check", enabled, "bool")
+
     def get_disable_alt_i586_dependency_check(self) -> bool:
         """Get ALT i586 dependency check setting."""
         return self._get_bool("disable_alt_i586_dependency_check", False)

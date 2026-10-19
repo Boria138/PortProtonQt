@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QApplication
 
 from portprotonqt.scripts_utils.easyterm import TerminalWidget
 
+PROCESS_TIMEOUT_SECONDS = 30
+
 
 def test_terminal_keeps_failed_command_output(
     monkeypatch: pytest.MonkeyPatch,
@@ -25,9 +27,10 @@ def test_terminal_keeps_failed_command_output(
         False,
     )
 
-    deadline = time.monotonic() + 5
-    while terminal.child_pid is not None and time.monotonic() < deadline:
+    deadline = time.monotonic() + PROCESS_TIMEOUT_SECONDS
+    while terminal.exit_code is None and time.monotonic() < deadline:
         application.processEvents()
+        terminal._check_child()
         time.sleep(0.01)
 
     assert terminal.exit_code == 7

@@ -21,6 +21,14 @@ msgstr ""
 "X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.18.0\n"
 
+#, fuzzy
+msgid "Resume Game"
+msgstr "最近游戏"
+
+#, fuzzy
+msgid "Pause Game"
+msgstr "启动游戏"
+
 msgid "Stop Game"
 msgstr "停止游戏"
 
@@ -247,6 +255,9 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "保存自定义数据失败：{error}"
@@ -356,6 +367,9 @@ msgstr "损坏"
 
 msgid "Denied"
 msgstr "已拒绝"
+
+msgid "Missing EXE"
+msgstr ""
 
 #, fuzzy
 msgid "Game Title"
@@ -475,6 +489,16 @@ msgstr ""
 #, fuzzy
 msgid "Wine prefix not found"
 msgstr "未找到前缀"
+
+msgid ""
+"Cyrillic characters were found in the following paths. Wine may work "
+"unreliably. Move the game or PortProton to a path without Cyrillic "
+"characters:\n"
+"\n"
+msgstr ""
+
+msgid "Don't remind again"
+msgstr ""
 
 msgid "Game not found."
 msgstr "未找到游戏。"
@@ -802,10 +826,6 @@ msgstr "分钟。"
 msgid "sec."
 msgstr "秒。"
 
-#, fuzzy
-msgid "Pause Game"
-msgstr "启动游戏"
-
 msgid "Exit"
 msgstr "退出"
 
@@ -816,10 +836,6 @@ msgid "Favorites"
 msgstr "收藏夹"
 
 msgid "Recent Games"
-msgstr "最近游戏"
-
-#, fuzzy
-msgid "Resume Game"
 msgstr "最近游戏"
 
 #, fuzzy
@@ -971,6 +987,16 @@ msgstr ""
 msgid "Close"
 msgstr "鼠标"
 
+msgid "Downloading…"
+msgstr "正在下载…"
+
+#, fuzzy
+msgid "Download process failed"
+msgstr "下载进行中"
+
+msgid "Downloading Complete"
+msgstr "下载完成"
+
 msgid "Open"
 msgstr "打开"
 
@@ -991,9 +1017,6 @@ msgstr "上一标签页"
 
 msgid "Next Tab"
 msgstr "下一标签页"
-
-msgid "Save"
-msgstr "保存"
 
 msgid "Search"
 msgstr "搜索"
@@ -1141,9 +1164,6 @@ msgstr "移除位于 {path} 的 WINE/Proton 失败：{error}"
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
 msgstr "已成功移除 {} 个 WINE/Proton。"
-
-msgid "Downloading Complete"
-msgstr "下载完成"
 
 msgid "All selected WINE/Proton have been downloaded!"
 msgstr "所有选定的 WINE/Proton 已下载完成！"
@@ -2150,6 +2170,9 @@ msgstr ""
 msgid "Another download is running"
 msgstr "正在下载"
 
+msgid "All"
+msgstr "全部"
+
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2187,10 +2210,6 @@ msgstr "详细"
 msgid "Repaired"
 msgstr "已配对"
 
-#, fuzzy
-msgid "Download process failed"
-msgstr "下载进行中"
-
 msgid "Quick Launch"
 msgstr "快速启动"
 
@@ -2211,9 +2230,6 @@ msgstr "按字母顺序"
 
 msgid "Sort Method:"
 msgstr "游戏排序方式:"
-
-msgid "All"
-msgstr "全部"
 
 msgid "Display Filter:"
 msgstr "显示筛选："
@@ -2336,6 +2352,9 @@ msgid "Enable UI Sounds"
 msgstr "启用界面音效"
 
 msgid "Show compatibility report after game crash"
+msgstr ""
+
+msgid "Disable Cyrillic path warning"
 msgstr ""
 
 msgid "Disable ALT Linux i586 dependency check"
@@ -2559,9 +2578,6 @@ msgstr "加载主题失败"
 
 msgid "Failed to download theme"
 msgstr "下载主题失败"
-
-msgid "Downloading…"
-msgstr "正在下载…"
 
 msgid "Downloading… {0}%"
 msgstr "正在下载… {0}%"

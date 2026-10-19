@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import re
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
@@ -115,7 +116,7 @@ class MainWindow(
     QMainWindow,
 ):
     games_loaded = Signal(list)
-    compatibility_report_ready = Signal(str)
+    compatibility_report_ready = Signal(str, str)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -2493,11 +2494,12 @@ class MainWindow(
         except (OSError, ValueError, TypeError) as error:
             logger.error("Compatibility analysis failed for %s: %s", launch.executable, error)
             return
-        self.compatibility_report_ready.emit(report)
+        self.compatibility_report_ready.emit(report, launch.executable)
 
-    def _show_compatibility_report(self, report: str) -> None:
+    def _show_compatibility_report(self, report: str, executable: str) -> None:
         logger.info("Compatibility report dialog opened")
         dialog = CompatibilityReportDialog(self, self.theme, report)
+        dialog.check_ppdb(executable)
         dialog.exec()
 
     def _terminate_game_processes(self) -> None:
@@ -2870,6 +2872,37 @@ class MainWindow(
         prefix_path = Path(self.portproton_location) / "data/prefixes" / prefix_name
         return self.egs_api.is_eos_overlay_enabled(prefix_path)
 
+    def _warn_cyrillic_launch_paths(self, game_path: str) -> bool:
+        if ui_config.get_disable_cyrillic_path_check():
+            return False
+        paths = [game_path, *(self.start_sh or [])[:1]]
+        affected_paths = []
+        for path in paths:
+            for candidate in (os.path.abspath(path), os.path.realpath(path)):
+                if candidate in affected_paths:
+                    continue
+                if any("CYRILLIC" in unicodedata.name(char, "") for char in candidate):
+                    affected_paths.append(candidate)
+        if not affected_paths:
+            return False
+        message_box = QMessageBox(self)
+        message_box.setIcon(QMessageBox.Icon.Warning)
+        message_box.setWindowTitle(_("Warning"))
+        message_box.setText(
+            _("Cyrillic characters were found in the following paths. "
+              "Wine may work unreliably. Move the game or PortProton "
+              "to a path without Cyrillic characters:\n\n")
+            + "\n".join(affected_paths)
+        )
+        message_box.setStandardButtons(QMessageBox.StandardButton.Close)
+        disable_button = message_box.addButton(
+            _("Don't remind again"), QMessageBox.ButtonRole.ActionRole
+        )
+        message_box.exec()
+        if message_box.clickedButton() is disable_button:
+            ui_config.set_disable_cyrillic_path_check(True)
+        return True
+
     def _launch_egs_game(self, app_id: str, button=None) -> None:
         target = self.egs_api.get_launch_target(app_id)
         if not target:
@@ -2897,6 +2930,7 @@ class MainWindow(
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
                 "--no-wine", "--skip-version-check",
             ])
+            self._warn_cyrillic_launch_paths(target)
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -2958,6 +2992,9 @@ class MainWindow(
         if not self._check_alt_i586_dependencies_before_launch():
             self._finish_silent_launch()
             return
+        self._warn_cyrillic_launch_paths(
+            self.gog_api.get_launch_target(app_id) or install_path
+        )
         needs_setup = getattr(self.gog_api, "needs_support_setup", lambda _app_id: False)
         if needs_setup(app_id):
             self._start_gog_support_setup(app_id, button)
@@ -3063,6 +3100,8 @@ class MainWindow(
         else:
             if not self._check_alt_i586_dependencies_before_launch():
                 return
+            if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
+                self._warn_cyrillic_launch_paths(file_to_check)
 
             if update_button:
                 try:
