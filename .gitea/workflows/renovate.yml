@@ -9,6 +9,9 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     container: ghcr.io/renovatebot/renovate:latest@sha256:47421f2f3f82048e969b5195dd808d5ac2c5f69d43d192191c4a3dca390afe06
+    env:
+      UV_PYTHON_INSTALL_MIRROR: https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone/
+      UV_DEFAULT_INDEX: https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
     steps:
       - uses: https://git.linux-gaming.ru/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

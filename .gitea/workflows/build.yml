@@ -31,6 +31,11 @@ jobs:
       image: archlinux:base-devel
       options: --privileged --device /dev/fuse
     steps:
+      - name: Configure Arch mirror
+        run: |
+          echo 'Server = https://cdn.lenuma.ru/archlinux-mirror/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+          sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
+
       - name: Prepare container
         uses: https://git.linux-gaming.ru/actions/anylinux-setup-action@7278cbb7c3692fce7241d427614ef7984192f138 # v3
 
@@ -69,6 +74,11 @@ jobs:
       image: archlinux:base-devel
 
     steps:
+      - name: Configure Arch mirror
+        run: |
+          echo 'Server = https://cdn.lenuma.ru/archlinux-mirror/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+          sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
+
       - name: Prepare container
         run: |
           pacman -Syuu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm

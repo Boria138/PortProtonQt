@@ -86,7 +86,7 @@ def get_system_locale():
     if ui_config.get_force_english():
         return 'en'
     loc = locale.getlocale()[0]
-    return loc if loc else 'en'
+    return loc if loc and loc not in ('C', 'POSIX') else 'en'
 
 def get_steam_language():
     try:

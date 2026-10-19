@@ -24,35 +24,23 @@ jobs:
     container:
       image: archlinux:base-devel@sha256:061679925e5d5028f2df9395d441ce6c4b9accf0157ff3486c06b6962e014ef1
     steps:
-      - name: Rank Arch mirrors
+      - name: Configure Arch mirror
         run: |
-          if curl -fL --retry 2 --connect-timeout 10 --max-time 60 \
-            https://github.com/westandskif/rate-mirrors/releases/download/v0.33.0/rate-mirrors-v0.33.0-x86_64-unknown-linux-musl.tar.gz \
-            -o /tmp/rate-mirrors.tar.gz &&
-            echo 'e0ffb221649b7e1ce6b67ffaabe7cfd2b619c8bf8d6971e07ff9507d4e19a4b3  /tmp/rate-mirrors.tar.gz' | sha256sum -c - &&
-            tar -xzf /tmp/rate-mirrors.tar.gz -C /tmp --strip-components=1 \
-              rate-mirrors-v0.33.0-x86_64-unknown-linux-musl/rate_mirrors &&
-            timeout --kill-after=5s 120s /tmp/rate_mirrors --allow-root --protocol=https --disable-untested-fallback \
-              --save=/tmp/arch-mirrorlist arch --max-delay=21600 &&
-            grep -q '^Server = https://' /tmp/arch-mirrorlist; then
-            install -m 644 /tmp/arch-mirrorlist /etc/pacman.d/mirrorlist
-          else
-            echo '::warning::Mirror ranking failed; keeping the original Arch mirrorlist'
-          fi
+          echo 'Server = https://cdn.lenuma.ru/archlinux-mirror/$repo/os/$arch' > /etc/pacman.d/mirrorlist
           sed -i -E 's/^#?[[:space:]]*ParallelDownloads[[:space:]]*=.*/ParallelDownloads = 5/' /etc/pacman.conf
 
-      - name: Install system dependencies
+      - name: Install CI dependencies
         run: |
-          pacman -Syu --noconfirm --needed git nodejs npm mesa libarchive libpulse sdl3 pyside6 qt6-svg qt6-imageformats uv
-          pacman -Scc --noconfirm
+          pacman -Syu --noconfirm --needed git nodejs npm
 
       - uses: https://git.linux-gaming.ru/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Sync dependencies into venv
-        run: uv sync --all-extras --dev
-
-      - name: Activate .venv & run pre-commit
+      - name: Install project and check dependencies
         shell: bash
         run: |
-          source .venv/bin/activate
-          pre-commit run --show-diff-on-failure --color=always --all-files
+          source build-aux/PKGBUILD-git
+          pacman -S --noconfirm --needed "${depends[@]}" python-qrcode libpulse mesa pre-commit pyright python-pytest python-pytest-mock
+          pacman -Scc --noconfirm
+
+      - name: Run pre-commit
+        run: pre-commit run --show-diff-on-failure --color=always --all-files

@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: pyright
         name: pyright
-        entry: uv run pyright
+        entry: pyright
         language: system
         types_or: [python, pyi]
         require_serial: true
@@ -62,7 +62,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: uv run pytest tests/ -x -q --tb=line
+        entry: pytest tests/ -x -q --tb=line
         language: system
         types: [python]
         files: ^(tests/|portprotonqt/)
