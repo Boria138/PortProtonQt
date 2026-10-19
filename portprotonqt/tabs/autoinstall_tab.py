@@ -99,9 +99,6 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = QLineEdit.ActionPosition.LeadingPosition
         self.autoInstallSearchIconAction = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
-        self.autoInstallSearchIconAction.triggered.connect(
-            lambda: self.keyboard.show_for_widget(self.autoInstallSearchLineEdit)
-        )
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
         self.autoInstallSearchLineEdit.setPlaceholderText(_("Search…"))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)

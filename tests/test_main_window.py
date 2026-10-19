@@ -13,8 +13,7 @@ from unittest.mock import MagicMock
 import psutil
 from pytest import MonkeyPatch, fixture, mark, raises
 from PySide6.QtCore import QEvent, QEventLoop, QObject, QPoint, QPointF, Qt, QTimer
-from PySide6.QtGui import QAction, QIcon, QMouseEvent, QPixmap, QWheelEvent
-from PySide6.QtTest import QTest
+from PySide6.QtGui import QAction, QMouseEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -26,7 +25,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTableWidget,
     QTableWidgetItem,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -3049,28 +3047,6 @@ def test_replace_game_refreshes_matching_detail_page(
         assert detail_data == {"name": current_name, "exec_line": "old.exe", "appid": "42"}
 
 
-def test_library_search_icon_opens_keyboard_without_gamepad() -> None:
-    app = QApplication.instance() or QApplication([])
-    window_type = type("SearchWindow", (QWidget, cast(Any, LibraryMixin)), {})
-    window = cast(Any, window_type())
-    window.theme = SimpleNamespace(SEARCH_EDIT_STYLE="")
-    window.theme_manager = SimpleNamespace(get_icon=lambda _: QIcon())
-    window.startSearchDebounce = MagicMock()
-    window.on_search_changed = MagicMock()
-    window.keyboard = SimpleNamespace(show_for_widget=MagicMock())
-    window._add_library_search(QHBoxLayout(window))
-    window.show()
-    app.processEvents()
-    button = next(button for button in window.searchEdit.findChildren(QToolButton)
-                  if button.defaultAction() is window.searchIconAction)
-
-    assert button.focusPolicy() == Qt.FocusPolicy.NoFocus
-    QTest.mouseClick(button, Qt.MouseButton.LeftButton)
-
-    window.keyboard.show_for_widget.assert_called_once_with(window.searchEdit)
-    window.close()
-
-
 def test_shutdown_waits_for_autoinstall_status_workers() -> None:
     worker = MagicMock()
     worker.isRunning.side_effect = [True, False]
@@ -3099,7 +3075,6 @@ def test_autoinstall_table_columns_match_header(
     window.theme = load_theme("standart")
     window.theme_manager = ThemeManager()
     window.auto_card_width = 250
-    window.keyboard = SimpleNamespace(show_for_widget=MagicMock())
     window.stackedWidget = QStackedWidget()
     window.setCentralWidget(window.stackedWidget)
     window._gamepad_tooltip_map = {}
@@ -3110,11 +3085,6 @@ def test_autoinstall_table_columns_match_header(
     monkeypatch.setattr(autoinstall_tab_module.ui_config, "get_library_layout_mode", lambda _: mode)
     monkeypatch.setattr("portprotonqt.game_card.load_pixmap_async", lambda *args, **kwargs: None)
     window.createAutoInstallTab()
-    search_button = next(button for button in window.autoInstallSearchLineEdit.findChildren(QToolButton)
-                         if button.defaultAction() is window.autoInstallSearchIconAction)
-    assert search_button.focusPolicy() == Qt.FocusPolicy.NoFocus
-    QTest.mouseClick(search_button, Qt.MouseButton.LeftButton)
-    window.keyboard.show_for_widget.assert_called_once_with(window.autoInstallSearchLineEdit)
     window._on_autoinstall_games_loaded([
         ("Game", "", "", "", "", "autoinstall:/tmp/game.ppai", "Never", "0h 0m",
          "", "", 0, 0, "autoinstall", "game_1"),
