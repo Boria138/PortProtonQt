@@ -220,6 +220,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.searchIconAction = self.searchEdit.addAction(icon, action_pos)
+        self.searchIconAction.triggered.connect(lambda: self.keyboard.show_for_widget(self.searchEdit))
         self.searchEdit.setMaximumWidth(200)
         self.searchEdit.setPlaceholderText(_("Search…"))
         self.searchEdit.setClearButtonEnabled(True)
