@@ -260,6 +260,9 @@ msgstr "Se ha eliminado «{game_name}» de {location}"
 msgid "Desktop"
 msgstr "Escritorio"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "No se han podido guardar los datos personalizados: {error}"
@@ -374,6 +377,9 @@ msgstr "Falló"
 
 msgid "Denied"
 msgstr "Denegado"
+
+msgid "Missing EXE"
+msgstr ""
 
 msgid "Game Title"
 msgstr "Título del juego"
@@ -495,10 +501,13 @@ msgid "Wine prefix not found"
 msgstr "Prefijo no encontrado"
 
 msgid ""
-"Launch cancelled. Cyrillic characters were found in the following paths. "
-"Wine may work unreliably. Move the game or PortProton to a path without "
-"Cyrillic characters:\n"
+"Cyrillic characters were found in the following paths. Wine may work "
+"unreliably. Move the game or PortProton to a path without Cyrillic "
+"characters:\n"
 "\n"
+msgstr ""
+
+msgid "Don't remind again"
 msgstr ""
 
 msgid "Game not found."
@@ -1029,6 +1038,16 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+msgid "Downloading…"
+msgstr "Descargando…"
+
+#, fuzzy
+msgid "Download process failed"
+msgstr "Descargar seleccionados"
+
+msgid "Downloading Complete"
+msgstr ""
+
 msgid "Open"
 msgstr "Abrir"
 
@@ -1049,9 +1068,6 @@ msgstr "Pestaña anterior"
 
 msgid "Next Tab"
 msgstr "Pestaña siguiente"
-
-msgid "Save"
-msgstr "Guardar"
 
 msgid "Search"
 msgstr "Buscar"
@@ -1196,9 +1212,6 @@ msgstr "No se pudo eliminar WINE/Proton en {path}: {error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
-msgstr ""
-
-msgid "Downloading Complete"
 msgstr ""
 
 msgid "All selected WINE/Proton have been downloaded!"
@@ -2198,6 +2211,9 @@ msgstr ""
 msgid "Another download is running"
 msgstr "Descargando"
 
+msgid "All"
+msgstr ""
+
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2233,10 +2249,6 @@ msgstr ""
 msgid "Repaired"
 msgstr ""
 
-#, fuzzy
-msgid "Download process failed"
-msgstr "Descargar seleccionados"
-
 msgid "Quick Launch"
 msgstr ""
 
@@ -2257,9 +2269,6 @@ msgid "Alphabetical"
 msgstr ""
 
 msgid "Sort Method:"
-msgstr ""
-
-msgid "All"
 msgstr ""
 
 msgid "Display Filter:"
@@ -2375,6 +2384,9 @@ msgid "Enable UI Sounds"
 msgstr ""
 
 msgid "Show compatibility report after game crash"
+msgstr ""
+
+msgid "Disable Cyrillic path warning"
 msgstr ""
 
 msgid "Disable ALT Linux i586 dependency check"
@@ -2598,9 +2610,6 @@ msgstr "Error al cargar los temas"
 
 msgid "Failed to download theme"
 msgstr "Error al descargar los temas"
-
-msgid "Downloading…"
-msgstr "Descargando…"
 
 msgid "Downloading… {0}%"
 msgstr "Descargando… {0}%"
