@@ -2873,6 +2873,8 @@ class MainWindow(
         return self.egs_api.is_eos_overlay_enabled(prefix_path)
 
     def _warn_cyrillic_launch_paths(self, game_path: str) -> bool:
+        if ui_config.get_disable_cyrillic_path_check():
+            return False
         paths = [game_path, *(self.start_sh or [])[:1]]
         affected_paths = []
         for path in paths:
@@ -2881,15 +2883,25 @@ class MainWindow(
                     continue
                 if any("CYRILLIC" in unicodedata.name(char, "") for char in candidate):
                     affected_paths.append(candidate)
-        if affected_paths:
-            QMessageBox.warning(
-                self, _("Warning"),
-                _("Launch cancelled. Cyrillic characters were found in the following paths. "
-                  "Wine may work unreliably. Move the game or PortProton "
-                  "to a path without Cyrillic characters:\n\n")
-                + "\n".join(affected_paths),
-            )
-        return bool(affected_paths)
+        if not affected_paths:
+            return False
+        message_box = QMessageBox(self)
+        message_box.setIcon(QMessageBox.Icon.Warning)
+        message_box.setWindowTitle(_("Warning"))
+        message_box.setText(
+            _("Cyrillic characters were found in the following paths. "
+              "Wine may work unreliably. Move the game or PortProton "
+              "to a path without Cyrillic characters:\n\n")
+            + "\n".join(affected_paths)
+        )
+        message_box.setStandardButtons(QMessageBox.StandardButton.Close)
+        disable_button = message_box.addButton(
+            _("Don't remind again"), QMessageBox.ButtonRole.ActionRole
+        )
+        message_box.exec()
+        if message_box.clickedButton() is disable_button:
+            ui_config.set_disable_cyrillic_path_check(True)
+        return True
 
     def _launch_egs_game(self, app_id: str, button=None) -> None:
         target = self.egs_api.get_launch_target(app_id)
@@ -2918,9 +2930,7 @@ class MainWindow(
                 "launch", app_id, "--json", "--wrapper", self.start_sh[0],
                 "--no-wine", "--skip-version-check",
             ])
-            if self._warn_cyrillic_launch_paths(target):
-                self._finish_silent_launch()
-                return
+            self._warn_cyrillic_launch_paths(target)
             process = subprocess.Popen(
                 command, env=self.egs_api.get_environment(), shell=False,
                 preexec_fn=os.setsid, stdout=subprocess.PIPE,
@@ -2982,9 +2992,9 @@ class MainWindow(
         if not self._check_alt_i586_dependencies_before_launch():
             self._finish_silent_launch()
             return
-        if self._warn_cyrillic_launch_paths(self.gog_api.get_launch_target(app_id) or install_path):
-            self._finish_silent_launch()
-            return
+        self._warn_cyrillic_launch_paths(
+            self.gog_api.get_launch_target(app_id) or install_path
+        )
         needs_setup = getattr(self.gog_api, "needs_support_setup", lambda _app_id: False)
         if needs_setup(app_id):
             self._start_gog_support_setup(app_id, button)
@@ -3091,9 +3101,7 @@ class MainWindow(
             if not self._check_alt_i586_dependencies_before_launch():
                 return
             if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
-                if self._warn_cyrillic_launch_paths(file_to_check):
-                    self._finish_silent_launch()
-                    return
+                self._warn_cyrillic_launch_paths(file_to_check)
 
             if update_button:
                 try:

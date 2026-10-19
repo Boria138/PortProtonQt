@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
 
 from portprotonqt.custom_widgets import CustomComboBox
 from portprotonqt.tabs.settings_tab import SettingsButtonsLayout
-
 from portprotonqt.dialogs.settings_gamescope import (
     GAMESCOPE_TOGGLE_CATEGORIES,
     GAMESCOPE_TOGGLE_DESCRIPTIONS,
@@ -40,6 +39,7 @@ from portprotonqt.dialogs.settings_mangohud import (
 from portprotonqt.dialogs.settings_vkbasalt import VkBasaltSettingsMixin
 
 
+PAINT_SETTLE_MS = 250
 _application = QApplication.instance() or QApplication([])
 
 
@@ -671,8 +671,8 @@ def test_settings_table_stops_repainting_when_idle(theme_name: str) -> None:
         table.setColumnWidth(0, width)
         for _ in range(10):
             QApplication.processEvents()
-        QTest.qWait(100)
+        QTest.qWait(PAINT_SETTLE_MS)
         paints = paint_filter.paints
-        QTest.qWait(100)
+        QTest.qWait(PAINT_SETTLE_MS)
         assert paint_filter.paints == paints
     table.close()

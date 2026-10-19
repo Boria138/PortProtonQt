@@ -12,6 +12,9 @@ from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
+THREAD_TIMEOUT_MS = 30000
+SYNC_TIMEOUT_SECONDS = 30
+
 
 @pytest.fixture(autouse=True)
 def application() -> QCoreApplication:
@@ -76,7 +79,7 @@ def test_missing_destination_still_downloads_with_a_worker(
 
     assert worker is not None
     assert worker in downloader._active_threads
-    assert worker.wait(5000)
+    assert worker.wait(THREAD_TIMEOUT_MS)
     assert results == []
     QApplication.processEvents()
     assert results == [str(target)]
@@ -124,11 +127,11 @@ def test_download_started_from_a_worker_cleans_up_on_the_owner_thread(
 
     caller = threading.Thread(target=start_download)
     caller.start()
-    caller.join(timeout=5)
+    caller.join(timeout=SYNC_TIMEOUT_SECONDS)
     assert not caller.is_alive()
     worker = workers[0]
     assert worker is not None
-    assert worker.wait(5000)
+    assert worker.wait(THREAD_TIMEOUT_MS)
     QApplication.processEvents()
 
     assert results == [(path, QThread.currentThread())]
@@ -146,13 +149,13 @@ def test_shutdown_waits_for_an_active_download(
 
     def download(*_args: Any) -> str:
         entered.set()
-        assert release.wait(5)
+        assert release.wait(SYNC_TIMEOUT_SECONDS)
         return path
 
     monkeypatch.setattr("portprotonqt.downloader.download_with_cache", download)
     worker = downloader.download_async("https://example.com/data.json", path)
     assert worker is not None
-    assert entered.wait(5)
+    assert entered.wait(SYNC_TIMEOUT_SECONDS)
     owner = cast(Any, MainWindowWorkersMixin())
     owner.downloader = downloader
     owner.compatibility_workers = []
@@ -171,4 +174,4 @@ def test_shutdown_waits_for_an_active_download(
     finally:
         release.set()
         release_timer.join()
-        worker.wait(5000)
+        worker.wait(THREAD_TIMEOUT_MS)

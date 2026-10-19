@@ -508,6 +508,33 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         crash_reports_enabled_layout.addStretch()
         uiForm.addRow(crash_reports_enabled_layout)
 
+        self.disableCyrillicPathCheckCheckBox = QCheckBox()
+        self.disableCyrillicPathCheckCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.disableCyrillicPathCheckCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        disable_cyrillic_path_check_title = QLabel(
+            _("Disable Cyrillic path warning")
+        )
+        disable_cyrillic_path_check_title.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        disable_cyrillic_path_check_title.setStyleSheet(
+            self.theme.SETTINGS_TITLE_CHECKBOX_STYLE
+        )
+        disable_cyrillic_path_check_title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.disableCyrillicPathCheckCheckBox.setChecked(
+            ui_config.get_disable_cyrillic_path_check()
+        )
+        disable_cyrillic_path_check_layout = QHBoxLayout()
+        disable_cyrillic_path_check_layout.setContentsMargins(0, 0, 0, 0)
+        disable_cyrillic_path_check_layout.addWidget(
+            self.disableCyrillicPathCheckCheckBox
+        )
+        disable_cyrillic_path_check_layout.addWidget(
+            disable_cyrillic_path_check_title
+        )
+        disable_cyrillic_path_check_layout.addStretch()
+        uiForm.addRow(disable_cyrillic_path_check_layout)
+
         self.disableAltDependencyCheckCheckBox: QCheckBox | None = None
         if self._is_alt_x86_64():
             self.disableAltDependencyCheckCheckBox = QCheckBox()
@@ -1194,6 +1221,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         ui_config.set_sounds_enabled(sounds_enabled)
         ui_config.set_crash_reports_enabled(
             self.crashReportsEnabledCheckBox.isChecked()
+        )
+        ui_config.set_disable_cyrillic_path_check(
+            self.disableCyrillicPathCheckCheckBox.isChecked()
         )
         if self.disableAltDependencyCheckCheckBox is not None:
             ui_config.set_disable_alt_i586_dependency_check(

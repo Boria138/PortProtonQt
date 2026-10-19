@@ -141,6 +141,14 @@ def test_crash_reports_config_defaults_to_enabled(tmp_path: Path):
     assert config.get_crash_reports_enabled() is False
 
 
+def test_cyrillic_path_check_config_defaults_to_enabled(tmp_path: Path):
+    config = UIConfig(config_file=tmp_path / "test.conf")
+
+    assert config.get_disable_cyrillic_path_check() is False
+    config.set_disable_cyrillic_path_check(True)
+    assert config.get_disable_cyrillic_path_check() is True
+
+
 def test_alt_dependency_check_config_defaults_to_enabled(tmp_path: Path):
     config = UIConfig(config_file=tmp_path / "test.conf")
 

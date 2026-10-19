@@ -11,7 +11,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import psutil
-from pytest import MonkeyPatch, fixture, mark
+from pytest import MonkeyPatch, fixture, mark, raises
 from PySide6.QtCore import QEvent, QEventLoop, QObject, QPoint, QPointF, Qt, QTimer
 from PySide6.QtGui import QAction, QMouseEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMenu,
     QMainWindow,
+    QMessageBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -79,16 +80,22 @@ import portprotonqt.localization as localization
 def test_cyrillic_launch_warning(
     monkeypatch: MonkeyPatch, game_path: str, script_path: str, expected: bool,
 ) -> None:
-    warning = MagicMock()
+    message_box = MagicMock()
+    message_box.addButton.return_value = object()
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
     window = SimpleNamespace(start_sh=[script_path])
-    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
 
     assert MainWindow._warn_cyrillic_launch_paths(cast(Any, window), game_path) is expected
 
-    assert warning.call_count == int(expected)
+    assert message_box.exec.call_count == int(expected)
     if expected:
         assert (game_path if "games/" in game_path and game_path != "/games/Game.exe"
-                else script_path) in warning.call_args.args[2]
+                else script_path) in message_box.setText.call_args.args[0]
 
 
 def test_cyrillic_launch_warning_resolves_symlinks(
@@ -98,18 +105,44 @@ def test_cyrillic_launch_warning_resolves_symlinks(
     target.mkdir()
     link = tmp_path / "games"
     link.symlink_to(target, target_is_directory=True)
-    warning = MagicMock()
+    message_box = MagicMock()
+    message_box.addButton.return_value = object()
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
     window = SimpleNamespace(start_sh=[])
-    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
 
     MainWindow._warn_cyrillic_launch_paths(cast(Any, window), str(link / "game.exe"))
 
-    warning.assert_called_once()
-    assert str(target / "game.exe") in warning.call_args.args[2]
+    message_box.exec.assert_called_once()
+    assert str(target / "game.exe") in message_box.setText.call_args.args[0]
+
+
+def test_cyrillic_launch_warning_can_be_disabled(monkeypatch: MonkeyPatch) -> None:
+    set_disabled = MagicMock()
+    disable_button = object()
+    message_box = MagicMock()
+    message_box.addButton.return_value = disable_button
+    message_box.clickedButton.return_value = disable_button
+    message_box_type = MagicMock(return_value=message_box)
+    message_box_type.Icon = QMessageBox.Icon
+    message_box_type.StandardButton = QMessageBox.StandardButton
+    message_box_type.ButtonRole = QMessageBox.ButtonRole
+    window = SimpleNamespace(start_sh=[])
+    monkeypatch.setattr(main_window_module.ui_config, "get_disable_cyrillic_path_check", lambda: False)
+    monkeypatch.setattr(main_window_module.ui_config, "set_disable_cyrillic_path_check", set_disabled)
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box_type)
+
+    MainWindow._warn_cyrillic_launch_paths(cast(Any, window), "/games/Игра.exe")
+
+    set_disabled.assert_called_once_with(True)
 
 
 @mark.parametrize("source", ["local", "gog", "egs"])
-def test_cyrillic_paths_cancel_launch(
+def test_cyrillic_paths_continue_launch(
     monkeypatch: MonkeyPatch, tmp_path: Path, source: str,
 ) -> None:
     target = tmp_path / "Игры" / "Breach.exe"
@@ -121,6 +154,7 @@ def test_cyrillic_paths_cancel_launch(
     window.target_exe = None
     window.current_play_button = None
     window._check_alt_i586_dependencies_before_launch = lambda: True
+    window._check_missing_prefix_before_launch = MagicMock()
     window._finish_silent_launch = MagicMock()
     window._start_gog_support_setup = MagicMock()
     api = SimpleNamespace(
@@ -129,24 +163,30 @@ def test_cyrillic_paths_cancel_launch(
         get_launch_target=lambda _app_id: str(target),
         needs_support_setup=lambda _app_id: True,
         build_command=lambda arguments: arguments,
+        get_environment=lambda: {},
     )
     window.gog_api = api
     window.egs_api = api
-    warning = MagicMock()
-    popen = MagicMock()
-    monkeypatch.setattr(main_window_module.QMessageBox, "warning", warning)
+    warning = MagicMock(return_value=True)
+    popen = MagicMock(side_effect=RuntimeError("launch reached"))
+    window._warn_cyrillic_launch_paths = warning
     monkeypatch.setattr(main_window_module.subprocess, "Popen", popen)
+    monkeypatch.setattr(main_window_module.SoundManager, "play", MagicMock())
+    monkeypatch.setattr(main_window_module.QMessageBox, "warning", MagicMock())
 
     if source == "local":
-        window.toggleGame(shlex.quote(str(target)))
+        window.toggleGame(shlex.quote(str(target)), game_name="Breach")
+    elif source == "egs":
+        with raises(RuntimeError, match="launch reached"):
+            window._launch_egs_game("123")
     else:
-        getattr(window, f"_launch_{source}_game")("123")
+        window._launch_gog_game("123")
 
     warning.assert_called_once()
-    popen.assert_not_called()
-    window._start_gog_support_setup.assert_not_called()
-    window._finish_silent_launch.assert_called_once_with()
-    assert window.game_processes == []
+    if source == "gog":
+        window._start_gog_support_setup.assert_called_once_with("123", None)
+    else:
+        popen.assert_called_once()
 
 
 @mark.parametrize("fullscreen, enabled", [(False, True), (True, True), (True, False)])
