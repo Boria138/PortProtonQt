@@ -675,7 +675,10 @@ def test_confirm_button_opens_combo_popup() -> None:
     assert app is not None
 
 
-def test_settings_gamepad_skips_separator_and_activates_download(monkeypatch: MonkeyPatch) -> None:
+@mark.parametrize("table_name", ["advanced_table", "favorites_table"])
+def test_settings_gamepad_skips_separator_and_activates_download(
+    monkeypatch: MonkeyPatch, table_name: str,
+) -> None:
     from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
     from portprotonqt.input_manager.constants import BUTTONS
     from portprotonqt.input_manager.settings import SettingsInputMixin
@@ -701,7 +704,7 @@ def test_settings_gamepad_skips_separator_and_activates_download(monkeypatch: Mo
         cast(ExeSettingsDialog, settings), index, combo, "PW_WINE_USE",
     ))
     manager = SimpleNamespace(
-        settings_dialog=SimpleNamespace(advanced_table=table, settings_table=None, favorites_table=None),
+        settings_dialog=SimpleNamespace(advanced_table=None, settings_table=None, favorites_table=None),
         _is_current_settings_tool_tab=lambda: False,
         _handle_table_action_navigation=lambda *_args: False,
         _get_dialog_action_buttons=lambda _dialog: [],
@@ -709,13 +712,13 @@ def test_settings_gamepad_skips_separator_and_activates_download(monkeypatch: Mo
         _get_open_settings_combo=lambda: combo,
         _handle_common_ui_elements=lambda _code: False,
     )
+    setattr(manager.settings_dialog, table_name, table)
     dialog.show()
     combo.showPopup()
     app.processEvents()
     SettingsInputMixin.handle_settings_dpad(cast(SettingsInputMixin, manager), PAD_DPAD_Y, 1, 0)
     assert combo.view().currentIndex().row() == 2
-    assert highlighted[-1] == 2
-    assert combo.currentData() == "download_wine"
+    assert combo.currentText() == "Proton"
     SettingsInputMixin.handle_settings_button(
         cast(SettingsInputMixin, manager), next(iter(BUTTONS["confirm"])), 1,
     )
@@ -754,7 +757,7 @@ def test_settings_combo_navigation_with_keyboard_events_intercepted() -> None:
         app.processEvents()
         for direction, expected in ((1, 1), (1, 2), (1, 2), (-1, 1), (-1, 0), (-1, 0)):
             SettingsInputMixin.handle_settings_dpad(cast(SettingsInputMixin, manager), PAD_DPAD_Y, direction, 0)
-            assert combo.currentIndex() == expected
+            assert combo.currentIndex() == 0
             assert combo.view().currentIndex().row() == expected
             assert combo.view().isVisible()
     finally:

@@ -602,6 +602,7 @@ def test_search_preserves_selection_across_different_queries(
 
     library, _ = library_scene
     monkeypatch.setattr("portprotonqt.config.ui_config.get_library_layout_mode", lambda _: layout_mode)
+    monkeypatch.setattr(library, "_incremental_batch_size", 1)
     library.rebuild_library_layout(layout_mode)
     games = [(name, "", "", "", "", name, "", "", "", "", 0, 0, "portproton")
              for name in ("DOOM64", "Akalabeth of Doom", "Biomance")]
@@ -610,7 +611,8 @@ def test_search_preserves_selection_across_different_queries(
     assert library._update_timer is not None and library._incremental_add_timer is not None
     library._update_timer.stop()
     library._update_game_grid_immediate()
-    library._process_incremental_add_batch()
+    while library._incremental_add_queue:
+        library._process_incremental_add_batch()
     library._incremental_add_timer.stop()
     menu = object.__new__(ContextMenuManager)
     menu.game_library_manager = library
@@ -622,6 +624,8 @@ def test_search_preserves_selection_across_different_queries(
         library.filter_games_delayed()
         library._update_timer.stop()
         library._update_game_grid_immediate()
+        while library._incremental_add_queue:
+            library._process_incremental_add_batch()
         library._incremental_add_timer.stop()
         if query == "doom":
             menu.start_card_selection(cards["DOOM64"])

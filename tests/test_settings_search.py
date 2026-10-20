@@ -464,7 +464,7 @@ def test_settings_table_descriptions_and_centered_controls(theme_name: str) -> N
 @pytest.mark.parametrize("close_dialog", [False, True])
 @pytest.mark.parametrize("themed", [False, True])
 def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed: bool) -> None:
-    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QComboBox, QDialog
     from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 
@@ -472,7 +472,7 @@ def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed
     QDialog.__init__(dialog)
     dialog.vkbasalt_toggle_key_button = None
     dialog.input_manager = None
-    dialog.gamepad_tooltip = QLabel(dialog, Qt.WindowType.ToolTip)
+    dialog.gamepad_tooltip = QLabel(dialog)
     dialog.gamepad_tooltip_timer = QTimer(dialog)
     dialog.gamepad_tooltip_timer.setSingleShot(True)
     combo = QComboBox(dialog)
@@ -481,9 +481,16 @@ def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed
         from portprotonqt.themes.standart import styles
 
         combo.setStyleSheet(ThemeWrapper(styles).COMBOBOX_STYLE)
+        dialog.gamepad_tooltip.setStyleSheet(ThemeWrapper(styles).TOOLTIP_STYLE)
     combo.addItems(["Proton", "WINE-11.18-AMD64-WOW64" if themed else "Proton " * 40])
+    dialog.resize(600, 400)
+    dialog.move(20, 20)
+    combo.setGeometry(450, 20, 140, 40)
     combo.view().setFixedWidth(180)
-    combo.highlighted.connect(lambda row: dialog._on_combo_highlighted(row, combo))
+    combo.view().installEventFilter(dialog)
+    combo.view().selectionModel().currentChanged.connect(
+        lambda index, _previous: dialog._on_combo_highlighted(index.row(), combo),
+    )
     combo.setCurrentIndex(1)
     dialog.show()
     combo.showPopup()
@@ -491,10 +498,11 @@ def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed
 
     assert dialog.gamepad_tooltip.isVisible()
     assert dialog.gamepad_tooltip.text() == combo.itemText(1)
-    dialog._on_combo_highlighted(0, combo)
+    assert dialog.rect().contains(dialog.gamepad_tooltip.geometry())
+    combo.view().setCurrentIndex(combo.model().index(0, 0))
     assert not dialog.gamepad_tooltip.isVisible()
     assert not dialog.gamepad_tooltip_timer.isActive()
-    dialog._on_combo_highlighted(1, combo)
+    combo.view().setCurrentIndex(combo.model().index(1, 0))
     assert dialog.gamepad_tooltip.isVisible()
 
     if close_dialog:
@@ -506,6 +514,112 @@ def test_combo_tooltip_only_for_clipped_visible_popup(close_dialog: bool, themed
     dialog._on_combo_highlighted(1, combo)
     assert not dialog.gamepad_tooltip.isVisible()
     combo.hidePopup()
+    dialog.close()
+
+
+def test_favorite_combo_preserves_separator_actions_and_source_updates() -> None:
+    from PySide6.QtWidgets import QComboBox
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+    from portprotonqt.theme_manager import ThemeWrapper, load_theme
+
+    table = QTableWidget(1, 2)
+    source = QComboBox(table)
+    source.addItems(["Wine", "Proton"])
+    source.insertSeparator(source.count())
+    source.addItem("Download", "download_wine")
+    activated = []
+    source.activated.connect(activated.append)
+    source.activated.connect(lambda _index: source.setCurrentIndex(0))
+    highlighted = []
+    dialog = ExeSettingsDialog.__new__(ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.vkbasalt_toggle_key_button = None
+    dialog.input_manager = None
+    dialog.theme = ThemeWrapper(load_theme("standart"))
+    dialog.favorites_table = table
+    dialog._on_combo_highlighted = lambda row, combo: highlighted.append((row, combo))
+    dialog._add_favorite_combo(0, source)
+    combo = cast(QComboBox, table.cellWidget(0, 1))
+
+    assert combo.model() is source.model()
+    assert not combo.model().flags(combo.model().index(2, 0)) & Qt.ItemFlag.ItemIsEnabled
+    assert combo.itemData(3) == "download_wine"
+    combo.setCurrentIndex(3)
+    combo.activated.emit(3)
+    assert activated == [3]
+    assert combo.currentText() == source.currentText() == "Wine"
+    source.addItem("New Wine")
+    assert combo.itemText(combo.count() - 1) == "New Wine"
+    highlighted.clear()
+    combo.view().setCurrentIndex(combo.model().index(1, 0))
+    assert highlighted == [(1, combo)]
+    table.deleteLater()
+
+
+@pytest.fixture
+def linked_settings_combos() -> tuple:
+    from PySide6.QtWidgets import QComboBox
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+    from portprotonqt.theme_manager import ThemeWrapper, load_theme
+
+    dialog = ExeSettingsDialog.__new__(ExeSettingsDialog)
+    QDialog.__init__(dialog)
+    dialog.vkbasalt_toggle_key_button = None
+    dialog.input_manager = None
+    dialog.theme = ThemeWrapper(load_theme("standart"))
+    dialog.gamepad_tooltip = QLabel(dialog)
+    dialog.gamepad_tooltip.setStyleSheet(dialog.theme.TOOLTIP_STYLE)
+    dialog.gamepad_tooltip_timer = QTimer(dialog)
+    stack = QStackedWidget(dialog)
+    stack.setGeometry(0, 0, 600, 400)
+    dialog.favorites_table = QTableWidget(1, 2)
+    advanced = QTableWidget(1, 2)
+    stack.addWidget(dialog.favorites_table)
+    stack.addWidget(advanced)
+    source = QComboBox()
+    source.addItems(["Wine", "WINE-11.18-AMD64-WOW64 " * 3])
+    advanced.setCellWidget(0, 1, source)
+    source.view().installEventFilter(dialog)
+    source.view().setMouseTracking(True)
+    source.view().entered.connect(lambda index: dialog._on_combo_highlighted(index.row(), source))
+    source.view().selectionModel().currentChanged.connect(
+        lambda index, _old: dialog._on_combo_highlighted(index.row(), source),
+    )
+    dialog._add_favorite_combo(0, source)
+    favorite = cast(QComboBox, dialog.favorites_table.cellWidget(0, 1))
+    dialog.resize(600, 400)
+    dialog.show()
+    return dialog, stack, favorite, source
+
+
+@pytest.mark.parametrize("navigation", ["gamepad", "mouse"])
+def test_linked_settings_combos_keep_visible_tooltip_during_navigation(
+    linked_settings_combos: tuple, navigation: str,
+) -> None:
+    from PySide6.QtGui import QMouseEvent
+
+    dialog, stack, favorite, source = linked_settings_combos
+    for page, combo in enumerate((favorite, source)):
+        stack.setCurrentIndex(page)
+        combo.view().setFixedWidth(180)
+        combo.showPopup()
+        QApplication.processEvents()
+        for row in (1, 0):
+            if navigation == "mouse":
+                rect = combo.view().visualRect(combo.model().index(row, 0))
+                point = rect.intersected(combo.view().viewport().rect()).center().toPointF()
+                QApplication.sendEvent(combo.view().viewport(), QMouseEvent(
+                    QEvent.Type.MouseMove, point, point, Qt.MouseButton.NoButton,
+                    Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+                ))
+            else:
+                combo.setCurrentIndex(row)
+            assert dialog.gamepad_tooltip.isVisible() == bool(row), page
+            if row:
+                assert dialog.gamepad_tooltip.text() == combo.itemText(row)
+                assert dialog.rect().contains(dialog.gamepad_tooltip.geometry())
+                assert not dialog.gamepad_tooltip.isWindow()
+        combo.hidePopup()
     dialog.close()
 
 
@@ -721,6 +835,25 @@ def autosave_dialog(request, monkeypatch, tmp_path) -> tuple[QDialog, list[list[
     monkeypatch.setattr(QProcess, 'start', lambda _self, program, args: calls.append(args))
 
     return dialog, calls, user_conf
+
+
+@pytest.mark.parametrize('autosave_dialog', [False, True], indirect=True)
+def test_settings_autosave_ignores_download_action(autosave_dialog: tuple) -> None:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
+
+    widget, calls, user_conf = autosave_dialog
+    dialog = cast(ExeSettingsDialog, widget)
+    combo = CustomComboBox(dialog)
+    combo.addItem("Wine")
+    combo.addItem("Download", "download_wine")
+    combo.setCurrentIndex(1)
+    key = 'PW_DEFAULT_WINE_USE' if user_conf else 'PW_WINE_USE'
+    dialog.advanced_widgets = {key: combo}
+    dialog.original_display_values = {key: "Wine"}
+    dialog.apply_changes()
+    assert calls == []
+    assert not dialog.saving
+    dialog.deleteLater()
 
 
 @pytest.mark.parametrize('autosave_dialog', [False, True], indirect=True)

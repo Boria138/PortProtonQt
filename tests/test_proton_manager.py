@@ -15,6 +15,39 @@ from portprotonqt.dialogs.wine_extractor import ExtractionThread
 from portprotonqt.tabs import library_tab
 
 
+def test_nested_manager_registers_input_before_connecting_hints(monkeypatch: pytest.MonkeyPatch) -> None:
+    from unittest.mock import MagicMock
+    from PySide6.QtWidgets import QDialog, QPushButton
+    from portprotonqt.theme_manager import ThemeWrapper, load_theme
+    import portprotonqt.dialogs.proton_manager as module
+
+    app = QApplication.instance() or QApplication([])
+    main = cast(Any, QWidget())
+    main.get_button_icon = MagicMock(return_value="placeholder")
+    main.get_nav_icon = MagicMock(return_value="placeholder")
+    settings = cast(Any, QDialog(main))
+    events = []
+    inputs = SimpleNamespace(
+        gamepad=object(), gamepad_type="xbox",
+        enable_proton_manager_mode=lambda dialog: events.append(("enable", dialog)),
+        disable_proton_manager_mode=lambda: None,
+        connect_surface_updates=lambda name, callback: events.append((name, callback)),
+    )
+    settings.input_manager = inputs
+    monkeypatch.setattr(module.ProtonManager, "start_loading_wine_data", lambda self: None)
+    monkeypatch.setattr(module, "AutoSizeButton", lambda text, **_kwargs: QPushButton(text))
+    manager = module.ProtonManager(settings, theme=ThemeWrapper(load_theme("standart")), input_manager=inputs)
+
+    assert manager.main_window is main
+    assert events[0] == ("enable", manager)
+    assert events[1][0] == "proton_manager_dialog"
+    assert main.get_button_icon.called and main.get_nav_icon.called
+    manager.close()
+    settings.deleteLater()
+    main.deleteLater()
+    app.processEvents()
+
+
 def test_cachyos_v3_builds_require_supported_cpu_level(monkeypatch) -> None:
     manager = ProtonManager.__new__(ProtonManager)
     manager.cpu_level = 2

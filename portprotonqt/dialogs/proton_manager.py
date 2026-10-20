@@ -59,7 +59,7 @@ class ProtonManager(DraggableDialog):
         self.main_window = None
         parent_widget = self.parent()
         while parent_widget:
-            if hasattr(parent_widget, 'input_manager'):
+            if hasattr(parent_widget, 'get_button_icon'):
                 self.main_window = parent_widget
                 break
             parent_widget = parent_widget.parent()
@@ -69,6 +69,14 @@ class ProtonManager(DraggableDialog):
 
         if self.input_manager:
             self.enable_proton_manager_mode()
+            if self.main_window:
+                def update_hints(*_args: object) -> None:
+                    update_dialog_hints(
+                        self.hints_labels, self.main_window, self.input_manager,
+                        theme_manager, self.current_theme_name,
+                    )
+                self.input_manager.connect_surface_updates('proton_manager_dialog', update_hints)
+                update_hints()
 
     @staticmethod
     def _get_dropped_wine_archives(mime_data: QMimeData) -> list[str]:
@@ -277,18 +285,6 @@ class ProtonManager(DraggableDialog):
         layout.addLayout(button_layout)
 
         self.tab_widget.currentChanged.connect(self.tab_changed)
-
-        if self.input_manager and self.main_window:
-            def update_hints(*_args: object) -> None:
-                update_dialog_hints(
-                    self.hints_labels, self.main_window, self.input_manager,
-                    theme_manager, self.current_theme_name,
-                )
-            self.input_manager.connect_surface_updates('proton_manager_dialog', update_hints)
-            update_dialog_hints(
-                self.hints_labels, self.main_window, self.input_manager,
-                theme_manager, self.current_theme_name
-            )
 
     def _open_wine_folder(self) -> None:
         if not self.portproton_location:
