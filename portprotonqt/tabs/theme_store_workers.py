@@ -21,6 +21,7 @@ THEME_STORE_IMAGE_WORKERS = 8
 THEME_STORE_CARD_BATCH_SIZE = 20
 THEME_STORE_VOTES_ICON = "★"
 THEME_STORE_DOWNLOADS_ICON = "⇩"
+THEME_ARCHIVE_EXTENSIONS = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.xz", ".tar.bz2")
 
 
 def _theme_store_download_url(theme_id: int) -> str:
@@ -124,6 +125,40 @@ def _install_theme_archive(archive_path: str) -> list[str]:
             shutil.move(source_dir, target_dir)
             installed_names.append(theme_name)
     return installed_names
+
+
+class ThemeArchiveInstallWorker(QThread):
+    installed = Signal(list)
+    failed = Signal(str)
+    wine_archives = Signal(list)
+
+    def __init__(self, paths: list[str]) -> None:
+        super().__init__()
+        self.paths = paths
+
+    def run(self) -> None:
+        wine_paths = []
+        for path in self.paths:
+            if self.isInterruptionRequested():
+                return
+            try:
+                if zipfile.is_zipfile(path):
+                    with zipfile.ZipFile(path) as archive:
+                        names = archive.namelist()
+                else:
+                    with tarfile.open(path) as archive:
+                        names = archive.getnames()
+                if not any(name.rstrip("/").split("/")[-1] == "styles.py" for name in names):
+                    wine_paths.append(path)
+                    continue
+                installed = _install_theme_archive(path)
+                if not installed:
+                    raise ValueError("No themes found in archive")
+                self.installed.emit(installed)
+            except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as error:
+                self.failed.emit(str(error))
+        if wine_paths and not self.isInterruptionRequested():
+            self.wine_archives.emit(wine_paths)
 
 
 class ThemeStoreListWorker(QThread):

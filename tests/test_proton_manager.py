@@ -2,11 +2,13 @@
 
 import io
 import tarfile
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 from PySide6.QtCore import QMimeData, QUrl
+from PySide6.QtWidgets import QApplication, QWidget
 
 from portprotonqt.dialogs.proton_manager import ProtonManager
 from portprotonqt.dialogs.wine_extractor import ExtractionThread
@@ -111,6 +113,7 @@ def test_extraction_does_not_change_process_directory(tmp_path, monkeypatch) -> 
 
 
 def test_library_drop_opens_manager_for_wine_archive(tmp_path, monkeypatch) -> None:
+    _app = QApplication.instance() or QApplication([])
     archive_path = tmp_path / "PROTON_LG_10-30.tar.xz"
     archive_path.touch()
     mime_data = QMimeData()
@@ -126,9 +129,18 @@ def test_library_drop_opens_manager_for_wine_archive(tmp_path, monkeypatch) -> N
         def acceptProposedAction(self):
             self.accepted = True
 
-    class Window:
+    class Window(QWidget):
         portproton_location = "/tmp/PortProtonQt"
         input_manager = None
+        _on_dropped_theme_installed = library_tab.MainWindowLibraryTabMixin._on_dropped_theme_installed
+        _on_dropped_theme_failed = library_tab.MainWindowLibraryTabMixin._on_dropped_theme_failed
+        _on_dropped_wine_archives = library_tab.MainWindowLibraryTabMixin._on_dropped_wine_archives
+        _install_dropped_theme_archives = library_tab.MainWindowLibraryTabMixin._install_dropped_theme_archives
+        theme = SimpleNamespace(MESSAGE_BOX_STYLE="", PROGRESS_BAR_STYLE="")
+
+    from portprotonqt.tabs.theme_store_workers import ThemeArchiveInstallWorker
+
+    monkeypatch.setattr(ThemeArchiveInstallWorker, "start", lambda self: self.wine_archives.emit(self.paths))
 
     monkeypatch.setattr(
         library_tab, "show_proton_manager", lambda *args, **kwargs: calls.append(kwargs)
