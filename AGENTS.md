@@ -419,7 +419,7 @@ tests/
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
 ├── test_debug_env_utils.py  # Debug environment helpers, runtime variables
 ├── test_easyterm.py         # Terminal final output, exit status, keyboard and gamepad closing
-├── test_input_manager.py    # Gamepad input navigation and focus regressions
+├── test_input_manager.py    # Gamepad input navigation, dialog keyboards, and focus regressions
 ├── test_sound_manager.py    # UI sound playback, widget events, gamepad connection, theme sound files
 ├── test_boot_animation.py   # Theme video inheritance, fullscreen boot rendering, gamepad skip, loading transitions, and shutdown
 ├── test_main_window.py      # Main window data processing and callback regressions
@@ -433,9 +433,10 @@ tests/
 ├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
 ├── test_file_explorer.py    # File explorer themed icon state regressions
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
+├── test_exe_metadata.py     # PE version strings, shell output, and ExifTool fallback
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
 ├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
-├── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+├── test_shortcuts.py        # Desktop shortcuts, folder import, edited exe paths, and gamepad navigation
 ├── test_theme_store.py      # Theme store UI worker lifecycle and race regressions
 ├── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
 ├── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
@@ -1056,6 +1057,8 @@ PortProtonQt/
 ---
 
 ## Dependencies
+
+- Use the existing `orjson` dependency instead of standard-library `json` for faster JSON parsing and serialization. For formatted output, use `orjson.OPT_INDENT_2`.
 
 ### Core
 
