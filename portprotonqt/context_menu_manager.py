@@ -1741,11 +1741,6 @@ class ContextMenuManager:
                         _("Success"),
                         _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
                     )
-                else:
-                    self.signals.show_info_dialog.emit(
-                        _("Success"),
-                        _("'{game_name}' was added to Steam.").format(game_name=game_name)
-                    )
             else:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),

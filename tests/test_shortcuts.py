@@ -1485,18 +1485,26 @@ def test_edit_shortcut_removes_desktop_file_with_original_filename(
     manager.signals.show_warning_dialog.emit.assert_not_called()
 
 
-def test_batch_steam_addition_has_no_success_dialog(monkeypatch: Any) -> None:
+@pytest.mark.parametrize("batch,result,expected", [
+    (True, (True, "restart"), (0, 0)),
+    (False, (True, "Game added to Steam via CEF API"), (0, 0)),
+    (False, (True, "Please restart Steam"), (1, 0)),
+    (False, (False, "Failed to create shortcut"), (0, 1)),
+])
+def test_steam_addition_dialogs(monkeypatch: Any, batch: bool, result: tuple[bool, str],
+                              expected: tuple[int, int]) -> None:
     from portprotonqt.context_menu_manager import ContextMenuManager
 
     manager = object.__new__(ContextMenuManager)
-    manager._batch_action = True
+    manager._batch_action = batch
     manager._check_portproton = lambda: True
     monkeypatch.setattr(manager, "_get_exec_line", lambda game_name, exec_line: exec_line)
     monkeypatch.setattr(manager, "_parse_exe_path", lambda exec_line, game_name: exec_line)
     manager.signals = MagicMock()
-    monkeypatch.setattr("portprotonqt.context_menu_manager.add_to_steam", lambda *args: (True, "restart"))
+    monkeypatch.setattr("portprotonqt.context_menu_manager.add_to_steam", lambda *args: result)
     manager.add_to_steam("Game", "game.exe", "cover")
-    manager.signals.show_info_dialog.emit.assert_not_called()
+    assert manager.signals.show_info_dialog.emit.call_count == expected[0]
+    assert manager.signals.show_warning_dialog.emit.call_count == expected[1]
 
 
 def test_context_menu_enters_and_cancels_selection_mode(monkeypatch: Any) -> None:
