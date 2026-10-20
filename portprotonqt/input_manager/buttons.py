@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListView,
     QMenu,
+    QPushButton,
     QSlider,
     QStackedWidget,
     QTableWidget,
@@ -160,11 +161,7 @@ class ButtonInputMixin(InputMixin):
     def _route_button_to_text_input(
         self, active: QWidget, focused: QWidget | None, button_code: int
     ) -> bool:
-        keyboard = (
-            getattr(active, 'keyboard', None)
-            if isinstance(active, AddGameDialog)
-            else getattr(self._parent, 'keyboard', None)
-        )
+        keyboard = getattr(active, 'keyboard', None) or getattr(self._parent, 'keyboard', None)
         if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
             if keyboard:
                 keyboard.show_for_widget(focused)
@@ -246,6 +243,11 @@ class ButtonInputMixin(InputMixin):
         return False
 
     def _handle_active_window_button(self, active: QWidget, button_code: int) -> bool:
+        if button_code in BUTTONS['add_game'] and isinstance(active, QDialog):
+            action = active.findChild(QPushButton, "gamepadAddButton")
+            if action is not None and action.isVisible() and action.isEnabled():
+                action.click()
+                return True
         if button_code in BUTTONS['back'] and isinstance(active, QDialog):
             active.reject()
             return True

@@ -141,6 +141,10 @@ class FileExplorerInputMixin(InputMixin):
                     self.file_explorer.show_folder_context_menu(item_rect.center())
 
             elif button_code in BUTTONS['add_game']:  # X button
+                if self._handle_active_window_button(self.file_explorer, button_code):
+                    return
+                if not self.file_explorer.directory_only:
+                    return
                 if self.file_explorer.file_list.count() == 0:
                     return
 

@@ -51,6 +51,7 @@ class MainWindowWorkersMixin:
             "_imageWorkerPool",
             "_detailImageWorkerPool",
             "_themeArchiveWorkers",
+            "_gameFolderWorkers",
         ):
             self._stopWorkerThreads(workers_name)
         downloader = getattr(self, "downloader", None)

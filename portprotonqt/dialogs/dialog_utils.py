@@ -25,7 +25,12 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
 
     dialog_actions = []
 
-    if context == 'file_explorer':
+    if context == 'folder_import':
+        dialog_actions = [
+            ("add_game", _("Apply")),
+            ("back", _("Close")),
+        ]
+    elif context == 'file_explorer':
         dialog_actions = [
             ("confirm", _("Open")),
             ("add_game", _("Select Dir")),

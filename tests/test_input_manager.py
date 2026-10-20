@@ -1456,3 +1456,111 @@ def test_settings_tool_gamepad_reaches_action_buttons(tool: str, monkeypatch: Mo
     manager.handle_settings_dpad(PAD_DPAD_Y, -1, 0)
     assert QApplication.focusWidget() is control
     dialog.close()
+
+
+def test_confirm_in_dialog_uses_its_own_keyboard() -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = cast(Any, QDialog())
+    field = QLineEdit(dialog)
+    shown_for = []
+    dialog.keyboard = SimpleNamespace(show_for_widget=shown_for.append)
+    main_keyboard = MagicMock()
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, SimpleNamespace(keyboard=main_keyboard))
+    confirm = next(iter(input_manager.BUTTONS["confirm"]))
+
+    assert manager._route_button_to_text_input(dialog, field, confirm)
+    assert shown_for == [field]
+    main_keyboard.show_for_widget.assert_not_called()
+    assert app is not None
+
+
+def test_dpad_stays_on_active_dialog_keyboard(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = cast(Any, QDialog())
+    field = QLineEdit(dialog)
+    key = QPushButton("Key", dialog)
+    key.move(0, 40)
+    down = MagicMock(side_effect=key.setFocus)
+    dialog.keyboard = SimpleNamespace(isVisible=lambda: True, move_focus_left=MagicMock(), move_focus_right=MagicMock(),
+                                       move_focus_up=MagicMock(), move_focus_down=down)
+    dialog.show()
+    dialog.activateWindow()
+    app.processEvents()
+    field.setFocus()
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, SimpleNamespace(keyboard=None, gamesListWidget=QWidget()))
+    manager.axis_moving = False
+    manager._gamepad_handling_enabled = True
+    navigation = MagicMock()
+    monkeypatch.setattr(manager, "_start_dpad_repeat", MagicMock())
+    monkeypatch.setattr(manager, "_route_dpad_navigation", navigation)
+    monkeypatch.setattr(QApplication, "activeWindow", lambda: dialog)
+    manager._handle_default_dpad(PAD_DPAD_Y, 1, 0.0)
+    down.assert_called_once()
+    navigation.assert_not_called()
+    assert QApplication.focusWidget() is key
+    dialog.close()
+
+
+@mark.parametrize("mode", ["import", "exe", "directory"])
+def test_file_picker_x_does_not_put_folder_in_executable_field(
+    tmp_path: Any, monkeypatch: MonkeyPatch, mode: str,
+) -> None:
+    from PySide6.QtWidgets import QListWidget
+    from portprotonqt.dialogs.base import FileSelectedSignal
+
+    app = QApplication.instance() or QApplication([])
+    folder = tmp_path / "Games"
+    folder.mkdir()
+    picker = cast(Any, QDialog())
+    picker.current_path = str(tmp_path)
+    picker.directory_only = mode == "directory"
+    picker.file_list = QListWidget(picker)
+    picker.file_list.addItem("Games/")
+    picker.file_list.setCurrentRow(0)
+    picker.file_signal = FileSelectedSignal()
+    selected = []
+    picker.file_signal.file_selected.connect(selected.append)
+    action = QPushButton(picker)
+    if mode == "import":
+        action.setObjectName("gamepadAddButton")
+    clicked = MagicMock()
+    action.clicked.connect(clicked)
+    picker.show()
+    app.processEvents()
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, SimpleNamespace(keyboard=None))
+    manager.file_explorer = picker
+    monkeypatch.setattr(QApplication, "activeWindow", lambda: picker)
+    monkeypatch.setattr(QApplication, "activePopupWidget", lambda: None)
+    manager.handle_file_explorer_button(next(iter(input_manager.BUTTONS["add_game"])), 1)
+    assert clicked.call_count == int(mode == "import")
+    assert selected == ([str(folder)] if mode == "directory" else [])
+    assert picker.result() == (QDialog.DialogCode.Accepted if mode == "directory" else QDialog.DialogCode.Rejected)
+    picker.close()
+
+
+def test_x_edits_keyboard_without_triggering_dialog_action(monkeypatch: MonkeyPatch) -> None:
+    app = QApplication.instance() or QApplication([])
+    dialog = cast(Any, QDialog())
+    keyboard = QFrame(dialog)
+    dialog.keyboard = keyboard
+    action = QPushButton(dialog)
+    action.setObjectName("gamepadAddButton")
+    clicked = MagicMock()
+    action.clicked.connect(clicked)
+    dialog.show()
+    app.processEvents()
+    manager = InputManager.__new__(InputManager)
+    manager._parent = cast(MainWindowProtocol, SimpleNamespace(keyboard=None))
+    handled = MagicMock()
+    monkeypatch.setattr(manager, "_handle_common_ui_elements", lambda _button: False)
+    monkeypatch.setattr(manager, "handle_virtual_keyboard", handled)
+    monkeypatch.setattr(input_buttons, "VirtualKeyboard", QFrame)
+    monkeypatch.setattr(QApplication, "activeWindow", lambda: dialog)
+    button = next(iter(input_manager.BUTTONS["add_game"]))
+    manager._handle_default_button(button, 1)
+    handled.assert_called_once_with(button, 1)
+    clicked.assert_not_called()
+    dialog.close()

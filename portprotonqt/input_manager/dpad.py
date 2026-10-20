@@ -317,10 +317,7 @@ class DpadInputMixin(InputMixin):
 
     def _handle_default_dpad(self, code: int, value: int, current_time: float) -> None:
         active_window = QApplication.activeWindow()
-        if isinstance(active_window, AddGameDialog):
-            keyboard = getattr(active_window, 'keyboard', None)
-        else:
-            keyboard = getattr(self._parent, 'keyboard', None)
+        keyboard = getattr(active_window, 'keyboard', None) or getattr(self._parent, 'keyboard', None)
 
         if value == 0:
             self._reset_dpad_repeat()
