@@ -155,6 +155,10 @@ msgstr "El archivo ya existe: {file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "No se pudo cambiar el nombre del archivo: {error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "Seleccionar todo"
+
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
 
@@ -259,9 +263,6 @@ msgstr "Se ha eliminado «{game_name}» de {location}"
 
 msgid "Desktop"
 msgstr "Escritorio"
-
-msgid "Play this game on Steam"
-msgstr ""
 
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
@@ -377,9 +378,6 @@ msgstr "Falló"
 
 msgid "Denied"
 msgstr "Denegado"
-
-msgid "Missing EXE"
-msgstr ""
 
 msgid "Game Title"
 msgstr "Título del juego"
@@ -2211,9 +2209,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr "Descargando"
 
-msgid "All"
-msgstr ""
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2271,6 +2266,9 @@ msgstr ""
 msgid "Sort Method:"
 msgstr ""
 
+msgid "All"
+msgstr ""
+
 msgid "Display Filter:"
 msgstr ""
 
@@ -2322,6 +2320,9 @@ msgid ""
 msgstr ""
 "¿Estás seguro de que quieres eliminar «{game_name}»? Esto eliminará el "
 "archivo .desktop y los datos personalizados."
+
+msgid "Failed to install theme"
+msgstr "Error al instalar el tema"
 
 msgid "PortProton Settings"
 msgstr ""
@@ -2613,9 +2614,6 @@ msgstr "Error al descargar los temas"
 
 msgid "Downloading… {0}%"
 msgstr "Descargando… {0}%"
-
-msgid "Failed to install theme"
-msgstr "Error al instalar el tema"
 
 msgid "Select Theme:"
 msgstr ""

@@ -153,6 +153,10 @@ msgstr "A pasta já existe: {file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "Falha ao renomear o arquivo: {error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "Selecionar Tudo"
+
 msgid "Delete from PortProton"
 msgstr "Excluir do PortProton"
 
@@ -259,9 +263,6 @@ msgstr "'{game_name}' removido de {location}"
 
 msgid "Desktop"
 msgstr "Área de Trabalho"
-
-msgid "Play this game on Steam"
-msgstr ""
 
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
@@ -375,9 +376,6 @@ msgstr "Quebrado"
 
 msgid "Denied"
 msgstr "Negado"
-
-msgid "Missing EXE"
-msgstr ""
 
 msgid "Game Title"
 msgstr "Título do jogo"
@@ -2199,9 +2197,6 @@ msgstr "Selecionar pasta de instalação"
 msgid "Another download is running"
 msgstr "Outro download está em andamento"
 
-msgid "All"
-msgstr "Todos"
-
 msgid "Another GOG operation is already running"
 msgstr "Outra operação da GOG já está em execução"
 
@@ -2256,6 +2251,9 @@ msgstr "Alfabético"
 msgid "Sort Method:"
 msgstr "Método de Ordenação:"
 
+msgid "All"
+msgstr "Todos"
+
 msgid "Display Filter:"
 msgstr "Filtro de Exibição:"
 
@@ -2305,6 +2303,9 @@ msgid ""
 msgstr ""
 "Tem certeza de que deseja excluir {count} cartões sem executável? Isso "
 "removerá os arquivos .desktop e os dados personalizados."
+
+msgid "Failed to install theme"
+msgstr "Falha ao instalar o tema"
 
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"
@@ -2596,9 +2597,6 @@ msgstr "Falha ao baixar o tema"
 
 msgid "Downloading… {0}%"
 msgstr "Baixando… {0}%"
-
-msgid "Failed to install theme"
-msgstr "Falha ao instalar o tema"
 
 msgid "Select Theme:"
 msgstr "Selecionar Tema:"

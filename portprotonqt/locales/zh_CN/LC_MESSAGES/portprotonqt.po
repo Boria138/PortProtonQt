@@ -149,6 +149,10 @@ msgstr "文件已存在：{file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "重命名文件失败：{error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "全选"
+
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"
 
@@ -254,9 +258,6 @@ msgstr "已从 {location} 移除\"{game_name}\""
 
 msgid "Desktop"
 msgstr "桌面"
-
-msgid "Play this game on Steam"
-msgstr ""
 
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
@@ -367,9 +368,6 @@ msgstr "损坏"
 
 msgid "Denied"
 msgstr "已拒绝"
-
-msgid "Missing EXE"
-msgstr ""
 
 #, fuzzy
 msgid "Game Title"
@@ -2170,9 +2168,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr "正在下载"
 
-msgid "All"
-msgstr "全部"
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2231,6 +2226,9 @@ msgstr "按字母顺序"
 msgid "Sort Method:"
 msgstr "游戏排序方式:"
 
+msgid "All"
+msgstr "全部"
+
 msgid "Display Filter:"
 msgstr "显示筛选："
 
@@ -2288,6 +2286,9 @@ msgid ""
 msgstr ""
 "确定要删除 {count} 个没有可执行文件的卡片吗？这将删除 .desktop 文件和自定义数"
 "据。"
+
+msgid "Failed to install theme"
+msgstr "安装主题失败"
 
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
@@ -2581,9 +2582,6 @@ msgstr "下载主题失败"
 
 msgid "Downloading… {0}%"
 msgstr "正在下载… {0}%"
-
-msgid "Failed to install theme"
-msgstr "安装主题失败"
 
 msgid "Select Theme:"
 msgstr "选择主题："

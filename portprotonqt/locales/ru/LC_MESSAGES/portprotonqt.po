@@ -153,6 +153,10 @@ msgstr "Файл уже существует: {file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "Не удалось переименовать файл: {error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "Выбрать всё"
+
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
 
@@ -257,9 +261,6 @@ msgstr "'{game_name}' удалён(а) из {location}"
 
 msgid "Desktop"
 msgstr "Рабочий стол"
-
-msgid "Play this game on Steam"
-msgstr ""
 
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
@@ -373,9 +374,6 @@ msgstr "Сломано"
 
 msgid "Denied"
 msgstr "Отказано"
-
-msgid "Missing EXE"
-msgstr ""
 
 msgid "Game Title"
 msgstr "Название игры"
@@ -2194,9 +2192,6 @@ msgstr "Выберите папку установки"
 msgid "Another download is running"
 msgstr "Другая загрузка уже выполняется"
 
-msgid "All"
-msgstr "Все"
-
 msgid "Another GOG operation is already running"
 msgstr "Другая операция GOG уже выполняется"
 
@@ -2249,6 +2244,9 @@ msgstr "Алфавитный"
 msgid "Sort Method:"
 msgstr "Метод сортировки:"
 
+msgid "All"
+msgstr "Все"
+
 msgid "Display Filter:"
 msgstr "Фильтр:"
 
@@ -2298,6 +2296,9 @@ msgid ""
 msgstr ""
 "Уверены, что хотите удалить {count} карточек без исполняемых файлов? Это "
 "приведёт к удалению файлов .desktop и пользовательских данных."
+
+msgid "Failed to install theme"
+msgstr "Не удалось установить тему"
 
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
@@ -2587,9 +2588,6 @@ msgstr "Не удалось скачать тему"
 
 msgid "Downloading… {0}%"
 msgstr "Скачивание… {0}%"
-
-msgid "Failed to install theme"
-msgstr "Не удалось установить тему"
 
 msgid "Select Theme:"
 msgstr "Выбрать тему:"

@@ -153,6 +153,10 @@ msgstr "Die Datei existiert bereits: {file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "Datei konnte nicht umbenannt werden: {error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "Alle auswählen"
+
 msgid "Delete from PortProton"
 msgstr "Von PortProton löschen"
 
@@ -259,9 +263,6 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 
 msgid "Desktop"
 msgstr "Desktop"
-
-msgid "Play this game on Steam"
-msgstr ""
 
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
@@ -375,9 +376,6 @@ msgstr "Kaputt"
 
 msgid "Denied"
 msgstr "Abgelehnt"
-
-msgid "Missing EXE"
-msgstr ""
 
 msgid "Game Title"
 msgstr "Spieltitel"
@@ -2201,9 +2199,6 @@ msgstr "Installationsordner auswählen"
 msgid "Another download is running"
 msgstr "Ein weiterer Download läuft"
 
-msgid "All"
-msgstr "Alle"
-
 msgid "Another GOG operation is already running"
 msgstr "Eine andere GOG-Aktion läuft bereits"
 
@@ -2258,6 +2253,9 @@ msgstr "Alphabetisch"
 msgid "Sort Method:"
 msgstr "Sortiermethode:"
 
+msgid "All"
+msgstr "Alle"
+
 msgid "Display Filter:"
 msgstr "Anzeigefilter:"
 
@@ -2307,6 +2305,9 @@ msgid ""
 msgstr ""
 "Sollen '{count}' Titelbidler ohne ausführbaren Dateien wirklich gelöscht "
 "werden? Dabei werden Benutzerdaten und .desktop-Dateien gelöscht."
+
+msgid "Failed to install theme"
+msgstr "Installation des Themes fehlgeschlagen"
 
 msgid "PortProton Settings"
 msgstr "PortProton-Einstellungen"
@@ -2600,9 +2601,6 @@ msgstr "Herunterladen des Themes fehlgeschlagen"
 
 msgid "Downloading… {0}%"
 msgstr "Herunterladen… {0}%"
-
-msgid "Failed to install theme"
-msgstr "Installation des Themes fehlgeschlagen"
 
 msgid "Select Theme:"
 msgstr "Theme auswählen:"

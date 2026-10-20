@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 10:50+0500\n"
+"POT-Creation-Date: 2026-10-20 18:59+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -144,6 +144,9 @@ msgstr ""
 msgid "Failed to rename file: {error}"
 msgstr ""
 
+msgid "Select multiple"
+msgstr ""
+
 msgid "Delete from PortProton"
 msgstr ""
 
@@ -245,9 +248,6 @@ msgid "Removed '{game_name}' from {location}"
 msgstr ""
 
 msgid "Desktop"
-msgstr ""
-
-msgid "Play this game on Steam"
 msgstr ""
 
 #, python-brace-format
@@ -356,9 +356,6 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
-msgstr ""
-
-msgid "Missing EXE"
 msgstr ""
 
 msgid "Game Title"
@@ -2099,9 +2096,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr ""
 
-msgid "All"
-msgstr ""
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2156,6 +2150,9 @@ msgstr ""
 msgid "Sort Method:"
 msgstr ""
 
+msgid "All"
+msgstr ""
+
 msgid "Display Filter:"
 msgstr ""
 
@@ -2202,6 +2199,9 @@ msgstr ""
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
 "will remove the .desktop files and custom data."
+msgstr ""
+
+msgid "Failed to install theme"
 msgstr ""
 
 msgid "PortProton Settings"
@@ -2493,9 +2493,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Downloading… {0}%"
-msgstr ""
-
-msgid "Failed to install theme"
 msgstr ""
 
 msgid "Select Theme:"
