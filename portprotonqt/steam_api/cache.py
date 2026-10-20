@@ -179,7 +179,7 @@ def build_index(steam_apps: list) -> dict:
     for app in steam_apps:
         normalized = app.get("normalized_name", "")
         if normalized:
-            steam_apps_index[normalized] = app
+            steam_apps_index.setdefault(normalized, app)
     return steam_apps_index
 
 

@@ -752,15 +752,18 @@ def get_steam_game_info_async(
 
         def on_app_info(app_info: dict | None) -> None:
             if not app_info:
+                cover = get_local_steam_cover(appid, prefer_exact=False)
+                if not cover and not has_custom_data:
+                    cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
                 def on_anticheat_info_no_info(anticheat_info: dict) -> None:
                     result = _build_game_info_result(
-                        appid="",
+                        appid=appid,
                         name=decode_text(game_name),
                         description="",
-                        cover="",
+                        cover=cover,
                         controller_support="",
                         protondb_tier="",
-                        steam_game="false",
+                        steam_game="true",
                         anticheat_status=anticheat_info.get("status", ""),
                         anticheat_slug=anticheat_info.get("slug", ""),
                     )

@@ -116,3 +116,25 @@ class TestDeleteCachedAppFiles:
         (tmp_path / "other.txt").write_text("hello")
         delete_cached_app_files(str(tmp_path), "steam_app_*.json")
         assert (tmp_path / "other.txt").exists()
+
+
+def test_matched_steam_game_keeps_cover_when_app_details_fail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import portprotonqt.steam_api.api as api
+
+    executable = tmp_path / "Praest.exe"
+    executable.touch()
+    app = {"appid": 1371690, "normalized_name": "graven"}
+    monkeypatch.setattr(api.ui_config, "get_economy_mode", lambda: False)
+    monkeypatch.setattr("portprotonqt.steam_api.cache.get_exiftool_data", lambda _exe: {})
+    monkeypatch.setattr(api, "_has_custom_data_for_exe", lambda _name: False)
+    monkeypatch.setattr(api, "get_steam_apps_and_index_async", lambda cb: cb(([app], {"graven": app})))
+    monkeypatch.setattr(api, "fetch_app_info_async", lambda _appid, cb: cb(None))
+    monkeypatch.setattr(api, "get_local_steam_cover", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(api, "get_weanticheatyet_info_async", lambda _name, cb: cb({}))
+    monkeypatch.setattr(api, "_add_ppdb_info", lambda result, _name, cb: cb(result))
+    results = []
+    api.get_steam_game_info_async("GRAVEN", str(executable), results.append)
+    assert len(results) == 1
+    assert results[0]["appid"] == 1371690
+    assert results[0]["steam_game"] == "true"
+    assert results[0]["cover"] == "https://steamcdn-a.akamaihd.net/steam/apps/1371690/library_600x900_2x.jpg"
