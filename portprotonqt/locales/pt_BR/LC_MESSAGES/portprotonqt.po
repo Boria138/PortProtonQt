@@ -317,10 +317,6 @@ msgstr ""
 "alterações."
 
 #, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr "'{game_name}' foi adicionado à Steam."
-
-#, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr "Falha ao adicionar '{game_name}' à Steam: {error}"
 
@@ -973,6 +969,22 @@ msgstr "Atualizando AppImage..."
 msgid "Launching {0}"
 msgstr "Iniciando {0}"
 
+#, python-brace-format
+msgid "Scanning: {folder}"
+msgstr ""
+
+#, python-brace-format
+msgid "Checking existing shortcuts: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Adding: {name}"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to create shortcut: {name}"
+msgstr "Falha ao criar a pasta: {error}"
+
 msgid "Name:"
 msgstr "Nome:"
 
@@ -997,6 +1009,33 @@ msgstr "Pré-visualização da Capa:"
 msgid "Apply"
 msgstr "Aplicar"
 
+#, fuzzy
+msgid "Select folder"
+msgstr "Excluir Pasta"
+
+#, fuzzy
+msgid "Processing games…"
+msgstr "Jogos Recentes"
+
+#, python-brace-format
+msgid ""
+"Processed {completed}/{total}\n"
+"{current}"
+msgstr ""
+
+msgid "Information"
+msgstr "Informação"
+
+msgid "No games found in the selected folder."
+msgstr ""
+
+#, fuzzy
+msgid "Select games"
+msgstr "Jogos Recentes"
+
+msgid "Close"
+msgstr "Fechar"
+
 msgid "Invalid image"
 msgstr "Imagem inválida"
 
@@ -1016,9 +1055,6 @@ msgid "The program stopped. Compatibility details were collected automatically."
 msgstr ""
 "O programa foi encerrado. As informações de compatibilidade foram coletadas "
 "automaticamente."
-
-msgid "Close"
-msgstr "Fechar"
 
 msgid "Downloading…"
 msgstr "Baixando…"
@@ -1282,9 +1318,6 @@ msgstr "Falha ao abrir o arquivo PPDB:\n"
 
 msgid "Failed to open file:\n"
 msgstr "Falha ao abrir o arquivo:\n"
-
-msgid "Information"
-msgstr "Informação"
 
 msgid "Confirm PPDB Clear"
 msgstr "Confirmar Limpeza do PPDB"

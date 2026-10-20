@@ -311,10 +311,6 @@ msgid ""
 msgstr "\"{game_name}\"已添加到 Steam。请重启 Steam 以使更改生效。"
 
 #, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr "\"{game_name}\"已添加到 Steam。"
-
-#, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr "无法将\"{game_name}\"添加到 Steam：{error}"
 
@@ -939,6 +935,22 @@ msgstr "正在更新 AppImage..."
 msgid "Launching {0}"
 msgstr "正在启动 {0}"
 
+#, python-brace-format
+msgid "Scanning: {folder}"
+msgstr ""
+
+#, python-brace-format
+msgid "Checking existing shortcuts: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Adding: {name}"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to create shortcut: {name}"
+msgstr "创建文件夹失败：{error}"
+
 msgid "Name:"
 msgstr "名称："
 
@@ -963,6 +975,34 @@ msgstr "封面预览："
 msgid "Apply"
 msgstr "应用"
 
+#, fuzzy
+msgid "Select folder"
+msgstr "删除文件夹"
+
+#, fuzzy
+msgid "Processing games…"
+msgstr "最近游戏"
+
+#, python-brace-format
+msgid ""
+"Processed {completed}/{total}\n"
+"{current}"
+msgstr ""
+
+msgid "Information"
+msgstr "信息"
+
+msgid "No games found in the selected folder."
+msgstr ""
+
+#, fuzzy
+msgid "Select games"
+msgstr "最近游戏"
+
+#, fuzzy
+msgid "Close"
+msgstr "鼠标"
+
 msgid "Invalid image"
 msgstr "图像无效"
 
@@ -980,10 +1020,6 @@ msgstr ""
 
 msgid "The program stopped. Compatibility details were collected automatically."
 msgstr ""
-
-#, fuzzy
-msgid "Close"
-msgstr "鼠标"
 
 msgid "Downloading…"
 msgstr "正在下载…"
@@ -1251,9 +1287,6 @@ msgstr "打开 PPDB 文件失败：\n"
 #, fuzzy
 msgid "Failed to open file:\n"
 msgstr "打开 PPDB 文件失败：\n"
-
-msgid "Information"
-msgstr "信息"
 
 msgid "Confirm PPDB Clear"
 msgstr "确认清除 PPDB"
