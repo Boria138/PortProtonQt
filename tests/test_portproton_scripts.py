@@ -192,3 +192,43 @@ def test_vk_gpu_info_uses_build_aux_binary() -> None:
 
     assert '/../../../bin/vk_gpu_info"' in helper
     assert "dev-scripts/vk_gpu_info" not in helper
+
+
+@mark.parametrize("filename,pe_status,expected_calls", [
+    ("Game [one].EXE", "0", ["pe"]),
+    ("Game [one].exe", "1", ["pe", "exiftool"]),
+    ("Game [one].lnk", "0", ["exiftool"]),
+])
+def test_executable_metadata_uses_pefile_and_preserves_lnk_fallback(
+    tmp_path: Path, filename: str, pe_status: str, expected_calls: list[str],
+) -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text()
+    definition = helper.split("use_exiftool () {", 1)[1].split("\npw_create_gui_png () {", 1)[0]
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    exiftool = bin_dir / "exiftool"
+    exiftool.write_text('#!/bin/sh\nprintf "exiftool\\n" >> "$CALLS"\nprintf "Product Name: Fallback\\n"\n')
+    exiftool.chmod(0o755)
+    calls = tmp_path / "calls"
+    script = '''python_module () {
+    printf 'pe\\n' >> "$CALLS"
+    if [[ "$PE_STATUS" == 0 ]]; then
+        printf 'Product Name: Game\\nFile Description: Description\\nCompany Name: Sony\\n'
+    fi
+    return "$PE_STATUS"
+}
+'''
+    script += 'use_exiftool () {' + definition + '\nuse_exiftool "$TARGET"\nuse_exiftool "$TARGET"\n'
+    result = subprocess.run(
+        ["bash", "-c", script], capture_output=True, text=True, check=False,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.defpath}", "PW_TMPFS_PATH": str(tmp_path),
+             "CALLS": str(calls), "PE_STATUS": pe_status, "TARGET": str(tmp_path / filename)},
+    )
+    assert result.returncode == 0, result.stderr
+    assert calls.read_text().splitlines() == expected_calls
+    metadata = (tmp_path / "exiftool.tmp").read_text()
+    assert metadata.splitlines()[0] == str(tmp_path / filename)
+    assert "Product Name:" in metadata
+    if expected_calls == ["pe"]:
+        assert "File Description: Description" in metadata
+        assert "Company Name: Sony" in metadata

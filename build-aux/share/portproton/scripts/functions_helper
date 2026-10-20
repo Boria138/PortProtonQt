@@ -2272,9 +2272,14 @@ manage_user_conf_value () {
 
 use_exiftool () {
     if [[ ! -f "${PW_TMPFS_PATH}/exiftool.tmp" ]] \
-    || ! grep -q "$1" "${PW_TMPFS_PATH}/exiftool.tmp"
+    || ! grep -Fqx -- "$1" "${PW_TMPFS_PATH}/exiftool.tmp"
     then
-        echo "$1" > "${PW_TMPFS_PATH}/exiftool.tmp"
+        printf '%s\n' "$1" > "${PW_TMPFS_PATH}/exiftool.tmp"
+        if [[ "${1,,}" == *.exe ]] \
+        && python_module exe_metadata "$1" >> "${PW_TMPFS_PATH}/exiftool.tmp"
+        then
+            return 0
+        fi
         if ! command -v exiftool &>/dev/null \
         || ! timeout 3 exiftool "$1" &>> "${PW_TMPFS_PATH}/exiftool.tmp"
         then
