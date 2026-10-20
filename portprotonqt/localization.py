@@ -3,7 +3,7 @@ import configparser
 from pathlib import Path
 import locale
 import os
-from babel import Locale
+from babel import Locale, UnknownLocaleError
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -85,8 +85,11 @@ def get_system_locale():
 
     if ui_config.get_force_english():
         return 'en'
-    loc = locale.getlocale()[0]
-    return loc if loc else 'en'
+    try:
+        loc = locale.getlocale()[0]
+        return str(Locale.parse(loc)) if loc else 'en'
+    except (UnknownLocaleError, ValueError):
+        return 'en'
 
 def get_steam_language():
     try:

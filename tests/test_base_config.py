@@ -196,6 +196,11 @@ def test_horizontal_card_orientation_uses_theme_until_overridden(tmp_path: Path)
 @pytest.mark.parametrize("system_locale,force_english,expected", [
     ("ru_RU", False, "ru_RU"),
     (None, False, "en"),
+    ("C", False, "en"),
+    ("c", False, "en"),
+    ("C.UTF-8", False, "en"),
+    ("POSIX", False, "en"),
+    ("unknown", False, "en"),
     ("ru_RU", True, "en"),
 ])
 def test_system_locale(

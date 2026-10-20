@@ -4,6 +4,7 @@ import warnings
 
 from PySide6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
+from PySide6.QtWidgets import QApplication, QLineEdit
 
 from portprotonqt.logger import get_logger
 from portprotonqt.config import ui_config
@@ -167,7 +168,8 @@ class GameCardAnimations:
         """Handle mouse enter event animations."""
         self.game_card._hovered = True
         self.game_card.hoverChanged.emit(self.game_card.name, True)
-        self.game_card.setFocus(Qt.FocusReason.MouseFocusReason)
+        if not isinstance(QApplication.focusWidget(), QLineEdit):
+            self.game_card.setFocus(Qt.FocusReason.MouseFocusReason)
 
         if not self.thickness_anim:
             self.setup_animations()

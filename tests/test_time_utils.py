@@ -6,7 +6,9 @@ Key regression areas (from git history):
 - Malformed playtime data robustness (dd65021)
 - #@_@# space encoding in stat paths
 """
-from datetime import datetime
+from datetime import datetime, timedelta
+
+import pytest
 
 from portprotonqt.time_utils import (
     _parse_last_launch_line,
@@ -18,7 +20,20 @@ from portprotonqt.time_utils import (
     parse_playtime_file,
     get_playtime_for_exe,
     format_playtime,
+    format_last_launch,
 )
+
+
+@pytest.mark.parametrize("detail_level", ["detailed", "brief", "steam"])
+def test_time_formatting_with_c_locale(
+    monkeypatch: pytest.MonkeyPatch, detail_level: str,
+) -> None:
+    monkeypatch.setattr("portprotonqt.localization.locale.getlocale", lambda: ("c", None))
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_force_english", lambda: False)
+    monkeypatch.setattr("portprotonqt.time_utils.ui_config.get_time_detail_level", lambda: detail_level)
+
+    assert format_last_launch(datetime.now() - timedelta(hours=2))
+    assert format_playtime(7200)
 
 
 # ── _parse_last_launch_line ──────────────────────────────────────────────────

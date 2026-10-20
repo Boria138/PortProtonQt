@@ -2,13 +2,139 @@
 
 from types import SimpleNamespace
 from typing import Any, cast
+import io
+import tarfile
+import zipfile
 
-from PySide6.QtCore import QEvent, QPointF, Qt
+import pytest
+
+from PySide6.QtCore import QEvent, QMimeData, QPointF, Qt, QUrl
 from PySide6.QtGui import QEnterEvent, QMouseEvent
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QApplication, QLabel, QProgressDialog, QWidget
+from types import MethodType
 
 from portprotonqt.tabs import theme_store
 from portprotonqt.tabs.theme_store import ThemeStoreCard, ThemeStoreMixin
+from portprotonqt.tabs import theme_store_workers
+from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin
+from portprotonqt.tabs.workers import MainWindowWorkersMixin
+
+
+@pytest.mark.parametrize("outcome", ["installed", "failed", "wine_archives"])
+def test_theme_zip_drop_starts_retained_worker(tmp_path, monkeypatch, outcome) -> None:
+    _app = QApplication.instance() or QApplication([])
+    archive_path = tmp_path / "theme.zip"
+    archive_path.touch()
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(archive_path))])
+    accepted = []
+    event = SimpleNamespace(
+        mimeData=lambda: mime,
+        acceptProposedAction=lambda: accepted.append(True),
+        ignore=lambda: accepted.append(False),
+    )
+    started = []
+    monkeypatch.setattr(theme_store_workers.ThemeArchiveInstallWorker, "start", lambda self: started.append(self))
+    window = cast(Any, QWidget())
+    window.theme = SimpleNamespace(MESSAGE_BOX_STYLE="", PROGRESS_BAR_STYLE="")
+    window._on_dropped_theme_installed = started.append
+    window._on_dropped_theme_failed = started.append
+    window._on_dropped_wine_archives = started.append
+    window._install_dropped_theme_archives = MethodType(
+        MainWindowLibraryTabMixin._install_dropped_theme_archives, window
+    )
+    MainWindowLibraryTabMixin.dragEnterEvent(cast(Any, window), event)
+    MainWindowLibraryTabMixin.dropEvent(cast(Any, window), event)
+
+    assert accepted == [True, True]
+    assert started == window._themeArchiveWorkers
+    assert started[0].paths == [str(archive_path)]
+    progress = window.findChild(QProgressDialog)
+    assert progress is not None
+    assert progress.isVisible()
+    assert progress.isModal()
+    assert progress.minimum() == progress.maximum() == 0
+    worker = started[0]
+    getattr(worker, outcome).emit("error" if outcome == "failed" else ["custom"])
+    assert progress.isVisible() == (outcome == "installed")
+    worker.finished.emit()
+    assert not progress.isVisible()
+    assert window._themeArchiveWorkers == []
+
+
+@pytest.mark.parametrize("archive_format", ["zip", "tar.gz"])
+def test_dropped_theme_archive_installs_and_applies(tmp_path, monkeypatch, archive_format) -> None:
+    archive_path = tmp_path / f"theme.{archive_format}"
+    if archive_format == "zip":
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            archive.writestr("custom/styles.py", "color = 'blue'\n")
+    else:
+        with tarfile.open(archive_path, "w:gz") as archive:
+            content = b"color = 'blue'\n"
+            entry = tarfile.TarInfo("custom/styles.py")
+            entry.size = len(content)
+            archive.addfile(entry, io.BytesIO(content))
+    themes_dir = tmp_path / "themes"
+    monkeypatch.setattr(theme_store_workers, "THEMES_DIRS", [themes_dir])
+    applied = []
+    invalidated = []
+    refreshed = []
+    window = SimpleNamespace(
+        theme_manager=SimpleNamespace(invalidate_theme=invalidated.append),
+        _refresh_theme_combo=refreshed.append,
+        _apply_theme_and_restart=lambda name, variant: applied.append((name, variant)),
+    )
+    monkeypatch.setattr("portprotonqt.tabs.library_tab.ui_config.get_theme_variant", lambda: "dark")
+    worker = theme_store_workers.ThemeArchiveInstallWorker([str(archive_path)])
+    worker.installed.connect(
+        lambda names: MainWindowLibraryTabMixin._on_dropped_theme_installed(cast(Any, window), names)
+    )
+    errors = []
+    worker.failed.connect(errors.append)
+    worker.run()
+
+    assert not errors
+    assert (themes_dir / "custom/styles.py").read_text() == "color = 'blue'\n"
+    assert invalidated == refreshed == ["custom"]
+    assert applied == [("custom", "dark")]
+
+
+def test_dropped_archives_keep_wine_and_reject_unsafe_theme(tmp_path, monkeypatch) -> None:
+    wine = tmp_path / "wine.tar.gz"
+    with tarfile.open(wine, "w:gz") as archive:
+        archive.addfile(tarfile.TarInfo("wine/bin/wine"))
+    unsafe = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(unsafe, "w") as archive:
+        archive.writestr("../styles.py", "")
+    monkeypatch.setattr(theme_store_workers, "THEMES_DIRS", [tmp_path / "themes"])
+    worker = theme_store_workers.ThemeArchiveInstallWorker([str(wine), str(unsafe)])
+    wines = []
+    errors = []
+    installed = []
+    worker.wine_archives.connect(wines.append)
+    worker.failed.connect(errors.append)
+    worker.installed.connect(installed.append)
+    worker.run()
+
+    assert wines == [[str(wine)]]
+    assert len(errors) == 1
+    assert installed == []
+    assert not (tmp_path / "styles.py").exists()
+
+
+def test_shutdown_waits_for_dropped_theme_workers() -> None:
+    worker = SimpleNamespace()
+    stopped = []
+    window = SimpleNamespace(
+        _themeArchiveWorkers=[worker],
+        _stopWorkerThread=lambda *args: None,
+        _stopWorkerThreads=lambda name: MainWindowWorkersMixin._stopWorkerThreads(cast(Any, window), name),
+        _stopWorker=lambda *args: stopped.append(args),
+    )
+    MainWindowWorkersMixin._stopBackgroundWorkers(cast(Any, window))
+
+    assert stopped == [(worker, "_themeArchiveWorkers", None)]
+    assert window._themeArchiveWorkers == []
 
 
 class FakeSignal:

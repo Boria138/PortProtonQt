@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QMessageBox,
+    QProgressDialog,
     QSizePolicy,
     QToolButton,
     QVBoxLayout,
@@ -42,6 +43,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.scripts_utils.shortcut_tools import find_ext_ppdb
 from portprotonqt.scripts_utils.prefix_backup import BACKUP_EXTENSION
 from portprotonqt.steam_api import get_cached_steam_game_info, is_game_in_steam
+from portprotonqt.tabs.theme_store_workers import THEME_ARCHIVE_EXTENSIONS, ThemeArchiveInstallWorker
 from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
@@ -604,18 +606,21 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
             for url in event.mimeData().urls():
                 path = url.toLocalFile().lower()
                 if path.endswith(
-                    LAUNCH_FILE_EXTENSIONS + PP_FILE_EXTENSIONS + WINE_ARCHIVE_EXTENSIONS
+                    LAUNCH_FILE_EXTENSIONS + PP_FILE_EXTENSIONS + THEME_ARCHIVE_EXTENSIONS
                 ):
                     event.acceptProposedAction()
                     return
         event.ignore()
 
     def dropEvent(self, event):
+        if any(worker.isRunning() for worker in getattr(self, "_themeArchiveWorkers", [])):
+            event.ignore()
+            return
         wine_archives = []
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             path_lower = path.lower()
-            if path_lower.endswith(WINE_ARCHIVE_EXTENSIONS) and os.path.isfile(path):
+            if path_lower.endswith(THEME_ARCHIVE_EXTENSIONS) and os.path.isfile(path):
                 wine_archives.append(path)
                 continue
             if path_lower.endswith(BACKUP_EXTENSION):
@@ -631,13 +636,55 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
                 event.acceptProposedAction()
                 break
         if wine_archives:
-            show_proton_manager(
-                self,
-                self.portproton_location,
-                input_manager=self.input_manager,
-                local_archives=wine_archives,
-            )
+            self._install_dropped_theme_archives(wine_archives)
             event.acceptProposedAction()
+
+    def _install_dropped_theme_archives(self, paths: list[str]) -> None:
+        progress = QProgressDialog(_("Installing…"), "", 0, 0, self)
+        progress.setWindowTitle(_("Theme"))
+        progress.setWindowModality(Qt.WindowModality.ApplicationModal)
+        progress.setCancelButton(None)
+        progress.setMinimumDuration(0)
+        progress.setStyleSheet(self.theme.MESSAGE_BOX_STYLE + self.theme.PROGRESS_BAR_STYLE)
+        worker = ThemeArchiveInstallWorker(paths)
+        workers = getattr(self, "_themeArchiveWorkers", [])
+        self._themeArchiveWorkers = workers
+        workers.append(worker)
+        worker.installed.connect(self._on_dropped_theme_installed)
+        worker.failed.connect(progress.close)
+        worker.failed.connect(self._on_dropped_theme_failed)
+        worker.wine_archives.connect(progress.close)
+        worker.wine_archives.connect(self._on_dropped_wine_archives)
+        worker.finished.connect(progress.close)
+        worker.finished.connect(progress.deleteLater)
+        worker.finished.connect(lambda: workers.remove(worker))
+        worker.finished.connect(worker.deleteLater)
+        progress.show()
+        worker.start()
+
+    def _on_dropped_theme_installed(self, theme_names: list[str]) -> None:
+        for theme_name in theme_names:
+            self.theme_manager.invalidate_theme(theme_name)
+        variant = ui_config.get_theme_variant()
+        theme_name = ui_config.resolve_theme(theme_names[0], variant)
+        if theme_name not in theme_names:
+            theme_name = theme_names[0]
+        self._refresh_theme_combo(theme_name)
+        self._apply_theme_and_restart(theme_name, variant)
+
+    def _on_dropped_theme_failed(self, message: str) -> None:
+        logger.warning("Failed to install dropped theme: %s", message)
+        QMessageBox.warning(self, _("Error"), _("Failed to install theme"))
+
+    def _on_dropped_wine_archives(self, paths: list[str]) -> None:
+        wine_paths = [path for path in paths if path.lower().endswith(WINE_ARCHIVE_EXTENSIONS)]
+        if len(wine_paths) != len(paths):
+            self._on_dropped_theme_failed("No themes found in archive")
+        if wine_paths:
+            show_proton_manager(
+                self, self.portproton_location,
+                input_manager=self.input_manager, local_archives=wine_paths,
+            )
 
     def openAddGameDialog(self, exe_path=None):
         if self.current_add_game_dialog is not None and self.current_add_game_dialog.isVisible():

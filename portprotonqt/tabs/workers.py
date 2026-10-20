@@ -38,6 +38,7 @@ class MainWindowWorkersMixin:
             "_listWorkerPool",
             "_imageWorkerPool",
             "_detailImageWorkerPool",
+            "_themeArchiveWorkers",
         ):
             self._stopWorkerThreads(workers_name)
         downloader = getattr(self, "downloader", None)
