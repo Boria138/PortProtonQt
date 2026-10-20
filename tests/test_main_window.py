@@ -312,7 +312,7 @@ def _tile_theme() -> Any:
 
 @mark.parametrize(
     "worker_name",
-    ("egs_library_worker", "gog_library_worker", "gog_metadata_worker", "gog_repair_worker", "store_dlc_worker"),
+    ("egs_library_worker", "gog_library_worker", "gog_metadata_worker", "gog_repair_worker", "gog_delete_worker", "store_dlc_worker"),
 )
 def test_shutdown_waits_for_store_library_workers(worker_name: str) -> None:
     worker = MagicMock()
@@ -1278,6 +1278,7 @@ def test_game_card_click_uses_select_callback() -> None:
         autoinstall_exe_name="",
         select_callback=select_callback,
         _get_missing_executable_path=lambda: "",
+        context_menu_manager=None,
     )
 
     GameCard.click(cast(Any, card))
@@ -3110,3 +3111,20 @@ def test_autoinstall_table_columns_match_header(
                        - value.mapTo(window, value.rect().center()).x()) <= 1
     window.stackedWidget.deleteLater()
     window.deleteLater()
+
+
+def test_shutdown_stops_batch_before_store_processes() -> None:
+    calls: list[str] = []
+    process = MagicMock()
+    process.terminate.side_effect = lambda: calls.append("terminate")
+    process.waitForFinished.side_effect = [False, True]
+    menu = SimpleNamespace(stop_card_actions=lambda: calls.append("stop_batch"))
+    window = SimpleNamespace(
+        context_menu_manager=menu, egs_process=process, store_download_queue=[("egs", {})],
+        _stopWorkerThread=MagicMock(), _stopWorkerThreads=MagicMock(),
+    )
+    MainWindowWorkersMixin._stopBackgroundWorkers(cast(Any, window))
+    assert calls == ["stop_batch", "terminate"]
+    process.kill.assert_called_once_with()
+    assert process.waitForFinished.call_count == 2
+    assert window.store_download_queue == []

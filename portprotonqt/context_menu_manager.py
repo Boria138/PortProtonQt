@@ -4,8 +4,8 @@ import shutil
 import tempfile
 from typing import TYPE_CHECKING
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer, QSize, QProcess
-from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
+from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer, QSize, QProcess, QThread
+from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence, QAction
 from portprotonqt.localization import _
 from portprotonqt.config import (
     create_desktop_file,
@@ -68,6 +68,14 @@ class ContextMenuManager:
         self.theme = theme
         self.theme_manager = ThemeManager()
         self.game_library_manager = game_library_manager
+        self._batch_action = False
+        self.card_selection_mode = False
+        self._card_actions: list[QAction] = []
+        self._card_action_menus: list[QMenu] = []
+        self._card_actions_stopping = False
+        self._card_action_timer = QTimer(parent)
+        self._card_action_timer.setSingleShot(True)
+        self._card_action_timer.timeout.connect(self._run_next_card_action)
         self.update_game_grid = game_library_manager.update_game_grid
         self.signals = ContextMenuSignals()
         self.signals.show_warning_dialog.connect(
@@ -449,7 +457,92 @@ class ContextMenuManager:
                 return self.theme_manager.get_colored_icon_path(icon_name, color)
         return None
 
-    def show_context_menu(self, game_card, pos: QPoint):
+    def clear_card_selection(self) -> None:
+        self.card_selection_mode = False
+        for card in self.game_library_manager.game_card_cache.values():
+            if card.batch_selected:
+                card.batch_selected = False
+                card.update()
+
+    def start_card_selection(self, game_card: "GameCard") -> None:
+        self.clear_card_selection()
+        self.card_selection_mode = True
+        game_card.batch_selected = True
+        game_card.update()
+        game_card.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def _start_card_actions(self, actions: list[QAction], menus: list[QMenu]) -> None:
+        if self._batch_action or self._card_actions_stopping:
+            return
+        self.clear_card_selection()
+        self._batch_action = True
+        self._card_actions = list(reversed(actions))
+        self._card_action_menus = menus
+        for menu in menus:
+            menu.setParent(self.parent, menu.windowFlags())
+        self._run_next_card_action()
+
+    def _run_next_card_action(self) -> None:
+        if not self._batch_action:
+            return
+        jobs = [getattr(self.parent, name, None) for name in (
+            "egs_process", "gog_process", "gog_repair_worker", "gog_delete_worker", "store_dlc_worker",
+        )]
+        jobs.extend(getattr(self.parent, "gog_support_workers", []))
+        for job in jobs:
+            if job is None or not isinstance(job, (QProcess, QThread)):
+                continue
+            job.finished.connect(lambda *args: self._card_action_timer.start() if not self._card_actions_stopping else None)
+            if ((isinstance(job, QProcess) and job.state() == QProcess.ProcessState.NotRunning)
+                    or (isinstance(job, QThread) and not job.isRunning())):
+                self._card_action_timer.start()
+            return
+        if self._card_actions_stopping or not self._card_actions:
+            self._batch_action = False
+            for menu in self._card_action_menus:
+                menu.deleteLater()
+            self._card_action_menus = []
+            self._card_actions = []
+            return
+        self._card_actions.pop().trigger()
+        self._card_action_timer.start()
+
+    def stop_card_actions(self) -> None:
+        self._card_actions_stopping = True
+        self._card_action_timer.stop()
+        self._card_actions = []
+        self._batch_action = False
+        for menu in self._card_action_menus:
+            menu.deleteLater()
+        self._card_action_menus = []
+
+    def _show_card_selection_menu(self, menu: QMenu, game_card: "GameCard", pos: QPoint) -> None:
+        grouped: dict[str, list[QAction]] = {}
+        menus: list[QMenu] = []
+        for card in self.game_library_manager.game_card_cache.values():
+            if not card.batch_selected:
+                continue
+            card_menu = self.show_context_menu(card, pos, build_only=True)
+            if card_menu is None:
+                continue
+            card_menu.setParent(menu, card_menu.windowFlags())
+            menus.append(card_menu)
+            for action in card_menu.actions():
+                if not action.isSeparator() and action.isEnabled():
+                    grouped.setdefault(action.text(), []).append(action)
+        for text, actions in grouped.items():
+            action = menu.addAction(actions[0].icon(), text)
+            action.setEnabled(not self._batch_action)
+            action.triggered.connect(
+                lambda checked=False, actions=actions: self._start_card_actions(actions, menus)
+            )
+        menu.addSeparator()
+        cancel_action = menu.addAction(_("Cancel"))
+        cancel_action.triggered.connect(self.clear_card_selection)
+        menu.setActiveAction(next(action for action in menu.actions() if action.isEnabled() and not action.isSeparator()))
+        menu.popup(game_card.mapToGlobal(pos))
+
+    def show_context_menu(self, game_card, pos: QPoint, build_only: bool = False):
         """
         Show the context menu for a game card at the specified position.
 
@@ -463,6 +556,16 @@ class ContextMenuManager:
         menu.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
+        if not build_only:
+            if self.card_selection_mode or game_card.batch_selected:
+                self._show_card_selection_menu(menu, game_card, pos)
+                return
+            self.clear_card_selection()
+            selection_action = menu.addAction(_("Select multiple"))
+            selection_action.triggered.connect(lambda: self.start_card_selection(game_card))
+            menu.setActiveAction(selection_action)
+            menu.addSeparator()
+
         # For non-Steam games, check if exe exists
         if game_card.game_source == "portproton":
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
@@ -471,6 +574,8 @@ class ContextMenuManager:
                 # Show only "Delete from PortProton" if no valid exe
                 delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete from PortProton"))
                 delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
+                if build_only:
+                    return menu
                 menu.popup(game_card.mapToGlobal(pos))
                 return
 
@@ -708,6 +813,9 @@ class ContextMenuManager:
                     if is_in_steam
                     else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
                 )
+
+        if build_only:
+            return menu
 
         # Set focus to the first menu item
         actions = menu.actions()
@@ -1054,6 +1162,9 @@ class ContextMenuManager:
         self.game_library_manager.remove_game_incremental(game_name, card_exec_line or resolved_exec_line)
 
     def delete_game(self, game_name, exec_line):
+        if self._batch_action:
+            self._delete_game_without_confirm(game_name, exec_line)
+            return
         msg_box = QMessageBox(self.parent)
         msg_box.setIcon(QMessageBox.Icon.Question)
         msg_box.setWindowTitle(_("Confirm Deletion"))
@@ -1623,6 +1734,8 @@ class ContextMenuManager:
         try:
             success, message = add_to_steam(game_name, exec_line, cover_path)
             if success:
+                if self._batch_action:
+                    return
                 if "restart" in message.lower():
                     self.signals.show_info_dialog.emit(
                         _("Success"),
@@ -1654,6 +1767,8 @@ class ContextMenuManager:
         def on_remove_from_steam_result(result: tuple[bool, str]):
             success, message = result
             if success:
+                if self._batch_action:
+                    return
                 if "restart" in message.lower():
                     self.signals.show_info_dialog.emit(
                         _("Success"),

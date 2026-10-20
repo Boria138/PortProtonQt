@@ -286,6 +286,10 @@ class AnimatedCard(QFrame):
             colors = (self.theme.color_bg, self.theme.color_surface_elevated)
             painter.fillRect(self.rect(), QColor(colors[row % len(colors)]))
         self.animations.paint_border(painter)
+        if getattr(self, "batch_selected", False):
+            painter.setPen(QPen(QColor(self.theme.color_accent),
+                                self.theme.GAME_CARD_ANIMATION["focus_border_width"]))
+            painter.drawRect(self.rect())
 
     def enterEvent(self, event: QEnterEvent) -> None:
         self.raise_()
@@ -375,6 +379,7 @@ class GameCard(AnimatedCard):
 
         self.select_callback = select_callback
         self.context_menu_manager = context_menu_manager
+        self.batch_selected = False
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.theme_manager = ThemeManager()
@@ -1256,6 +1261,12 @@ class GameCard(AnimatedCard):
         super().showEvent(event)
 
     def click(self) -> None:
+        if self.context_menu_manager:
+            if self.context_menu_manager.card_selection_mode is True:
+                self.batch_selected = not self.batch_selected
+                self.update()
+                return
+            self.context_menu_manager.clear_card_selection()
         if self._get_missing_executable_path() and self.context_menu_manager:
             self.context_menu_manager.handle_missing_executable(self)
             return
@@ -1282,6 +1293,11 @@ class GameCard(AnimatedCard):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                self.batch_selected = not self.batch_selected
+                self.update()
+                event.accept()
+                return
             self.click()
         super().mousePressEvent(event)
 

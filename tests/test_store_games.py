@@ -1350,3 +1350,78 @@ def test_store_storage_migrates_existing_data(
     assert not (api.data_dir / "bin").exists()
     assert not legacy.exists()
     assert api_class().library_path.read_text() == "[]"
+
+
+def test_batch_egs_deletion_skips_confirmation(monkeypatch: MonkeyPatch) -> None:
+    message_box = MagicMock()
+    monkeypatch.setattr(main_window_module, "QMessageBox", message_box)
+    window = SimpleNamespace(
+        context_menu_manager=SimpleNamespace(_batch_action=True),
+        egs_api=SimpleNamespace(load_installed=lambda: {}), _start_egs_operation=MagicMock(),
+    )
+    MainWindow._delete_egs_game(cast(Any, window), "Game")
+    message_box.assert_not_called()
+    assert window._start_egs_operation.call_args.args[:2] == ("Game", ["uninstall", "Game", "-y"])
+
+
+def test_batch_gog_deletion_retains_worker_without_confirmation(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    worker = MagicMock()
+    monkeypatch.setattr(download_tab_module, "GOGDeleteWorker", MagicMock(return_value=worker))
+    message_box = MagicMock()
+    monkeypatch.setattr(download_tab_module, "QMessageBox", message_box)
+    window = SimpleNamespace(
+        context_menu_manager=SimpleNamespace(_batch_action=True),
+        gog_api=SimpleNamespace(get_installed_path=lambda app_id: tmp_path),
+        _on_gog_delete_finished=MagicMock(), gogAccountStatus=MagicMock(),
+    )
+    game = {"app_id": "1", "title": "Game"}
+    GOGMixin._delete_gog_game(cast(Any, window), game)
+    message_box.assert_not_called()
+    assert window.gog_delete_worker is worker
+    worker.finished.connect.assert_called_once_with(window._on_gog_delete_finished)
+    worker.start.assert_called_once_with()
+
+
+@mark.parametrize("failure", [False, True])
+def test_gog_delete_worker_preserves_records_on_failure(
+    tmp_path: Path, monkeypatch: MonkeyPatch, failure: bool,
+) -> None:
+    from threading import get_ident
+
+    folder = tmp_path / "game"
+    folder.mkdir()
+    (folder / "game.exe").write_text("game")
+    manifest = tmp_path / "heroic_gogdl" / "manifests" / "1"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("manifest")
+    api = SimpleNamespace(get_installed_path=lambda app_id: folder, config_dir=tmp_path,
+                          remove_installed_game=MagicMock())
+    menu = SimpleNamespace(remove_gog_shortcuts=MagicMock())
+    thread_ids: list[int] = []
+    original_rmtree = download_tab_module.shutil.rmtree
+
+    def delete_installation(path: Path) -> None:
+        thread_ids.append(get_ident())
+        if failure:
+            raise PermissionError("denied")
+        original_rmtree(path)
+
+    monkeypatch.setattr(download_tab_module.shutil, "rmtree", delete_installation)
+    worker = download_tab_module.GOGDeleteWorker(cast(Any, api), {"app_id": "1", "title": "Game"}, cast(Any, menu))
+    worker.start()
+    assert worker.wait(3000)
+    assert thread_ids and thread_ids[0] != get_ident()
+    assert bool(worker.error) is failure
+    assert folder.exists() is failure
+    assert manifest.exists() is failure
+    assert api.remove_installed_game.call_count == int(not failure)
+    assert menu.remove_gog_shortcuts.call_count == int(not failure)
+
+
+def test_failed_store_process_completes_callback_path() -> None:
+    process = MagicMock()
+    GOGMixin._handle_store_process_error(cast(Any, SimpleNamespace()), process,
+                                       download_tab_module.QProcess.ProcessError.FailedToStart)
+    process.finished.emit.assert_called_once_with(
+        download_tab_module.os.EX_UNAVAILABLE, download_tab_module.QProcess.ExitStatus.CrashExit,
+    )

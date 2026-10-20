@@ -14,7 +14,9 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
-from PySide6.QtCore import QPoint, Qt
+import pytest
+
+from PySide6.QtCore import QPoint, Qt, QCoreApplication, QEventLoop, QThread, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QLabel, QMenu, QPushButton, QWidget
 
@@ -35,6 +37,7 @@ def test_game_card_context_menu_does_not_block_gamepad_polling(monkeypatch) -> N
     app = QApplication.instance() or QApplication([])
     parent = QWidget()
     card = SimpleNamespace(
+        batch_selected=False,
         game_source="portproton",
         name="Missing Game",
         exec_line="",
@@ -42,6 +45,8 @@ def test_game_card_context_menu_does_not_block_gamepad_polling(monkeypatch) -> N
     )
     manager = ContextMenuManager.__new__(ContextMenuManager)
     manager.parent = parent
+    manager.card_selection_mode = False
+    manager.game_library_manager = SimpleNamespace(game_card_cache={})
     manager.theme = SimpleNamespace(CONTEXT_MENU_STYLE="")
     monkeypatch.setattr(
         manager,
@@ -1478,3 +1483,263 @@ def test_edit_shortcut_removes_desktop_file_with_original_filename(
     assert not desktop_shortcut.exists()
     assert source.exists()
     manager.signals.show_warning_dialog.emit.assert_not_called()
+
+
+def test_batch_steam_addition_has_no_success_dialog(monkeypatch: Any) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    manager = object.__new__(ContextMenuManager)
+    manager._batch_action = True
+    manager._check_portproton = lambda: True
+    monkeypatch.setattr(manager, "_get_exec_line", lambda game_name, exec_line: exec_line)
+    monkeypatch.setattr(manager, "_parse_exe_path", lambda exec_line, game_name: exec_line)
+    manager.signals = MagicMock()
+    monkeypatch.setattr("portprotonqt.context_menu_manager.add_to_steam", lambda *args: (True, "restart"))
+    manager.add_to_steam("Game", "game.exe", "cover")
+    manager.signals.show_info_dialog.emit.assert_not_called()
+
+
+def test_context_menu_enters_and_cancels_selection_mode(monkeypatch: Any) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    app = QApplication.instance() or QApplication([])
+    parent = QWidget()
+    card = SimpleNamespace(
+        batch_selected=False, game_source="portproton", name="Game", exec_line="missing.exe",
+        mapToGlobal=lambda position: position, update=MagicMock(), setFocus=MagicMock(),
+        isVisible=lambda: True,
+    )
+    manager = object.__new__(ContextMenuManager)
+    manager.parent = parent
+    manager.theme = SimpleNamespace(CONTEXT_MENU_STYLE="")
+    manager.card_selection_mode = False
+    manager.game_library_manager = SimpleNamespace(game_card_cache={"game": card})
+    monkeypatch.setattr(manager, "_get_exec_line", lambda *args: None)
+    monkeypatch.setattr(manager, "_get_safe_icon", lambda icon: QIcon())
+    menus: list[QMenu] = []
+    monkeypatch.setattr(QMenu, "popup", lambda menu, position: menus.append(menu))
+    manager.show_context_menu(card, QPoint())
+    menus[-1].actions()[0].trigger()
+    assert manager.card_selection_mode and card.batch_selected
+    card.batch_selected = False
+    manager.show_context_menu(card, QPoint())
+    assert manager.card_selection_mode
+    assert all(action.isSeparator() for action in menus[-1].actions()[:-1])
+    menus[-1].actions()[-1].trigger()
+    assert not manager.card_selection_mode and not card.batch_selected
+    parent.deleteLater()
+    assert app is not None
+
+
+def test_batch_steam_removal_has_no_success_dialog(monkeypatch: Any) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    manager = object.__new__(ContextMenuManager)
+    manager._batch_action = True
+    manager._check_portproton = lambda: True
+    monkeypatch.setattr(manager, "_get_exec_line", lambda name, command: command)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.extract_exec_target_path", lambda command: command)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.remove_from_steam", lambda *args: (True, "restart"))
+    manager.signals = MagicMock()
+    manager.remove_from_steam("Game", "game.exe", "portproton")
+    manager.signals.show_info_dialog.emit.assert_not_called()
+
+
+
+@pytest.fixture
+def selection_scene(tmp_path: Path, monkeypatch: Any) -> Any:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    app = QApplication.instance() or QApplication([])
+    parent = QWidget()
+    cards = [SimpleNamespace(
+        name=name, exec_line=f"{name}.exe", cover_path="cover", appid=name,
+        batch_selected=True, game_source="portproton", isVisible=lambda: True,
+        update=MagicMock(), setFocus=MagicMock(), mapToGlobal=lambda position: position,
+    ) for name in ("First", "Second")]
+    library = SimpleNamespace(game_card_cache=dict(enumerate(cards)), update_game_grid=MagicMock())
+    manager = ContextMenuManager(parent, str(tmp_path), SimpleNamespace(CONTEXT_MENU_STYLE=""), library)
+    manager.card_selection_mode = True
+    scene = SimpleNamespace(manager=manager, cards=cards, parent=parent, menus=[], steam=set(), root=tmp_path,
+                            popup=QMenu.popup)
+    monkeypatch.setattr(manager, "_get_safe_icon", lambda icon: QIcon())
+    monkeypatch.setattr(manager, "_get_exec_line", lambda name, command: command)
+    monkeypatch.setattr(manager, "_parse_exe_path", lambda command, name: command)
+    monkeypatch.setattr(manager, "_is_game_running", lambda card: False)
+    monkeypatch.setattr(manager, "_get_menu_shortcut_path", lambda name: str(tmp_path / f"menu-{name}"))
+    monkeypatch.setattr(manager, "_get_shortcut_path", lambda name, directory: str(tmp_path / f"desktop-{name}"))
+    monkeypatch.setattr(manager, "_get_steam_shortcut_path", manager._get_shortcut_path)
+    monkeypatch.setattr(manager, "_get_steam_menu_shortcut_path", manager._get_menu_shortcut_path)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.get_steam_home", lambda: tmp_path)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.is_game_in_steam", lambda name: name in scene.steam)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.favorites_config.get_games", lambda: [])
+    monkeypatch.setattr(QMenu, "popup", lambda menu, position: scene.menus.append(menu))
+    monkeypatch.setattr(parent, "_is_egs_overlay_enabled", MagicMock(return_value=False), raising=False)
+    yield scene
+    manager.stop_card_actions()
+    app.processEvents()
+    parent.deleteLater()
+
+
+@pytest.mark.parametrize("source", ["portproton", "gog", "egs", "steam"])
+@pytest.mark.parametrize("installed", [True, False])
+def test_batch_menu_contains_all_normal_card_actions(selection_scene: Any, source: str, installed: bool) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    for card in scene.cards:
+        card.game_source = source
+        card.exec_line = f"{source}://{'launch' if installed else 'install'}/{card.appid}"
+    expected: set[str] = set()
+    for card in scene.cards:
+        single = scene.manager.show_context_menu(card, QPoint(), build_only=True)
+        expected.update(action.text() for action in single.actions() if not action.isSeparator())
+    scene.manager.show_context_menu(scene.cards[0], QPoint())
+    actual = {action.text() for action in scene.menus[-1].actions() if not action.isSeparator()}
+    assert actual == expected | {_("Cancel")}
+    if installed:
+        assert _("Add to Desktop") in actual
+        assert (_("Delete") if source in ("gog", "egs") else _("Edit Shortcut")) in actual
+
+
+@pytest.mark.parametrize("present", [set(), {"First", "Second"}, {"First"}])
+def test_batch_shortcut_actions_follow_each_games_state(selection_scene: Any, present: set[str]) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    scene.steam.update(present)
+    for name in present:
+        (scene.root / f"menu-{name}").touch()
+        (scene.root / f"desktop-{name}").touch()
+    scene.manager.show_context_menu(scene.cards[0], QPoint())
+    texts = {action.text() for action in scene.menus[-1].actions()}
+    for location in ("Steam", "Menu", "Desktop"):
+        assert (_(f"Add to {location}") in texts) == (len(present) < len(scene.cards))
+        assert (_(f"Remove from {location}") in texts) == bool(present)
+
+
+@pytest.mark.parametrize("source", ["portproton", "gog", "egs", "steam"])
+def test_batch_desktop_action_only_touches_games_missing_shortcuts(selection_scene: Any, source: str) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    for card in scene.cards:
+        card.game_source = source
+        card.exec_line = f"{source}://launch/{card.appid}"
+    (scene.root / "desktop-First").touch()
+    scene.manager.add_to_desktop = MagicMock()
+    scene.manager.add_steam_to_desktop = MagicMock()
+    scene.manager.show_context_menu(scene.cards[0], QPoint())
+    next(action for action in scene.menus[-1].actions() if action.text() == _("Add to Desktop")).trigger()
+    for _index in range(5):
+        QCoreApplication.processEvents()
+    if source == "steam":
+        scene.manager.add_steam_to_desktop.assert_called_once_with("Second", "Second")
+        scene.manager.add_to_desktop.assert_not_called()
+    else:
+        scene.manager.add_to_desktop.assert_called_once_with("Second", scene.cards[1].exec_line)
+    assert not scene.manager._batch_action
+    assert not any(card.batch_selected for card in scene.cards)
+
+
+def test_batch_steam_removal_only_touches_existing_entries(selection_scene: Any) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    scene.steam.add("First")
+    scene.manager.remove_from_steam = MagicMock()
+    scene.manager.show_context_menu(scene.cards[0], QPoint())
+    next(action for action in scene.menus[-1].actions() if action.text() == _("Remove from Steam")).trigger()
+    QCoreApplication.processEvents()
+    scene.manager.remove_from_steam.assert_called_once_with("First", "First.exe", "portproton")
+
+
+def test_batch_queue_waits_for_background_operation(selection_scene: Any) -> None:
+    from threading import Event
+    from PySide6.QtGui import QAction
+
+    release = Event()
+
+    class Operation(QThread):
+        def run(self) -> None:
+            release.wait()
+
+    scene = selection_scene
+    worker = Operation(scene.parent)
+    worker.finished.connect(lambda: setattr(scene.parent, "gog_delete_worker", None))
+    actions = [QAction("First", scene.parent), QAction("Second", scene.parent)]
+    calls: list[str] = []
+
+    def start_operation() -> None:
+        scene.parent.gog_delete_worker = worker
+        calls.append("First")
+        worker.start()
+
+    actions[0].triggered.connect(start_operation)
+    actions[1].triggered.connect(lambda: calls.append("Second"))
+    try:
+        scene.manager._start_card_actions(actions, [])
+        QCoreApplication.processEvents()
+        assert calls == ["First"]
+        loop = QEventLoop()
+        actions[1].triggered.connect(loop.quit)
+        QTimer.singleShot(0, release.set)
+        QTimer.singleShot(1000, loop.quit)
+        loop.exec()
+        QCoreApplication.processEvents()
+        assert calls == ["First", "Second"]
+        assert not scene.manager._batch_action
+    finally:
+        release.set()
+        worker.wait()
+
+
+def test_shutdown_discards_pending_batch_actions(selection_scene: Any) -> None:
+    from PySide6.QtGui import QAction
+
+    scene = selection_scene
+    calls: list[str] = []
+    actions = [QAction("First", scene.parent), QAction("Second", scene.parent)]
+    actions[0].triggered.connect(lambda: calls.append("First"))
+    actions[1].triggered.connect(lambda: calls.append("Second"))
+    scene.manager._start_card_actions(actions, [])
+    scene.manager.stop_card_actions()
+    QCoreApplication.processEvents()
+    assert calls == ["First"]
+    assert not scene.manager._batch_action
+
+
+def test_mixed_store_selection_displays_only_one_menu(selection_scene: Any, monkeypatch: Any) -> None:
+    scene = selection_scene
+    for card, source in zip(scene.cards, ("gog", "egs"), strict=True):
+        card.game_source = source
+        card.exec_line = f"{source}://install/{card.appid}"
+
+    def popup(menu: QMenu, position: QPoint) -> None:
+        scene.menus.append(menu)
+        scene.popup(menu, position)
+
+    monkeypatch.setattr(QMenu, "popup", popup)
+    scene.manager.show_context_menu(scene.cards[0], QPoint())
+    QCoreApplication.processEvents()
+    visible = [widget for widget in QApplication.topLevelWidgets() if isinstance(widget, QMenu) and widget.isVisible()]
+    assert visible == [scene.menus[-1]]
+    assert all(not child.isVisible() for child in scene.menus[-1].findChildren(QMenu))
+    scene.menus[-1].close()
+
+
+def test_batch_action_includes_selected_cards_hidden_by_search(selection_scene: Any) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    scene.cards[0].isVisible = lambda: False
+    scene.manager.add_to_desktop = MagicMock()
+    scene.manager.show_context_menu(scene.cards[1], QPoint())
+    next(action for action in scene.menus[-1].actions() if action.text() == _("Add to Desktop")).trigger()
+    for _index in range(5):
+        QCoreApplication.processEvents()
+    assert scene.manager.add_to_desktop.call_args_list == [
+        (("First", "First.exe"),), (("Second", "Second.exe"),),
+    ]
+    assert not scene.manager._batch_action
+    assert not any(card.batch_selected for card in scene.cards)
