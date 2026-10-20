@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Any
-import json
 import os
+
+import orjson
 
 from PySide6.QtCore import QIODevice, QPoint, QSaveFile, Qt, QUrl
 from PySide6.QtNetwork import (
@@ -124,7 +125,7 @@ class CompatibilityReportDialog(DraggableDialog):
             logger.warning("PPDB lookup failed: %s", reply.errorString())
             return
         try:
-            metadata = json.loads(bytes(reply.readAll().data()))
+            metadata = orjson.loads(bytes(reply.readAll().data()))
         except ValueError as error:
             logger.warning("Invalid PPDB metadata: %s", error)
             return

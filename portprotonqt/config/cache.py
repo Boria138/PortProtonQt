@@ -1,5 +1,4 @@
 """Cache configuration and management."""
-import json
 import shutil
 import threading
 import time
@@ -118,7 +117,7 @@ class CacheManager:
         temp_file = cache_file.with_name(f".{cache_file.name}.{time.time_ns()}.tmp")
         try:
             if pretty:
-                content = json.dumps(data, indent=2).encode("utf-8")
+                content = orjson.dumps(data, option=orjson.OPT_INDENT_2)
             else:
                 content = orjson.dumps(data)
             with _CACHE_FILE_LOCK:
