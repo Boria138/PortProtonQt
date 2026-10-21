@@ -286,6 +286,10 @@ class AnimatedCard(QFrame):
             colors = (self.theme.color_bg, self.theme.color_surface_elevated)
             painter.fillRect(self.rect(), QColor(colors[row % len(colors)]))
         self.animations.paint_border(painter)
+        if getattr(self, "batch_selected", False):
+            painter.setPen(QPen(QColor(self.theme.color_accent),
+                                self.theme.GAME_CARD_ANIMATION["focus_border_width"]))
+            painter.drawRect(self.rect())
 
     def enterEvent(self, event: QEnterEvent) -> None:
         self.raise_()
@@ -375,6 +379,7 @@ class GameCard(AnimatedCard):
 
         self.select_callback = select_callback
         self.context_menu_manager = context_menu_manager
+        self.batch_selected = False
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.theme_manager = ThemeManager()
@@ -873,10 +878,10 @@ class GameCard(AnimatedCard):
         ribbon_size = int(current_width * ribbon_cfg.get("size_ratio", 0.28))
         ribbon_size = max(ribbon_size, int(ribbon_cfg.get("min_size", 54) * self._scale))
         source_ribbons = [
-            (self.steam_visible and not self.vertical_layout, self.steamLabel),
-            (self.gog_visible and not self.vertical_layout, self.gogLabel),
-            (self.egs_visible and not self.vertical_layout, self.egsLabel),
-            (self.portproton_visible and not self.vertical_layout, self.portprotonLabel),
+            (self.steam_visible, self.steamLabel),
+            (self.gog_visible, self.gogLabel),
+            (self.egs_visible, self.egsLabel),
+            (self.portproton_visible, self.portprotonLabel),
         ]
 
         for is_visible, ribbon in source_ribbons:
@@ -1046,15 +1051,11 @@ class GameCard(AnimatedCard):
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
         hidden_badges = self.badge_view_mode == "hidden"
-        show_source_ribbons = self.vertical_layout is not True
-
         try:
-            self.steamLabel.setVisible(self.steam_visible and show_source_ribbons)
-            self.gogLabel.setVisible(self.gog_visible and show_source_ribbons)
-            self.egsLabel.setVisible(self.egs_visible and show_source_ribbons)
-            self.portprotonLabel.setVisible(
-                self.portproton_visible and show_source_ribbons
-            )
+            self.steamLabel.setVisible(self.steam_visible)
+            self.gogLabel.setVisible(self.gog_visible)
+            self.egsLabel.setVisible(self.egs_visible)
+            self.portprotonLabel.setVisible(self.portproton_visible)
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)
@@ -1256,6 +1257,12 @@ class GameCard(AnimatedCard):
         super().showEvent(event)
 
     def click(self) -> None:
+        if self.context_menu_manager:
+            if self.context_menu_manager.card_selection_mode is True:
+                self.batch_selected = not self.batch_selected
+                self.update()
+                return
+            self.context_menu_manager.clear_card_selection()
         if self._get_missing_executable_path() and self.context_menu_manager:
             self.context_menu_manager.handle_missing_executable(self)
             return
@@ -1282,6 +1289,11 @@ class GameCard(AnimatedCard):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                self.batch_selected = not self.batch_selected
+                self.update()
+                event.accept()
+                return
             self.click()
         super().mousePressEvent(event)
 

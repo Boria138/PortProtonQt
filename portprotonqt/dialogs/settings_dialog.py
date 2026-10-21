@@ -480,7 +480,6 @@ class ExeSettingsDialog(
         self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
         self.gamepad_tooltip.setVisible(False)
         self.gamepad_tooltip.setParent(self)
-        self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
         self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.gamepad_tooltip_timer = QTimer(self)
@@ -865,13 +864,19 @@ class ExeSettingsDialog(
                     prefix_line_edit = combo.lineEdit()
                     if prefix_line_edit is not None:
                         prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
-                    combo.highlighted.connect(
-                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    combo.view().setMouseTracking(True)
+                    combo.view().installEventFilter(self)
+                    combo.view().selectionModel().currentChanged.connect(
+                        lambda index, _previous, c=combo: self._on_combo_highlighted(index.row(), c),
                     )
+                    combo.view().entered.connect(lambda index, c=combo: self._on_combo_highlighted(index.row(), c))
                 elif setting['key'] in ('PW_WINE_USE', 'PW_DEFAULT_WINE_USE'):
-                    combo.highlighted.connect(
-                        lambda row, c=combo: self._on_combo_highlighted(row, c),
+                    combo.view().setMouseTracking(True)
+                    combo.view().installEventFilter(self)
+                    combo.view().selectionModel().currentChanged.connect(
+                        lambda index, _previous, c=combo: self._on_combo_highlighted(index.row(), c),
                     )
+                    combo.view().entered.connect(lambda index, c=combo: self._on_combo_highlighted(index.row(), c))
 
                 current_raw = current.get(setting['key'], '') if self.user_conf else (
                     current.get(setting['key'], setting['default'])
@@ -893,7 +898,9 @@ class ExeSettingsDialog(
                         current_val = reverse_map[current_raw]
 
                 current_val_text = current_val if isinstance(current_val, str) else ''
-                if current_val_text and current_val_text not in setting['options']:
+                if setting['key'] in ('PW_WINE_USE', 'PW_DEFAULT_WINE_USE') and current_val_text == _('Download Wine/Proton...'):
+                    current_val_text = setting['options'][0]
+                if current_val_text and combo.findText(current_val_text) < 0:
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
@@ -1206,8 +1213,8 @@ class ExeSettingsDialog(
             Qt.WidgetAttribute.WA_TranslucentBackground
         )
         combo.setEditable(source_widget.isEditable())
-        for index in range(source_widget.count()):
-            combo.addItem(source_widget.itemText(index), source_widget.itemData(index))
+        combo.setInsertPolicy(source_widget.insertPolicy())
+        combo.setModel(source_widget.model())
         combo.setCurrentText(source_widget.currentText())
         combo.setEnabled(source_widget.isEnabled())
         settings_combo_style = getattr(self.theme, "SETTINGS_TABLE_COMBOBOX_STYLE", "")
@@ -1217,9 +1224,14 @@ class ExeSettingsDialog(
             + self.theme.SCROLL_STYLE
         )
         combo.currentTextChanged.connect(source_widget.setCurrentText)
-        combo.highlighted.connect(
-            lambda row_idx, c=combo: self._on_combo_highlighted(row_idx, c),
+        source_widget.currentTextChanged.connect(combo.setCurrentText)
+        combo.activated.connect(source_widget.activated.emit)
+        combo.view().setMouseTracking(True)
+        combo.view().installEventFilter(self)
+        combo.view().selectionModel().currentChanged.connect(
+            lambda index, _previous, c=combo: self._on_combo_highlighted(index.row(), c),
         )
+        combo.view().entered.connect(lambda index, c=combo: self._on_combo_highlighted(index.row(), c))
         self.favorites_table.setCellWidget(row, 1, combo)
 
     def _add_favorite_line_edit(self, row: int, source_widget: QLineEdit) -> None:
@@ -1255,9 +1267,7 @@ class ExeSettingsDialog(
 
     def _on_combo_highlighted(self, row: int, combo: QComboBox) -> None:
         view = combo.view()
-        view.installEventFilter(self)
         if not self.isVisible() or not combo.isVisible() or not view.isVisible():
-            self.show_gamepad_tooltip(show=False)
             return
         index = view.model().index(row, 0)
         if not index.isValid():
@@ -1273,25 +1283,31 @@ class ExeSettingsDialog(
         if text_width <= item_rect.intersected(view.viewport().rect()).width():
             self.show_gamepad_tooltip(show=False)
             return
-        text_rect = fm.boundingRect(0, 0, 480, 1000, Qt.TextFlag.TextWordWrap, text)
-        w = min(500, text_rect.width() + 25)
-        h = min(300, text_rect.height() + 25)
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setWordWrap(False)
+        w = min(500, self.gamepad_tooltip.sizeHint().width())
+        self.gamepad_tooltip.setWordWrap(True)
+        h = min(300, self.gamepad_tooltip.heightForWidth(w))
         item_center_y = view.viewport().mapToGlobal(item_rect.center()).y()
         combo_right_x = combo.mapToGlobal(combo.rect().topRight()).x()
         pos = QPoint(combo_right_x + 4, item_center_y - h // 2)
-        screen = QGuiApplication.screenAt(pos) or QGuiApplication.primaryScreen()
+        screen = combo.screen()
         if screen:
-            ar = screen.availableGeometry()
+            ar = screen.availableGeometry().intersected(self.rect().translated(self.mapToGlobal(QPoint())))
+            w, h = min(w, ar.width()), min(h, ar.height())
             if pos.x() + w > ar.right():
-                pos.setX(ar.right() - w)
+                pos.setX(combo.mapToGlobal(combo.rect().topLeft()).x() - w)
+            if pos.x() < ar.left():
+                pos.setX(ar.left())
             if pos.y() + h > ar.bottom():
                 pos.setY(ar.bottom() - h)
             if pos.y() < ar.top():
                 pos.setY(ar.top())
-        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.hide()
         self.gamepad_tooltip.setFixedSize(w, h)
-        self.gamepad_tooltip.move(pos)
+        self.gamepad_tooltip.move(self.mapFromGlobal(pos))
         self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip.raise_()
         self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
 
     def _open_wine_manager_from_combo(self, index: int, combo: QComboBox, key: str) -> None:
@@ -1485,6 +1501,8 @@ class ExeSettingsDialog(
         for key, widget in self.advanced_widgets.items():
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
+                if widget.currentData() == 'download_wine':
+                    continue
                 new_val = widget.currentText()
                 if self.user_conf and new_val == _('Default'):
                     new_val = ''
@@ -1851,8 +1869,9 @@ class ExeSettingsDialog(
                         y = available_rect.top()
 
                 self.gamepad_tooltip.setFixedSize(required_width, required_height)
-                self.gamepad_tooltip.move(x, y)
+                self.gamepad_tooltip.move(self.mapFromGlobal(QPoint(x, y)))
                 self.gamepad_tooltip.setVisible(True)
+                self.gamepad_tooltip.raise_()
                 self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
 
             if anchor_global_pos is not None:

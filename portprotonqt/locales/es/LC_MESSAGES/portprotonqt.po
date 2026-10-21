@@ -155,6 +155,10 @@ msgstr "El archivo ya existe: {file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "No se pudo cambiar el nombre del archivo: {error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "Seleccionar todo"
+
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
 
@@ -260,9 +264,6 @@ msgstr "Se ha eliminado «{game_name}» de {location}"
 msgid "Desktop"
 msgstr "Escritorio"
 
-msgid "Play this game on Steam"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "No se han podido guardar los datos personalizados: {error}"
@@ -316,10 +317,6 @@ msgid ""
 msgstr ""
 "Se ha añadido «{game_name}» a Steam. Reinicia Steam para que los cambios "
 "surtan efecto."
-
-#, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr "«{game_name}» se ha añadido a Steam."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
@@ -377,9 +374,6 @@ msgstr "Falló"
 
 msgid "Denied"
 msgstr "Denegado"
-
-msgid "Missing EXE"
-msgstr ""
 
 msgid "Game Title"
 msgstr "Título del juego"
@@ -993,6 +987,22 @@ msgstr "Actualizando AppImage…"
 msgid "Launching {0}"
 msgstr "Comenzando {0}"
 
+#, python-brace-format
+msgid "Scanning: {folder}"
+msgstr ""
+
+#, python-brace-format
+msgid "Checking existing shortcuts: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Adding: {name}"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to create shortcut: {name}"
+msgstr "No se ha podido crear la carpeta: {error}"
+
 msgid "Name:"
 msgstr "Nombre:"
 
@@ -1017,6 +1027,33 @@ msgstr "Vista previa de la portada:"
 msgid "Apply"
 msgstr "Aplicar"
 
+#, fuzzy
+msgid "Select folder"
+msgstr "Borrar la carpeta"
+
+#, fuzzy
+msgid "Processing games…"
+msgstr "Juegos recientes"
+
+#, python-brace-format
+msgid ""
+"Processed {completed}/{total}\n"
+"{current}"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid "No games found in the selected folder."
+msgstr ""
+
+#, fuzzy
+msgid "Select games"
+msgstr "Juegos recientes"
+
+msgid "Close"
+msgstr ""
+
 msgid "Invalid image"
 msgstr "Imagen no válida"
 
@@ -1033,9 +1070,6 @@ msgid "Compatibility report"
 msgstr ""
 
 msgid "The program stopped. Compatibility details were collected automatically."
-msgstr ""
-
-msgid "Close"
 msgstr ""
 
 msgid "Downloading…"
@@ -1303,9 +1337,6 @@ msgstr ""
 #, fuzzy, python-brace-format
 msgid "Failed to open file:\n"
 msgstr "No se ha podido abrir la carpeta: {error}"
-
-msgid "Information"
-msgstr ""
 
 msgid "Confirm PPDB Clear"
 msgstr "Confirmar que PPDB está vacío"
@@ -2211,9 +2242,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr "Descargando"
 
-msgid "All"
-msgstr ""
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2271,6 +2299,9 @@ msgstr ""
 msgid "Sort Method:"
 msgstr ""
 
+msgid "All"
+msgstr ""
+
 msgid "Display Filter:"
 msgstr ""
 
@@ -2322,6 +2353,9 @@ msgid ""
 msgstr ""
 "¿Estás seguro de que quieres eliminar «{game_name}»? Esto eliminará el "
 "archivo .desktop y los datos personalizados."
+
+msgid "Failed to install theme"
+msgstr "Error al instalar el tema"
 
 msgid "PortProton Settings"
 msgstr ""
@@ -2613,9 +2647,6 @@ msgstr "Error al descargar los temas"
 
 msgid "Downloading… {0}%"
 msgstr "Descargando… {0}%"
-
-msgid "Failed to install theme"
-msgstr "Error al instalar el tema"
 
 msgid "Select Theme:"
 msgstr ""

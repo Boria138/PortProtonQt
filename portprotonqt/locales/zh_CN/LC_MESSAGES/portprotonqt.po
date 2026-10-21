@@ -149,6 +149,10 @@ msgstr "文件已存在：{file_name}"
 msgid "Failed to rename file: {error}"
 msgstr "重命名文件失败：{error}"
 
+#, fuzzy
+msgid "Select multiple"
+msgstr "全选"
+
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"
 
@@ -255,9 +259,6 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
-msgid "Play this game on Steam"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr "保存自定义数据失败：{error}"
@@ -308,10 +309,6 @@ msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
 msgstr "\"{game_name}\"已添加到 Steam。请重启 Steam 以使更改生效。"
-
-#, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr "\"{game_name}\"已添加到 Steam。"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
@@ -367,9 +364,6 @@ msgstr "损坏"
 
 msgid "Denied"
 msgstr "已拒绝"
-
-msgid "Missing EXE"
-msgstr ""
 
 #, fuzzy
 msgid "Game Title"
@@ -941,6 +935,22 @@ msgstr "正在更新 AppImage..."
 msgid "Launching {0}"
 msgstr "正在启动 {0}"
 
+#, python-brace-format
+msgid "Scanning: {folder}"
+msgstr ""
+
+#, python-brace-format
+msgid "Checking existing shortcuts: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Adding: {name}"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Failed to create shortcut: {name}"
+msgstr "创建文件夹失败：{error}"
+
 msgid "Name:"
 msgstr "名称："
 
@@ -965,6 +975,34 @@ msgstr "封面预览："
 msgid "Apply"
 msgstr "应用"
 
+#, fuzzy
+msgid "Select folder"
+msgstr "删除文件夹"
+
+#, fuzzy
+msgid "Processing games…"
+msgstr "最近游戏"
+
+#, python-brace-format
+msgid ""
+"Processed {completed}/{total}\n"
+"{current}"
+msgstr ""
+
+msgid "Information"
+msgstr "信息"
+
+msgid "No games found in the selected folder."
+msgstr ""
+
+#, fuzzy
+msgid "Select games"
+msgstr "最近游戏"
+
+#, fuzzy
+msgid "Close"
+msgstr "鼠标"
+
 msgid "Invalid image"
 msgstr "图像无效"
 
@@ -982,10 +1020,6 @@ msgstr ""
 
 msgid "The program stopped. Compatibility details were collected automatically."
 msgstr ""
-
-#, fuzzy
-msgid "Close"
-msgstr "鼠标"
 
 msgid "Downloading…"
 msgstr "正在下载…"
@@ -1253,9 +1287,6 @@ msgstr "打开 PPDB 文件失败：\n"
 #, fuzzy
 msgid "Failed to open file:\n"
 msgstr "打开 PPDB 文件失败：\n"
-
-msgid "Information"
-msgstr "信息"
 
 msgid "Confirm PPDB Clear"
 msgstr "确认清除 PPDB"
@@ -2170,9 +2201,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr "正在下载"
 
-msgid "All"
-msgstr "全部"
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2231,6 +2259,9 @@ msgstr "按字母顺序"
 msgid "Sort Method:"
 msgstr "游戏排序方式:"
 
+msgid "All"
+msgstr "全部"
+
 msgid "Display Filter:"
 msgstr "显示筛选："
 
@@ -2288,6 +2319,9 @@ msgid ""
 msgstr ""
 "确定要删除 {count} 个没有可执行文件的卡片吗？这将删除 .desktop 文件和自定义数"
 "据。"
+
+msgid "Failed to install theme"
+msgstr "安装主题失败"
 
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
@@ -2581,9 +2615,6 @@ msgstr "下载主题失败"
 
 msgid "Downloading… {0}%"
 msgstr "正在下载… {0}%"
-
-msgid "Failed to install theme"
-msgstr "安装主题失败"
 
 msgid "Select Theme:"
 msgstr "选择主题："

@@ -52,7 +52,8 @@ class TestSaveLoadJson:
 
     def test_pretty_print(self, tmp_path: Path):
         mgr = CacheManager(cache_dir=tmp_path)
-        mgr.save_json("test", {"a": 1}, pretty=True)
+        assert mgr.save_json("test", {"a": 1}, pretty=True)
+        assert mgr._get_cache_file_path("test").read_text() == '{\n  "a": 1\n}'
         loaded = mgr.load_json("test")
         assert loaded == {"a": 1}
 

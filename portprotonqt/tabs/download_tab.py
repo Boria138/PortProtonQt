@@ -59,6 +59,7 @@ def _format_download_size(size_mib: float) -> str:
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMainWindow
+    from portprotonqt.context_menu_manager import ContextMenuManager
 
     _MainWindowTypingBase = QMainWindow
 else:
@@ -204,6 +205,35 @@ class GOGRepairWorker(QThread):
             self.error = str(error)
 
 
+class GOGDeleteWorker(QThread):
+    """Delete a GOG installation outside the UI thread."""
+
+    def __init__(self, api: GOGAPI, game: dict, menu_manager: "ContextMenuManager") -> None:
+        super().__init__()
+        self.api = api
+        self.game = game
+        self.menu_manager = menu_manager
+        self.error = ""
+
+    def run(self) -> None:
+        app_id = str(self.game["app_id"])
+        try:
+            install_path = self.api.get_installed_path(app_id)
+            if install_path is None:
+                raise FileNotFoundError(f"GOG installation not found: {app_id}")
+            shutil.rmtree(install_path)
+            manifest_path = self.api.config_dir / "heroic_gogdl" / "manifests" / app_id
+            try:
+                manifest_path.unlink(missing_ok=True)
+            except OSError as error:
+                logger.warning("Failed to delete GOG manifest %s: %s", app_id, error)
+            self.api.remove_installed_game(app_id)
+            self.menu_manager.remove_gog_shortcuts(str(self.game["title"]))
+        except Exception as error:
+            logger.exception("Failed to delete GOG game %s", app_id)
+            self.error = str(error)
+
+
 class StoreDLCWorker(QThread):
     """Read owned, installable store DLC outside the UI thread."""
 
@@ -324,6 +354,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         self.gog_process = None
         self.egs_process = None
         self.gog_repair_worker = None
+        self.gog_delete_worker = None
         self.egs_install_importing = False
         self.store_download_queue = []
         self.gog_download_output = ""
@@ -1051,38 +1082,41 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         if install_path is None:
             self.gogAccountStatus.setText(_("GOG installation not found"))
             return
-        message_box = QMessageBox(self)
-        message_box.setIcon(QMessageBox.Icon.Question)
-        message_box.setWindowTitle(_("Confirm Deletion"))
-        message_box.setText(
-            _("Delete '{0}' and all files in its installation folder?").format(
-                game["title"]
+        if getattr(self, "gog_delete_worker", None) is not None:
+            self.gogAccountStatus.setText(_("Another GOG operation is already running"))
+            return
+        if not getattr(getattr(self, "context_menu_manager", None), "_batch_action", False):
+            message_box = QMessageBox(self)
+            message_box.setIcon(QMessageBox.Icon.Question)
+            message_box.setWindowTitle(_("Confirm Deletion"))
+            message_box.setText(
+                _("Delete '{0}' and all files in its installation folder?").format(
+                    game["title"]
+                )
             )
-        )
-        message_box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        message_box.setDefaultButton(QMessageBox.StandardButton.No)
-        message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
-        if message_box.exec() != QMessageBox.StandardButton.Yes:
+            message_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            message_box.setDefaultButton(QMessageBox.StandardButton.No)
+            message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+            message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+            if message_box.exec() != QMessageBox.StandardButton.Yes:
+                return
+        worker = GOGDeleteWorker(self.gog_api, game, self.context_menu_manager)
+        worker.finished.connect(self._on_gog_delete_finished)
+        self.gog_delete_worker = worker
+        worker.start()
+
+    def _on_gog_delete_finished(self) -> None:
+        worker = self.gog_delete_worker
+        if worker is None:
             return
-        try:
-            shutil.rmtree(install_path)
-        except OSError as error:
-            logger.error("Failed to delete GOG game %s: %s", app_id, error)
-            self.gogAccountStatus.setText(str(error))
-            return
-        manifest_path = (
-            self.gog_api.config_dir / "heroic_gogdl" / "manifests" / app_id
-        )
-        try:
-            manifest_path.unlink(missing_ok=True)
-        except OSError as error:
-            logger.warning("Failed to delete GOG manifest %s: %s", app_id, error)
-        self.gog_api.remove_installed_game(app_id)
-        self.context_menu_manager.remove_gog_shortcuts(str(game["title"]))
-        self.loadGames(force_load=True)
+        self.gog_delete_worker = None
+        if worker.error:
+            self.gogAccountStatus.setText(worker.error)
+        else:
+            self.loadGames(force_load=True)
+        worker.deleteLater()
 
     def _start_gog_download(
         self, game: dict, install_path: Path, command: list[str], action: str
@@ -1104,6 +1138,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         process.setArguments(command[1:])
         process.setProcessEnvironment(self._gog_process_environment())
         process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        process.errorOccurred.connect(lambda error: self._handle_store_process_error(process, error))
         process.readyReadStandardOutput.connect(self._read_gog_download_output)
         process.finished.connect(self._on_gog_download_finished)
         self.gog_process = process
@@ -1137,6 +1172,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         process.setArguments(command[1:])
         process.setProcessEnvironment(self._egs_process_environment())
         process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        process.errorOccurred.connect(lambda error: self._handle_store_process_error(process, error))
         process.readyReadStandardOutput.connect(self._read_egs_download_output)
         process.finished.connect(self._on_egs_download_finished)
         self.egs_process = process
@@ -1170,6 +1206,7 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         process.setArguments(command[1:])
         process.setProcessEnvironment(self._egs_process_environment())
         process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        process.errorOccurred.connect(lambda error: self._handle_store_process_error(process, error))
         process.readyReadStandardOutput.connect(self._read_egs_download_output)
         process.finished.connect(
             lambda code, _status: self._on_egs_operation_finished(
@@ -1184,6 +1221,12 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
         self.downloadCancelButton.setEnabled(True)
         self.switchTab(6)
         process.start()
+
+    def _handle_store_process_error(self, process: QProcess, error: QProcess.ProcessError) -> None:
+        if error != QProcess.ProcessError.FailedToStart:
+            return
+        logger.error("Failed to start store operation: %s", process.errorString())
+        process.finished.emit(os.EX_UNAVAILABLE, QProcess.ExitStatus.CrashExit)
 
     def _cancel_gog_download(self) -> None:
         process = self.gog_process or self.egs_process

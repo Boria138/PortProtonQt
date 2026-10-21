@@ -767,3 +767,11 @@ def test_disabled_steam_proton_scanning_skips_discovery(monkeypatch: pytest.Monk
     with patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs") as discover:
         assert get_steam_proton_versions() == []
     discover.assert_not_called()
+
+
+def test_steam_index_preserves_original_game_when_name_is_reused() -> None:
+    apps = [
+        {"appid": 1371690, "normalized_name": "graven"},
+        {"appid": 5171110, "normalized_name": "graven"},
+    ]
+    assert build_index(apps)["graven"]["appid"] == 1371690

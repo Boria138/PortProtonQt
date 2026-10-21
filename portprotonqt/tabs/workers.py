@@ -5,6 +5,17 @@ logger = get_logger(__name__)
 
 class MainWindowWorkersMixin:
     def _stopBackgroundWorkers(self) -> None:
+        context_menu_manager = getattr(self, "context_menu_manager", None)
+        if context_menu_manager is not None:
+            context_menu_manager.stop_card_actions()
+        self.store_download_queue = []
+        for process_name in ("gog_process", "egs_process"):
+            process = getattr(self, process_name, None)
+            if process is not None:
+                process.terminate()
+                if not process.waitForFinished():
+                    process.kill()
+                    process.waitForFinished()
         worker_timeouts = {
             "networkWorker": 3000,
             "bluetoothWorker": 12000,
@@ -22,6 +33,7 @@ class MainWindowWorkersMixin:
             "gog_library_worker": None,
             "gog_metadata_worker": None,
             "gog_repair_worker": None,
+            "gog_delete_worker": None,
             "store_dlc_worker": None,
             "gog_auth_worker": None,
             "gog_account_worker": None,
@@ -39,6 +51,7 @@ class MainWindowWorkersMixin:
             "_imageWorkerPool",
             "_detailImageWorkerPool",
             "_themeArchiveWorkers",
+            "_gameFolderWorkers",
         ):
             self._stopWorkerThreads(workers_name)
         downloader = getattr(self, "downloader", None)

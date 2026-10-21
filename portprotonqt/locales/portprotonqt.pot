@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 10:50+0500\n"
+"POT-Creation-Date: 2026-10-21 00:34+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -144,6 +144,9 @@ msgstr ""
 msgid "Failed to rename file: {error}"
 msgstr ""
 
+msgid "Select multiple"
+msgstr ""
+
 msgid "Delete from PortProton"
 msgstr ""
 
@@ -247,9 +250,6 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
-msgid "Play this game on Steam"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to save custom data: {error}"
 msgstr ""
@@ -297,10 +297,6 @@ msgstr ""
 msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
-msgstr ""
-
-#, python-brace-format
-msgid "'{game_name}' was added to Steam."
 msgstr ""
 
 #, python-brace-format
@@ -356,9 +352,6 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
-msgstr ""
-
-msgid "Missing EXE"
 msgstr ""
 
 msgid "Game Title"
@@ -898,6 +891,22 @@ msgstr ""
 msgid "Launching {0}"
 msgstr ""
 
+#, python-brace-format
+msgid "Scanning: {folder}"
+msgstr ""
+
+#, python-brace-format
+msgid "Checking existing shortcuts: {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Adding: {name}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to create shortcut: {name}"
+msgstr ""
+
 msgid "Name:"
 msgstr ""
 
@@ -922,6 +931,30 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
+msgid "Select folder"
+msgstr ""
+
+msgid "Processing games…"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Processed {completed}/{total}\n"
+"{current}"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid "No games found in the selected folder."
+msgstr ""
+
+msgid "Select games"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
 msgid "Invalid image"
 msgstr ""
 
@@ -938,9 +971,6 @@ msgid "Compatibility report"
 msgstr ""
 
 msgid "The program stopped. Compatibility details were collected automatically."
-msgstr ""
-
-msgid "Close"
 msgstr ""
 
 msgid "Downloading…"
@@ -1199,9 +1229,6 @@ msgid "Failed to open PPDB file:\n"
 msgstr ""
 
 msgid "Failed to open file:\n"
-msgstr ""
-
-msgid "Information"
 msgstr ""
 
 msgid "Confirm PPDB Clear"
@@ -2099,9 +2126,6 @@ msgstr ""
 msgid "Another download is running"
 msgstr ""
 
-msgid "All"
-msgstr ""
-
 msgid "Another GOG operation is already running"
 msgstr ""
 
@@ -2156,6 +2180,9 @@ msgstr ""
 msgid "Sort Method:"
 msgstr ""
 
+msgid "All"
+msgstr ""
+
 msgid "Display Filter:"
 msgstr ""
 
@@ -2202,6 +2229,9 @@ msgstr ""
 msgid ""
 "Are you sure you want to delete {count} cards without executable? This "
 "will remove the .desktop files and custom data."
+msgstr ""
+
+msgid "Failed to install theme"
 msgstr ""
 
 msgid "PortProton Settings"
@@ -2493,9 +2523,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Downloading… {0}%"
-msgstr ""
-
-msgid "Failed to install theme"
 msgstr ""
 
 msgid "Select Theme:"

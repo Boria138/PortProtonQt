@@ -541,3 +541,101 @@ def test_vertical_library_headers_align_with_values(
                 assert heading.alignment() == value.alignment() == Qt.AlignmentFlag.AlignCenter
                 assert abs(heading.mapToGlobal(heading.rect().center()).x()
                            - value.mapToGlobal(value.rect().center()).x()) <= 1
+
+
+def test_control_click_toggles_card_without_opening_details(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+) -> None:
+    manager, _ = library_scene
+    game = ("Game", "", "", "", "", "game.exe", "", "", "", "", 0, 0, "portproton")
+    card = manager._create_game_card(game)
+    position = card.rect().center().toPointF()
+    for selected in (True, False):
+        event = QMouseEvent(QEvent.Type.MouseButtonPress, position, position,
+                            Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton,
+                            Qt.KeyboardModifier.ControlModifier)
+        card.mousePressEvent(event)
+        assert card.batch_selected is selected
+    cast(Any, manager.main_window).openGameDetailPage.assert_not_called()
+
+
+@pytest.mark.parametrize("activation", ["mouse", "gamepad"])
+@pytest.mark.parametrize("game_source", ["portproton", "gog", "egs"])
+def test_selection_mode_toggles_without_opening_game(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, activation: str, game_source: str,
+) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+    from portprotonqt.main_window import MainWindow
+
+    library, _ = library_scene
+    menu = object.__new__(ContextMenuManager)
+    menu.game_library_manager = library
+    game = ("Game", "", "", "", "", "missing.exe", "", "", "", "", 0, 0, game_source)
+    card = library._create_game_card(game)
+    card.context_menu_manager = menu
+    library.game_card_cache[(card.name, card.exec_line)] = card
+    monkeypatch.setattr(QApplication, "focusWidget", lambda: card)
+    menu.start_card_selection(card)
+    assert menu.card_selection_mode and card.batch_selected
+    for selected in (False, True):
+        if activation == "mouse":
+            position = card.rect().center().toPointF()
+            card.mousePressEvent(QMouseEvent(
+                QEvent.Type.MouseButtonPress, position, position,
+                Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+            ))
+        else:
+            MainWindow.activateFocusedWidget(cast(Any, library.main_window))
+        assert card.batch_selected is selected
+    cast(Any, library.main_window).openGameDetailPage.assert_not_called()
+    menu.clear_card_selection()
+    assert not menu.card_selection_mode and not card.batch_selected
+
+
+@pytest.mark.parametrize("layout_mode", ["grid", "horizontal", "horizontal_top", "list", "vertical"])
+def test_search_preserves_selection_across_different_queries(
+    library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
+    monkeypatch: pytest.MonkeyPatch, layout_mode: str,
+) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    library, _ = library_scene
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_library_layout_mode", lambda _: layout_mode)
+    monkeypatch.setattr(library, "_incremental_batch_size", 1)
+    library.rebuild_library_layout(layout_mode)
+    games = [(name, "", "", "", "", name, "", "", "", "", 0, 0, "portproton")
+             for name in ("DOOM64", "Akalabeth of Doom", "Biomance")]
+    cast(Any, library.main_window)._loaded_library_cache = {"portproton": games}
+    library.set_games(games, focus_first_card=False)
+    assert library._update_timer is not None and library._incremental_add_timer is not None
+    library._update_timer.stop()
+    library._update_game_grid_immediate()
+    while library._incremental_add_queue:
+        library._process_incremental_add_batch()
+    library._incremental_add_timer.stop()
+    menu = object.__new__(ContextMenuManager)
+    menu.game_library_manager = library
+    cards = {card.name: card for card in library.game_card_cache.values()}
+    for card in cards.values():
+        card.context_menu_manager = menu
+    for query in ("doom", "bio", ""):
+        library.main_window.searchEdit.setText(query)
+        library.filter_games_delayed()
+        library._update_timer.stop()
+        library._update_game_grid_immediate()
+        while library._incremental_add_queue:
+            library._process_incremental_add_batch()
+        library._incremental_add_timer.stop()
+        if query == "doom":
+            menu.start_card_selection(cards["DOOM64"])
+            cards["Akalabeth of Doom"].click()
+        elif query == "bio":
+            cards["Biomance"].click()
+            assert not cards["DOOM64"].isVisible()
+        if query != "doom":
+            assert all(card.batch_selected for card in cards.values())
+        assert menu.card_selection_mode
+    menu.clear_card_selection()
+    assert not any(card.batch_selected for card in cards.values())
+    cast(Any, library.main_window).openGameDetailPage.assert_not_called()
