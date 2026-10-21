@@ -1553,6 +1553,20 @@ def test_batch_steam_removal_has_no_success_dialog(monkeypatch: Any) -> None:
     manager.signals.show_info_dialog.emit.assert_not_called()
 
 
+def test_steam_removal_has_no_success_dialog(monkeypatch: Any) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+
+    manager = object.__new__(ContextMenuManager)
+    manager._batch_action = False
+    manager._check_portproton = lambda: True
+    monkeypatch.setattr(manager, "_get_exec_line", lambda name, command: command)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.extract_exec_target_path", lambda command: command)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.remove_from_steam", lambda *args: (True, "removed"))
+    manager.signals = MagicMock()
+    manager.remove_from_steam("Game", "game.exe", "portproton")
+    manager.signals.show_info_dialog.emit.assert_not_called()
+
+
 
 @pytest.fixture
 def selection_scene(tmp_path: Path, monkeypatch: Any) -> Any:

@@ -1769,11 +1769,7 @@ class ContextMenuManager:
                         _("Success"),
                         _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
                     )
-                else:
-                    self.signals.show_info_dialog.emit(
-                        _("Success"),
-                        _("'{game_name}' was removed from Steam.").format(game_name=game_name)
-                    )
+                return
             else:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
