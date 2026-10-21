@@ -4,7 +4,7 @@ from typing import cast
 
 from shiboken6 import isValid
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt
-from PySide6.QtGui import QKeySequence
+from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QApplication,
@@ -130,7 +130,7 @@ class KeyboardInputMixin(InputMixin):
                 return True
 
         if event.type() == QEvent.Type.KeyPress:
-            if self._redirect_gamecard_input_to_search(event):
+            if isinstance(event, QKeyEvent) and self._redirect_gamecard_input_to_search(event):
                 return True
             key = self._qt_event_to_input_key(event)
             if key is not None:
@@ -235,7 +235,9 @@ class KeyboardInputMixin(InputMixin):
         1: 'autoInstallSearchLineEdit',
     }
 
-    def _redirect_gamecard_input_to_search(self, event: QEvent) -> bool:
+    def _redirect_gamecard_input_to_search(self, event: QKeyEvent) -> bool:
+        if event.key() == Qt.Key.Key_Space:
+            return False
         focused = self._focused_widget()
         if not isinstance(focused, GameCard):
             return False

@@ -537,7 +537,7 @@ class ContextMenuManager:
                 lambda checked=False, actions=actions: self._start_card_actions(actions, menus)
             )
         menu.addSeparator()
-        cancel_action = menu.addAction(_("Cancel"))
+        cancel_action = menu.addAction(self._get_safe_icon("cancel"), _("Cancel"))
         cancel_action.triggered.connect(self.clear_card_selection)
         menu.setActiveAction(next(action for action in menu.actions() if action.isEnabled() and not action.isSeparator()))
         menu.popup(game_card.mapToGlobal(pos))
@@ -561,7 +561,7 @@ class ContextMenuManager:
                 self._show_card_selection_menu(menu, game_card, pos)
                 return
             self.clear_card_selection()
-            selection_action = menu.addAction(_("Select multiple"))
+            selection_action = menu.addAction(self._get_safe_icon("edit"), _("Select multiple"))
             selection_action.triggered.connect(lambda: self.start_card_selection(game_card))
             menu.setActiveAction(selection_action)
             menu.addSeparator()

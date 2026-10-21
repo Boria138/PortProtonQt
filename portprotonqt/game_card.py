@@ -16,6 +16,7 @@ from PySide6.QtGui import (
     QEnterEvent,
     QFocusEvent,
     QMouseEvent,
+    QKeyEvent,
     QPaintEvent,
 )
 from PySide6.QtCore import QEvent, Signal, Property, Qt, QUrl, QTimer, QSize
@@ -1289,13 +1290,18 @@ class GameCard(AnimatedCard):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                self.batch_selected = not self.batch_selected
-                self.update()
-                event.accept()
-                return
             self.click()
         super().mousePressEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Space and self.context_menu_manager:
+            if self.context_menu_manager.card_selection_mode:
+                self.context_menu_manager.clear_card_selection()
+            else:
+                self.context_menu_manager.start_card_selection(self)
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def cleanup(self):
         """Clean up animations to prevent memory leaks when the card is destroyed."""
