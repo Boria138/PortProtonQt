@@ -430,7 +430,7 @@ def test_minimal_tray_exits_after_stopping_game(monkeypatch: MonkeyPatch) -> Non
     manager.tray_icon.hide.assert_called_once_with()
     quit_app.assert_called_once_with()
 
-@mark.parametrize(("vertical_layout", "ribbon_visible"), [(False, True), (True, False)])
+@mark.parametrize(("vertical_layout", "ribbon_visible"), [(False, True), (True, True)])
 def test_source_ribbon_visibility(
     monkeypatch: MonkeyPatch,
     vertical_layout: bool,

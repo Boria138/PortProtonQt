@@ -878,10 +878,10 @@ class GameCard(AnimatedCard):
         ribbon_size = int(current_width * ribbon_cfg.get("size_ratio", 0.28))
         ribbon_size = max(ribbon_size, int(ribbon_cfg.get("min_size", 54) * self._scale))
         source_ribbons = [
-            (self.steam_visible and not self.vertical_layout, self.steamLabel),
-            (self.gog_visible and not self.vertical_layout, self.gogLabel),
-            (self.egs_visible and not self.vertical_layout, self.egsLabel),
-            (self.portproton_visible and not self.vertical_layout, self.portprotonLabel),
+            (self.steam_visible, self.steamLabel),
+            (self.gog_visible, self.gogLabel),
+            (self.egs_visible, self.egsLabel),
+            (self.portproton_visible, self.portprotonLabel),
         ]
 
         for is_visible, ribbon in source_ribbons:
@@ -1051,15 +1051,11 @@ class GameCard(AnimatedCard):
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
         hidden_badges = self.badge_view_mode == "hidden"
-        show_source_ribbons = self.vertical_layout is not True
-
         try:
-            self.steamLabel.setVisible(self.steam_visible and show_source_ribbons)
-            self.gogLabel.setVisible(self.gog_visible and show_source_ribbons)
-            self.egsLabel.setVisible(self.egs_visible and show_source_ribbons)
-            self.portprotonLabel.setVisible(
-                self.portproton_visible and show_source_ribbons
-            )
+            self.steamLabel.setVisible(self.steam_visible)
+            self.gogLabel.setVisible(self.gog_visible)
+            self.egsLabel.setVisible(self.egs_visible)
+            self.portprotonLabel.setVisible(self.portproton_visible)
             self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)
