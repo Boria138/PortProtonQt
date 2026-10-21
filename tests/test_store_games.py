@@ -920,15 +920,19 @@ def test_installed_filter_excludes_uninstalled_gog_games(
         get_launch_target=lambda app_id: f"/games/{app_id}/game.exe",
     )
     monkeypatch.setattr(game_config, "get_only_installed", lambda: True)
+    loaded_metadata = []
     monkeypatch.setattr(
         "portprotonqt.main_window.get_steam_game_info_async",
-        lambda _name, _uri, callback: callback({}),
+        lambda name, _uri, callback: (
+            loaded_metadata.append(name) or callback({})
+        ),
     )
     results = []
 
     MainWindow._load_gog_games_async(window, results.append)
 
     assert [game[3] for game in results[0]] == ["installed"]
+    assert loaded_metadata == ["Installed"]
     assert results[0][0][5] == "gog://launch/installed"
 
 def test_installed_filter_disabled_includes_uninstalled_gog_games(
@@ -1051,6 +1055,38 @@ def test_egs_library_uses_steam_description_when_epic_has_title_only(
     MainWindow._load_egs_games_async(window, results.append)
 
     assert results[0][0][1] == "Witch It — игра в прятки по сети."
+
+
+def test_installed_filter_skips_uninstalled_egs_metadata(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    library = [
+        {"app_id": "installed", "title": "Installed"},
+        {"app_id": "uninstalled", "title": "Uninstalled"},
+    ]
+    installed_data = {"installed": {}}
+    api = SimpleNamespace(
+        load_library=lambda: library,
+        load_installed=lambda: installed_data,
+        is_game_installed=lambda app_id, data: app_id in data,
+        get_launch_target=lambda app_id, _data: f"/games/{app_id}.exe",
+    )
+    loaded_metadata = []
+    monkeypatch.setattr(game_config, "get_only_installed", lambda: True)
+    monkeypatch.setattr(
+        "portprotonqt.main_window.get_steam_game_info_async",
+        lambda name, _uri, callback: (
+            loaded_metadata.append(name) or callback({})
+        ),
+    )
+    results = []
+
+    MainWindow._load_egs_games_async(
+        cast(MainWindow, SimpleNamespace(egs_api=api)), results.append
+    )
+
+    assert loaded_metadata == ["Installed"]
+    assert [game[3] for game in results[0]] == ["installed"]
 
 def test_egs_maintenance_uses_legendary_commands() -> None:
     start_operation = MagicMock()
