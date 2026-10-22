@@ -312,7 +312,7 @@ def _tile_theme() -> Any:
 
 @mark.parametrize(
     "worker_name",
-    ("egs_library_worker", "gog_library_worker", "gog_metadata_worker", "gog_repair_worker", "gog_delete_worker", "store_dlc_worker"),
+    ("egs_library_worker", "gog_library_worker", "gog_metadata_worker", "native_library_worker", "gog_repair_worker", "gog_delete_worker", "store_dlc_worker"),
 )
 def test_shutdown_waits_for_store_library_workers(worker_name: str) -> None:
     worker = MagicMock()
@@ -431,14 +431,16 @@ def test_minimal_tray_exits_after_stopping_game(monkeypatch: MonkeyPatch) -> Non
     quit_app.assert_called_once_with()
 
 @mark.parametrize(("vertical_layout", "ribbon_visible"), [(False, True), (True, True)])
+@mark.parametrize("source", ["portproton", "native"])
 def test_source_ribbon_visibility(
     monkeypatch: MonkeyPatch,
     vertical_layout: bool,
     ribbon_visible: bool,
+    source: str,
 ) -> None:
     card = MagicMock()
     card.coverLabel = MagicMock()
-    card.game_source = "portproton"
+    card.game_source = source
     card.ppdb_id = "report-id"
     card.protondb_tier = "Platinum"
     card.anticheat_status = "Supported"
@@ -449,9 +451,9 @@ def test_source_ribbon_visibility(
     card.parentWidget.return_value = None
     monkeypatch.setattr("portprotonqt.game_card.ui_config.get_economy_mode", lambda: False)
 
-    GameCard.update_badge_visibility(card, "portproton")
+    GameCard.update_badge_visibility(card, source)
 
-    card.portprotonLabel.setVisible.assert_called_with(ribbon_visible)
+    getattr(card, f"{source}Label").setVisible.assert_called_with(ribbon_visible)
     card.ppdbLabel.setVisible.assert_called_with(False)
     card.protondbLabel.setVisible.assert_called_with(False)
     card.anticheatLabel.setVisible.assert_called_with(False)
@@ -2727,6 +2729,7 @@ def test_add_game_dialog_does_not_reprocess_its_shortcut(
         exeEdit=SimpleNamespace(text=lambda: "/games/praest.exe"),
         coverEdit=SimpleNamespace(text=lambda: ""),
         getDesktopEntryData=lambda: (entry, str(desktop_path)),
+        native_checkbox=SimpleNamespace(isChecked=lambda: False),
         last_cover_path="",
     )
     window: Any = MainWindow.__new__(MainWindow)

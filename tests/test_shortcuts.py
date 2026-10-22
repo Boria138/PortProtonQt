@@ -2006,6 +2006,7 @@ def test_add_game_file_picker_offers_folder_selection_only_for_adding(
     monkeypatch.setattr(module, "AutoSizeButton", lambda text, **_kwargs: QPushButton(text))
     dialog = SimpleNamespace(
         last_exe_path=None, edit_mode=edit_mode, onExeSelected=MagicMock(),
+        native_checkbox=SimpleNamespace(isChecked=lambda: False),
         _select_game_folder=MagicMock(), parentWidget=lambda: None,
         theme=SimpleNamespace(ACTION_BUTTON_STYLE=""),
     )

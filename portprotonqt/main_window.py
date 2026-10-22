@@ -28,6 +28,7 @@ from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, remove_empty_custom_data_dirs
 from portprotonqt.gog_api import GOGAPI
 from portprotonqt.egs_api import EGSAPI
+from portprotonqt.native_games import NativeLibraryWorker, NATIVE_URI_PREFIX, get_native_launch
 from portprotonqt.debug_utils import get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager
@@ -91,6 +92,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 STORE_LAUNCH_GRACE_SECONDS = 10
+GAME_PROCESS_CHECK_INTERVAL_MS = 500
 
 if TYPE_CHECKING:
     from portprotonqt.appimage_updater import AppImageUpdateWorker
@@ -1035,7 +1037,7 @@ class MainWindow(
                     self.games_loaded.emit(games)
 
                 # Load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': []}
+                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': [], 'native': []}
                 completed = dict.fromkeys(results, False)
 
                 def check_completion():
@@ -1065,13 +1067,19 @@ class MainWindow(
                     completed['egs'] = True
                     check_completion()
 
+                def native_callback(games: list[tuple]) -> None:
+                    results['native'] = games
+                    completed['native'] = True
+                    check_completion()
+
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
                 self._load_gog_games_async(gog_callback)
                 self._load_egs_games_async(egs_callback)
+                self._load_native_games_async(native_callback)
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': []}
+                results = {'portproton': [], 'steam': [], 'gog': [], 'egs': [], 'native': []}
                 completed = dict.fromkeys(results, False)
 
                 def on_all_games():
@@ -1114,14 +1122,104 @@ class MainWindow(
                     completed['egs'] = True
                     check_completion()
 
+                def native_callback(games: list[tuple]) -> None:
+                    results['native'] = games
+                    completed['native'] = True
+                    check_completion()
+
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
                 self._load_gog_games_async(gog_callback)
                 self._load_egs_games_async(egs_callback)
+                self._load_native_games_async(native_callback)
 
         # Run loading immediately to show status without delay
         start_loading()
+
+    def _load_native_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
+        self._native_games_callback = callback
+        self.native_library_worker = NativeLibraryWorker()
+        self.native_library_worker.finished.connect(self._on_native_games_loaded)
+        self.native_library_worker.start()
+
+    def open_native_settings(self, exec_line: str) -> None:
+        desktop_path = exec_line.removeprefix(NATIVE_URI_PREFIX)
+        try:
+            dialog = ExeSettingsDialog(self, self.theme, desktop_path, game_source="native")
+        except OSError as error:
+            logger.warning("Cannot open native settings for %s: %s", desktop_path, error)
+            QMessageBox.warning(self, _("Error"), str(error))
+            return
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _launch_native_game(self, exec_line: str, button: QPushButton | None = None) -> None:
+        desktop_path = Path(exec_line.removeprefix(NATIVE_URI_PREFIX))
+        if self.game_processes:
+            if getattr(self, "native_game_running", False) and self.game_start_exe == str(desktop_path):
+                self.stop_running_game(button)
+            else:
+                QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
+            return
+        try:
+            if not desktop_path.is_absolute() or desktop_path.suffix != ".desktop":
+                raise ValueError("Invalid native desktop path")
+            command, directory = get_native_launch(str(desktop_path))
+            process = subprocess.Popen(command, cwd=directory, start_new_session=True, text=True)
+        except Exception as error:
+            logger.warning("Failed to launch native game %s: %s", desktop_path, error)
+            QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(error))
+            return
+        self.native_game_running = True
+        self.game_stopped_by_user = False
+        self.game_processes = [process]
+        self.current_running_button = button
+        self.target_exe = desktop_path.name
+        self.game_start_exe = str(desktop_path)
+        self.game_start_exact_path = True
+        self.game_start_time = datetime.now()
+        self.game_launch_monotonic = time.monotonic()
+        self.game_launch_started = True
+        self.wine_download_seen = False
+        save_last_launch(desktop_path.stem, self.game_start_time)
+        self._update_last_launch_after_start(str(desktop_path), self.game_start_time)
+        self.launch_output_queue = Queue()
+        self.input_manager.suspend_gamepad_polling()
+        self._set_running_button_stop()
+        SoundManager().play("game_launch")
+        self.checkProcessTimer = QTimer(self)
+        self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+        self.checkProcessTimer.start(GAME_PROCESS_CHECK_INTERVAL_MS)
+
+    @Slot()
+    def _on_native_games_loaded(self) -> None:
+        worker = self.native_library_worker
+        if worker is None:
+            return
+        self.native_library_worker = None
+        games = worker.games
+        worker.deleteLater()
+        if not games:
+            self._native_games_callback([])
+            return
+        completed = []
+
+        def on_info(info: dict, game: tuple) -> None:
+            updated = list(game)
+            updated[1] = info.get("description", "") or game[1]
+            updated[2] = game[2] or info.get("cover", "")
+            updated[3] = info.get("appid", "")
+            updated[4] = info.get("controller_support", "")
+            completed.append(tuple(updated))
+            if len(completed) == len(games):
+                self._native_games_callback(completed)
+
+        for game in games:
+            if ui_config.get_economy_mode():
+                on_info(get_cached_steam_game_info(game[0], game[5]), game)
+            else:
+                get_steam_game_info_async(game[0], game[5], lambda info, game=game: on_info(info, game))
 
     def _load_gog_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
         api = getattr(self, "gog_api", None) or GOGAPI()
@@ -2116,7 +2214,7 @@ class MainWindow(
 
 
     def checkTargetExe(self):
-        """Update launch state from the marker and PortProton process."""
+        """Update launch state and reset controls after the game exits."""
         dependency_active = self._drain_launch_output_progress()
         child_running = self._has_running_game_process()
 
@@ -2241,6 +2339,7 @@ class MainWindow(
         self.game_processes = [] if launcher_only else [
             proc for proc in self.game_processes if proc.poll() is None
         ]
+        self.native_game_running = False
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
         self._refresh_portproton_shortcuts()
@@ -2335,6 +2434,8 @@ class MainWindow(
 
     def _get_game_executable(self, exec_line: str) -> str:
         """Resolve a library launch entry to its tracked executable."""
+        if exec_line.startswith(NATIVE_URI_PREFIX):
+            return exec_line.removeprefix(NATIVE_URI_PREFIX)
         if exec_line.startswith("gog://launch/"):
             app_id = exec_line.rsplit("/", 1)[-1]
             return str(self.gog_api.get_launch_target(app_id) or "")
@@ -2344,6 +2445,19 @@ class MainWindow(
         return extract_exec_target_path(exec_line) or ""
 
     def _has_running_game_process(self) -> bool:
+        if getattr(self, "native_game_running", False):
+            if any(process.poll() is None for process in self.game_processes):
+                return True
+            groups = {process.pid for process in self.game_processes}
+            for process in psutil.process_iter(attrs=["pid", "status"]):
+                try:
+                    if process.info["status"] != psutil.STATUS_ZOMBIE and os.getpgid(process.pid) in groups:
+                        return True
+                except ProcessLookupError:
+                    continue
+                except PermissionError:
+                    continue
+            return False
         if self._observe_game_processes():
             return True
         process_alive = any(proc.poll() is None for proc in self.game_processes)
@@ -2465,6 +2579,8 @@ class MainWindow(
         self._start_launch_output_reader(game_process)
 
     def _analyze_short_launch(self) -> None:
+        if getattr(self, "native_game_running", False):
+            return
         if not ui_config.get_crash_reports_enabled():
             logger.info("Compatibility report skipped: crash reports disabled")
             return
@@ -2536,11 +2652,12 @@ class MainWindow(
 
     def _terminate_game_processes(self) -> None:
         for proc in self.game_processes:
-            if proc.poll() is not None:
+            if proc.poll() is not None and not getattr(self, "native_game_running", False):
                 continue
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                proc.kill()
+                os.killpg(proc.pid if getattr(self, "native_game_running", False) else os.getpgid(proc.pid), signal.SIGTERM)
+                if not getattr(self, "native_game_running", False):
+                    proc.kill()
             except ProcessLookupError:
                 continue
             except OSError as e:
@@ -2559,11 +2676,14 @@ class MainWindow(
         return True
 
     def stop_running_game(self, button=None) -> bool:
-        """Stop current game via PortProton CLI stop command."""
+        """Stop the current game's owned processes and launcher."""
         if button is not None:
             self.current_running_button = button
         self.game_stopped_by_user = True
         self.egs_launch_cancelled = True
+        if getattr(self, "native_game_running", False):
+            self._terminate_game_processes()
+            return True
         if getattr(self, "launcher_process_only", False):
             if self._run_portproton_stop_command():
                 return True
@@ -3071,6 +3191,10 @@ class MainWindow(
             button.setIcon(self.theme_manager.get_icon("stop", as_path=True))
 
     def toggleGame(self, exec_line, button=None, game_name=None):
+        if exec_line.startswith(NATIVE_URI_PREFIX):
+            self._launch_native_game(exec_line, button)
+            return
+
         # Handle Steam games
         if exec_line.startswith("steam://"):
             self._launch_steam_game(exec_line)
