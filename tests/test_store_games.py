@@ -3,12 +3,15 @@
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
 import orjson
+from PySide6.QtCore import QEventLoop, QThread, QTimer
 from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QMainWindow
 from pytest import MonkeyPatch, mark
 from shiboken6 import delete
 
@@ -20,6 +23,7 @@ from portprotonqt.tabs.download_tab import MainWindowDownloadTabMixin
 from portprotonqt.tabs.download_tab import MainWindowDownloadTabMixin as GOGMixin
 import portprotonqt.main_window as main_window_module
 import portprotonqt.tabs.download_tab as download_tab_module
+from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 
 @mark.parametrize("source", ("gog", "egs"))
@@ -101,6 +105,83 @@ def test_store_dlc_selection_remains_available_during_download(
 
     worker.start.assert_called_once_with()
     assert window.store_dlc_worker is worker
+
+
+@mark.parametrize("source", ("gog", "egs"))
+@mark.parametrize("failed", (False, True))
+def test_dlc_worker_released_before_modal_and_retry(
+    monkeypatch: MonkeyPatch, source: str, failed: bool
+) -> None:
+    application = download_tab_module.QApplication.instance() or download_tab_module.QApplication([])
+    loop = QEventLoop()
+    observations = []
+
+    class Window(GOGMixin, QMainWindow):
+        def _on_store_dlcs_loaded(self, source: str, game: dict, dlcs: list[dict]) -> None:
+            observations.append((self.store_dlc_worker, QThread.currentThread()))
+            dialog = download_tab_module.QDialog(self)
+            QTimer.singleShot(0, dialog.reject)
+            dialog.exec()
+            loop.quit()
+
+    window: Any = Window()
+    window.gog_api = cast(Any, object())
+    window.egs_api = cast(Any, object())
+
+    def run(worker: download_tab_module.StoreDLCWorker) -> None:
+        if failed:
+            worker.failed.emit("failed")
+        else:
+            worker.loaded.emit([])
+
+    def warning(*args: Any) -> None:
+        observations.append((window.store_dlc_worker, QThread.currentThread()))
+        loop.quit()
+
+    monkeypatch.setattr(download_tab_module.StoreDLCWorker, "run", run)
+    monkeypatch.setattr(download_tab_module.QMessageBox, "warning", warning)
+    timeout = QTimer()
+    timeout.setSingleShot(True)
+    timeout.timeout.connect(loop.quit)
+    for _attempt in range(2):
+        window._select_store_dlcs(source, {"app_id": "123", "title": "Game"})
+        timeout.start(3000)
+        loop.exec()
+        timeout.stop()
+        assert window.store_dlc_worker is None
+    assert observations == [(None, application.thread())] * 2
+    window.deleteLater()
+
+
+def test_dlc_worker_shutdown_suppresses_picker(monkeypatch: MonkeyPatch) -> None:
+    application = download_tab_module.QApplication.instance() or download_tab_module.QApplication([])
+
+    class Window(GOGMixin, QMainWindow, MainWindowWorkersMixin):
+        pass
+
+    window: Any = Window()
+    window.gog_api = cast(Any, object())
+    window._on_store_dlcs_loaded = MagicMock()
+    warning = MagicMock()
+    started = Event()
+
+    def run(worker: download_tab_module.StoreDLCWorker) -> None:
+        started.set()
+        while not worker.isInterruptionRequested():
+            Event().wait(0.001)
+
+    monkeypatch.setattr(download_tab_module.StoreDLCWorker, "run", run)
+    monkeypatch.setattr(download_tab_module.QMessageBox, "warning", warning)
+    window._select_store_dlcs("gog", {"app_id": "123", "title": "Game"})
+    worker = window.store_dlc_worker
+    assert started.wait(3)
+    window._stopWorkerThread("store_dlc_worker", None)
+    assert not worker.isRunning()
+    application.processEvents()
+    assert window.store_dlc_worker is None
+    window._on_store_dlcs_loaded.assert_not_called()
+    warning.assert_not_called()
+    window.deleteLater()
 
 
 def test_store_download_queues_reject_duplicates() -> None:

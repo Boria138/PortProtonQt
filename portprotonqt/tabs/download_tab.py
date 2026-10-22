@@ -849,9 +849,17 @@ class MainWindowDownloadTabMixin(_MainWindowTypingBase):
             return
         api = self.egs_api if source == "egs" else self.gog_api
         worker = StoreDLCWorker(api, str(game["app_id"]))
-        worker.loaded.connect(lambda dlcs: self._on_store_dlcs_loaded(source, game, dlcs))
-        worker.failed.connect(lambda error: QMessageBox.warning(self, _("Error"), error))
+        results: list[list[dict]] = []
+        errors: list[str] = []
+        worker.loaded.connect(results.append)
+        worker.failed.connect(errors.append)
         worker.finished.connect(self._on_store_dlc_worker_finished)
+        worker.finished.connect(
+            lambda: self._on_store_dlcs_loaded(source, game, results[0]) if results else None
+        )
+        worker.finished.connect(
+            lambda: QMessageBox.warning(self, _("Error"), errors[0]) if errors else None
+        )
         self.store_dlc_worker = worker
         worker.start()
 
