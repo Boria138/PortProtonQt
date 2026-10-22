@@ -287,8 +287,8 @@ class MainWindowThemeTabMixin(ThemeStoreMixin, _MainWindowTypingBase):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         message_box.setDefaultButton(QMessageBox.StandardButton.No)
-        message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        message_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        message_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         if message_box.exec() != QMessageBox.StandardButton.Yes:
             return
         removal_results = [

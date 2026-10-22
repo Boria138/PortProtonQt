@@ -175,7 +175,7 @@ def _show_portdata_warning(parent: QWidget, theme: Any, text: str, allow_choose:
     message_box.setText(text)
     if allow_choose:
         message_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Open)
-        message_box.setButtonText(QMessageBox.StandardButton.Open, _("Choose Folder"))
+        message_box.button(QMessageBox.StandardButton.Open).setText(_("Choose Folder"))
     main_style = getattr(theme, "MAIN_WINDOW_STYLE", "")
     message_box_style = getattr(theme, "MESSAGE_BOX_STYLE", "")
     message_box.setStyleSheet(main_style + message_box_style)

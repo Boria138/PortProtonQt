@@ -958,8 +958,8 @@ class ProtonManager(DraggableDialog):
         msg_box.setText(_("Are you sure you want to delete {} selected WINE/Proton?\n\nThis action cannot be undone.").format(len(versions_to_remove)))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return

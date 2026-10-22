@@ -2595,8 +2595,8 @@ class MainWindow(
         msg_box.setText(_("Prefix '{0}' was not found. Install recommended libraries?").format(prefix_name))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.No:
             env_vars["DISABLE_CP_DEFPFX"] = "1"
@@ -2713,8 +2713,8 @@ class MainWindow(
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
         )
         msg_box.setDefaultButton(QMessageBox.StandardButton.Ok)
-        msg_box.setButtonText(QMessageBox.StandardButton.Ok, _("OK"))
-        msg_box.setButtonText(QMessageBox.StandardButton.Cancel, _("Cancel"))
+        msg_box.button(QMessageBox.StandardButton.Ok).setText(_("OK"))
+        msg_box.button(QMessageBox.StandardButton.Cancel).setText(_("Cancel"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Ok:
             return self._install_alt_i586_dependencies()
@@ -2811,8 +2811,8 @@ class MainWindow(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             message_box.setDefaultButton(QMessageBox.StandardButton.No)
-            message_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-            message_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+            message_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+            message_box.button(QMessageBox.StandardButton.No).setText(_("No"))
             if message_box.exec() != QMessageBox.StandardButton.Yes:
                 return
         self._start_egs_operation(

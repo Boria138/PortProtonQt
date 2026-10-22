@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 import subprocess
-import signal
+import shlex
 import threading
 import urllib.error
 import urllib.request
@@ -11,17 +11,16 @@ from logging import Logger
 
 import psutil
 
+
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QApplication,
-    QMenu,
     QMessageBox,
-    QSystemTrayIcon,
 )
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QIcon
 
 from portprotonqt.config import (
     consume_download_counter_skip,
@@ -66,6 +65,8 @@ if APP_VERSION == "@APP" "_VERSION@":
 
 __app_version__ = APP_VERSION
 
+RESTART_STOP_TIMEOUT_SECONDS = 30
+
 COUNTER_DOWNLOAD_URL = "http://cloud.linux-gaming.ru:8081/api/download/{version}"
 
 def get_version():
@@ -80,103 +81,6 @@ def get_version():
         return f"{__app_version__} ({commit})"
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return __app_version__
-
-
-def stop_portproton_game(start_sh: list[str], logger: Logger) -> None:
-    try:
-        subprocess.run(
-            start_sh + ["cli", "--stop"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
-    except (OSError, subprocess.SubprocessError) as e:
-        logger.warning("Failed to execute PortProton stop command: %s", e)
-
-
-def get_portproton_tray_icon() -> QIcon:
-    from portprotonqt.theme_manager import ThemeManager
-
-    icon = ThemeManager().get_icon("tray_portproton", ui_config.get_theme())
-    if isinstance(icon, QIcon):
-        return icon
-    return QIcon()
-
-
-def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> None:
-    """Launch a game with minimal tray game controls."""
-    logger = get_logger(__name__)
-    app.setQuitOnLastWindowClosed(False)
-    tray_icon = QSystemTrayIcon(get_portproton_tray_icon(), app)
-    tray_icon.setToolTip(__app_name__)
-
-    from datetime import datetime
-    from portprotonqt.time_utils import save_last_launch, save_playtime
-    save_last_launch(os.path.splitext(os.path.basename(exe_path))[0], datetime.now())
-    start_time = datetime.now()
-
-    process = subprocess.Popen(start_sh + [exe_path], env=os.environ.copy(), shell=False)
-    tray_menu = QMenu()
-
-    def end_silent_run():
-        monitor_timer.stop()
-        elapsed = int((datetime.now() - start_time).total_seconds())
-        if elapsed > 0:
-            save_playtime(exe_path, elapsed)
-        tray_icon.hide()
-        app.quit()
-
-    def stop_game() -> None:
-        stop_portproton_game(start_sh, logger)
-        end_silent_run()
-
-    def close_when_game_exits(_tray_menu: QMenu = tray_menu) -> None:
-        if process.poll() is not None:
-            end_silent_run()
-
-    def update_pause_action() -> list[psutil.Process]:
-        try:
-            children = psutil.Process(process.pid).children(recursive=True)
-            paused = bool(children) and all(
-                child.status() == psutil.STATUS_STOPPED for child in children
-            )
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            children = []
-            paused = False
-        pause_action.setEnabled(bool(children))
-        pause_action.setText(_("Resume Game") if paused else _("Pause Game"))
-        return children
-
-    def toggle_pause() -> None:
-        children = update_pause_action()
-        if not children:
-            return
-        try:
-            paused = all(child.status() == psutil.STATUS_STOPPED for child in children)
-            pause_signal = signal.SIGCONT if paused else signal.SIGSTOP
-            for child in children:
-                try:
-                    child.send_signal(pause_signal)
-                except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as error:
-                    logger.warning("Failed to change pause state for process %s: %s", child.pid, error)
-        except (psutil.NoSuchProcess, psutil.AccessDenied) as error:
-            logger.warning("Failed to inspect game pause state: %s", error)
-        update_pause_action()
-
-    pause_action = QAction(_("Pause Game"), tray_menu)
-    pause_action.triggered.connect(toggle_pause)
-    tray_menu.addAction(pause_action)
-    tray_menu.aboutToShow.connect(update_pause_action)
-    stop_action = QAction(_("Stop Game"), tray_menu)
-    stop_action.triggered.connect(stop_game)
-    tray_menu.addAction(stop_action)
-    tray_icon.setContextMenu(tray_menu)
-    tray_icon.show()
-
-    monitor_timer = QTimer(app)
-    monitor_timer.timeout.connect(close_when_game_exits)
-    monitor_timer.start(1000)
 
 
 def restore_prefix_backup(start_sh: list[str], backup_path: str) -> int:
@@ -393,7 +297,7 @@ def main():
         if theme_store_id is not None:
             ipc_message = f"theme:{theme_store_id}"
 
-    from PySide6.QtCore import QThread, Signal
+    from PySide6.QtCore import QLockFile, QStandardPaths, QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
     from requests import RequestException
     from portprotonqt.appimage_updater import (
@@ -419,7 +323,10 @@ def main():
     from portprotonqt.qt_utils import get_screen_info, get_system_dpi_for_wine
 
     # --- Single-instance logic ---
-    server_name = __app_id__
+    runtime_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.RuntimeLocation)
+    server_name = os.path.join(runtime_dir, __app_id__)
+    instance_lock = QLockFile(server_name + ".lock")
+    owns_instance = instance_lock.tryLock(0)
     socket = QLocalSocket()
     socket.connectToServer(server_name)
 
@@ -432,7 +339,11 @@ def main():
         logger.info("Restored existing instance from tray")
         return
 
-    # Remove old socket if it exists
+    if not owns_instance:
+        logger.warning("PortProtonQt is already running but its IPC server is unavailable")
+        return
+
+    # Only the lock owner can remove a stale socket.
     QLocalServer.removeServer(server_name)
 
     local_server = QLocalServer()
@@ -548,10 +459,7 @@ def main():
     if silent_game_request:
         window._initialize_tray(__app_name__)
         assert window.tray_manager is not None
-        if exe_path:
-            window.tray_manager.tray_icon.hide()
-        else:
-            window.tray_manager.set_minimal_mode()
+        window.tray_manager.set_minimal_mode()
 
     def open_store_game_card(source: str, app_id: str, log_mode: bool = False) -> None:
         exec_line = f"{source}://launch/{app_id}"
@@ -576,11 +484,32 @@ def main():
         loader = getattr(window, f"_load_{source}_games_async")
         loader(open_card)
 
-    def handle_game_request(target: str, silent: bool, log_mode: bool = False) -> None:
+    restart_target = None
+
+    def handle_game_request(
+        target: str, silent: bool, log_mode: bool = False, confirm: bool = False,
+    ) -> None:
+        nonlocal restart_target
+        if restart_target is not None:
+            return
+        if silent and (confirm or window.game_processes):
+            message_box = QMessageBox(window)
+            message_box.setIcon(QMessageBox.Icon.Question)
+            message_box.setWindowTitle(__app_name__)
+            message_box.setText(_("PortProtonQt is already running. Stop it and all games, then restart for the new launch?"))
+            message_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            message_box.setDefaultButton(QMessageBox.StandardButton.No)
+            message_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+            message_box.button(QMessageBox.StandardButton.No).setText(_("No"))
+            if message_box.exec() != QMessageBox.StandardButton.Yes:
+                return
+            restart_target = target
+            app.quit()
+            return
         if is_launch_file(target):
             path = normalize_launch_path(target)
             if silent:
-                run_silent_tray(app, start_sh, path)
+                window.toggleGame(shlex.quote(path))
                 return
             window.handle_launch_exe(path, log_mode=log_mode)
             return
@@ -665,7 +594,7 @@ def main():
 
                         if msg.startswith("silent:"):
                             target = unquote(msg[7:].strip())
-                            handle_game_request(target, True)
+                            handle_game_request(target, True, confirm=True)
                         elif msg.startswith("open:") or msg.startswith("log:"):
                             log_mode = msg.startswith("log:")
                             launch_path = unquote(msg.split(":", 1)[1].strip())
@@ -924,7 +853,44 @@ def main():
 
     app.aboutToQuit.connect(cleanup_on_exit)
 
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    if restart_target is not None:
+        if window.game_processes:
+            window._terminate_game_processes()
+            window.resetPlayButton()
+        window._stopBackgroundWorkers()
+        try:
+            children = psutil.Process().children(recursive=True)
+            for child in children:
+                try:
+                    child.terminate()
+                except psutil.NoSuchProcess:
+                    continue
+            alive = psutil.wait_procs(children, timeout=RESTART_STOP_TIMEOUT_SECONDS)[1]
+            for child in alive:
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:
+                    continue
+            alive = psutil.wait_procs(alive, timeout=RESTART_STOP_TIMEOUT_SECONDS)[1]
+            if alive:
+                logger.error("Cannot restart while child processes are still running")
+                sys.exit(1)
+            if start_sh:
+                subprocess.run(start_sh + ["cli", "--stop"], check=True,
+                               timeout=RESTART_STOP_TIMEOUT_SECONDS)
+            instance_lock.unlock()
+            os.execv(sys.executable, [sys.executable, "-m", "portprotonqt.app", "--silent", restart_target])
+        except OSError as error:
+            logger.error("Failed to restart PortProtonQt: %s", error)
+            exit_code = 1
+        except psutil.Error as error:
+            logger.error("Failed to stop PortProtonQt child processes: %s", error)
+            exit_code = 1
+        except subprocess.SubprocessError as error:
+            logger.error("Failed to stop PortProton before restart: %s", error)
+            exit_code = 1
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

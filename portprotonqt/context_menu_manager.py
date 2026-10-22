@@ -363,8 +363,8 @@ class ContextMenuManager:
         )
         msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         if msg_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -392,8 +392,8 @@ class ContextMenuManager:
         )
         msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         if msg_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -1178,8 +1178,8 @@ class ContextMenuManager:
         msg_box.setText(_("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
