@@ -207,10 +207,32 @@ def test_system_locale(
     monkeypatch: pytest.MonkeyPatch, system_locale: str | None,
     force_english: bool, expected: str,
 ) -> None:
+    monkeypatch.delenv("LANGUAGE", raising=False)
     monkeypatch.setattr(localization.locale, "getlocale", lambda: (system_locale, "UTF-8"))
     monkeypatch.setattr("portprotonqt.config.ui_config.get_force_english", lambda: force_english)
 
     assert localization.get_system_locale() == expected
+
+
+@pytest.mark.parametrize("language,expected", [
+    ("de", "german"),
+    ("ru", "russian"),
+    ("ru_RU.UTF-8", "russian"),
+    ("de:ru", "german"),
+    ("unknown:de", "german"),
+    ("", "russian"),
+    ("unknown", "russian"),
+])
+def test_steam_language_from_environment(
+    monkeypatch: pytest.MonkeyPatch, language: str, expected: str,
+) -> None:
+    monkeypatch.setenv("LANGUAGE", language)
+    monkeypatch.setenv("FULL_LN", "")
+    monkeypatch.setattr(localization.locale, "getlocale", lambda: ("ru_RU", "UTF-8"))
+    monkeypatch.setattr("portprotonqt.config.ui_config.get_force_english", lambda: False)
+
+    assert localization.get_steam_language() == expected
+    assert localization.os.environ["FULL_LN"] == expected
 
 
 def test_translation_can_switch_to_english_without_restart(

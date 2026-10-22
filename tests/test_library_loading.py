@@ -543,19 +543,28 @@ def test_vertical_library_headers_align_with_values(
                            - value.mapToGlobal(value.rect().center()).x()) <= 1
 
 
-def test_control_click_toggles_card_without_opening_details(
+def test_space_enters_and_toggles_card_selection_without_opening_details(
     library_scene: tuple[GameLibraryManager, list[Callable[[QPixmap], None]]],
 ) -> None:
     manager, _ = library_scene
     game = ("Game", "", "", "", "", "game.exe", "", "", "", "", 0, 0, "portproton")
     card = manager._create_game_card(game)
-    position = card.rect().center().toPointF()
-    for selected in (True, False):
-        event = QMouseEvent(QEvent.Type.MouseButtonPress, position, position,
-                            Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton,
-                            Qt.KeyboardModifier.ControlModifier)
-        card.mousePressEvent(event)
-        assert card.batch_selected is selected
+    from portprotonqt.context_menu_manager import ContextMenuManager
+    from PySide6.QtGui import QKeyEvent
+
+    selection_manager = object.__new__(ContextMenuManager)
+    selection_manager.game_library_manager = manager
+    selection_manager.card_selection_mode = False
+    manager.game_card_cache[(card.name, card.exec_line)] = card
+    card.context_menu_manager = selection_manager
+    event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier)
+    card.keyPressEvent(event)
+    assert card.batch_selected
+    assert selection_manager.card_selection_mode
+    event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier)
+    card.keyPressEvent(event)
+    assert not card.batch_selected
+    assert not selection_manager.card_selection_mode
     cast(Any, manager.main_window).openGameDetailPage.assert_not_called()
 
 

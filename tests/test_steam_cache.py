@@ -118,11 +118,16 @@ class TestDeleteCachedAppFiles:
         assert (tmp_path / "other.txt").exists()
 
 
-def test_matched_steam_game_keeps_cover_when_app_details_fail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("source", ["exe", "gog", "egs"])
+def test_matched_steam_game_keeps_cover_when_app_details_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, source: str,
+) -> None:
     import portprotonqt.steam_api.api as api
 
+    monkeypatch.setattr("portprotonqt.config.cache.CACHE_DIR", tmp_path / "cache")
     executable = tmp_path / "Praest.exe"
     executable.touch()
+    exec_line = str(executable) if source == "exe" else f"{source}://launch/graven"
     app = {"appid": 1371690, "normalized_name": "graven"}
     monkeypatch.setattr(api.ui_config, "get_economy_mode", lambda: False)
     monkeypatch.setattr("portprotonqt.steam_api.cache.get_exiftool_data", lambda _exe: {})
@@ -133,8 +138,20 @@ def test_matched_steam_game_keeps_cover_when_app_details_fail(tmp_path: Path, mo
     monkeypatch.setattr(api, "get_weanticheatyet_info_async", lambda _name, cb: cb({}))
     monkeypatch.setattr(api, "_add_ppdb_info", lambda result, _name, cb: cb(result))
     results = []
-    api.get_steam_game_info_async("GRAVEN", str(executable), results.append)
+    api.get_steam_game_info_async("GRAVEN", exec_line, results.append)
     assert len(results) == 1
     assert results[0]["appid"] == 1371690
     assert results[0]["steam_game"] == "true"
-    assert results[0]["cover"] == "https://steamcdn-a.akamaihd.net/steam/apps/1371690/library_600x900_2x.jpg"
+    expected_cover = (
+        "https://steamcdn-a.akamaihd.net/steam/apps/1371690/library_600x900_2x.jpg"
+        if source == "exe" else ""
+    )
+    assert results[0]["cover"] == expected_cover
+    with (
+        patch("portprotonqt.steam_api.cache.get_exiftool_data", side_effect=AssertionError("EXE reread")),
+        patch.object(api, "get_steam_apps_and_index_async", side_effect=AssertionError("Catalog reloaded")),
+        patch.object(api, "search_app", side_effect=AssertionError("AppID searched again")),
+    ):
+        api.get_steam_game_info_async("GRAVEN", exec_line, results.append)
+    assert len(results) == 2
+    assert results[1] == results[0]

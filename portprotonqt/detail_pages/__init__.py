@@ -93,6 +93,9 @@ class DetailPageManager:
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
         self._current_detail_source = ("game", dict(game_data))
+        self._return_to_library_card_key = (
+            game_data.get("name", ""), game_data.get("exec_line", "")
+        )
         detail_page = QWidget()
         detail_page.setProperty("coverCacheKey", str(game_data.get("appid", "")))
         fallback_exe, fallback_icon_path = self._get_exe_icon_fallback(game_data)
@@ -1638,10 +1641,15 @@ class DetailPageManager:
         container = getattr(self.main_window, "gamesListWidget", None)
         if container is None:
             return
+        manager = getattr(self.main_window, "game_library_manager", None)
+        card_key = getattr(self, "_return_to_library_card_key", None)
+        card = getattr(manager, "game_card_cache", {}).get(card_key)
         cards = [
             widget for widget in container.findChildren(QWidget)
             if widget.__class__.__name__ == "GameCard"
         ]
+        if card is not None and card.isVisible():
+            cards = [card]
         if not cards:
             return
         cards.sort(key=lambda card: (card.pos().y(), card.pos().x()))

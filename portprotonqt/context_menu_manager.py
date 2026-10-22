@@ -537,7 +537,7 @@ class ContextMenuManager:
                 lambda checked=False, actions=actions: self._start_card_actions(actions, menus)
             )
         menu.addSeparator()
-        cancel_action = menu.addAction(_("Cancel"))
+        cancel_action = menu.addAction(self._get_safe_icon("cancel"), _("Cancel"))
         cancel_action.triggered.connect(self.clear_card_selection)
         menu.setActiveAction(next(action for action in menu.actions() if action.isEnabled() and not action.isSeparator()))
         menu.popup(game_card.mapToGlobal(pos))
@@ -561,7 +561,7 @@ class ContextMenuManager:
                 self._show_card_selection_menu(menu, game_card, pos)
                 return
             self.clear_card_selection()
-            selection_action = menu.addAction(_("Select multiple"))
+            selection_action = menu.addAction(self._get_safe_icon("edit"), _("Select multiple"))
             selection_action.triggered.connect(lambda: self.start_card_selection(game_card))
             menu.setActiveAction(selection_action)
             menu.addSeparator()
@@ -913,7 +913,9 @@ class ContextMenuManager:
                             if not entry:
                                 continue
                             exec_line = entry.get("Exec", entry.get("exec", ""))
-                            if script_name.lower() in exec_line.lower():
+                            exe_path = extract_exec_target_path(exec_line)
+                            if (exe_path and resolve_custom_data_dir(custom_root, exe_path)
+                                    == os.path.dirname(metadata_path)) or script_name.lower() in exec_line.lower():
                                 return file_path
                     except OSError:
                         continue
@@ -1536,6 +1538,27 @@ class ContextMenuManager:
             except OSError as error:
                 logger.warning("Failed to relocate statistics for %s: %s", old_exe, error)
 
+    def _save_local_shortcut_name(self, exe_path: str, name: str) -> None:
+        data_home = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        custom_root = os.path.join(data_home, "PortProtonQt", "custom_data")
+        game_dir = resolve_custom_data_dir(custom_root, exe_path)
+        os.makedirs(game_dir, exist_ok=True)
+        metadata_path = os.path.join(game_dir, "metadata.txt")
+        metadata_lines = []
+        if os.path.isfile(metadata_path):
+            with open(metadata_path, encoding="utf-8") as metadata_file:
+                metadata_lines = [line for line in metadata_file if not line.startswith(("name=", "name_"))]
+        clean_name = " ".join(name.splitlines()).strip()
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=game_dir, delete=False) as metadata_file:
+                temp_path = metadata_file.name
+                metadata_file.write(f"name={clean_name}\n" + "".join(metadata_lines))
+            os.replace(temp_path, metadata_path)
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.unlink(temp_path)
+
     def edit_game_shortcut(self, game_name, exec_line, cover_path, appid=None):
         """
         Opens a dialog allowing the user to edit a game shortcut in edit mode to modify an existing .desktop file.
@@ -1576,7 +1599,12 @@ class ContextMenuManager:
                     _("Game name and executable path are required")
                 )
                 return
+            old_path = self._get_desktop_path(game_name)
+            old_entry = parse_desktop_entry(old_path)
+            original_name = old_entry.get("Name", game_name) if old_entry else game_name
+            dialog.nameEdit.setText(original_name)
             desktop_entry, new_desktop_path = dialog.getDesktopEntryData()
+            dialog.nameEdit.setText(new_name)
             if not desktop_entry or not new_desktop_path:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
@@ -1584,10 +1612,15 @@ class ContextMenuManager:
                 )
                 return
 
-            old_path = self._get_desktop_path(game_name)
+            new_desktop_path = old_path
             moved_paths = []
             try:
                 moved_paths = self._relocate_shortcut_data(exe_path, new_exe_path)
+                if exe_path == new_exe_path and os.path.isfile(old_path):
+                    with open(old_path, encoding="utf-8") as source:
+                        desktop_entry = source.read()
+                if new_name != game_name:
+                    self._save_local_shortcut_name(new_exe_path, new_name)
                 with open(new_desktop_path, "w", encoding="utf-8") as f:
                     f.write(desktop_entry)
                 os.chmod(new_desktop_path, 0o755)
@@ -1606,13 +1639,6 @@ class ContextMenuManager:
                     dialog.last_cover_path = target + dialog.last_cover_path[len(source):]
             if exe_path != new_exe_path:
                 self._relocate_shortcut_statistics(exe_path, new_exe_path)
-            if game_name != new_name and os.path.exists(old_path):
-                self._remove_file(
-                    old_path,
-                    _("Failed to delete old .desktop file: {error}"),
-                    _("Removed old .desktop file for '{game_name}'"),
-                    game_name
-                )
             saved_entry = parse_desktop_entry(new_desktop_path)
             updated_exec_line = new_exe_path
             if saved_entry:
@@ -1632,11 +1658,9 @@ class ContextMenuManager:
                     "XDG_DATA_HOME",
                     os.path.join(os.path.expanduser("~"), ".local", "share")
                 )
-                custom_folder = os.path.join(
-                    xdg_data_home,
-                    "PortProtonQt",
-                    "custom_data",
-                    get_custom_data_dir_name(new_exe_path),
+                custom_folder = resolve_custom_data_dir(
+                    os.path.join(xdg_data_home, "PortProtonQt", "custom_data"),
+                    new_exe_path,
                 )
                 os.makedirs(custom_folder, exist_ok=True)
 

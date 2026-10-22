@@ -266,9 +266,11 @@ class EGSAPI:
         data = self._load_json(self.config_dir / "installed.json", {})
         return data if isinstance(data, dict) else {}
 
-    def is_game_installed(self, app_id: str) -> bool:
+    def is_game_installed(
+        self, app_id: str, installed_data: dict[str, dict] | None = None
+    ) -> bool:
         """Return whether Legendary records a usable installation."""
-        return self.get_launch_target(app_id) is not None
+        return self.get_launch_target(app_id, installed_data) is not None
 
     @staticmethod
     def is_eos_overlay_enabled(prefix_path: Path) -> bool:
@@ -285,9 +287,13 @@ class EGSAPI:
                     return True
         return False
 
-    def get_launch_target(self, app_id: str) -> str | None:
+    def get_launch_target(
+        self, app_id: str, installed_data: dict[str, dict] | None = None
+    ) -> str | None:
         """Return the installed game's Windows executable."""
-        installed = self.load_installed().get(app_id, {})
+        installed = (
+            installed_data if installed_data is not None else self.load_installed()
+        ).get(app_id, {})
         install_path = Path(str(installed.get("install_path", "")))
         executable = str(installed.get("executable", "")).replace("\\", "/")
         target = install_path.joinpath(*executable.split("/"))

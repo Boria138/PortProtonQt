@@ -1130,6 +1130,11 @@ class MainWindow(
         library = [game for game in api.load_library() if game.get("app_id")]
         if self._upgrade_legacy_gog_library(api, library, callback):
             return
+        if only_installed:
+            library = [
+                game for game in library
+                if api.is_game_installed(str(game["app_id"]), installed)
+            ]
         games = []
         if not library:
             callback(games)
@@ -1196,6 +1201,23 @@ class MainWindow(
         if not library:
             callback(games)
             return
+        installed_data = None
+        installed_by_id = {}
+        if only_installed:
+            installed_data = self.egs_api.load_installed()
+            installed_by_id = {
+                str(game["app_id"]): self.egs_api.is_game_installed(
+                    str(game["app_id"]), installed_data
+                )
+                for game in library
+            }
+            library = [
+                game for game in library
+                if installed_by_id[str(game["app_id"])]
+            ]
+        if not library:
+            callback(games)
+            return
         from portprotonqt.time_utils import get_statistics_path
         statistics_file = get_statistics_path()
         processed_count = 0
@@ -1206,9 +1228,19 @@ class MainWindow(
             name, custom_cover = MainWindow._get_custom_store_data(
                 "egs", app_id, str(game.get("title", app_id))
             )
-            installed = self.egs_api.is_game_installed(app_id)
+            installed = (
+                installed_by_id[app_id] if only_installed
+                else self.egs_api.is_game_installed(app_id)
+            )
             if not only_installed or installed:
-                target = self.egs_api.get_launch_target(app_id) if installed else None
+                target = None
+                if installed:
+                    if only_installed:
+                        target = self.egs_api.get_launch_target(
+                            app_id, installed_data
+                        )
+                    else:
+                        target = self.egs_api.get_launch_target(app_id)
                 description = str(game.get("description", ""))
                 if not description or description == str(game.get("title", "")):
                     description = str(steam_info.get("description", ""))

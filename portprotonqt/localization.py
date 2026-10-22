@@ -85,6 +85,13 @@ def get_system_locale():
 
     if ui_config.get_force_english():
         return 'en'
+    for language in os.getenv("LANGUAGE", "").split(":"):
+        if not language:
+            continue
+        try:
+            return str(Locale.parse(language))
+        except (UnknownLocaleError, ValueError):
+            continue
     try:
         loc = locale.getlocale()[0]
         return str(Locale.parse(loc)) if loc else 'en'
