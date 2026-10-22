@@ -69,16 +69,16 @@ def test_game_card_context_menu_does_not_block_gamepad_polling(monkeypatch) -> N
     assert app is not None
 
 
+@pytest.mark.parametrize("target", ["game.exe", "gog://launch/123", "egs://launch/game-id"])
 def test_add_to_steam_for_all_accounts(
     tmp_path: Path,
     monkeypatch: Any,
+    target: str,
 ) -> None:
     steam_home = tmp_path / "steam"
     user_ids = ("76561197960265729", "76561197960265730")
     executable = tmp_path / "game.exe"
     executable.touch()
-    script_path = tmp_path / "game.sh"
-
     monkeypatch.setattr(steam_shortcuts, "get_steam_home", lambda: steam_home)
     monkeypatch.setattr(
         steam_shortcuts,
@@ -91,12 +91,9 @@ def test_add_to_steam_for_all_accounts(
     monkeypatch.setattr(
         steam_shortcuts, "get_portproton_start_command", lambda: "start"
     )
-    monkeypatch.setattr(
-        steam_shortcuts,
-        "_create_launch_script",
-        lambda *_args: (str(script_path), ""),
-    )
-    monkeypatch.setattr(steam_shortcuts, "_generate_icon", lambda *_args: "")
+    icon_path = str(tmp_path / "game-icon.png")
+    generate_icon = MagicMock(return_value=icon_path)
+    monkeypatch.setattr(steam_shortcuts, "_generate_icon", generate_icon)
     monkeypatch.setattr(
         steam_shortcuts.game_config, "get_steam_account_id", lambda: "all"
     )
@@ -105,10 +102,11 @@ def test_add_to_steam_for_all_accounts(
     )
 
     result, _message = steam_shortcuts.add_to_steam(
-        "Test Game", str(executable), ""
+        "Test Game", str(executable) if target == "game.exe" else target, "", str(executable)
     )
 
     assert result is True
+    generate_icon.assert_called_once_with(str(executable), str(tmp_path))
     for account_id in ("1", "2"):
         shortcuts_path = (
             steam_home / "userdata" / account_id / "config" / "shortcuts.vdf"
@@ -116,6 +114,9 @@ def test_add_to_steam_for_all_accounts(
         assert shortcuts_path.is_file()
         shortcuts = steam_shortcuts.safe_vdf_load(shortcuts_path)["shortcuts"]
         assert shortcuts["0"]["AppName"] == "Test Game"
+        assert shortcuts["0"]["icon"] == icon_path
+    script = (tmp_path / "steam_scripts" / "Test Game.sh").read_text()
+    assert target in script
 
 
 def test_custom_data_hash_distinguishes_same_exe_names(tmp_path: Path) -> None:
@@ -1546,6 +1547,7 @@ def test_local_shortcut_name_keeps_metadata_on_write_failure(
     assert list(game_dir.iterdir()) == [metadata]
 
 
+@pytest.mark.parametrize("target", ["game.exe", "gog://launch/123", "egs://launch/game-id"])
 @pytest.mark.parametrize("batch,result,expected", [
     (True, (True, "restart"), (0, 0)),
     (False, (True, "Game added to Steam via CEF API"), (0, 0)),
@@ -1553,17 +1555,24 @@ def test_local_shortcut_name_keeps_metadata_on_write_failure(
     (False, (False, "Failed to create shortcut"), (0, 1)),
 ])
 def test_steam_addition_dialogs(monkeypatch: Any, batch: bool, result: tuple[bool, str],
-                              expected: tuple[int, int]) -> None:
+                              expected: tuple[int, int], target: str) -> None:
     from portprotonqt.context_menu_manager import ContextMenuManager
 
     manager = object.__new__(ContextMenuManager)
     manager._batch_action = batch
     manager._check_portproton = lambda: True
     monkeypatch.setattr(manager, "_get_exec_line", lambda game_name, exec_line: exec_line)
-    monkeypatch.setattr(manager, "_parse_exe_path", lambda exec_line, game_name: exec_line)
+    if target == "game.exe":
+        monkeypatch.setattr(manager, "_parse_exe_path", lambda exec_line, game_name: exec_line)
     manager.signals = MagicMock()
-    monkeypatch.setattr("portprotonqt.context_menu_manager.add_to_steam", lambda *args: result)
-    manager.add_to_steam("Game", "game.exe", "cover")
+    api = SimpleNamespace(get_launch_target=MagicMock(return_value="installed.exe"))
+    manager.parent = SimpleNamespace(gog_api=api, egs_api=api)
+    add_shortcut = MagicMock(return_value=result)
+    monkeypatch.setattr("portprotonqt.context_menu_manager.add_to_steam", add_shortcut)
+    manager.add_to_steam("Game", target, "cover")
+    if target != "game.exe":
+        api.get_launch_target.assert_called_once_with(target.rsplit("/", 1)[-1])
+        add_shortcut.assert_called_once_with("Game", target, "cover", "installed.exe")
     assert manager.signals.show_info_dialog.emit.call_count == expected[0]
     assert manager.signals.show_warning_dialog.emit.call_count == expected[1]
 
@@ -1662,6 +1671,34 @@ def selection_scene(tmp_path: Path, monkeypatch: Any) -> Any:
     manager.stop_card_actions()
     app.processEvents()
     parent.deleteLater()
+
+
+@pytest.mark.parametrize("source", ["gog", "egs"])
+@pytest.mark.parametrize("in_steam", [True, False])
+@pytest.mark.parametrize("installed", [True, False])
+def test_store_steam_menu_action(selection_scene: Any, source: str,
+                                in_steam: bool, installed: bool) -> None:
+    from portprotonqt.localization import _
+
+    scene = selection_scene
+    card = scene.cards[0]
+    card.game_source = source
+    card.exec_line = f"{source}://{'launch' if installed else 'install'}/{card.appid}"
+    if in_steam:
+        scene.steam.add(card.name)
+    scene.manager.add_to_steam = MagicMock()
+    scene.manager.remove_from_steam = MagicMock()
+    menu = scene.manager.show_context_menu(card, QPoint(), build_only=True)
+    text = _("Remove from Steam") if in_steam else _("Add to Steam")
+    actions = [action for action in menu.actions() if action.text() == text]
+    assert len(actions) == int(installed)
+    if not installed:
+        return
+    actions[0].trigger()
+    if in_steam:
+        scene.manager.remove_from_steam.assert_called_once_with(card.name, card.exec_line, source)
+    else:
+        scene.manager.add_to_steam.assert_called_once_with(card.name, card.exec_line, card.cover_path)
 
 
 @pytest.mark.parametrize("source", ["portproton", "gog", "egs", "steam"])

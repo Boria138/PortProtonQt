@@ -369,7 +369,9 @@ def _download_covers(
         )
 
 
-def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool, str]:
+def add_to_steam(
+    game_name: str, exec_line: str, cover_path: str, icon_source: str | None = None
+) -> tuple[bool, str]:
     """
     Add a non-Steam game to Steam via shortcuts.vdf with PortProton tag,
     and download Steam Grid covers with correct sizes and names.
@@ -382,7 +384,8 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
     if not exe_path:
         return (False, error)
 
-    if not os.path.exists(exe_path):
+    is_store_uri = exe_path.startswith(("gog://launch/", "egs://launch/"))
+    if not is_store_uri and not os.path.exists(exe_path):
         logger.error(f"Executable not found: {exe_path}")
         return (False, f"Executable file not found: {exe_path}")
 
@@ -396,7 +399,8 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
     if error:
         return (False, error)
 
-    icon_path = _generate_icon(exe_path, portproton_dir)
+    icon_source = icon_source or (None if is_store_uri else exe_path)
+    icon_path = _generate_icon(icon_source, portproton_dir) if icon_source else ""
 
     steam_home = get_steam_home()
     if not steam_home:
