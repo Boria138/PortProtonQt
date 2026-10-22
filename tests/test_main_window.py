@@ -2257,10 +2257,12 @@ def test_steam_launch_plays_game_launch_sound(monkeypatch: MonkeyPatch) -> None:
 
     assert launch_events == ["popen", "game_launch"]
 
+@mark.parametrize("custom_name", [None, "Edited Local Game"])
 def test_process_portproton_desktop_calls_callback_without_asset_download(
     tmp_config_dir: Path,
     tmp_path: Path,
     monkeypatch: Any,
+    custom_name: str | None,
 ) -> None:
     exe_path = tmp_path / "Game.exe"
     exe_path.write_text("", encoding="utf-8")
@@ -2276,8 +2278,15 @@ def test_process_portproton_desktop_calls_callback_without_asset_download(
     window = MainWindow.__new__(MainWindow)
     window.portproton_location = str(tmp_path)
     results: list[tuple | None] = []
+    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
+    if custom_name:
+        from portprotonqt.config import get_custom_data_dir_name
+        game_dir = custom_data_path / get_custom_data_dir_name(str(exe_path))
+        game_dir.mkdir(parents=True)
+        (game_dir / "metadata.txt").write_text(f"name={custom_name}\n", encoding="utf-8")
 
     def fake_steam_info(_name: str, _exec_line: str, callback: Any) -> None:
+        assert _name == "Test Game"
         callback({})
 
     monkeypatch.setattr(
@@ -2297,10 +2306,9 @@ def test_process_portproton_desktop_calls_callback_without_asset_download(
 
     assert len(results) == 1
     assert results[0] is not None
-    assert results[0][0] == "Test Game"
+    assert results[0][0] == (custom_name or "Test Game")
     assert results[0][5] == f"portproton {exe_path}"
-    custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"
-    assert not custom_data_path.exists()
+    assert custom_data_path.exists() == bool(custom_name)
 
 def test_remove_empty_custom_data_dirs_keeps_non_empty_dirs(tmp_config_dir: Path) -> None:
     custom_data_path = tmp_config_dir.parent / "data" / "PortProtonQt" / "custom_data"

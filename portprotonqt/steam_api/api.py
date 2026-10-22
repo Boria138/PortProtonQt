@@ -1,5 +1,6 @@
 """Steam API functions for PortProtonQt."""
 
+import hashlib
 import os
 import shlex
 import threading
@@ -623,6 +624,19 @@ def get_steam_game_info_async(
     from portprotonqt.steam_api.cache import get_exiftool_data
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 
+    cache_manager = CacheManager()
+    match_key = "steam_match_" + hashlib.sha256(
+        orjson.dumps([desktop_name, exec_line])
+    ).hexdigest()
+    cached_match = (
+        cache_manager.load_json(match_key)
+        if cache_manager.is_fresh(match_key, CACHE_DURATION) else None
+    )
+    if not isinstance(cached_match, dict) or type(cached_match.get("appid")) is not int:
+        cached_match = None
+    elif cached_match["appid"] <= 0:
+        cached_match = None
+
     is_autoinstall = exec_line.startswith("autoinstall:")
     is_store_uri = exec_line.startswith(("gog://", "egs://"))
 
@@ -646,7 +660,7 @@ def get_steam_game_info_async(
         else:
             logger.error("Command file not found: %s", game_exe)
 
-    if is_store_uri:
+    if cached_match is not None or is_store_uri:
         meta_data = {}
     elif not game_exe.lower().endswith('.exe'):
         logger.error("Invalid executable path: %s. Expected .exe", game_exe)
@@ -685,9 +699,9 @@ def get_steam_game_info_async(
         data_and_index: tuple[list | None, dict | None]
     ) -> None:
         steam_apps, steam_apps_index = data_and_index
-        matching_app = None
+        matching_app = cached_match
 
-        if not steam_apps or not steam_apps_index:
+        if matching_app is None and (not steam_apps or not steam_apps_index):
             game_name = desktop_name or exe_name
 
             def on_sgdb_cover_failure(cover: str) -> None:
@@ -716,9 +730,11 @@ def get_steam_game_info_async(
             return
 
         for candidate in candidates_ordered:
+            if matching_app:
+                break
             if not candidate:
                 continue
-            matching_app = search_app(candidate, steam_apps_index)
+            matching_app = search_app(candidate, steam_apps_index or {})
             if matching_app:
                 break
 
@@ -749,6 +765,8 @@ def get_steam_game_info_async(
             return
 
         appid = matching_app["appid"]
+        if cached_match is None:
+            cache_manager.save_json(match_key, matching_app)
 
         def on_app_info(app_info: dict | None) -> None:
             if not app_info:
@@ -800,4 +818,7 @@ def get_steam_game_info_async(
 
         fetch_app_info_async(appid, on_app_info)
 
-    get_steam_apps_and_index_async(on_steam_apps_and_index)
+    if cached_match is not None:
+        on_steam_apps_and_index((None, None))
+    else:
+        get_steam_apps_and_index_async(on_steam_apps_and_index)

@@ -16,6 +16,7 @@
 
 ### Changed
 
+- Найденные Steam AppID сохраняются в кеше, чтобы при повторной загрузке библиотеки пропускать чтение метаданных EXE и поиск по каталогу Steam
 - При возврате из карточки игры библиотека сохраняет прокрутку и фокус на этой карточке
 - Подсказки списков настроек обновляются при наведении мышью и перемещении геймпадом между пунктами
 - После добавления или удаления ярлыков в Steam через CEF без необходимости перезапуска больше не показывается диалог
@@ -24,6 +25,7 @@
 - Настройки exe и `user.conf` применяются автоматически при изменении
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Русский `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/ru/`
+- Обновлён перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 
 ### Fixed
 
@@ -43,6 +45,7 @@
 ### Contributors
 - @adem4ik
 - @rogerio-mattos
+- @Rubin13
 
 ---
 

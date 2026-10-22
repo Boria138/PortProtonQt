@@ -1443,11 +1443,14 @@ def test_missing_dialog_buttons_fit_translated_text(monkeypatch: Any) -> None:
     assert all(actual >= required for actual, required in widths)
 
 
+@pytest.mark.parametrize("edited_name", ["Renamed", "Custom Alias"])
+@pytest.mark.parametrize("edited_executable", ["/games/game.exe", "/games/other.exe"])
 def test_edit_shortcut_removes_desktop_file_with_original_filename(
-    tmp_path: Path, monkeypatch: Any,
+    tmp_path: Path, monkeypatch: Any, edited_name: str, edited_executable: str,
 ) -> None:
     import portprotonqt.context_menu_manager as context_menu
 
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     desktop_dir = tmp_path / "Desktop"
     desktop_dir.mkdir()
     source = tmp_path / "Original.desktop"
@@ -1463,12 +1466,15 @@ def test_edit_shortcut_removes_desktop_file_with_original_filename(
     manager._get_desktop_path = MagicMock(return_value=str(source))
     manager._get_menu_shortcut_path = MagicMock(return_value=str(tmp_path / "missing.desktop"))
     manager._relocate_shortcut_data = MagicMock(return_value=[])
+    manager._relocate_shortcut_statistics = MagicMock()
     dialog = MagicMock()
     dialog.exec.return_value = context_menu.QDialog.DialogCode.Accepted
-    dialog.nameEdit.text.return_value = "Renamed"
-    dialog.exeEdit.text.return_value = "/games/game.exe"
+    dialog.nameEdit.text.return_value = edited_name
+    dialog.exeEdit.text.return_value = edited_executable
     dialog.coverEdit.text.return_value = ""
-    dialog.getDesktopEntryData.return_value = (source.read_text(), str(source))
+    dialog.getDesktopEntryData.return_value = (
+        source.read_text().replace("/games/game.exe", edited_executable), str(source),
+    )
     dialog.add_to_menu_checkbox.isChecked.return_value = False
     dialog.add_to_desktop_checkbox.isChecked.return_value = False
     dialog.add_to_steam_checkbox.isChecked.return_value = False
@@ -1482,7 +1488,62 @@ def test_edit_shortcut_removes_desktop_file_with_original_filename(
 
     assert not desktop_shortcut.exists()
     assert source.exists()
+    assert "Name=Renamed\n" in source.read_text()
+    assert f"Exec={edited_executable}\n" in source.read_text()
+    if edited_name != "Renamed":
+        metadata = next((tmp_path / "data/PortProtonQt/custom_data").glob("*/metadata.txt"))
+        assert metadata.read_text() == f"name={edited_name}\n"
     manager.signals.show_warning_dialog.emit.assert_not_called()
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_local_shortcut_name_preserves_metadata_and_resolves_desktop(
+    tmp_path: Path, monkeypatch: Any, legacy: bool,
+) -> None:
+    from portprotonqt.context_menu_manager import ContextMenuManager
+    from portprotonqt.config import get_custom_data_dir_name
+    from portprotonqt.localization import read_metadata_translations
+
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    executable = str(tmp_path / "Game.exe")
+    desktop = tmp_path / "Original.desktop"
+    desktop.write_text(f"[Desktop Entry]\nName=Original\nExec=portprotonqt --silent {executable}\n")
+    folder = "Game" if legacy else get_custom_data_dir_name(executable)
+    game_dir = tmp_path / "data/PortProtonQt/custom_data" / folder
+    game_dir.mkdir(parents=True)
+    metadata = game_dir / "metadata.txt"
+    metadata.write_text("name=Original\nname_ru=Original RU\ndescription=Details\ndescription_ru=Details RU\n")
+    manager = object.__new__(ContextMenuManager)
+    manager.portproton_location = str(tmp_path)
+
+    for name in ["Custom Alias", "Another Alias"]:
+        manager._save_local_shortcut_name(executable, name)
+        assert manager._get_desktop_path(name) == str(desktop)
+        assert read_metadata_translations(str(metadata), "ru") == {
+            "name": name, "description": "Details RU",
+        }
+        assert "description=Details\n" in metadata.read_text()
+    assert "Name=Original\n" in desktop.read_text()
+
+
+def test_local_shortcut_name_keeps_metadata_on_write_failure(
+    tmp_path: Path, monkeypatch: Any,
+) -> None:
+    import portprotonqt.context_menu_manager as context_menu
+    from portprotonqt.config import get_custom_data_dir_name
+
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    executable = str(tmp_path / "Game.exe")
+    game_dir = tmp_path / "PortProtonQt/custom_data" / get_custom_data_dir_name(executable)
+    game_dir.mkdir(parents=True)
+    metadata = game_dir / "metadata.txt"
+    metadata.write_text("name=Original\ndescription=Details\n")
+    manager = object.__new__(context_menu.ContextMenuManager)
+    monkeypatch.setattr(context_menu.os, "replace", MagicMock(side_effect=OSError("Cannot replace")))
+    with pytest.raises(OSError, match="Cannot replace"):
+        manager._save_local_shortcut_name(executable, "Renamed")
+    assert metadata.read_text() == "name=Original\ndescription=Details\n"
+    assert list(game_dir.iterdir()) == [metadata]
 
 
 @pytest.mark.parametrize("batch,result,expected", [
