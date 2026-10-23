@@ -3,12 +3,14 @@
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
+from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QListWidget,
     QListWidgetItem,
     QStyle,
@@ -16,6 +18,8 @@ from PySide6.QtWidgets import (
 )
 
 import portprotonqt.dialogs.file_explorer as file_explorer_module
+from portprotonqt.input_manager.file_explorer import FileExplorerInputMixin
+from portprotonqt.input_manager.constants import BUTTONS
 from portprotonqt.dialogs.file_explorer import (
     FileExplorer,
     FileIconDelegate,
@@ -23,6 +27,29 @@ from portprotonqt.dialogs.file_explorer import (
 )
 
 _application = QApplication.instance() or QApplication([])
+
+
+def test_gamepad_opens_file_explorer_context_menu(monkeypatch: MonkeyPatch) -> None:
+    explorer = FileExplorer.__new__(FileExplorer)
+    QDialog.__init__(explorer)
+    explorer.file_list = QListWidget(explorer)
+    explorer.file_list.addItem("folder/")
+    explorer.file_list.setCurrentRow(0)
+    context_manager = MagicMock()
+    explorer.context_menu_manager = context_manager
+    manager = SimpleNamespace(file_explorer=explorer, _parent=SimpleNamespace())
+    monkeypatch.setattr(QApplication, "activeWindow", lambda: explorer)
+    monkeypatch.setattr(QApplication, "activePopupWidget", lambda: None)
+
+    FileExplorerInputMixin.handle_file_explorer_button(
+        cast(FileExplorerInputMixin, manager), next(iter(BUTTONS["context_menu"])), 1,
+    )
+
+    item = explorer.file_list.currentItem()
+    assert item is not None
+    context_manager.show_file_explorer_context_menu.assert_called_once_with(
+        explorer, explorer.file_list.visualItemRect(item).center(),
+    )
 
 
 class FakeIcon:
