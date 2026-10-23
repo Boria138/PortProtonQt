@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 00:34+0500\n"
+"POT-Creation-Date: 2026-10-22 15:48+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,18 +18,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Resume Game"
-msgstr ""
-
-msgid "Pause Game"
-msgstr ""
-
-msgid "Stop Game"
-msgstr ""
-
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
+msgstr ""
+
+msgid ""
+"PortProtonQt is already running. Stop it and all games, then restart for "
+"the new launch?"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "No"
 msgstr ""
 
 msgid "Update complete"
@@ -113,12 +115,6 @@ msgid ""
 "cannot be undone."
 msgstr ""
 
-msgid "Yes"
-msgstr ""
-
-msgid "No"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr ""
@@ -148,6 +144,9 @@ msgid "Select multiple"
 msgstr ""
 
 msgid "Delete from PortProton"
+msgstr ""
+
+msgid "Stop Game"
 msgstr ""
 
 msgid "Launch Game"
@@ -275,14 +274,6 @@ msgid "Failed to save .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to delete old .desktop file: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Removed old .desktop file for '{game_name}'"
-msgstr ""
-
-#, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr ""
 
@@ -307,10 +298,6 @@ msgstr ""
 msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to"
 " take effect."
-msgstr ""
-
-#, python-brace-format
-msgid "'{game_name}' was removed from Steam."
 msgstr ""
 
 #, python-brace-format
@@ -777,6 +764,9 @@ msgstr ""
 msgid "sec."
 msgstr ""
 
+msgid "Pause Game"
+msgstr ""
+
 msgid "Exit"
 msgstr ""
 
@@ -787,6 +777,9 @@ msgid "Favorites"
 msgstr ""
 
 msgid "Recent Games"
+msgstr ""
+
+msgid "Resume Game"
 msgstr ""
 
 msgid "Failed to pause game"

@@ -1530,8 +1530,8 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             msg_box.setText(request.get("message", ""))
             msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
-            msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-            msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+            msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+            msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
             button = msg_box.exec()
             worker.submit_pairing_response("yes" if button == QMessageBox.StandardButton.Yes else "no")
             return

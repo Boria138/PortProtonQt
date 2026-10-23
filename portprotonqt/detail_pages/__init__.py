@@ -1483,7 +1483,7 @@ class DetailPageManager:
         msg_box.setWindowTitle(_("Log Saved"))
         msg_box.setText(_("Debug log saved to:") + f"\n{log_file}")
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Open)
-        msg_box.setButtonText(QMessageBox.StandardButton.Open, _("Open Folder"))
+        msg_box.button(QMessageBox.StandardButton.Open).setText(_("Open Folder"))
 
         result = msg_box.exec()
 

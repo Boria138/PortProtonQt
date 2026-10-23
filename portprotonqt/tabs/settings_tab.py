@@ -920,8 +920,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         msg_box.setText(_("Are you sure you want to reset all settings? This action cannot be undone."))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             if reset_settings():
@@ -940,8 +940,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         msg_box.setText(_("Migrate old PortProton shortcuts to PortProtonQt format?"))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
@@ -957,8 +957,8 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         msg_box.setText(_("Are you sure you want to clear the cache? This action cannot be undone."))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()

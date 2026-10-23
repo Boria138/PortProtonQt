@@ -21,19 +21,21 @@ msgstr ""
 "X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Resume Game"
-msgstr "Spiel fortsetzen"
-
-msgid "Pause Game"
-msgstr "Spiel anhalten"
-
-msgid "Stop Game"
-msgstr "Spiel beenden"
-
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr "Kein Lese/Schreibzugriff auf den Ordner. Wähle anderen Benutzerordner."
+
+msgid ""
+"PortProtonQt is already running. Stop it and all games, then restart for "
+"the new launch?"
+msgstr ""
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "No"
+msgstr "Nein"
 
 msgid "Update complete"
 msgstr "Aktualisierung abgeschlossen"
@@ -120,12 +122,6 @@ msgstr ""
 "Soll der Ordner '{folder_name}' wirklich gelöscht werden? Dieser Vorgang ist "
 "unwiderruflich."
 
-msgid "Yes"
-msgstr "Ja"
-
-msgid "No"
-msgstr "Nein"
-
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Ordner konnte nicht gelöscht werden: {error}"
@@ -158,6 +154,9 @@ msgstr "Mehrere auswählen"
 
 msgid "Delete from PortProton"
 msgstr "Von PortProton löschen"
+
+msgid "Stop Game"
+msgstr "Spiel beenden"
 
 msgid "Launch Game"
 msgstr "Spiel starten"
@@ -289,14 +288,6 @@ msgid "Failed to save .desktop file: {error}"
 msgstr "Speichern der .desktop-Datei fehlgeschlagen: {error}"
 
 #, python-brace-format
-msgid "Failed to delete old .desktop file: {error}"
-msgstr "Die alte .desktop-Datei konnte nicht gelöscht werden: {error}"
-
-#, python-brace-format
-msgid "Removed old .desktop file for '{game_name}'"
-msgstr "Die alte .desktop-Datei für '{game_name}' wurde entfernt"
-
-#, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr "Fehler beim Kopieren des Titelbildes: {error}"
 
@@ -326,10 +317,6 @@ msgid ""
 msgstr ""
 "'{game_name}' wurde von Steam entfernt. Bitte starte Steam neu, damit die "
 "Änderungen wirksam werden."
-
-#, python-brace-format
-msgid "'{game_name}' was removed from Steam."
-msgstr "'{game_name}' wurde von Steam entfernt."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -856,6 +843,9 @@ msgstr "Min."
 msgid "sec."
 msgstr "Sek."
 
+msgid "Pause Game"
+msgstr "Spiel anhalten"
+
 msgid "Exit"
 msgstr "Exit"
 
@@ -867,6 +857,9 @@ msgstr "Favoriten"
 
 msgid "Recent Games"
 msgstr "Aktuelle Spiele"
+
+msgid "Resume Game"
+msgstr "Spiel fortsetzen"
 
 msgid "Failed to pause game"
 msgstr "Spiel konnte nicht pausiert werden"

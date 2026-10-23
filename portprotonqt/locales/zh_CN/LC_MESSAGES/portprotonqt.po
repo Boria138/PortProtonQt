@@ -21,21 +21,21 @@ msgstr ""
 "X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.18.0\n"
 
-#, fuzzy
-msgid "Resume Game"
-msgstr "最近游戏"
-
-#, fuzzy
-msgid "Pause Game"
-msgstr "启动游戏"
-
-msgid "Stop Game"
-msgstr "停止游戏"
-
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr "PortProton 数据文件夹不可读写。请为 PortProton 数据选择其他文件夹。"
+
+msgid ""
+"PortProtonQt is already running. Stop it and all games, then restart for "
+"the new launch?"
+msgstr ""
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
 
 msgid "Update complete"
 msgstr "更新完成"
@@ -118,12 +118,6 @@ msgid ""
 "cannot be undone."
 msgstr "确定要删除文件夹\"{folder_name}\"吗？此操作无法撤销。"
 
-msgid "Yes"
-msgstr "是"
-
-msgid "No"
-msgstr "否"
-
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "删除文件夹失败：{error}"
@@ -155,6 +149,9 @@ msgstr "全选"
 
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"
+
+msgid "Stop Game"
+msgstr "停止游戏"
 
 msgid "Launch Game"
 msgstr "启动游戏"
@@ -286,14 +283,6 @@ msgid "Failed to save .desktop file: {error}"
 msgstr "保存 .desktop 文件失败：{error}"
 
 #, python-brace-format
-msgid "Failed to delete old .desktop file: {error}"
-msgstr "删除旧的 .desktop 文件失败：{error}"
-
-#, python-brace-format
-msgid "Removed old .desktop file for '{game_name}'"
-msgstr "已移除\"{game_name}\"的旧版 .desktop 文件"
-
-#, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr "复制封面图像失败：{error}"
 
@@ -319,10 +308,6 @@ msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to"
 " take effect."
 msgstr "\"{game_name}\"已从 Steam 中移除。请重启 Steam 以使更改生效。"
-
-#, python-brace-format
-msgid "'{game_name}' was removed from Steam."
-msgstr "\"{game_name}\"已从 Steam 中移除。"
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -820,6 +805,10 @@ msgstr "分钟。"
 msgid "sec."
 msgstr "秒。"
 
+#, fuzzy
+msgid "Pause Game"
+msgstr "启动游戏"
+
 msgid "Exit"
 msgstr "退出"
 
@@ -830,6 +819,10 @@ msgid "Favorites"
 msgstr "收藏夹"
 
 msgid "Recent Games"
+msgstr "最近游戏"
+
+#, fuzzy
+msgid "Resume Game"
 msgstr "最近游戏"
 
 #, fuzzy

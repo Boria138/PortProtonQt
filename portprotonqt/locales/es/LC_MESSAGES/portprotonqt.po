@@ -21,21 +21,23 @@ msgstr ""
 "X-Generator: Weblate 2026.8.1\n"
 "Generated-By: Babel 2.17.0\n"
 
-msgid "Resume Game"
-msgstr "Reanudar el juego"
-
-msgid "Pause Game"
-msgstr "Pausar el juego"
-
-msgid "Stop Game"
-msgstr "Detener Juego"
-
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr ""
 "La carpeta de datos de PortProton no tiene permisos de lectura ni escritura. "
 "Elija otra carpeta para los datos de PortProton."
+
+msgid ""
+"PortProtonQt is already running. Stop it and all games, then restart for "
+"the new launch?"
+msgstr ""
+
+msgid "Yes"
+msgstr "Sí"
+
+msgid "No"
+msgstr "No"
 
 msgid "Update complete"
 msgstr "Actualización completada"
@@ -122,12 +124,6 @@ msgstr ""
 "¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
 "acción no se puede deshacer."
 
-msgid "Yes"
-msgstr "Sí"
-
-msgid "No"
-msgstr "No"
-
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "No se ha podido eliminar la carpeta: {error}"
@@ -161,6 +157,9 @@ msgstr "Seleccionar todo"
 
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
+
+msgid "Stop Game"
+msgstr "Detener Juego"
 
 msgid "Launch Game"
 msgstr "Iniciar juego"
@@ -292,14 +291,6 @@ msgid "Failed to save .desktop file: {error}"
 msgstr "No se ha podido guardar el archivo .desktop: {error}"
 
 #, python-brace-format
-msgid "Failed to delete old .desktop file: {error}"
-msgstr "No se ha podido eliminar el archivo .desktop antiguo: {error}"
-
-#, python-brace-format
-msgid "Removed old .desktop file for '{game_name}'"
-msgstr "Se ha eliminado el antiguo archivo .desktop de «{game_name}»"
-
-#, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr "No se ha podido copiar la imagen de portada: {error}"
 
@@ -329,10 +320,6 @@ msgid ""
 msgstr ""
 "«{game_name}» se ha eliminado de Steam. Por favor, reinicia Steam para que "
 "los cambios surtan efecto."
-
-#, python-brace-format
-msgid "'{game_name}' was removed from Steam."
-msgstr "«{game_name}» se ha eliminado de Steam."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -873,6 +860,9 @@ msgstr "min"
 msgid "sec."
 msgstr "s"
 
+msgid "Pause Game"
+msgstr "Pausar el juego"
+
 msgid "Exit"
 msgstr "Salir"
 
@@ -884,6 +874,9 @@ msgstr "Favoritos"
 
 msgid "Recent Games"
 msgstr "Juegos recientes"
+
+msgid "Resume Game"
+msgstr "Reanudar el juego"
 
 msgid "Failed to pause game"
 msgstr "Error al pausar el juego"

@@ -21,21 +21,23 @@ msgstr ""
 "X-Generator: Weblate 2026.10.1\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Resume Game"
-msgstr "Retomar jogo"
-
-msgid "Pause Game"
-msgstr "Pausar jogo"
-
-msgid "Stop Game"
-msgstr "Parar o Jogo"
-
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr ""
 "A pasta de dados do PortProton não pode ser lida nem gravada. Escolha "
 "outra pasta para os dados do PortProton."
+
+msgid ""
+"PortProtonQt is already running. Stop it and all games, then restart for "
+"the new launch?"
+msgstr ""
+
+msgid "Yes"
+msgstr "Sim"
+
+msgid "No"
+msgstr "Não"
 
 msgid "Update complete"
 msgstr "Atualização concluída"
@@ -120,12 +122,6 @@ msgstr ""
 "Tem certeza de que deseja excluir a pasta '{folder_name}'? Esta ação não "
 "pode ser desfeita."
 
-msgid "Yes"
-msgstr "Sim"
-
-msgid "No"
-msgstr "Não"
-
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Falha ao excluir a pasta: {error}"
@@ -159,6 +155,9 @@ msgstr "Selecionar Tudo"
 
 msgid "Delete from PortProton"
 msgstr "Excluir do PortProton"
+
+msgid "Stop Game"
+msgstr "Parar o Jogo"
 
 msgid "Launch Game"
 msgstr "Iniciar Jogo"
@@ -290,14 +289,6 @@ msgid "Failed to save .desktop file: {error}"
 msgstr "Falha ao salvar o arquivo .desktop: {error}"
 
 #, python-brace-format
-msgid "Failed to delete old .desktop file: {error}"
-msgstr "Falha ao excluir o arquivo .desktop antigo: {error}"
-
-#, python-brace-format
-msgid "Removed old .desktop file for '{game_name}'"
-msgstr "Arquivo .desktop antigo de '{game_name}' removido"
-
-#, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr "Falha ao copiar a imagem de capa: {error}"
 
@@ -327,10 +318,6 @@ msgid ""
 msgstr ""
 "'{game_name}' foi removido da Steam. Reinicie à Steam para que as "
 "alterações tenham efeito."
-
-#, python-brace-format
-msgid "'{game_name}' was removed from Steam."
-msgstr "'{game_name}' foi removido da Steam."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -855,6 +842,9 @@ msgstr "min."
 msgid "sec."
 msgstr "s."
 
+msgid "Pause Game"
+msgstr "Pausar jogo"
+
 msgid "Exit"
 msgstr "Sair"
 
@@ -866,6 +856,9 @@ msgstr "Favoritos"
 
 msgid "Recent Games"
 msgstr "Jogos Recentes"
+
+msgid "Resume Game"
+msgstr "Retomar jogo"
 
 msgid "Failed to pause game"
 msgstr "Falha ao pausar o jogo"

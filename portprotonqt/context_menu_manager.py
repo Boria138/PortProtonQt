@@ -363,8 +363,8 @@ class ContextMenuManager:
         )
         msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         if msg_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -392,8 +392,8 @@ class ContextMenuManager:
         )
         msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         if msg_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -803,16 +803,21 @@ class ContextMenuManager:
                 if os.path.exists(menu_path)
                 else self.add_to_menu(game_card.name, game_card.exec_line)
             )
-            if get_steam_home() is not None:
-                is_in_steam = is_game_in_steam(game_card.name)
-                steam_icon_name = "delete" if is_in_steam else "menu_steam"
-                steam_text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-                steam_action = menu.addAction(self._get_safe_icon(steam_icon_name), steam_text)
-                steam_action.triggered.connect(
-                    lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
-                    if is_in_steam
-                    else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
-                )
+
+        if (
+            game_card.game_source in ("portproton", "gog", "egs")
+            and not is_uninstalled_store_game
+            and get_steam_home() is not None
+        ):
+            is_in_steam = is_game_in_steam(game_card.name)
+            steam_icon_name = "delete" if is_in_steam else "menu_steam"
+            steam_text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
+            steam_action = menu.addAction(self._get_safe_icon(steam_icon_name), steam_text)
+            steam_action.triggered.connect(
+                lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
+                if is_in_steam
+                else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
+            )
 
         if build_only:
             return menu
@@ -1173,8 +1178,8 @@ class ContextMenuManager:
         msg_box.setText(_("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
-        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        msg_box.button(QMessageBox.StandardButton.Yes).setText(_("Yes"))
+        msg_box.button(QMessageBox.StandardButton.No).setText(_("No"))
         reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
@@ -1751,12 +1756,18 @@ class ContextMenuManager:
         exec_line = self._get_exec_line(game_name, exec_line)
         if not exec_line:
             return
-        exe_path = self._parse_exe_path(exec_line, game_name)
-        if not exe_path:
-            return
+        if not exec_line.startswith(("gog://launch/", "egs://launch/")):
+            exe_path = self._parse_exe_path(exec_line, game_name)
+            if not exe_path:
+                return
         logger.debug("Adding game '%s' to Steam", game_name)
         try:
-            success, message = add_to_steam(game_name, exec_line, cover_path)
+            if exec_line.startswith(("gog://launch/", "egs://launch/")):
+                source, app_id = exec_line.split("://", 1)[0], exec_line.rsplit("/", 1)[-1]
+                icon_source = getattr(self.parent, f"{source}_api").get_launch_target(app_id)
+                success, message = add_to_steam(game_name, exec_line, cover_path, icon_source)
+            else:
+                success, message = add_to_steam(game_name, exec_line, cover_path)
             if success:
                 if self._batch_action:
                     return
